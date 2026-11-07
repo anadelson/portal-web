@@ -1,6 +1,6 @@
 :root{--cor:#1D4E89;--tx:#17212B;--sub:#4B5563;--bd:#DCE1E6}
 *{box-sizing:border-box}body{margin:0;font-family:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5;color:var(--tx);background:#F3F5F8}
-a{color:var(--cor)}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #F0B429;outline-offset:2px}
+a{color:var(--cor)}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #F0B429;outline-offset:2px;box-shadow:0 0 0 2px #fff,0 0 0 7px #17212B}
 .casca{display:flex;min-height:100vh}
 nav.lado{flex:0 0 256px;background:#17212B;color:#E5E9EE;padding:14px 10px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;align-self:flex-start;min-height:100vh;max-height:100vh;overflow-y:auto}
 nav.lado .marca{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;padding:4px 8px 14px}nav.lado .marca img{background:#fff;border-radius:8px;padding:3px;width:40px;height:auto}nav.lado .marca small{display:block;color:#AEB8C2;font-weight:400}
@@ -44,4 +44,4 @@ fieldset{border:1px solid var(--bd);border-radius:12px;padding:12px 14px;display
 form.midia{display:flex;flex-wrap:wrap;gap:14px;border:1px solid var(--bd);border-radius:12px;padding:12px;margin:0}
 .prev{flex:0 0 140px;height:120px;border-radius:10px;background:#F3F5F8;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--sub);font-size:13px}.prev img{width:100%;height:100%;object-fit:cover}
 .campos-m{flex:1 1 220px;display:grid;gap:8px}.campos-m label{display:flex;flex-direction:column;gap:3px;font-weight:600;font-size:13px}.campos-m input{font:inherit;font-weight:400;padding:7px 9px;border:1px solid #6B7684;border-radius:8px}
-:focus-visible{outline:3px solid #F0B429;outline-offset:2px}
+:focus-visible{outline:3px solid #F0B429;outline-offset:2px;box-shadow:0 0 0 2px #fff,0 0 0 7px #17212B}

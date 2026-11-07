@@ -8,7 +8,7 @@ Imagens reais em `imagens/` (brasão e fotos enviadas pela Prefeitura; serviços
 - Texto `#17212B`; texto secundário `#4B5563`; bordas `#DCE1E6`; fundo `#F5F7F9`/`#F4F7F9`.
 - Prefeitura: primária `#0E4D64` (alternativa `#1D4E89`); destaque amarelo `#F0B429`; sucesso `#146C43`; alerta `#7A4A00` sobre `#FCEFD9`; erro `#9B1C1C` sobre `#FBE4D8`.
 - Câmara: primária `#2F5233`, escuro `#1F3A22`, destaque `#F7C948`.
-- Raio de cartões 14–22px; sombras leves só no hover; foco visível amarelo `#F0B429` 3px.
+- Raio de cartões 14–22px; sombras leves só no hover; foco visível em **anel duplo**: contorno amarelo `#F0B429` de 3px (afastado 2px) + anel externo escuro `#17212B` e anel interno branco (`box-shadow: 0 0 0 2px #fff, 0 0 0 7px #17212B`), no portal, no painel administrativo e no console — o amarelo sozinho sobre fundo branco tem contraste ≈1,9:1, abaixo do 3:1 da WCAG 1.4.11 (atualizado em 07/11/2026, Fase 7).
 - Contraste AA em tudo; nada depende só de cor.
 
 ## Prefeitura (Main.dc.html)
