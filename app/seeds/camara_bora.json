@@ -1,0 +1,1157 @@
+{
+ "LEGIS": [
+  {
+   "n": 15,
+   "anos": "2025–2028",
+   "prefeito": "Luiz Carlos Rodrigues (PODE)",
+   "vice": "Claudio Augusto Merci (PSD)",
+   "ver": [
+    [
+     "Advaldo Celestino Teixeira",
+     "Du",
+     "PSD",
+     63
+    ],
+    [
+     "Cecilia Macedo de Amorim",
+     "",
+     "PODE",
+     59
+    ],
+    [
+     "Danilo Pietro",
+     "",
+     "PODE",
+     51
+    ],
+    [
+     "Igor Donisete Guido",
+     "",
+     "PODE",
+     87
+    ],
+    [
+     "Ivanete Maximina de Carvalho",
+     "",
+     "MDB",
+     38
+    ],
+    [
+     "Luis Antonio Vinhando",
+     "",
+     "MDB",
+     35
+    ],
+    [
+     "Paulo Roberto Gonçalves Gusmão",
+     "Paulinho",
+     "MDB",
+     99
+    ],
+    [
+     "Paulo Sergio dos Santos",
+     "Paulo Mecânico",
+     "MDB",
+     81
+    ],
+    [
+     "Pedro Correia da Costa",
+     "Pedro",
+     "PSD",
+     46
+    ]
+   ],
+   "mesas": [
+    {
+     "b": "2025–2026",
+     "m": [
+      [
+       "Presidente",
+       "Advaldo Celestino Teixeira"
+      ],
+      [
+       "Vice-presidente",
+       "Danilo Pietro"
+      ],
+      [
+       "1º secretário",
+       "Paulo Roberto Gonçalves Gusmão"
+      ],
+      [
+       "2º secretário",
+       "Luis Antonio Vinhando"
+      ]
+     ]
+    },
+    {
+     "b": "2027–2028",
+     "m": null
+    }
+   ]
+  },
+  {
+   "n": 14,
+   "anos": "2021–2024",
+   "prefeito": "Luiz Carlos Rodrigues (PTB)",
+   "vice": "Claudio Augusto Merci (PSD)",
+   "ver": [
+    [
+     "Artur Roque Caldas",
+     "Artur",
+     "PSDB",
+     37
+    ],
+    [
+     "Cecilia Macedo de Amorim",
+     "",
+     "PTB",
+     70
+    ],
+    [
+     "Cristiano Macedo",
+     "",
+     "PSDB",
+     29
+    ],
+    [
+     "Domilson Domingos dos Santos",
+     "Goiano",
+     "Republicanos",
+     51
+    ],
+    [
+     "João Antonio Nespoli",
+     "João do Posto",
+     "Republicanos",
+     49
+    ],
+    [
+     "João Flavio Vieira",
+     "João Enfermeiro",
+     "Republicanos",
+     62
+    ],
+    [
+     "Paulo Roberto Gonçalves Gusmão",
+     "Paulinho",
+     "Republicanos",
+     70
+    ],
+    [
+     "Paulo Sergio dos Santos",
+     "Paulo Mecânico",
+     "PTB",
+     45
+    ],
+    [
+     "Wilson Canato",
+     "Neno",
+     "PSD",
+     30
+    ]
+   ],
+   "mesas": [
+    {
+     "b": "2021–2022",
+     "m": [
+      [
+       "Presidente",
+       "João Antonio Nespoli"
+      ],
+      [
+       "Vice-presidente",
+       "Artur Roque Caldas"
+      ],
+      [
+       "1º secretário",
+       "Cristiano Macedo"
+      ],
+      [
+       "2º secretário",
+       "Wilson Canato"
+      ]
+     ]
+    },
+    {
+     "b": "2023–2024",
+     "m": [
+      [
+       "Presidente",
+       "Paulo Roberto Gonçalves Gusmão"
+      ],
+      [
+       "Vice-presidente",
+       "João Antonio Nespoli"
+      ],
+      [
+       "1º secretário",
+       "João Flavio Vieira"
+      ],
+      [
+       "2º secretário",
+       "Paulo Sergio dos Santos"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "n": 13,
+   "anos": "2017–2020",
+   "prefeito": "Wilson Ferreira da Costa (PRB)",
+   "vice": "Carlos Nogueira da Silva (PRB)",
+   "ver": [
+    [
+     "Advaldo Celestino Teixeira",
+     "Du",
+     "PSDB",
+     78
+    ],
+    [
+     "Angelo Aparecido da Silva",
+     "Nico",
+     "PSDB",
+     45
+    ],
+    [
+     "Domilson Domingos dos Santos",
+     "Goiano",
+     "PRB",
+     44
+    ],
+    [
+     "Edson Alves dos Santos",
+     "",
+     "PT",
+     36
+    ],
+    [
+     "Paulo Roberto Gonçalves Gusmão",
+     "Paulinho",
+     "PT",
+     80
+    ],
+    [
+     "Paulo Sergio dos Santos",
+     "Paulo Mecânico",
+     "PSB",
+     84
+    ],
+    [
+     "Pedro Correia da Costa",
+     "Pedro",
+     "PRB",
+     34
+    ],
+    [
+     "Robson Donley",
+     "Robson",
+     "PSB",
+     56
+    ],
+    [
+     "Valdir Pedro da Silva",
+     "Tibira",
+     "PRB",
+     32
+    ]
+   ],
+   "mesas": [
+    {
+     "b": "2017–2018",
+     "m": [
+      [
+       "Presidente",
+       "Advaldo Celestino Teixeira"
+      ],
+      [
+       "Vice-presidente",
+       "Angelo Aparecido da Silva"
+      ],
+      [
+       "1º secretário",
+       "Paulo Roberto Gonçalves Gusmão"
+      ],
+      [
+       "2º secretário",
+       "Robson Donley"
+      ]
+     ]
+    },
+    {
+     "b": "2019–2020",
+     "m": [
+      [
+       "Presidente",
+       "Paulo Roberto Gonçalves Gusmão"
+      ],
+      [
+       "Vice-presidente",
+       "Edson Alves dos Santos"
+      ],
+      [
+       "1º secretário",
+       "Robson Donley"
+      ],
+      [
+       "2º secretário",
+       "Paulo Sergio dos Santos"
+      ]
+     ]
+    }
+   ]
+  }
+ ],
+ "EMENDAS_IMP": [
+  [
+   "1/2026",
+   "Advaldo Celestino Teixeira",
+   "Equipamentos para atendimento educacional especializado (AEE)",
+   11680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "2/2026",
+   "Ivanete Maximina de Carvalho",
+   "Equipamentos para atendimento educacional especializado (AEE)",
+   11680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "3/2026",
+   "Luiz Antonio Vinhando",
+   "Equipamentos para atendimento educacional especializado (AEE)",
+   11680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "4/2026",
+   "Pedro Correia da Costa",
+   "Equipamentos para atendimento educacional especializado (AEE)",
+   11680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "5/2026",
+   "Danilo Pietro",
+   "Locação de brinquedos",
+   22680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "6/2026",
+   "Igor Donisete Guido",
+   "Material esportivo",
+   5000,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "7/2026",
+   "Ivanete Maximina de Carvalho",
+   "Material esportivo",
+   11000,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "8/2026",
+   "Luiz Antonio Vinhando",
+   "Material esportivo",
+   11000,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "9/2026",
+   "Paulo Roberto Gonçalves Gusmão",
+   "Material esportivo",
+   7669.71,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "10/2026",
+   "Paulo Sérgio dos Santos",
+   "Equipamentos para oficina mecânica",
+   22680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "11/2026",
+   "Advaldo Celestino Teixeira",
+   "Custeio das ações e projetos do CCI",
+   11000,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "12/2026",
+   "Paulo Roberto Gonçalves Gusmão",
+   "Custeio das ações e projetos do CCI",
+   15000,
+   "M",
+   "I",
+   0,
+   2450
+  ],
+  [
+   "13/2026",
+   "Pedro Correia da Costa",
+   "Custeio das ações e projetos do CCI",
+   11000,
+   "M",
+   "I",
+   0,
+   7200
+  ],
+  [
+   "14/2026",
+   "Advaldo Celestino Teixeira",
+   "Veículo e gerador",
+   20000,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "15/2026",
+   "Danilo Pietro",
+   "Veículo e gerador",
+   20000,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "16/2026",
+   "Igor Donisete Guido",
+   "Veículo e gerador",
+   37680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "17/2026",
+   "Ivanete Maximina de Carvalho",
+   "Veículo e gerador",
+   20000,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "18/2026",
+   "Luiz Antonio Vinhando",
+   "Veículo e gerador",
+   20000,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "19/2026",
+   "Paulo Roberto Gonçalves Gusmão",
+   "Veículo",
+   22690.29,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "20/2026",
+   "Paulo Sérgio dos Santos",
+   "Veículo e gerador",
+   20000,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "21/2026",
+   "Pedro Correia da Costa",
+   "Veículo e gerador",
+   20000,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "22/2026",
+   "Cecilia Macedo de Amorim",
+   "Prestadores de serviço — fisioterapia",
+   45360,
+   "M",
+   "I",
+   0,
+   1160
+  ],
+  [
+   "23/2026",
+   "Advaldo Celestino Teixeira",
+   "Medicamentos",
+   2680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "24/2026",
+   "Danilo Pietro",
+   "Medicamentos",
+   2680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "25/2026",
+   "Igor Donisete Guido",
+   "Medicamentos",
+   2680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "26/2026",
+   "Ivanete Maximina de Carvalho",
+   "Medicamentos",
+   2680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "27/2026",
+   "Luiz Antonio Vinhando",
+   "Medicamentos",
+   2680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "28/2026",
+   "Paulo Sérgio dos Santos",
+   "Medicamentos",
+   2680,
+   "M",
+   "I",
+   0,
+   0
+  ],
+  [
+   "29/2026",
+   "Pedro Correia da Costa",
+   "Medicamentos",
+   2680,
+   "M",
+   "I",
+   0,
+   0
+  ]
+ ],
+ "INDIC": [
+  [
+   2026,
+   1,
+   "Igor Donisete Guido",
+   "Curso de informática e treinamento no uso de aplicativos bancários, aberto à comunidade."
+  ],
+  [
+   2026,
+   2,
+   "Igor Donisete Guido",
+   "Contratação de Frente de Trabalho para atender munícipes em situação de vulnerabilidade social."
+  ],
+  [
+   2026,
+   3,
+   "Igor Donisete Guido",
+   "Transporte para trabalhadores que precisam se deslocar a outras cidades para trabalhar."
+  ],
+  [
+   2026,
+   4,
+   "Paulo Roberto Gonçalves Gusmão",
+   "Envio de projeto de lei que institua o Salário Mínimo Municipal de R$ 2.200 para os servidores."
+  ],
+  [
+   2026,
+   6,
+   "Igor Donisete Guido",
+   "Fornecimento de próteses dentárias."
+  ],
+  [
+   2026,
+   7,
+   "Paulo Sergio dos Santos",
+   ""
+  ],
+  [
+   2026,
+   8,
+   "Paulo Roberto Gonçalves Gusmão",
+   "Criação do projeto “Meu Primeiro Emprego Boraense”, de qualificação e inserção no mercado de trabalho."
+  ],
+  [
+   2026,
+   9,
+   "Igor Donisete Guido",
+   "Placas com QR Code nos postes para a população relatar problemas na iluminação pública pelo celular."
+  ],
+  [
+   2026,
+   10,
+   "Paulo Roberto Gonçalves Gusmão",
+   "Revitalização da arena esportiva de areia do Balneário Municipal, com fechamento em alambrado."
+  ],
+  [
+   2026,
+   11,
+   "Paulo Roberto Gonçalves Gusmão",
+   "Lombada na esquina da Rua Ver. Herculano Azevedo com a Rua 31 de Agosto, perto da Rodoviária."
+  ],
+  [
+   2026,
+   12,
+   "Cecilia Macedo de Amorim",
+   "Programa de Estágio para Estudantes na Administração Pública."
+  ],
+  [
+   2026,
+   13,
+   "Igor Donisete Guido",
+   "Isenção anual de IPTU para doadores de sangue cadastrados no Centro de Saúde, entre outras isenções."
+  ],
+  [
+   2026,
+   14,
+   "Igor Donisete Guido",
+   "Profissional de enfermagem à noite, nos fins de semana e feriados."
+  ],
+  [
+   2026,
+   15,
+   "Igor Donisete Guido",
+   "Troca do banheiro do balneário municipal por quiosque com cozinha, banheiro amplo e vestiário."
+  ],
+  [
+   2026,
+   16,
+   "Paulo Sergio dos Santos",
+   "Lombada próximo ao Sítio Olinda."
+  ],
+  [
+   2026,
+   17,
+   "Pedro Correia da Costa",
+   "Manutenção da estrada vicinal entre Borá e Quatá (Bairro Aguinha)."
+  ],
+  [
+   2026,
+   18,
+   "Paulo Roberto Gonçalves Gusmão",
+   "Estudos de drenagem de águas pluviais, com canaletas de escoamento, em estrada vicinal."
+  ],
+  [
+   2026,
+   19,
+   "Pedro Correia da Costa",
+   "Biblioteca e museu no prédio da creche."
+  ],
+  [
+   2025,
+   110,
+   "Pedro Correia da Costa",
+   ""
+  ],
+  [
+   2025,
+   109,
+   "Pedro Correia da Costa",
+   ""
+  ],
+  [
+   2025,
+   108,
+   "Igor Donisete Guido",
+   ""
+  ],
+  [
+   2025,
+   107,
+   "Igor Donisete Guido",
+   ""
+  ],
+  [
+   2025,
+   106,
+   "Igor Donisete Guido",
+   ""
+  ],
+  [
+   2025,
+   105,
+   "Igor Donisete Guido",
+   ""
+  ],
+  [
+   2025,
+   104,
+   "Luis Antonio Vinhando",
+   ""
+  ],
+  [
+   2025,
+   103,
+   "Luis Antonio Vinhando",
+   "Bicicletas elétricas para os agentes de saúde."
+  ],
+  [
+   2025,
+   102,
+   "Paulo Roberto Gonçalves Gusmão",
+   ""
+  ],
+  [
+   2025,
+   101,
+   "Igor Donisete Guido",
+   ""
+  ],
+  [
+   2025,
+   100,
+   "Advaldo Celestino Teixeira",
+   "Reconhecimento de Borá como Município de Interesse Turístico (MIT)."
+  ],
+  [
+   2025,
+   99,
+   "Igor Donisete Guido",
+   ""
+  ],
+  [
+   2025,
+   97,
+   "Advaldo Celestino Teixeira",
+   "Aplicativo de comunicação na rede municipal de ensino."
+  ],
+  [
+   2025,
+   90,
+   "Paulo Sergio dos Santos",
+   ""
+  ],
+  [
+   2025,
+   89,
+   "Paulo Roberto Gonçalves Gusmão",
+   ""
+  ],
+  [
+   2025,
+   88,
+   "Paulo Roberto Gonçalves Gusmão",
+   ""
+  ],
+  [
+   2025,
+   87,
+   "Paulo Roberto Gonçalves Gusmão",
+   ""
+  ],
+  [
+   2025,
+   86,
+   "Igor Donisete Guido",
+   ""
+  ],
+  [
+   2025,
+   85,
+   "Igor Donisete Guido",
+   ""
+  ],
+  [
+   2025,
+   84,
+   "Igor Donisete Guido",
+   ""
+  ]
+ ],
+ "OUTRAS": [
+  [
+   "Requerimento",
+   "3/2026",
+   [
+    "Advaldo Celestino Teixeira"
+   ],
+   "Estadualização da estrada vicinal Manoel Caldas.",
+   "23/04/2026",
+   "Aprovado"
+  ],
+  [
+   "Moção",
+   "3/2025",
+   [
+    "Igor Donisete Guido",
+    "Ivanete Maximina de Carvalho"
+   ],
+   "Moção de congratulação a campeão de rodeio do município.",
+   "20/10/2025",
+   "Aprovada"
+  ]
+ ],
+ "SESSOES": [
+  [
+   "18ª Sessão Ordinária de 2026",
+   "16/11/2026",
+   "19h",
+   "proxima"
+  ],
+  [
+   "Sessões de julho a novembro de 2026",
+   "—",
+   "",
+   "faltando"
+  ],
+  [
+   "3ª Sessão Extraordinária de 2026",
+   "03/07/2026",
+   "19h",
+   "pauta"
+  ],
+  [
+   "10ª Sessão Ordinária de 2026",
+   "15/06/2026",
+   "19h",
+   "pauta"
+  ],
+  [
+   "9ª Sessão Ordinária de 2026",
+   "01/06/2026",
+   "19h",
+   "pauta"
+  ],
+  [
+   "8ª Sessão Ordinária de 2026",
+   "18/05/2026",
+   "19h",
+   "pauta"
+  ],
+  [
+   "5ª Sessão Ordinária de 2026",
+   "06/04/2026",
+   "19h",
+   "pauta"
+  ],
+  [
+   "2ª Sessão Ordinária de 2026",
+   "23/02/2026",
+   "19h",
+   "pauta"
+  ],
+  [
+   "20ª Sessão Ordinária de 2025",
+   "15/12/2025",
+   "19h",
+   "pauta"
+  ],
+  [
+   "19ª Sessão Ordinária de 2025",
+   "01/12/2025",
+   "19h",
+   "pauta"
+  ]
+ ],
+ "VEREADORES": [
+  [
+   "Advaldo Celestino Teixeira",
+   "Du",
+   "PSD",
+   "Presidente"
+  ],
+  [
+   "Danilo Pietro",
+   "",
+   "PODE",
+   "Vice-presidente"
+  ],
+  [
+   "Paulo Roberto Gonçalves Gusmão",
+   "Paulinho",
+   "MDB",
+   "1º secretário"
+  ],
+  [
+   "Luis Antonio Vinhando",
+   "",
+   "MDB",
+   "2º secretário"
+  ],
+  [
+   "Cecilia Macedo de Amorim",
+   "Cecilia",
+   "PODE",
+   ""
+  ],
+  [
+   "Igor Donisete Guido",
+   "",
+   "PODE",
+   ""
+  ],
+  [
+   "Ivanete Maximina de Carvalho",
+   "",
+   "MDB",
+   ""
+  ],
+  [
+   "Paulo Sergio dos Santos",
+   "Paulo Mecânico",
+   "MDB",
+   ""
+  ],
+  [
+   "Pedro Correia da Costa",
+   "Pedro",
+   "PSD",
+   ""
+  ]
+ ],
+ "DTP_CM": [
+  [
+   2023,
+   "3º quadr.",
+   699191.32,
+   3.66
+  ],
+  [
+   2024,
+   "3º quadr.",
+   608568.39,
+   2.67
+  ],
+  [
+   2025,
+   "3º quadr.",
+   645513.76,
+   2.53
+  ],
+  [
+   2026,
+   "2º quadr.",
+   943372.29,
+   3.47
+  ]
+ ],
+ "RGF_CM": [
+  [
+   "1º quadr. 2026",
+   "28/05/2026"
+  ],
+  [
+   "2º quadr. 2026",
+   "21/09/2026"
+  ],
+  [
+   "1º quadr. 2025",
+   "04/06/2025"
+  ],
+  [
+   "2º quadr. 2025",
+   "22/09/2025"
+  ],
+  [
+   "3º quadr. 2025",
+   "18/02/2026"
+  ],
+  [
+   "1º quadr. 2024",
+   "14/05/2024"
+  ],
+  [
+   "2º quadr. 2024",
+   "12/09/2024"
+  ],
+  [
+   "3º quadr. 2024",
+   "10/02/2025"
+  ]
+ ],
+ "EXEC_EMENDA": {
+  "22/2026": {
+   "vinculo": "804002 · Emenda Ver. Cecilia Macedo de Amorim",
+   "ato": "Lei Orgânica do Município, art. 127",
+   "destinacao": "Custeio",
+   "orgao": "Departamento de Saúde · Fundo Municipal de Saúde",
+   "programa": "1019 · Saúde Integral e Acesso Humanizado à Atenção Básica",
+   "acao": "2260 · Emendas Parlamentares Municipais",
+   "natureza": "3.3.90.39.50 · Serviço médico-hospitalar, odontológico e laboratorial",
+   "fonte": "08 · Emendas parlamentares individuais (STN 1.500)",
+   "ficha": "220",
+   "contratacao": "Dispensa 9/2026 · Lei 14.133/2021, art. 75, II",
+   "credor": "Anesio Rodrigues Junior (pessoa jurídica)",
+   "empenhos": [
+    {
+     "num": "426/2026",
+     "tipo": "Ordinário",
+     "data": "30/01/2026",
+     "valor": 1160,
+     "anul": [],
+     "liq": [
+      [
+       "12/02/2026",
+       1160
+      ]
+     ],
+     "pag": [
+      [
+       "12/03/2026",
+       1160
+      ]
+     ]
+    }
+   ],
+   "pagoCad": 1160
+  },
+  "13/2026": {
+   "vinculo": "804009 · Emenda Ver. Pedro Correia da Costa",
+   "ato": "Lei Orgânica do Município, art. 127",
+   "destinacao": "Custeio",
+   "orgao": "Departamento de Assistência Social · Fundo Municipal de Assistência Social",
+   "programa": "1020 · Proteção Social Básica e Inclusão de Famílias Vulneráveis",
+   "acao": "2260 · Emendas Parlamentares Municipais",
+   "natureza": "3.3.90.39.48 · Serviço de seleção e treinamento",
+   "fonte": "08 · Emendas parlamentares individuais (STN 1.659)",
+   "ficha": "242",
+   "contratacao": "Dispensa 89/2025 · contrato 10/2025, vigente até 13/11/2026",
+   "credor": "Luciane Rezende Costa Kill (MEI)",
+   "empenhos": [
+    {
+     "num": "83/2026",
+     "tipo": "Global",
+     "data": "05/01/2026",
+     "valor": 10800,
+     "anul": [
+      [
+       "29/05/2026",
+       1800
+      ],
+      [
+       "03/07/2026",
+       5400
+      ]
+     ],
+     "liq": [
+      [
+       "26/02/2026",
+       1800
+      ],
+      [
+       "06/04/2026",
+       1800
+      ]
+     ],
+     "pag": [
+      [
+       "10/03/2026",
+       1800
+      ],
+      [
+       "10/04/2026",
+       1800
+      ]
+     ]
+    }
+   ],
+   "pagoCad": 7200
+  },
+  "12/2026": {
+   "vinculo": "804007 · Emenda Ver. Paulo Roberto Gonçalves Gusmão",
+   "ato": "Lei Orgânica do Município, art. 127",
+   "destinacao": "Custeio",
+   "orgao": "Departamento de Assistência Social · Fundo Municipal de Assistência Social",
+   "programa": "1020 · Proteção Social Básica e Inclusão de Famílias Vulneráveis",
+   "acao": "2260 · Emendas Parlamentares Municipais",
+   "natureza": "3.3.90.39.48 · Serviço de seleção e treinamento",
+   "fonte": "08 · Emendas parlamentares individuais (STN 1.659)",
+   "ficha": "241",
+   "contratacao": "Dispensa 153/2023 · contrato 9/2023, vigente até 30/06/2026",
+   "credor": "Renato Gomes Castro (pessoa jurídica)",
+   "empenhos": [
+    {
+     "num": "111/2026",
+     "tipo": "Global",
+     "data": "05/01/2026",
+     "valor": 7350,
+     "anul": [
+      [
+       "30/04/2026",
+       6125
+      ]
+     ],
+     "liq": [
+      [
+       "10/03/2026",
+       1225
+      ]
+     ],
+     "pag": [
+      [
+       "10/03/2026",
+       1225
+      ]
+     ]
+    }
+   ],
+   "pagoCad": 2450
+  }
+ }
+}

@@ -1,0 +1,5 @@
+{% extends 'portal/base.html' %}
+{% block conteudo %}<h1>Projetos e proposições</h1>
+<div class="tabela"><table><thead><tr><th scope="col">Proposição</th><th scope="col">Ementa</th><th scope="col">Autoria</th><th scope="col">Situação</th></tr></thead><tbody>
+{% for p in props %}<tr><td>{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</td><td>{{ p.ementa }}</td><td>{{ p.autor }}</td><td><span class="chip">{{ p.situacao }}</span></td></tr>{% endfor %}
+</tbody></table></div><p class="legal">Indicações de 2026 e 2025 (parcial), requerimentos e moções: portal da Câmara, consulta de 06/11/2026.</p>{% endblock %}

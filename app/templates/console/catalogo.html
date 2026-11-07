@@ -1,0 +1,4 @@
+{% extends 'console/base.html' %}{% block h1 %}Catálogo de módulos{% endblock %}
+{% block conteudo %}<div class="tabela"><table><thead><tr><th>Módulo</th><th>Oferta</th><th>Serve para</th>{% for o in orgaos %}<th>{{ o.slug }}</th>{% endfor %}</tr></thead><tbody>
+{% for m in mods %}<tr><td><strong>{{ m[1] }}</strong><br><small>{{ m[2] }}</small></td><td>{{ {'obr':'Obrigatório por lei','plano':'Incluído no plano','opc':'Opcional'}[m[3]] }}</td><td>{{ {'ambos':'Prefeitura e Câmara','executivo':'Prefeitura','legislativo':'Câmara'}[m[4]] }}</td>
+{% for o in orgaos %}<td>{% if not serve(m[0], o.tipo) %}{% elif m[3] != 'opc' %}●{% elif cont.get((o.id, m[0])) %}✓{% else %}—{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div><p class="legal">● obrigatório ou incluído · ✓ contratado · — não contratado · vazio: não se aplica.</p>{% endblock %}

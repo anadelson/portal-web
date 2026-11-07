@@ -1,0 +1,3 @@
+{% extends 'admin/base.html' %}{% block h1 %}Trocar senha{% endblock %}
+{% block conteudo %}{% if u.trocar %}<p class="msg" style="background:#FCEFD9">Primeiro acesso: defina uma senha só sua.</p>{% endif %}
+<form class="campos" method="post" action="/admin/senha" style="max-width:420px"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><label>Senha atual<input type="password" name="atual" required></label><label>Nova senha (10+ caracteres)<input type="password" name="nova" required minlength="10"></label><label>Repita a nova senha<input type="password" name="conf" required></label><button class="btn">Salvar</button></form>{% endblock %}

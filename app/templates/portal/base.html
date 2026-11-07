@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
+<link rel="stylesheet" href="/static/portal.css">
+<style>:root{--cor:{{ cor }}}</style>
+</head>
+<body>
+<a class="pular" href="#conteudo">Ir para o conteúdo [1]</a>
+<div class="acess"><div>
+<a href="#conteudo" accesskey="1">Conteúdo [1]</a><a href="#menu" accesskey="2">Menu [2]</a><a href="#rodape" accesskey="4">Rodapé [4]</a>
+<button type="button" onclick="document.body.classList.toggle('alto-contraste')">Alto contraste</button>
+<button type="button" onclick="document.body.style.fontSize=(parseFloat(getComputedStyle(document.body).fontSize)+2)+'px'">A+</button>
+<button type="button" onclick="document.body.style.fontSize=''">A</button>
+<a href="/acesso">Acesso à informação</a>
+</div></div>
+<header class="topo"><div>
+<a class="marca" href="/"><span class="selo" aria-hidden="true">{{ (ident.nome or orgao.nome)[:1] }}</span><span><strong>{{ ident.nome or orgao.nome }}</strong><br><small>{{ orgao.municipio }}</small></span></a>
+<nav class="menu" id="menu" aria-label="Menu principal"><ul>
+<li><a href="/">Início</a></li>
+{% if orgao.tipo == 'legislativo' %}
+<li><a href="/vereadores">Vereadores</a></li><li><a href="/sessoes">Sessões</a></li><li><a href="/proposicoes">Projetos</a></li>
+{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
+{% else %}
+<li><a href="/servicos">Serviços</a></li>{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}
+{% endif %}
+<li><a href="/transparencia">Transparência</a></li>
+{% if mods.noticias %}<li><a href="/noticias">Notícias</a></li>{% endif %}
+<li><a href="/acesso">e-SIC e Ouvidoria</a></li>
+</ul></nav>
+</div></header>
+{% if defeso and eleicao.aviso %}<div class="aviso-defeso" role="note"><p>Em cumprimento à Lei 9.504/1997, art. 73, VI, b, parte do conteúdo está suspensa até {{ eleicao.fim|br }}. Transparência, serviços e atos oficiais seguem disponíveis.</p></div>{% endif %}
+<main id="conteudo" tabindex="-1">
+{% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}
+{% block conteudo %}{% endblock %}
+{% if legal %}<p class="legal" style="margin-top:28px"><strong>Base legal:</strong> {{ BASE_LEGAL[legal] }}</p>{% endif %}
+</main>
+<footer class="rodape" id="rodape"><div class="int">
+<section><h2>Atendimento</h2><p>{{ ident.endereco }}<br>{{ ident.telefone }} · {{ ident.email }}<br>{{ ident.horario }}<br>CNPJ {{ ident.cnpj }}</p></section>
+<section><h2>Acesso à informação</h2><ul><li><a href="/transparencia">Portal da Transparência</a></li><li><a href="/acesso">e-SIC</a></li><li><a href="/acesso#ouvidoria">Ouvidoria</a></li>{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}</ul></section>
+<section><h2>Privacidade</h2><p>Encarregado de dados (LGPD): {{ ident.encarregado }} · {{ ident.encarregado_email }}</p><p><a href="https://radardatransparencia.atricon.org.br/">Radar da Transparência Pública</a></p></section>
+<section><h2>Área restrita</h2><p><a href="/admin">Painel administrativo</a></p><p style="font-size:13px">Piloto em homologação. Conteúdos marcados como “exemplo” são ilustrativos.</p></section>
+</div></footer>
+</body>
+</html>

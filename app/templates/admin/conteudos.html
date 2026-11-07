@@ -1,0 +1,5 @@
+{% extends 'admin/base.html' %}{% block h1 %}Conteúdos{% endblock %}
+{% block conteudo %}<div class="acoes" style="margin-bottom:12px">{% for k, v in SITUACOES.items() %}<a class="btn {{ '' if sit == k else 'sec' }}" href="/admin/conteudos?sit={{ k }}">{{ v }}</a>{% endfor %}<a class="btn sec" href="/admin/conteudos">Todos</a>{% if pode('editar') %}<a class="btn" href="/admin/conteudos/novo">+ Novo conteúdo</a>{% endif %}</div>
+<div class="tabela"><table><thead><tr><th>Título</th><th>Tipo</th><th>Classificação eleitoral</th><th>Situação</th><th>Atualizado</th></tr></thead><tbody>
+{% for c in itens %}<tr><td><a href="/admin/conteudos/{{ c.id }}">{{ c.titulo }}</a>{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}<br><small>{{ c.autor }}</small></td><td>{{ c.tipo }}</td><td>{{ CLASSES[c.classe][0] }}</td><td><span class="chip">{{ SITUACOES[c.situacao] }}</span>{% if c.suspenso %} <span class="chip erro">Suspenso (defeso)</span>{% endif %}</td><td>{{ c.atualizado_em|br }}</td></tr>{% else %}<tr><td colspan="5">Nenhum conteúdo.</td></tr>{% endfor %}
+</tbody></table></div>{% endblock %}

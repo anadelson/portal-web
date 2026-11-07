@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+/dados/
+# VPS: nunca versionar backups (dumps têm dados pessoais do e-SIC), diagnósticos e pacotes recebidos
+/backups/
+Docs/diagnostico-*.txt
+Docs/*.tgz

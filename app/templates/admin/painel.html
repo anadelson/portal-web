@@ -1,0 +1,4 @@
+{% extends 'admin/base.html' %}{% block h1 %}Visão geral{% endblock %}
+{% block conteudo %}<div class="kpis">
+<a class="kpi" href="/admin/conteudos?sit=revisao">Aguardando revisão<b>{{ k.revisao }}</b></a><a class="kpi" href="/admin/conteudos?sit=devolvido">Devolvidos<b>{{ k.devolvido }}</b></a><a class="kpi" href="/admin/conteudos?sit=agendado">Agendados<b>{{ k.agendado }}</b></a><a class="kpi" href="/admin/conteudos?sit=publicado">Publicados<b>{{ k.publicado }}</b></a><a class="kpi" href="/admin/eleicao">Sairão no defeso<b>{{ k.vedados }}</b></a><a class="kpi" href="/admin/atendimento">e-SIC/Ouvidoria em aberto<b>{{ sic.abertos }}</b></a></div>
+<section class="cx"><h2>Últimas ações</h2><ul>{% for l in log %}<li>{{ l.quando|br }} · <strong>{{ l.usuario }}</strong> · {{ l.acao }}</li>{% endfor %}</ul></section>{% endblock %}

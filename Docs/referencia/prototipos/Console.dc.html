@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Console do gestor da plataforma</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button,select,input{font:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #F0B429;outline-offset:2px}
+button:disabled{cursor:not-allowed;opacity:.45}
+.mi:hover{background:#2A2F45 !important}
+.row:hover{background:#F7F8FB}
+.sw{position:relative;display:inline-block;width:44px;height:24px;border-radius:999px;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:3px;width:18px;height:18px;border-radius:50%;background:#FFFFFF;transition:left .15s ease}
+.sw[data-on="true"]::after{left:23px}.sw[data-on="false"]::after{left:3px}
+.blk{transition:box-shadow .12s ease}.blk:hover{box-shadow:0 0 0 2px #F0B429}
+@media (prefers-reduced-motion: reduce){.sw::after,.blk{transition:none}}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; background: #F4F5F9; color: #171A2B; font-family: 'Public Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5;">
+
+<nav aria-label="Menu do console" style="flex: 0 0 248px; background: #1B1E30; color: #E3E5EE; display: flex; flex-direction: column; gap: 3px; padding: 18px 14px; box-sizing: border-box; position: sticky; top: 0; align-self: flex-start; min-height: 100vh;">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 6px 18px;">
+<span aria-hidden="true" style="width: 34px; height: 34px; border-radius: 9px; background: #F0B429; color: #1B1E30; display: inline-flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5"></path></svg></span>
+<span style="display: flex; flex-direction: column; line-height: 1.2;"><strong style="color: #FFFFFF;">Console do gestor</strong><span style="font-size: 12px; color: #9BA0B8;">Plataforma de portais</span></span>
+</div>
+<sc-for list="{{menu}}" as="m" hint-placeholder-count="6"><button type="button" class="mi" onClick="{{m.go}}" aria-current="{{m.cur}}" style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 8px; background: {{m.bg}}; color: #FFFFFF; font-weight: 600; text-align: left; cursor: pointer;"><span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 7px; background: {{m.icBg}}; color: {{m.icFg}}; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.ic}}"></path></svg></span><span style="flex: 1;">{{m.label}}</span><sc-if value="{{m.temN}}" hint-placeholder-val="{{false}}"><span style="min-width: 20px; padding: 0 6px; border-radius: 999px; background: #F0B429; color: #1B1E30; font-size: 11px; font-weight: 800; text-align: center; line-height: 18px;">{{m.n}}</span></sc-if></button></sc-for>
+<a href="Backend.dc.html" class="mi" style="margin-top: 14px; display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; border-radius: 8px; color: #C9CDE0; text-decoration: none; font-weight: 600;"><span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 7px; background: #2A2F45; display: inline-flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"></path></svg></span>Painel dos órgãos</a>
+<div style="margin-top: auto; padding: 12px; border-radius: 10px; background: #24283D; font-size: 13px;">
+<label for="f-data" style="display: block; color: #9BA0B8; margin-bottom: 4px;">Simular a data de hoje</label>
+<select id="f-data" value="{{dataSim}}" onChange="{{onData}}" style="width: 100%; min-height: 38px; padding: 0 8px; border: 1px solid #3A3F58; border-radius: 8px; background: #1B1E30; color: #FFFFFF;"><sc-for list="{{datasOpts}}" as="d" hint-placeholder-count="4"><option value="{{d.v}}">{{d.t}}</option></sc-for></select>
+<p style="margin: 6px 0 0; color: #9BA0B8; font-size: 12px;">Mude a data para ver alertas, vencimento e carência.</p>
+</div>
+</nav>
+
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+<header style="background: #FFFFFF; border-bottom: 1px solid #DDE0EA; padding: 14px 28px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 20px; align-items: center;">
+<div><p style="margin: 0; font-size: 13px; color: #555B70;">Acesso restrito ao gestor do projeto e à DTIC · gov.br + 2º fator</p><h1 style="margin: 0; font-size: 22px;">{{viewTitle}}</h1></div>
+<span style="padding: 6px 12px; border-radius: 999px; background: #FFF4D6; color: #6B4A00; font-size: 13px; font-weight: 700;">Hoje simulado: {{dataTxt}}</span>
+</header>
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}"><div role="status" style="margin: 16px 28px 0; padding: 12px 16px; border-radius: 10px; background: {{msgBg}}; font-size: 14px; display: flex; justify-content: space-between; gap: 12px;"><span>{{msg}}</span><button type="button" onClick="{{limparMsg}}" aria-label="Fechar mensagem" style="background: none; border: 0; font-size: 18px; line-height: 1; cursor: pointer;">×</button></div></sc-if>
+
+<main style="padding: 22px 28px 56px;">
+
+<!-- VISÃO GERAL -->
+<sc-if value="{{isGeral}}" hint-placeholder-val="{{true}}">
+<dl style="margin: 0 0 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;"><sc-for list="{{kpis}}" as="k" hint-placeholder-count="4"><div style="padding: 14px 16px; border-radius: 14px; background: #FFFFFF; border: 1px solid #DDE0EA; border-top: 4px solid {{k.cor}};"><dt style="font-size: 13px; color: #555B70;">{{k.l}}</dt><dd style="margin: 2px 0 0; font-size: 28px; font-weight: 800;">{{k.v}}</dd><dd style="margin: 0; font-size: 12px; color: #555B70;">{{k.d}}</dd></div></sc-for></dl>
+<section style="background: #FFFFFF; border: 1px solid #DDE0EA; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 10px; font-size: 18px;">Alertas de licença</h2>
+<sc-if value="{{semAlertas}}" hint-placeholder-val="{{false}}"><p style="margin: 0; color: #555B70;">Nenhum contrato vence nos próximos 90 dias.</p></sc-if>
+<ul style="list-style: none; margin: 0; padding: 0;"><sc-for list="{{alertas}}" as="a" hint-placeholder-count="3"><li style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid #EEF0F5;"><span><strong style="display: block;">{{a.orgao}}</strong><span style="font-size: 13px; color: #555B70;">{{a.txt}}</span></span><span style="display: flex; gap: 8px; align-items: center;"><span style="padding: 2px 10px; border-radius: 999px; background: {{a.bg}}; color: {{a.fg}}; font-size: 12px; font-weight: 700;">{{a.st}}</span><button type="button" onClick="{{a.go}}" style="min-height: 34px; padding: 0 12px; border: 1px solid #C9CDDA; border-radius: 8px; background: #FFFFFF; font-weight: 600; cursor: pointer;">Abrir contrato</button></span></li></sc-for></ul>
+</section>
+</sc-if>
+
+<!-- ÓRGÃOS -->
+<sc-if value="{{isOrgaos}}" hint-placeholder-val="{{false}}">
+<div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DDE0EA; border-radius: 14px; margin-bottom: 16px;">
+<table style="width: 100%; min-width: 900px; border-collapse: collapse; font-size: 14px;">
+<thead><tr style="text-align: left; font-size: 12px; text-transform: uppercase; color: #555B70;"><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DDE0EA;">Órgão</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DDE0EA;">Domínio</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DDE0EA;">Banco</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DDE0EA;">Plano</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DDE0EA;">Licença</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DDE0EA;"><span style="position: absolute; left: -9999px;">Ação</span></th></tr></thead>
+<tbody><sc-for list="{{orgaos}}" as="o" hint-placeholder-count="4"><tr class="row"><th scope="row" style="text-align: left; padding: 11px 14px; border-bottom: 1px solid #EEF0F5;">{{o.nome}}<span style="display: block; font-weight: 400; font-size: 12px; color: #555B70;">{{o.tipoTxt}} · {{o.mun}}</span></th><td style="padding: 11px 14px; border-bottom: 1px solid #EEF0F5;">{{o.dominio}}</td><td style="padding: 11px 14px; border-bottom: 1px solid #EEF0F5; font-family: ui-monospace, monospace; font-size: 13px;">{{o.banco}}</td><td style="padding: 11px 14px; border-bottom: 1px solid #EEF0F5;">{{o.plano}}<span style="display: block; font-size: 12px; color: #555B70;">{{o.nOpc}}</span></td><td style="padding: 11px 14px; border-bottom: 1px solid #EEF0F5;"><span style="padding: 2px 10px; border-radius: 999px; background: {{o.bg}}; color: {{o.fg}}; font-size: 12px; font-weight: 700; white-space: nowrap;">{{o.st}}</span></td><td style="padding: 11px 14px; border-bottom: 1px solid #EEF0F5; text-align: right; white-space: nowrap;"><button type="button" onClick="{{o.goContrato}}" style="min-height: 32px; padding: 0 10px; border: 1px solid #C9CDDA; border-radius: 8px; background: #FFFFFF; font-weight: 600; cursor: pointer;">Contrato</button> <button type="button" onClick="{{o.goLayout}}" style="min-height: 32px; padding: 0 10px; border: 1px solid #C9CDDA; border-radius: 8px; background: #FFFFFF; font-weight: 600; cursor: pointer;">Layout</button></td></tr></sc-for></tbody>
+</table>
+</div>
+<p style="margin: -6px 0 16px; font-size: 12px; color: #555B70;">Prefeitura e Câmara de Borá são os órgãos do projeto; os outros dois são exemplos para mostrar vencimento e carência.</p>
+<section style="background: #FFFFFF; border: 1px solid #DDE0EA; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 4px; font-size: 18px;">Cadastrar novo órgão</h2>
+<p style="margin: 0 0 12px; font-size: 14px; color: #555B70;">Passo {{wiz.n}} de 5 · {{wiz.t}}</p>
+<ol style="list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px;"><sc-for list="{{wizPassos}}" as="w" hint-placeholder-count="5"><li style="padding: 4px 12px; border-radius: 999px; background: {{w.bg}}; color: {{w.fg}}; font-size: 13px; font-weight: 700;">{{w.n}}. {{w.t}}</li></sc-for></ol>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px;"><sc-for list="{{wizCampos}}" as="f" hint-placeholder-count="2"><label style="display: flex; flex-direction: column; gap: 3px; font-size: 13px; font-weight: 600;">{{f.label}}<sc-if value="{{f.isSel}}" hint-placeholder-val="{{false}}"><select value="{{f.v}}" onChange="{{f.set}}" style="min-height: 40px; padding: 0 8px; border: 1px solid #6B7186; border-radius: 8px; background: #FFFFFF; font-weight: 400;"><sc-for list="{{f.opts}}" as="o" hint-placeholder-count="3"><option value="{{o}}">{{o}}</option></sc-for></select></sc-if><sc-if value="{{f.isTxt}}" hint-placeholder-val="{{true}}"><input value="{{f.v}}" onChange="{{f.set}}" style="min-height: 40px; padding: 0 10px; border: 1px solid #6B7186; border-radius: 8px; font-weight: 400;"></sc-if></label></sc-for></div>
+<p style="margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: #F4F5F9; font-size: 14px;">{{wiz.d}}</p>
+<div style="display: flex; gap: 8px;"><button type="button" onClick="{{wizVoltar}}" disabled="{{wizPrimeiro}}" style="min-height: 40px; padding: 0 14px; border: 1px solid #C9CDDA; border-radius: 9px; background: #FFFFFF; font-weight: 700; cursor: pointer;">Voltar</button><button type="button" onClick="{{wizAvancar}}" style="min-height: 40px; padding: 0 16px; border: 0; border-radius: 9px; background: #1B1E30; color: #FFFFFF; font-weight: 700; cursor: pointer;">{{wizBtn}}</button></div>
+</section>
+</sc-if>
+
+<!-- CONTRATOS E LICENÇAS -->
+<sc-if value="{{isContratos}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;"><sc-for list="{{ctTabs}}" as="t" hint-placeholder-count="4"><button type="button" onClick="{{t.go}}" aria-pressed="{{t.sel}}" style="display: flex; flex-direction: column; align-items: flex-start; min-height: 46px; padding: 6px 14px; border-radius: 12px; border: 2px solid {{t.bd}}; background: #FFFFFF; cursor: pointer; text-align: left;"><strong style="font-size: 14px;">{{t.t}}</strong><span style="font-size: 12px; color: {{t.fg}}; font-weight: 700;">{{t.st}}</span></button></sc-for></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px;">
+<section style="background: #FFFFFF; border: 1px solid #DDE0EA; border-top: 5px solid {{ct.cor}}; border-radius: 16px; padding: 18px 20px;">
+<div style="display: flex; justify-content: space-between; gap: 10px; align-items: flex-start;"><h2 style="margin: 0; font-size: 19px;">{{ct.orgao}}</h2><span style="padding: 3px 12px; border-radius: 999px; background: {{ct.bg}}; color: {{ct.fg}}; font-size: 13px; font-weight: 800; white-space: nowrap;">{{ct.st}}</span></div>
+<dl style="margin: 12px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px;">
+<dt style="color: #555B70;">Contrato</dt><dd style="margin: 0;">{{ct.num}} · {{ct.proc}}</dd>
+<dt style="color: #555B70;">Plano</dt><dd style="margin: 0;">{{ct.plano}}</dd>
+<dt style="color: #555B70;">Vigência</dt><dd style="margin: 0; font-weight: 700;">{{ct.vig}}</dd>
+<dt style="color: #555B70;">Prazo</dt><dd style="margin: 0;">{{ct.prazo}}</dd>
+<dt style="color: #555B70;">Carência</dt><dd style="margin: 0;">{{ct.carencia}}</dd>
+<dt style="color: #555B70;">Limite legal</dt><dd style="margin: 0;">{{ct.limite}}</dd>
+</dl>
+<div aria-hidden="true" style="position: relative; margin: 16px 0 4px; height: 12px; border-radius: 6px; background: #EEF0F5; overflow: hidden;"><span style="position: absolute; left: 0; top: 0; bottom: 0; width: {{ct.pct}}%; background: {{ct.cor}};"></span></div>
+<p style="margin: 0 0 14px; font-size: 12px; color: #555B70;">{{ct.barraTxt}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;"><sc-for list="{{ctAcoes}}" as="a" hint-placeholder-count="3"><button type="button" onClick="{{a.go}}" disabled="{{a.off}}" style="min-height: 40px; padding: 0 14px; border-radius: 9px; border: 1px solid {{a.bd}}; background: {{a.bg}}; color: {{a.fg}}; font-weight: 700; cursor: pointer;">{{a.t}}</button></sc-for></div>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DDE0EA; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 10px; font-size: 18px;">O que acontece agora</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;"><sc-for list="{{ct.efeitos}}" as="e" hint-placeholder-count="4"><li style="display: grid; grid-template-columns: 140px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid #EEF0F5; font-size: 14px;"><strong>{{e.t}}</strong><span style="color: {{e.cor}};">{{e.d}}</span></li></sc-for></ul>
+<h3 style="margin: 16px 0 6px; font-size: 15px;">Aditivos e prorrogações</h3>
+<ul style="list-style: none; margin: 0; padding: 0;"><sc-for list="{{ct.aditivos}}" as="d" hint-placeholder-count="2"><li style="padding: 6px 0; border-top: 1px solid #EEF0F5; font-size: 14px;">{{d}}</li></sc-for></ul>
+<sc-if value="{{ct.semAditivo}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 14px; color: #555B70;">Nenhum aditivo registrado.</p></sc-if>
+</section>
+</div>
+<section style="margin-top: 16px; background: #FFFFFF; border: 1px solid #DDE0EA; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 4px; font-size: 18px;">Módulos opcionais deste contrato</h2>
+<p style="margin: 0 0 10px; font-size: 14px; color: #555B70;">Ligar aqui libera o módulo no painel do órgão, que decide quando colocar no ar. Obrigatórios e incluídos no plano não aparecem: vêm sempre.</p>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 10px;"><sc-for list="{{ctOpc}}" as="m" hint-placeholder-count="4"><li style="display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid #DDE0EA; border-radius: 12px;"><span style="flex: 1;"><strong style="display: block; font-size: 14px;">{{m.t}}</strong><span style="font-size: 12px; color: #555B70;">{{m.d}}</span><sc-if value="{{m.temDep}}" hint-placeholder-val="{{false}}"><span style="display: block; font-size: 12px; color: #8A4B00;">{{m.dep}}</span></sc-if></span><button type="button" role="switch" aria-checked="{{m.on}}" aria-label="{{m.t}}" onClick="{{m.tog}}" disabled="{{m.trava}}" style="background: none; border: 0; padding: 0; cursor: pointer;"><span class="sw" data-on="{{m.on}}" style="background: {{m.swBg}};"></span></button></li></sc-for></ul>
+</section>
+<p style="margin: 14px 0 0; font-size: 12px; color: #555B70;"><strong style="font-weight: 600;">Base legal:</strong> Lei 14.133/2021, arts. 105 a 107 (vigência e prorrogação de serviços contínuos: até 5 anos, prorrogáveis até 10) e art. 124 (aditivos); a prorrogação precisa ser feita durante a vigência, contrato vencido exige nova contratação; LAI, art. 8º (transparência é obrigação permanente do órgão); LGPD, art. 16 (dados ao fim do tratamento). Números de contrato e datas são exemplos.</p>
+</sc-if>
+
+<!-- CATÁLOGO E PLANOS -->
+<sc-if value="{{isCatalogo}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0 0 14px; max-width: 96ch; color: #555B70;">Tudo o que a plataforma oferece. Um módulo novo é programado uma vez e entra aqui; daí em diante, oferecer a cada órgão é só ligar a chave no contrato, sem mexer em código.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;"><sc-for list="{{catFiltros}}" as="f" hint-placeholder-count="4"><button type="button" onClick="{{f.go}}" aria-pressed="{{f.sel}}" style="min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid {{f.bd}}; background: {{f.bg}}; color: {{f.fg}}; font-weight: 600; cursor: pointer;">{{f.t}} <span style="opacity: 0.7;">{{f.n}}</span></button></sc-for></div>
+<div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DDE0EA; border-radius: 14px;">
+<table style="width: 100%; min-width: 980px; border-collapse: collapse; font-size: 14px;">
+<thead><tr style="text-align: left; font-size: 12px; text-transform: uppercase; color: #555B70;"><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DDE0EA;">Módulo</th><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DDE0EA;">Oferta</th><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DDE0EA;">Serve para</th><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DDE0EA;">Depende de</th><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DDE0EA;">Valor mensal</th><sc-for list="{{catOrgCols}}" as="c" hint-placeholder-count="4"><th scope="col" style="padding: 10px 8px; border-bottom: 1px solid #DDE0EA; text-align: center; font-size: 11px;">{{c}}</th></sc-for></tr></thead>
+<tbody><sc-for list="{{catalogo}}" as="m" hint-placeholder-count="10"><tr class="row"><th scope="row" style="text-align: left; padding: 10px 12px; border-bottom: 1px solid #EEF0F5;">{{m.t}}<span style="display: block; font-weight: 400; font-size: 12px; color: #555B70;">{{m.d}}</span></th><td style="padding: 10px 12px; border-bottom: 1px solid #EEF0F5;"><span style="padding: 2px 8px; border-radius: 6px; background: {{m.tipoBg}}; color: {{m.tipoFg}}; font-size: 12px; font-weight: 700; white-space: nowrap;">{{m.tipo}}</span></td><td style="padding: 10px 12px; border-bottom: 1px solid #EEF0F5;">{{m.aplica}}</td><td style="padding: 10px 12px; border-bottom: 1px solid #EEF0F5; color: #555B70;">{{m.dep}}</td><td style="padding: 10px 12px; border-bottom: 1px solid #EEF0F5; color: #555B70;">{{m.preco}}</td><sc-for list="{{m.cel}}" as="c" hint-placeholder-count="4"><td style="padding: 6px 8px; border-bottom: 1px solid #EEF0F5; text-align: center; font-weight: 800; color: {{c.cor}};"><span aria-label="{{c.al}}">{{c.s}}</span></td></sc-for></tr></sc-for></tbody>
+</table>
+</div>
+<p style="margin: 10px 0 0; font-size: 13px; color: #555B70;">✓ contratado ou incluído · ● obrigatório · — não contratado · em branco: não se aplica ao tipo de órgão. Valores entre colchetes a definir na proposta comercial.</p>
+</sc-if>
+
+<!-- EDITOR DE REGIÕES -->
+<sc-if value="{{isLayout}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; margin-bottom: 14px;">
+<label style="display: flex; flex-direction: column; gap: 3px; font-size: 13px; font-weight: 600;">Órgão<select value="{{lyOrg}}" onChange="{{onLyOrg}}" style="min-height: 40px; padding: 0 8px; border: 1px solid #6B7186; border-radius: 8px; background: #FFFFFF; font-weight: 400;"><sc-for list="{{lyOrgs}}" as="o" hint-placeholder-count="4"><option value="{{o.v}}">{{o.t}}</option></sc-for></select></label>
+<span style="font-size: 14px; color: #555B70; padding-bottom: 8px;">Página: <strong>Página inicial</strong> · tema base, nível 2</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start;">
+<div style="flex: 1 1 640px; min-width: 0; background: #FFFFFF; border: 1px solid #DDE0EA; border-radius: 16px; padding: 14px; display: grid; gap: 10px;">
+<sc-for list="{{regioesTopo}}" as="g" hint-placeholder-count="3"><section aria-label="Região {{g.t}}" style="border: 2px dashed {{g.bd}}; border-radius: 12px; padding: 8px 10px; background: {{g.bg}};"><p style="margin: 0 0 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #555B70;">{{g.t}}</p><div style="display: flex; flex-wrap: wrap; gap: 6px;"><sc-for list="{{g.blocos}}" as="b" hint-placeholder-count="2"><button type="button" class="blk" onClick="{{b.go}}" aria-pressed="{{b.sel}}" style="flex: 1 1 {{b.base}}px; min-height: {{b.h}}px; padding: 6px 10px; border-radius: 9px; border: 2px solid {{b.bd}}; background: {{b.bg}}; color: {{b.fg}}; font-size: 13px; font-weight: 700; text-align: left; cursor: pointer;">{{b.t}}<sc-if value="{{b.trava}}" hint-placeholder-val="{{false}}"><span style="display: block; font-size: 11px; font-weight: 600; opacity: 0.8;">travado por lei</span></sc-if></button></sc-for><sc-if value="{{g.vazia}}" hint-placeholder-val="{{false}}"><span style="font-size: 13px; color: #8A90A6;">Região vazia</span></sc-if></div></section></sc-for>
+<div style="display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 10px;">
+<sc-for list="{{regioesMeio}}" as="g" hint-placeholder-count="2"><section aria-label="Região {{g.t}}" style="border: 2px dashed {{g.bd}}; border-radius: 12px; padding: 8px 10px; background: {{g.bg}};"><p style="margin: 0 0 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #555B70;">{{g.t}}</p><div style="display: grid; gap: 6px;"><sc-for list="{{g.blocos}}" as="b" hint-placeholder-count="4"><button type="button" class="blk" onClick="{{b.go}}" aria-pressed="{{b.sel}}" style="min-height: {{b.h}}px; padding: 6px 10px; border-radius: 9px; border: 2px solid {{b.bd}}; background: {{b.bg}}; color: {{b.fg}}; font-size: 13px; font-weight: 700; text-align: left; cursor: pointer;">{{b.t}}<sc-if value="{{b.trava}}" hint-placeholder-val="{{false}}"><span style="display: block; font-size: 11px; font-weight: 600; opacity: 0.8;">travado por lei</span></sc-if></button></sc-for><sc-if value="{{g.vazia}}" hint-placeholder-val="{{false}}"><span style="font-size: 13px; color: #8A90A6;">Região vazia</span></sc-if></div></section></sc-for>
+</div>
+<sc-for list="{{regioesBase}}" as="g" hint-placeholder-count="1"><section aria-label="Região {{g.t}}" style="border: 2px dashed {{g.bd}}; border-radius: 12px; padding: 8px 10px; background: {{g.bg}};"><p style="margin: 0 0 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #555B70;">{{g.t}}</p><div style="display: flex; flex-wrap: wrap; gap: 6px;"><sc-for list="{{g.blocos}}" as="b" hint-placeholder-count="1"><button type="button" class="blk" onClick="{{b.go}}" aria-pressed="{{b.sel}}" style="flex: 1 1 200px; min-height: {{b.h}}px; padding: 6px 10px; border-radius: 9px; border: 2px solid {{b.bd}}; background: {{b.bg}}; color: {{b.fg}}; font-size: 13px; font-weight: 700; text-align: left; cursor: pointer;">{{b.t}}<sc-if value="{{b.trava}}" hint-placeholder-val="{{false}}"><span style="display: block; font-size: 11px; font-weight: 600; opacity: 0.8;">travado por lei</span></sc-if></button></sc-for></div></section></sc-for>
+</div>
+<aside style="flex: 0 1 330px; min-width: 280px; display: flex; flex-direction: column; gap: 14px;">
+<section style="background: #FFFFFF; border: 1px solid #DDE0EA; border-radius: 16px; padding: 16px;">
+<sc-if value="{{temBloco}}" hint-placeholder-val="{{false}}">
+<h2 style="margin: 0 0 2px; font-size: 16px;">{{bl.t}}</h2>
+<p style="margin: 0 0 10px; font-size: 13px; color: #555B70;">{{bl.d}}</p>
+<sc-if value="{{bl.trava}}" hint-placeholder-val="{{false}}"><p style="margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: #FFF4D6; font-size: 13px;">Bloco exigido por lei ou pelo tema: não sai da página nem muda de região. O visual acompanha o tema.</p></sc-if>
+<label style="display: flex; flex-direction: column; gap: 3px; font-size: 13px; font-weight: 600; margin-bottom: 10px;">Região<select value="{{bl.reg}}" onChange="{{bl.onReg}}" disabled="{{bl.trava}}" style="min-height: 38px; padding: 0 8px; border: 1px solid #6B7186; border-radius: 8px; background: #FFFFFF; font-weight: 400;"><sc-for list="{{bl.regs}}" as="o" hint-placeholder-count="2"><option value="{{o.v}}">{{o.t}}</option></sc-for></select></label>
+<div style="display: flex; flex-wrap: wrap; gap: 6px;"><button type="button" onClick="{{bl.up}}" disabled="{{bl.semUp}}" style="min-height: 36px; padding: 0 12px; border: 1px solid #C9CDDA; border-radius: 8px; background: #FFFFFF; font-weight: 700; cursor: pointer;">▲ Subir</button><button type="button" onClick="{{bl.down}}" disabled="{{bl.semDown}}" style="min-height: 36px; padding: 0 12px; border: 1px solid #C9CDDA; border-radius: 8px; background: #FFFFFF; font-weight: 700; cursor: pointer;">▼ Descer</button><button type="button" onClick="{{bl.remover}}" disabled="{{bl.trava}}" style="min-height: 36px; padding: 0 12px; border: 1px solid #E8B4B4; border-radius: 8px; background: #FFFFFF; color: #9B1C1C; font-weight: 700; cursor: pointer;">Tirar da página</button></div>
+</sc-if>
+<sc-if value="{{semBloco}}" hint-placeholder-val="{{true}}"><p style="margin: 0; font-size: 14px; color: #555B70;">Clique em um bloco do mapa para mudar a região ou a ordem.</p></sc-if>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DDE0EA; border-radius: 16px; padding: 16px;">
+<h2 style="margin: 0 0 8px; font-size: 15px;">Blocos disponíveis</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;"><sc-for list="{{paleta}}" as="p" hint-placeholder-count="3"><li style="display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid #EEF0F5;"><span><strong style="display: block; font-size: 14px;">{{p.t}}</strong><span style="font-size: 12px; color: {{p.cor}};">{{p.d}}</span></span><button type="button" onClick="{{p.add}}" disabled="{{p.off}}" style="min-height: 32px; padding: 0 10px; border: 1px solid #C9CDDA; border-radius: 8px; background: #FFFFFF; font-weight: 700; cursor: pointer;">Adicionar</button></li></sc-for></ul>
+<sc-if value="{{paletaVazia}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 13px; color: #555B70;">Todos os blocos contratados já estão na página.</p></sc-if>
+</section>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;"><button type="button" onClick="{{lyPadrao}}" style="min-height: 40px; padding: 0 14px; border: 1px solid #C9CDDA; border-radius: 9px; background: #FFFFFF; font-weight: 700; cursor: pointer;">Salvar como padrão do plano</button><button type="button" onClick="{{lyAplicar}}" style="min-height: 40px; padding: 0 14px; border: 0; border-radius: 9px; background: #1B1E30; color: #FFFFFF; font-weight: 700; cursor: pointer;">Enviar ao órgão (homologação)</button></div>
+</aside>
+</div>
+</sc-if>
+
+<!-- REGISTRO -->
+<sc-if value="{{isLog}}" hint-placeholder-val="{{false}}">
+<div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DDE0EA; border-radius: 14px;">
+<table style="width: 100%; min-width: 640px; border-collapse: collapse; font-size: 14px;">
+<thead><tr style="text-align: left; font-size: 12px; text-transform: uppercase; color: #555B70;"><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DDE0EA;">Quando</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DDE0EA;">Quem</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DDE0EA;">Ação</th></tr></thead>
+<tbody><sc-for list="{{log}}" as="l" hint-placeholder-count="5"><tr><td style="padding: 9px 14px; border-bottom: 1px solid #EEF0F5; white-space: nowrap;">{{l.q}}</td><td style="padding: 9px 14px; border-bottom: 1px solid #EEF0F5; font-weight: 600;">{{l.quem}}</td><td style="padding: 9px 14px; border-bottom: 1px solid #EEF0F5;">{{l.a}}</td></tr></sc-for></tbody>
+</table>
+</div>
+</sc-if>
+
+</main>
+</div>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+const ISO = (d) => d.toISOString().slice(0, 10);
+const D = (iso) => new Date(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)));
+const addD = (iso, n) => { const d = D(iso); d.setUTCDate(d.getUTCDate() + n); return ISO(d); };
+const addM = (iso, n) => { const d = D(iso); d.setUTCMonth(d.getUTCMonth() + n); return ISO(d); };
+const dias = (a, b) => Math.round((D(b) - D(a)) / 86400000);
+const br = (iso) => iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
+const ICON = {
+  geral: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+  orgaos: 'M4 21V9l8-5 8 5v12M9 21v-6h6v6M2 21h20',
+  contratos: 'M6 3h9l4 4v14H6zM15 3v4h4M9 12h6M9 16h4M14.5 17.5l1.5 1.5 3-3',
+  catalogo: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5',
+  layout: 'M3 4h18v4H3zM3 10h12v10H3zM17 10h4v10h-4z',
+  log: 'M3 12a9 9 0 1 0 3-6.7M3 4v4h4M12 7v5l3 2'
+};
+// Órgãos: Borá é o projeto real; os dois outros são exemplos para demonstrar vencimento.
+const ORG0 = [
+  { id: 'pm', nome: 'Prefeitura Municipal de Borá', tipo: 'executivo', mun: 'Borá (SP) · IBGE 3507209', dominio: '[domínio da Prefeitura]', banco: 'bd_pm_bora', plano: 'Executivo', num: '[nº]/2026', proc: 'processo [nº]/2026', ini: '2026-12-01', fim: '2027-11-30', carencia: 60, aditivos: [], susp: false, opc: { diario: true, bi: true, transmpm: false, agenda: false, galeria: true, tema3: false } },
+  { id: 'cm', nome: 'Câmara Municipal de Borá', tipo: 'legislativo', mun: 'Borá (SP) · IBGE 3507209', dominio: 'camarabora.sp.gov.br', banco: 'bd_cm_bora', plano: 'Legislativo', num: '[nº]/2026', proc: 'processo [nº]/2026', ini: '2026-12-01', fim: '2027-11-30', carencia: 60, aditivos: [], susp: false, opc: { emend: true, integpref: true, galeria: false, tema3: false } },
+  { id: 'xa', nome: 'Prefeitura de [Município A] (exemplo)', tipo: 'executivo', mun: '[UF] · IBGE [código]', dominio: '[dominio-a].sp.gov.br', banco: 'bd_pm_munA', plano: 'Executivo', num: '[nº]/2024', proc: 'processo [nº]/2023', ini: '2024-01-15', fim: '2027-01-14', carencia: 60, aditivos: ['1º aditivo: prorrogação por 12 meses (exemplo)'], susp: false, opc: { diario: true, bi: false, transmpm: true, agenda: false, galeria: false, tema3: true } },
+  { id: 'xb', nome: 'Câmara de [Município B] (exemplo)', tipo: 'legislativo', mun: '[UF] · IBGE [código]', dominio: '[camara-b].sp.gov.br', banco: 'bd_cm_munB', plano: 'Legislativo', num: '[nº]/2023', proc: 'processo [nº]/2023', ini: '2023-11-01', fim: '2026-10-31', carencia: 60, aditivos: [], susp: false, opc: { emend: false, integpref: false, galeria: true, tema3: false } }
+];
+// Catálogo: [chave, nome, descrição, oferta (obr|plano|opc), serve para (pm|cm|ambos), depende de]
+const CAT = [
+  ['transp', 'Portal da Transparência', 'Receitas, despesas, pessoal, contratos, relatórios fiscais', 'obr', 'ambos', ''], ['sic', 'e-SIC', 'Pedidos de informação com prazos e recursos', 'obr', 'ambos', ''], ['ouv', 'Ouvidoria', 'Manifestações com protocolo', 'obr', 'ambos', ''], ['dados', 'Dados abertos', 'CSV, JSON e API', 'obr', 'ambos', ''], ['licit', 'Licitações e contratos (PNCP)', 'Editais, atas, contratos', 'obr', 'ambos', ''], ['carta', 'Carta de Serviços', 'Serviços, prazos e canais', 'obr', 'pm', ''],
+  ['ver', 'Vereadores e Mesa Diretora', 'Perfis, Mesas, galeria de legislaturas', 'obr', 'cm', ''], ['sess', 'Sessões e votações', 'Pauta, ata, presença, votação nominal', 'obr', 'cm', ''], ['prop', 'Proposições', 'Tramitação com autor e relator', 'obr', 'cm', ''], ['transm', 'Transmissão das sessões', 'Ao vivo e gravações (PNTP 20.9)', 'obr', 'cm', ''],
+  ['noticias', 'Notícias e avisos', 'Com fluxo de aprovação', 'plano', 'ambos', ''], ['blocos', 'Página inicial em blocos', 'Personalização nível 2', 'plano', 'ambos', ''], ['midia', 'Biblioteca de mídia', 'Crédito, licença e texto alternativo', 'plano', 'ambos', ''], ['eleicao', 'Período eleitoral', 'Suspensão automática no defeso', 'plano', 'ambos', ''], ['lgpd', 'LGPD e cookies', 'Pedidos de titulares e cookies', 'plano', 'ambos', ''], ['part', 'Participação', 'Tribuna Livre, opiniões e avaliação', 'plano', 'ambos', ''],
+  ['diario', 'Diário Oficial eletrônico', 'Edições com assinatura ICP-Brasil', 'opc', 'pm', ''], ['bi', 'Painel de indicadores', 'Saúde, educação, social e gestão', 'opc', 'pm', ''], ['transmpm', 'Transmissões ao vivo', 'Audiências e eventos oficiais', 'opc', 'pm', ''], ['agenda', 'Agenda de autoridades', 'Compromissos públicos', 'opc', 'pm', ''],
+  ['integpref', 'Integração com a Prefeitura', 'Lê a execução orçamentária do Executivo', 'opc', 'cm', ''], ['emend', 'Emendas impositivas', 'Emendas por vereador e execução', 'opc', 'cm', 'integpref'], ['galeria', 'Galerias de fotos e vídeos', 'Álbuns de eventos', 'opc', 'ambos', ''], ['tema3', 'Tema próprio (nível 3)', 'Layout totalmente redesenhado', 'opc', 'ambos', '']
+];
+const CATK = {}; CAT.forEach((c) => { CATK[c[0]] = c; });
+const serve = (c, tipo) => c[4] === 'ambos' || (c[4] === 'pm' && tipo === 'executivo') || (c[4] === 'cm' && tipo === 'legislativo');
+const tem = (o, k) => { const c = CATK[k]; if (!c || !serve(c, o.tipo)) return false; return c[3] !== 'opc' || !!o.opc[k]; };
+// Blocos da página inicial: [chave, nome, descrição, regiões permitidas, módulo, travado?, altura, tipo de órgão]
+const REG = [['topo', 'Cabeçalho'], ['avisos', 'Faixa de avisos'], ['destaque', 'Destaque'], ['principal', 'Área principal'], ['lateral', 'Coluna lateral'], ['rodape', 'Rodapé']];
+const BLK = [
+  ['acess', 'Barra de acessibilidade', 'Contraste, fonte, VLibras e atalhos (eMAG)', ['topo'], '', true, 30, 'ambos'], ['menu', 'Marca e menu principal', 'Brasão, nome do órgão e menu', ['topo'], '', true, 36, 'ambos'],
+  ['defeso', 'Aviso do período eleitoral', 'Aparece sozinho no defeso', ['avisos'], 'eleicao', true, 28, 'ambos'], ['live', 'Faixa “Ao vivo”', 'Aparece durante transmissões', ['avisos'], 'transm|transmpm', false, 28, 'ambos'],
+  ['hero', 'Destaque com foto e busca', 'Foto da cidade ou do prédio', ['destaque'], '', false, 70, 'ambos'], ['atalhos', 'Acesso direto', 'Atalhos para serviços e transparência', ['destaque', 'principal'], '', false, 40, 'ambos'],
+  ['servicos', 'Serviços mais procurados', 'Cartões com foto', ['principal'], 'carta', false, 60, 'pm'], ['painel', 'Indicadores em números', 'Do painel de BI', ['principal', 'lateral'], 'bi', false, 50, 'pm'], ['diario', 'Últimas edições do Diário', 'Edições recentes', ['principal', 'lateral'], 'diario', false, 44, 'pm'], ['agenda', 'Agenda', 'Próximos eventos e audiências', ['lateral', 'principal'], '', false, 44, 'ambos'],
+  ['noticias', 'Notícias', 'Últimas notícias', ['principal', 'lateral'], 'noticias', false, 56, 'ambos'], ['ver', 'Vereadores e Mesa Diretora', 'Presidente em destaque', ['principal'], 'ver', false, 64, 'cm'], ['contas', 'Prestação de contas', 'Quanto custa a Câmara', ['principal', 'lateral'], 'transp', false, 50, 'cm'], ['emendas', 'Emendas impositivas', 'KPIs e execução', ['principal', 'lateral'], 'emend', false, 50, 'cm'], ['sessoes', 'Últimas sessões', 'Pauta e situação', ['principal', 'lateral'], 'sess', false, 44, 'cm'], ['galeria', 'Galeria', 'Álbuns recentes', ['principal', 'lateral'], 'galeria', false, 44, 'ambos'],
+  ['rodape', 'Rodapé com links obrigatórios', 'Contatos, acesso à informação, privacidade, Radar', ['rodape'], '', true, 34, 'ambos']
+];
+const BK = {}; BLK.forEach((b) => { BK[b[0]] = b; });
+const LAY0 = {
+  executivo: [['acess', 'topo'], ['menu', 'topo'], ['defeso', 'avisos'], ['live', 'avisos'], ['hero', 'destaque'], ['atalhos', 'destaque'], ['servicos', 'principal'], ['painel', 'principal'], ['noticias', 'principal'], ['diario', 'lateral'], ['agenda', 'lateral'], ['rodape', 'rodape']],
+  legislativo: [['acess', 'topo'], ['menu', 'topo'], ['defeso', 'avisos'], ['live', 'avisos'], ['hero', 'destaque'], ['atalhos', 'destaque'], ['ver', 'principal'], ['contas', 'principal'], ['noticias', 'principal'], ['emendas', 'lateral'], ['sessoes', 'lateral'], ['rodape', 'rodape']]
+};
+const LOG0 = [['06/11 11:02', '[Gestor do projeto]', 'Abriu o contrato da Câmara de Borá para conferência'], ['05/11 16:40', '[Analista DTIC]', 'Cadastrou o banco bd_cm_bora (homologação)'], ['05/11 16:31', '[Analista DTIC]', 'Cadastrou o banco bd_pm_bora (homologação)']];
+const agora = () => { try { const d = new Date(); return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); } catch (e) { return '06/11 12:30'; } };
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const lay = {}; ORG0.forEach((o) => { lay[o.id] = LAY0[o.tipo].filter((x) => { const m = (BK[x[0]][4] || '').split('|').filter(Boolean); return !m.length || m.some((k) => tem(o, k)); }).map((x) => x.slice()); });
+    this.state = { view: 'geral', data: '2026-11-06', orgs: ORG0.map((o) => JSON.parse(JSON.stringify(o))), ctSel: 'cm', catF: 'todos', lay: lay, lyOrg: 'cm', blSel: null, wiz: 1, wTipo: 'Câmara Municipal', wMun: '', wPlano: 'Legislativo', log: LOG0.map((l) => ({ q: l[0], quem: l[1], a: l[2] })), msg: '', msgOk: true };
+  }
+  reg(a, extra) { this.setState(Object.assign({ log: [{ q: agora(), quem: '[Gestor do projeto]', a: a }].concat(this.state.log) }, extra || {})); }
+  go(v, ex) { this.setState(Object.assign({ view: v, msg: '' }, ex || {})); try { window.scrollTo(0, 0); } catch (e) { } }
+
+  situacao(o) {
+    const h = this.state.data;
+    if (o.susp) return { st: 'Suspensa', bg: '#FBE4D8', fg: '#9B1C1C', cor: '#9B1C1C', fase: 'susp' };
+    if (h < o.ini) return { st: 'Em implantação', bg: '#E5EEFB', fg: '#1D4E89', cor: '#1D4E89', fase: 'impl' };
+    if (h > o.fim) { const c = dias(o.fim, h); return c <= o.carencia ? { st: 'Vencida · carência', bg: '#FCEFD9', fg: '#7A4A00', cor: '#B4540A', fase: 'carencia', resto: o.carencia - c } : { st: 'Encerrada', bg: '#FBE4D8', fg: '#9B1C1C', cor: '#9B1C1C', fase: 'fim' }; }
+    const r = dias(h, o.fim);
+    return r <= 90 ? { st: 'Ativa · vence em ' + r + ' dias', bg: '#FCEFD9', fg: '#7A4A00', cor: '#B4540A', fase: 'alerta', resto: r } : { st: 'Ativa', bg: '#E3F2E9', fg: '#146C43', cor: '#146C43', fase: 'ativa', resto: r };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const sit = (o) => this.situacao(o);
+    const updOrg = (id, patch) => s.orgs.map((o) => o.id === id ? Object.assign({}, o, patch) : o);
+    const B = (t, go, tipo, off) => ({ t: t, go: go, off: !!off, bg: tipo === 'pri' ? '#1B1E30' : '#FFFFFF', fg: tipo === 'pri' ? '#FFFFFF' : tipo === 'perigo' ? '#9B1C1C' : '#171A2B', bd: tipo === 'pri' ? '#1B1E30' : tipo === 'perigo' ? '#E8B4B4' : '#C9CDDA' });
+    const alertasL = s.orgs.map((o) => ({ o: o, x: sit(o) })).filter((z) => ['alerta', 'carencia', 'fim', 'susp'].indexOf(z.x.fase) >= 0);
+    const MENU = [['geral', 'Visão geral', 0], ['orgaos', 'Órgãos', 0], ['contratos', 'Contratos e licenças', alertasL.length], ['catalogo', 'Catálogo e planos', 0], ['layout', 'Editor de regiões', 0], ['log', 'Registro de ações', 0]];
+    const menu = MENU.map((m) => { const on = s.view === m[0]; return { label: m[1], go: () => this.go(m[0]), cur: on ? 'page' : undefined, bg: on ? '#2A2F45' : 'transparent', icBg: on ? '#F0B429' : '#2A2F45', icFg: on ? '#1B1E30' : '#C9CDE0', ic: ICON[m[0]], n: m[2], temN: m[2] > 0 }; });
+    const titles = { geral: 'Visão geral da plataforma', orgaos: 'Órgãos atendidos', contratos: 'Contratos e licenças', catalogo: 'Catálogo de módulos e planos', layout: 'Editor de regiões da página', log: 'Registro de ações do console' };
+    const datas = [['2026-11-06', '06/11/2026 (hoje)'], ['2027-09-15', '15/09/2027'], ['2027-12-10', '10/12/2027'], ['2028-03-01', '01/03/2028']];
+
+    // visão geral
+    const nOpc = s.orgs.reduce((a, o) => a + Object.keys(o.opc).filter((k) => o.opc[k]).length, 0);
+    const kpis = [
+      { l: 'Órgãos cadastrados', v: String(s.orgs.length), d: s.orgs.filter((o) => sit(o).fase === 'impl').length + ' em implantação', cor: '#1D4E89' },
+      { l: 'Licenças ativas', v: String(s.orgs.filter((o) => ['ativa', 'alerta'].indexOf(sit(o).fase) >= 0).length), d: 'no ar com contrato vigente', cor: '#146C43' },
+      { l: 'Vencem em 90 dias', v: String(s.orgs.filter((o) => sit(o).fase === 'alerta').length), d: 'renovar ou prorrogar', cor: '#B4540A' },
+      { l: 'Vencidas ou suspensas', v: String(s.orgs.filter((o) => ['carencia', 'fim', 'susp'].indexOf(sit(o).fase) >= 0).length), d: 'portal só com o obrigatório', cor: '#9B1C1C' },
+      { l: 'Módulos opcionais contratados', v: String(nOpc), d: 'em todos os órgãos', cor: '#5B3B8C' }
+    ];
+    const alertas = alertasL.map((z) => ({ orgao: z.o.nome, st: z.x.st, bg: z.x.bg, fg: z.x.fg, txt: z.x.fase === 'alerta' ? 'Vigência até ' + br(z.o.fim) + '. Avisos enviados com 90, 60 e 30 dias.' : z.x.fase === 'carencia' ? 'Venceu em ' + br(z.o.fim) + '; carência termina em ' + br(addD(z.o.fim, z.o.carencia)) + '.' : z.x.fase === 'susp' ? 'Suspensa manualmente.' : 'Carência encerrada em ' + br(addD(z.o.fim, z.o.carencia)) + '.', go: () => this.go('contratos', { ctSel: z.o.id }) }));
+
+    // órgãos
+    const orgaos = s.orgs.map((o) => { const x = sit(o); const n = Object.keys(o.opc).filter((k) => o.opc[k] && CATK[k] && serve(CATK[k], o.tipo)).length; return { nome: o.nome, tipoTxt: o.tipo === 'executivo' ? 'Poder Executivo' : 'Poder Legislativo', mun: o.mun, dominio: o.dominio, banco: o.banco, plano: o.plano, nOpc: n + (n === 1 ? ' opcional' : ' opcionais'), st: x.st, bg: x.bg, fg: x.fg, goContrato: () => this.go('contratos', { ctSel: o.id }), goLayout: () => this.go('layout', { lyOrg: o.id, blSel: null }) }; });
+    const WIZ = [['Município', 'Informe o município pelo código IBGE. O sistema puxa nome e UF e liga os dados públicos compartilhados (IBGE, INEP, Siconfi, PNCP).'], ['Tipo e plano', 'Executivo ou Legislativo. O tipo define os módulos obrigatórios; o plano define os incluídos.'], ['Banco e conector', 'Cria um banco próprio (bd_<órgão>_<município>) no servidor e escolhe o conector do sistema contábil ou legislativo.'], ['Contrato', 'Número, processo, início, fim e carência. Sem contrato ativo, o órgão fica em implantação (homologação).'], ['Domínio', 'O órgão aponta o DNS para a VPS; o certificado SSL sai sozinho.']];
+    const wizCampos = s.wiz === 1 ? [{ label: 'Código IBGE ou nome do município', v: s.wMun, isTxt: true, isSel: false, opts: [], set: (e) => this.setState({ wMun: e.target.value }) }] : s.wiz === 2 ? [{ label: 'Tipo de órgão', v: s.wTipo, isSel: true, isTxt: false, opts: ['Prefeitura Municipal', 'Câmara Municipal'], set: (e) => this.setState({ wTipo: e.target.value, wPlano: e.target.value === 'Câmara Municipal' ? 'Legislativo' : 'Executivo' }) }, { label: 'Plano', v: s.wPlano, isSel: true, isTxt: false, opts: ['Executivo', 'Legislativo'], set: (e) => this.setState({ wPlano: e.target.value }) }] : [];
+    const wizAvancar = () => {
+      if (s.wiz < 5) { this.setState({ wiz: s.wiz + 1 }); return; }
+      const leg = s.wTipo === 'Câmara Municipal'; const mun = s.wMun.trim() || '[Município C]'; const id = 'n' + s.orgs.length;
+      const novo = { id: id, nome: (leg ? 'Câmara de ' : 'Prefeitura de ') + mun, tipo: leg ? 'legislativo' : 'executivo', mun: mun + ' · IBGE [código]', dominio: '[a apontar]', banco: (leg ? 'bd_cm_' : 'bd_pm_') + mun.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 10), plano: s.wPlano, num: '[a registrar]', proc: '[a registrar]', ini: addD(s.data, 30), fim: addM(addD(s.data, 30), 12), carencia: 60, aditivos: [], susp: false, opc: {} };
+      const lay = Object.assign({}, s.lay); lay[id] = LAY0[novo.tipo].filter((x) => { const m = (BK[x[0]][4] || '').split('|').filter(Boolean); return !m.length || m.some((k) => tem(novo, k)); }).map((x) => x.slice());
+      this.reg('Cadastrou o órgão ' + novo.nome + ' (em implantação)', { orgs: s.orgs.concat([novo]), lay: lay, wiz: 1, wMun: '', msg: novo.nome + ' cadastrado em implantação, com banco próprio e layout padrão do plano.', msgOk: true });
+    };
+
+    // contratos
+    const C0 = s.orgs.find((o) => o.id === s.ctSel) || s.orgs[0];
+    const x0 = sit(C0);
+    const total = dias(C0.ini, C0.fim); const passado = Math.min(Math.max(dias(C0.ini, s.data), 0), total);
+    const anosTot = dias(C0.ini, C0.fim) / 365.25;
+    const EF = {
+      impl: [['Painel do órgão', 'Liberado em homologação para montar conteúdo', '#1D4E89'], ['Portal público', 'Ainda não publicado', '#555B70'], ['Opcionais', 'Configurados, entram no ar com a licença', '#555B70'], ['Exportação', 'Disponível a qualquer momento', '#146C43']],
+      ativa: [['Painel do órgão', 'Edição liberada', '#146C43'], ['Portal público', 'No ar, completo', '#146C43'], ['Opcionais', 'Ligados conforme o contrato', '#146C43'], ['Exportação', 'Disponível a qualquer momento', '#146C43']],
+      alerta: [['Painel do órgão', 'Edição liberada, com aviso de vencimento ao administrador', '#B4540A'], ['Portal público', 'No ar, completo', '#146C43'], ['Opcionais', 'Ligados; serão desligados se não houver prorrogação', '#B4540A'], ['Exportação', 'Disponível a qualquer momento', '#146C43']],
+      carencia: [['Painel do órgão', 'Somente leitura: nenhuma publicação nova', '#9B1C1C'], ['Portal público', 'No ar com o conteúdo obrigatório (transparência, e-SIC, ouvidoria)', '#B4540A'], ['Opcionais', 'Desligados (Diário, BI, emendas…)', '#9B1C1C'], ['Exportação', 'Disponível; aviso ao órgão sobre o fim da carência', '#146C43']],
+      fim: [['Painel do órgão', 'Bloqueado', '#9B1C1C'], ['Portal público', 'Página com o conteúdo obrigatório estático e aviso ao cidadão; dados entregues ao órgão', '#9B1C1C'], ['Opcionais', 'Desligados', '#9B1C1C'], ['Exportação', 'Pacote completo entregue (CSV, JSON, arquivos)', '#146C43']],
+      susp: [['Painel do órgão', 'Bloqueado', '#9B1C1C'], ['Portal público', 'No ar com o conteúdo obrigatório', '#B4540A'], ['Opcionais', 'Desligados', '#9B1C1C'], ['Exportação', 'Disponível', '#146C43']]
+    };
+    const ct = { orgao: C0.nome, st: x0.st, bg: x0.bg, fg: x0.fg, cor: x0.cor, num: C0.num, proc: C0.proc, plano: C0.plano, vig: br(C0.ini) + ' a ' + br(C0.fim), prazo: x0.fase === 'impl' ? 'começa em ' + dias(s.data, C0.ini) + ' dias' : x0.fase === 'carencia' ? 'vencido; carência por mais ' + x0.resto + ' dias' : x0.fase === 'fim' ? 'encerrado' : x0.fase === 'susp' ? 'suspenso' : x0.resto + ' dias restantes', carencia: C0.carencia + ' dias após o vencimento', limite: 'Total contratado: ' + anosTot.toFixed(1).replace('.', ',') + ' anos de 10 possíveis (serviço contínuo)', pct: total > 0 ? Math.round(passado / total * 100) : 0, barraTxt: 'Decorrido ' + (total > 0 ? Math.round(passado / total * 100) : 0) + '% da vigência', efeitos: EF[x0.fase].map((e) => ({ t: e[0], d: e[1], cor: e[2] })), aditivos: C0.aditivos, semAditivo: C0.aditivos.length === 0 };
+    const novoFim = addM(C0.fim, 12); const passa10 = dias(C0.ini, novoFim) / 365.25 > 10;
+    const ctAcoes = [
+      B(['carencia', 'fim'].indexOf(x0.fase) >= 0 ? 'Vencido: exige nova contratação' : 'Registrar prorrogação (+12 meses)', () => this.reg('Registrou prorrogação do contrato de ' + C0.nome + ' até ' + br(novoFim), { orgs: updOrg(C0.id, { fim: novoFim, aditivos: C0.aditivos.concat([(C0.aditivos.length + 1) + 'º aditivo: prorrogação até ' + br(novoFim) + ' (registrado em ' + br(s.data) + ')']) }), msg: 'Vigência prorrogada até ' + br(novoFim) + '.', msgOk: true }), 'pri', passa10 || ['carencia', 'fim'].indexOf(x0.fase) >= 0),
+      C0.susp ? B('Reativar licença', () => this.reg('Reativou a licença de ' + C0.nome, { orgs: updOrg(C0.id, { susp: false }), msg: 'Licença reativada.', msgOk: true }), 'sec') : B('Suspender licença', () => this.reg('Suspendeu a licença de ' + C0.nome, { orgs: updOrg(C0.id, { susp: true }), msg: 'Licença suspensa. O portal mantém só o conteúdo obrigatório.', msgOk: true }), 'perigo'),
+      B('Exportar todos os dados', () => this.reg('Gerou exportação completa de ' + C0.nome, { msg: 'Pacote de exportação gerado: bancos em CSV e JSON, arquivos de mídia e registro de ações.', msgOk: true }), 'sec')
+    ];
+    const ctTabs = s.orgs.map((o) => { const x = sit(o); return { t: o.nome, st: x.st, fg: x.fg, sel: o.id === C0.id ? 'true' : 'false', bd: o.id === C0.id ? '#1B1E30' : '#DDE0EA', go: () => this.setState({ ctSel: o.id }) }; });
+    const ctOpc = CAT.filter((c) => c[3] === 'opc' && serve(c, C0.tipo)).map((c) => { const on = !!C0.opc[c[0]]; const dep = c[5]; const depOk = !dep || !!C0.opc[dep]; return { t: c[1], d: c[2], on: on ? 'true' : 'false', swBg: on ? '#146C43' : '#9AA0B5', temDep: !!dep, dep: dep ? 'Depende de: ' + CATK[dep][1] + (depOk ? '' : ' (não contratado)') : '', trava: (!on && !depOk), tog: () => { const op = Object.assign({}, C0.opc); op[c[0]] = !on; if (on) Object.keys(op).forEach((k) => { if (CATK[k] && CATK[k][5] === c[0]) op[k] = false; }); this.reg((on ? 'Desligou' : 'Ligou') + ' o módulo ' + c[1] + ' no contrato de ' + C0.nome, { orgs: updOrg(C0.id, { opc: op }), msg: c[1] + (on ? ' desligado no contrato. Some do painel e do portal do órgão; os dados ficam guardados.' : ' liberado. Já aparece em Funcionalidades no painel do órgão.'), msgOk: true }); } }; });
+
+    // catálogo
+    const catF = s.catF;
+    const tipoInfo = { obr: ['Obrigatório por lei', '#E5EEFB', '#1D4E89'], plano: ['Incluído no plano', '#E3F2E9', '#146C43'], opc: ['Opcional', '#EDE7F6', '#5B3B8C'] };
+    const catFiltros = [['todos', 'Todos'], ['obr', 'Obrigatórios'], ['plano', 'Incluídos no plano'], ['opc', 'Opcionais']].map((f) => ({ t: f[1], n: f[0] === 'todos' ? CAT.length : CAT.filter((c) => c[3] === f[0]).length, sel: catF === f[0] ? 'true' : 'false', bg: catF === f[0] ? '#1B1E30' : '#FFFFFF', fg: catF === f[0] ? '#FFFFFF' : '#171A2B', bd: catF === f[0] ? '#1B1E30' : '#C9CDDA', go: () => this.setState({ catF: f[0] }) }));
+    const catalogo = CAT.filter((c) => catF === 'todos' || c[3] === catF).map((c) => ({ t: c[1], d: c[2], tipo: tipoInfo[c[3]][0], tipoBg: tipoInfo[c[3]][1], tipoFg: tipoInfo[c[3]][2], aplica: c[4] === 'ambos' ? 'Prefeitura e Câmara' : c[4] === 'pm' ? 'Prefeitura' : 'Câmara', dep: c[5] ? CATK[c[5]][1] : '—', preco: c[3] === 'opc' ? '[R$ a definir]' : 'no plano', cel: s.orgs.map((o) => !serve(c, o.tipo) ? { s: '', al: 'Não se aplica', cor: '#9AA0B5' } : c[3] === 'obr' ? { s: '●', al: 'Obrigatório', cor: '#1D4E89' } : tem(o, c[0]) ? { s: '✓', al: 'Contratado', cor: '#146C43' } : { s: '—', al: 'Não contratado', cor: '#9AA0B5' }) }));
+    const catOrgCols = s.orgs.map((o) => o.nome.replace('Prefeitura Municipal de ', 'PM ').replace('Câmara Municipal de ', 'CM ').replace('Prefeitura de ', 'PM ').replace('Câmara de ', 'CM ').replace(' (exemplo)', '*'));
+
+    // editor de regiões
+    const LO = s.orgs.find((o) => o.id === s.lyOrg) || s.orgs[0];
+    const L = s.lay[LO.id] || [];
+    const disp = (k) => { const m = (BK[k][4] || '').split('|').filter(Boolean); return !m.length || m.some((x) => tem(LO, x)); };
+    const setL = (nl, logTxt) => { const lay = Object.assign({}, s.lay); lay[LO.id] = nl; if (logTxt) this.reg(logTxt, { lay: lay }); else this.setState({ lay: lay }); };
+    const mkB = (x) => { const b = BK[x[0]]; const ok = disp(x[0]); const sel = s.blSel === x[0]; return { t: b[1] + (ok ? '' : ' (módulo não contratado)'), trava: b[5], h: b[6], base: b[6] > 50 ? 260 : 160, sel: sel ? 'true' : 'false', bd: sel ? '#F0B429' : b[5] ? '#8A90A6' : '#3E4A8A', bg: !ok ? '#F4F5F9' : b[5] ? '#E9EAF1' : '#EEF0FB', fg: !ok ? '#9AA0B5' : '#1B1E30', go: () => this.setState({ blSel: x[0] }) }; };
+    const regiao = (r) => { const bl = L.filter((x) => x[1] === r[0]).map(mkB); return { t: r[1], blocos: bl, vazia: bl.length === 0, bd: r[0] === 'topo' || r[0] === 'rodape' ? '#8A90A6' : '#B8BCD0', bg: r[0] === 'topo' || r[0] === 'rodape' ? '#F7F7FA' : '#FFFFFF' }; };
+    const regioesTopo = ['topo', 'avisos', 'destaque'].map((k) => regiao(REG.find((r) => r[0] === k)));
+    const regioesMeio = ['principal', 'lateral'].map((k) => regiao(REG.find((r) => r[0] === k)));
+    const regioesBase = [regiao(REG[5])];
+    const iSel = L.findIndex((x) => x[0] === s.blSel);
+    const XS = iSel >= 0 ? L[iSel] : null;
+    const mesmos = XS ? L.map((x, i) => [x, i]).filter((z) => z[0][1] === XS[1]) : [];
+    const pos = XS ? mesmos.findIndex((z) => z[1] === iSel) : -1;
+    const troca = (d) => () => { const j = mesmos[pos + d][1]; const nl = L.slice(); const t = nl[iSel]; nl[iSel] = nl[j]; nl[j] = t; setL(nl); };
+    const bl = XS ? { t: BK[XS[0]][1], d: BK[XS[0]][2], trava: BK[XS[0]][5], reg: XS[1], regs: BK[XS[0]][3].map((k) => ({ v: k, t: REG.find((r) => r[0] === k)[1] })), onReg: (e) => { const nl = L.filter((x, i) => i !== iSel).concat([[XS[0], e.target.value]]); setL(nl, 'Moveu “' + BK[XS[0]][1] + '” para ' + REG.find((r) => r[0] === e.target.value)[1] + ' (' + LO.nome + ')'); }, semUp: pos <= 0 || BK[XS[0]][5], semDown: pos < 0 || pos >= mesmos.length - 1 || BK[XS[0]][5], up: pos > 0 ? troca(-1) : () => { }, down: pos >= 0 && pos < mesmos.length - 1 ? troca(1) : () => { }, remover: () => { setL(L.filter((x, i) => i !== iSel), 'Tirou “' + BK[XS[0]][1] + '” da página (' + LO.nome + ')'); this.setState({ blSel: null }); } } : { t: '', d: '', trava: false, reg: '', regs: [], onReg: () => { }, semUp: true, semDown: true, up: () => { }, down: () => { }, remover: () => { } };
+    const tipoOk = (b) => b[7] === 'ambos' || (b[7] === 'pm' && LO.tipo === 'executivo') || (b[7] === 'cm' && LO.tipo === 'legislativo');
+    const paleta = BLK.filter((b) => tipoOk(b) && !L.some((x) => x[0] === b[0])).map((b) => { const ok = disp(b[0]); const mods = (b[4] || '').split('|').filter((k) => CATK[k] && serve(CATK[k], LO.tipo)); return { t: b[1], d: ok ? 'Entra em: ' + REG.find((r) => r[0] === b[3][0])[1] : 'Requer o módulo ' + (mods.length ? CATK[mods[0]][1] : '') + ' no contrato', cor: ok ? '#555B70' : '#8A4B00', off: !ok, add: () => { setL(L.concat([[b[0], b[3][0]]]), 'Adicionou “' + b[1] + '” à página (' + LO.nome + ')'); this.setState({ blSel: b[0] }); } }; });
+    const lyOrgs = s.orgs.map((o) => ({ v: o.id, t: o.nome }));
+
+    return {
+      menu: menu, viewTitle: titles[s.view] || '', dataSim: s.data, dataTxt: br(s.data), datasOpts: datas.map((d) => ({ v: d[0], t: d[1] })), onData: (e) => this.setState({ data: e.target.value }),
+      hasMsg: !!s.msg, msg: s.msg, msgBg: s.msgOk ? '#E3F2E9' : '#FBE4D8', limparMsg: () => this.setState({ msg: '' }),
+      isGeral: s.view === 'geral', isOrgaos: s.view === 'orgaos', isContratos: s.view === 'contratos', isCatalogo: s.view === 'catalogo', isLayout: s.view === 'layout', isLog: s.view === 'log',
+      kpis: kpis, alertas: alertas, semAlertas: alertas.length === 0, orgaos: orgaos,
+      wiz: { n: s.wiz, t: WIZ[s.wiz - 1][0], d: WIZ[s.wiz - 1][1] }, wizPassos: WIZ.map((w, i) => ({ n: i + 1, t: w[0], bg: i + 1 === s.wiz ? '#1B1E30' : i + 1 < s.wiz ? '#E3F2E9' : '#EEF0F5', fg: i + 1 === s.wiz ? '#FFFFFF' : i + 1 < s.wiz ? '#146C43' : '#555B70' })), wizCampos: wizCampos, wizPrimeiro: s.wiz === 1, wizBtn: s.wiz === 5 ? 'Cadastrar órgão' : 'Avançar', wizVoltar: () => this.setState({ wiz: Math.max(1, s.wiz - 1) }), wizAvancar: wizAvancar,
+      ct: ct, ctAcoes: ctAcoes, ctTabs: ctTabs, ctOpc: ctOpc,
+      catFiltros: catFiltros, catalogo: catalogo, catOrgCols: catOrgCols,
+      lyOrg: LO.id, lyOrgs: lyOrgs, onLyOrg: (e) => this.setState({ lyOrg: e.target.value, blSel: null }), regioesTopo: regioesTopo, regioesMeio: regioesMeio, regioesBase: regioesBase, temBloco: !!XS, semBloco: !XS, bl: bl, paleta: paleta, paletaVazia: paleta.length === 0,
+      lyPadrao: () => this.reg('Salvou o layout como padrão do plano ' + LO.plano, { msg: 'Layout salvo como padrão do plano ' + LO.plano + '. Órgãos novos desse plano nascem com ele.', msgOk: true }),
+      lyAplicar: () => this.reg('Enviou o layout para homologação de ' + LO.nome, { msg: 'Layout enviado para a homologação de ' + LO.nome + '. O administrador do órgão confere e publica.', msgOk: true }),
+      log: s.log
+    };
+  }
+}
+</script>
+</body>
+</html>

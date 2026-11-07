@@ -1,0 +1,8 @@
+{% extends 'admin/base.html' %}{% block h1 %}{{ s.nome }}{% endblock %}
+{% block conteudo %}<form class="campos" method="post" action="/admin/sessoes/{{ s.id }}"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<p>{{ s.data|br }} · {{ s.hora }}</p><label>Pauta<textarea name="pauta" rows="5">{{ s.pauta }}</textarea></label>
+<fieldset style="border:1px solid #DCE1E6;border-radius:12px;padding:12px"><legend><strong>Presença</strong> (nada vem preenchido: registre depois da sessão)</legend>
+{% for v in ver %}<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #EEF1F4"><span>{{ v.nome }}</span><span>{% for o in ['presente','ausente','justificada'] %}<label style="display:inline-flex;flex-direction:row;gap:4px;font-weight:400;margin-left:10px"><input type="radio" name="pres_{{ v.id }}" value="{{ o }}" {{ 'checked' if v.situacao == o }}> {{ o }}</label>{% endfor %}</span></div>{% endfor %}</fieldset>
+<label>Ata<textarea name="ata" rows="6">{{ s.ata }}</textarea></label><label>Vídeo da sessão (endereço)<input name="video_url" value="{{ s.video_url }}"></label>
+<div class="acoes"><button class="btn sec" name="acao" value="salvar">Salvar</button>{% if pode('publicar') %}<button class="btn" name="acao" value="pub_pauta" {{ 'disabled' if s.pauta_publicada }}>Publicar pauta</button><button class="btn" name="acao" value="pub_presenca" {{ 'disabled' if s.presenca_publicada }}>Publicar presença</button><button class="btn" name="acao" value="pub_ata" {{ 'disabled' if s.ata_publicada or s.ata|length < 20 }}>Publicar ata</button>{% endif %}</div></form>
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.sessoes }}</p>{% endblock %}

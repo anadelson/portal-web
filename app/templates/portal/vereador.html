@@ -1,0 +1,14 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ v.nome }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}<p><a href="/vereadores?leg={{ v.legislatura }}">‹ Vereadores</a></p>
+<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><span class="avatar" style="width:84px;height:84px;font-size:26px" aria-hidden="true">{{ v.nome.split()[0][:1] }}{{ v.nome.split()[-1][:1] }}</span><div><h1>{{ v.nome }}</h1><p>{{ v.apelido and '“' ~ v.apelido ~ '” · ' or '' }}{{ v.partido }} · {{ v.votos }} votos · {{ v.legislatura }}ª Legislatura</p></div></div>
+{% if v.bio %}<p>{{ v.bio }}</p>{% endif %}
+<div class="grade" style="margin:18px 0">
+<div class="cartao"><h3>Proposições</h3><p style="font-size:28px;font-weight:800;margin:0">{{ props|length }}</p><small>nos registros importados</small></div>
+<div class="cartao"><h3>Presença</h3>{% if pres.presente or pres.ausente or pres.justificada %}<p>{{ pres.presente }} presenças · {{ pres.ausente }} faltas · {{ pres.justificada }} justificadas</p>{% else %}<p>A carregar: depende das atas publicadas.</p>{% endif %}</div>
+<div class="cartao"><h3>Cargos na Mesa</h3>{% for c in cargos %}<p>{{ c.cargo }} ({{ c.bienio }})</p>{% else %}<p>Nenhum</p>{% endfor %}</div>
+</div>
+{% if emendas %}<section class="secao"><h2>Emendas impositivas</h2><div class="tabela"><table><thead><tr><th scope="col">Emenda</th><th scope="col">Objeto</th><th scope="col">Valor</th><th scope="col">Pago</th></tr></thead><tbody>{% for e in emendas %}<tr><td><a href="/emendas/{{ e.numero.split('/')[1] }}/{{ e.numero.split('/')[0] }}">{{ e.numero }}</a></td><td>{{ e.objeto }}</td><td>{{ e.valor|moeda }}</td><td>{{ e.pago_cadastro|moeda }}</td></tr>{% endfor %}</tbody></table></div></section>{% endif %}
+<section class="secao"><h2>Proposições</h2>{% for p in props %}<p><strong>{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</strong> — {{ p.ementa }} <span class="chip">{{ p.situacao }}</span></p>{% else %}<p>Nenhuma proposição nos registros importados.</p>{% endfor %}</section>
+<section class="secao"><h2>Mandatos</h2><ul>{% for m in mandatos %}<li>{{ m.legislatura }}ª Legislatura ({{ m.anos }}) · {{ m.partido }} · {{ m.votos }} votos</li>{% endfor %}</ul></section>
+{% endblock %}

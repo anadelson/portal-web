@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Painel administrativo único — Prefeitura e Câmara</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button,select,input,textarea{font:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #F0B429;outline-offset:2px}
+button:disabled{cursor:not-allowed;opacity:.45}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.row:hover{background:#F7F9FB}
+.mi:hover{background:#243241 !important}
+.mg:hover{color:#FFFFFF !important}
+@media (prefers-reduced-motion: reduce){.mg svg{transition:none !important}}
+.sw{position:relative;display:inline-block;width:44px;height:24px;border-radius:999px;flex:0 0 auto;transition:background-color .15s ease}
+.sw::after{content:"";position:absolute;top:3px;width:18px;height:18px;border-radius:50%;background:#FFFFFF;transition:left .15s ease}
+.sw[data-on="true"]::after{left:23px}.sw[data-on="false"]::after{left:3px}
+@media (prefers-reduced-motion: reduce){.sw,.sw::after{transition:none}}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; background: #F3F5F8; color: #17212B; font-family: 'Public Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5;">
+
+<!-- MENU LATERAL -->
+<nav aria-label="Menu do painel" style="flex: 0 0 256px; background: #17212B; color: #E5E9EE; display: flex; flex-direction: column; padding: 18px 14px; box-sizing: border-box; gap: 2px; position: sticky; top: 0; align-self: flex-start; max-height: 100vh; overflow-y: auto;">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 6px 14px;">
+<span aria-hidden="true" style="width: 34px; height: 34px; border-radius: 9px; background: {{acc}}; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 800;">P</span>
+<span style="display: flex; flex-direction: column; line-height: 1.2;"><strong style="color: #FFFFFF;">Painel administrativo</strong><span style="font-size: 12px; color: #9AA5B1;">Prefeitura e Câmara de Borá</span></span>
+</div>
+<label for="f-ten" style="padding: 0 6px; font-size: 12px; color: #9AA5B1; font-weight: 600;">Órgão em edição</label>
+<select id="f-ten" value="{{tenant}}" onChange="{{onTenant}}" style="margin: 2px 0 12px; min-height: 42px; padding: 0 10px; border: 1px solid #3A4856; border-radius: 9px; background: #1E2B37; color: #FFFFFF;">
+<sc-for list="{{tenants}}" as="t" hint-placeholder-count="2"><option value="{{t.id}}">{{t.nome}}</option></sc-for>
+</select>
+<sc-for list="{{menu}}" as="m" hint-placeholder-count="10">
+<sc-if value="{{m.grupo}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{m.go}}" aria-expanded="{{m.aberto}}" class="mg" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding: 6px 8px; border: 0; border-radius: 6px; background: transparent; color: #8C99A6; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; text-align: left; cursor: pointer;"><span>{{m.label}}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate({{m.rot}}deg); transition: transform .15s ease;"><path d="M6 9l6 6 6-6"></path></svg></button></sc-if>
+<sc-if value="{{m.item}}" hint-placeholder-val="{{true}}"><button type="button" class="mi" onClick="{{m.go}}" aria-current="{{m.cur}}" title="{{m.label}}" style="position: relative; display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 10px; border: 0; border-radius: 8px; background: {{m.bg}}; color: {{m.fg}}; font-weight: 600; font-size: 14px; text-align: left; cursor: pointer;"><span aria-hidden="true" style="position: absolute; left: -14px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: {{m.barra}};"></span><span aria-hidden="true" style="width: 28px; height: 28px; flex: 0 0 auto; border-radius: 7px; background: {{m.icBg}}; color: {{m.icFg}}; display: inline-flex; align-items: center; justify-content: center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.ic}}"></path></svg></span><span style="flex: 1; min-width: 0; line-height: 1.25;">{{m.label}}</span><sc-if value="{{m.temN}}" hint-placeholder-val="{{false}}"><span style="min-width: 20px; padding: 0 6px; border-radius: 999px; background: {{m.nBg}}; color: {{m.nFg}}; font-size: 11px; font-weight: 800; text-align: center; line-height: 18px;">{{m.n}}</span></sc-if></button></sc-if>
+</sc-for>
+<button type="button" onClick="{{goPerfil}}" class="mi" style="margin-top: 14px; display: flex; align-items: center; gap: 10px; padding: 10px; border: 0; border-radius: 10px; background: #1E2B37; color: #FFFFFF; text-align: left; cursor: pointer;"><span aria-hidden="true" style="width: 32px; height: 32px; flex: 0 0 auto; border-radius: 50%; background: {{acc}}; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;">{{roleIni}}</span><span style="min-width: 0; line-height: 1.25;"><strong style="display: block; font-size: 13px;">{{roleUser}}</strong><span style="font-size: 12px; color: #9AA5B1;">Meu perfil · {{ten.banco}}</span></span></button>
+</nav>
+
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+<header style="background: #FFFFFF; border-bottom: 1px solid #DCE1E6; padding: 12px 28px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between;">
+<div style="min-width: 0;">
+<p style="margin: 0; font-size: 13px; color: #4B5563;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {{acc}}; margin-right: 6px;"></span>{{ten.nome}} · {{ten.tipoTxt}}</p>
+<h1 style="margin: 0; font-size: 22px; line-height: 1.25;">{{viewTitle}}</h1>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+<sc-if value="{{ehDticV}}" hint-placeholder-val="{{false}}"><a href="Console.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 9px; background: #1B1E30; color: #F0B429; text-decoration: none; font-weight: 700; font-size: 14px;">Console do gestor ↗</a></sc-if>
+<a href="{{ten.portal}}" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #C9D1D9; border-radius: 9px; color: #17212B; text-decoration: none; font-weight: 600; font-size: 14px;">Ver portal ↗</a>
+<label for="f-role" style="font-size: 13px; font-weight: 600;">Simular perfil</label>
+<select id="f-role" value="{{role}}" onChange="{{onRole}}" style="min-height: 40px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 9px; background: #FFFFFF;">
+<sc-for list="{{roles}}" as="r" hint-placeholder-count="5"><option value="{{r.id}}">{{r.label}}</option></sc-for>
+</select>
+<span style="display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; background: #EEF2F6; font-size: 13px;"><span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 50%; background: {{acc}}; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">{{roleIni}}</span>{{roleUser}}</span>
+</div>
+</header>
+
+<sc-if value="{{temAoVivo}}" hint-placeholder-val="{{false}}">
+<div role="status" style="background: #C81E1E; color: #FFFFFF; padding: 8px 28px; font-size: 14px; display: flex; justify-content: space-between; gap: 10px; align-items: center;"><span><strong>● Ao vivo agora:</strong> {{aoVivoTxt}} — o portal mostra a faixa “Ao vivo” e o aviso.</span><button type="button" onClick="{{goTransm}}" style="background: #FFFFFF; color: #C81E1E; border: 0; border-radius: 8px; padding: 5px 12px; font-weight: 700; cursor: pointer;">Gerenciar</button></div>
+</sc-if>
+<sc-if value="{{defesoAtivo}}" hint-placeholder-val="{{false}}">
+<div role="status" style="background: #7A2E0E; color: #FFFFFF; padding: 10px 28px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; justify-content: space-between;"><span><strong>Período eleitoral em vigor (simulação {{dataSimTxt}}).</strong> {{defesoResumo}}</span><button type="button" onClick="{{goEleicao}}" style="background: #FFFFFF; color: #7A2E0E; border: 0; border-radius: 8px; padding: 6px 12px; font-weight: 700; cursor: pointer;">Ver plano</button></div>
+</sc-if>
+
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}">
+<div role="status" style="margin: 16px 28px 0; padding: 12px 16px; border-radius: 10px; background: {{msgBg}}; font-size: 14px; display: flex; justify-content: space-between; gap: 12px;"><span>{{msg}}</span><button type="button" onClick="{{limparMsg}}" aria-label="Fechar mensagem" style="background: none; border: 0; cursor: pointer; font-size: 18px; line-height: 1;">×</button></div>
+</sc-if>
+
+<main style="padding: 22px 28px 56px; box-sizing: border-box;">
+
+<!-- VISÃO GERAL -->
+<sc-if value="{{isPainel}}" hint-placeholder-val="{{true}}">
+<dl style="margin: 0 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="5"><button type="button" onClick="{{k.go}}" style="text-align: left; padding: 14px 16px; border-radius: 14px; background: #FFFFFF; border: 1px solid #DCE1E6; border-top: 4px solid {{k.cor}}; cursor: pointer; color: #17212B;"><dt style="font-size: 13px; color: #4B5563;">{{k.l}}</dt><dd style="margin: 2px 0 0; font-size: 28px; font-weight: 800; line-height: 1.15;">{{k.v}}</dd><dd style="margin: 0; font-size: 12px; color: #4B5563;">{{k.d}}</dd></button></sc-for>
+</dl>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 16px;">
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 4px; font-size: 18px;">Minha fila</h2>
+<p style="margin: 0 0 10px; font-size: 13px; color: #4B5563;">{{filaSub}}</p>
+<sc-if value="{{filaVazia}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 12px; border-radius: 10px; background: #F4F6F8; color: #4B5563;">Nada pendente para este perfil.</p></sc-if>
+<ul style="list-style: none; margin: 0; padding: 0;">
+<sc-for list="{{fila}}" as="c" hint-placeholder-count="3"><li style="border-top: 1px solid #EEF1F4;"><button type="button" class="row" onClick="{{c.abrir}}" style="width: 100%; display: flex; justify-content: space-between; gap: 12px; padding: 10px 4px; background: none; border: 0; text-align: left; cursor: pointer; color: #17212B;"><span style="min-width: 0;"><strong style="display: block;">{{c.titulo}}</strong><span style="font-size: 13px; color: #4B5563;">{{c.tipo}} · {{c.autor}}</span></span><span style="align-self: center; padding: 2px 10px; border-radius: 999px; background: {{c.stBg}}; color: {{c.stFg}}; font-size: 12px; font-weight: 700; white-space: nowrap;">{{c.st}}</span></button></li></sc-for>
+</ul>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 4px; font-size: 18px;">Período eleitoral</h2>
+<p style="margin: 0 0 12px; font-size: 13px; color: #4B5563;">{{ele.nome}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: baseline;"><span style="font-size: 34px; font-weight: 800; line-height: 1;">{{ele.dias}}</span><span style="color: #4B5563;">{{ele.diasTxt}}</span></div>
+<p style="margin: 10px 0 0; font-size: 14px;">Defeso: <strong>{{ele.janela}}</strong> · plano: <strong style="color: {{planoCor}};">{{planoTxt}}</strong></p>
+<p style="margin: 4px 0 12px; font-size: 14px; color: #4B5563;">{{impactoTxt}}</p>
+<button type="button" onClick="{{goEleicao}}" style="min-height: 40px; padding: 0 16px; border: 0; border-radius: 9px; background: #17212B; color: #FFFFFF; font-weight: 700; cursor: pointer;">Abrir plano do período eleitoral</button>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 10px; font-size: 18px;">Últimas ações</h2>
+<ol style="list-style: none; margin: 0; padding: 0;">
+<sc-for list="{{logTop}}" as="l" hint-placeholder-count="5"><li style="display: grid; grid-template-columns: 92px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid #EEF1F4; font-size: 14px;"><span style="color: #4B5563; font-variant-numeric: tabular-nums;">{{l.quando}}</span><span><strong>{{l.quem}}</strong> {{l.acao}}</span></li></sc-for>
+</ol>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 10px; font-size: 18px;">Funcionalidades ativas</h2>
+<p style="margin: 0 0 10px; font-size: 14px; color: #4B5563;">{{modResumo}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 6px;"><sc-for list="{{modChips}}" as="c" hint-placeholder-count="8"><span style="padding: 3px 10px; border-radius: 999px; background: {{c.bg}}; color: {{c.fg}}; font-size: 13px; font-weight: 600;">{{c.t}}</span></sc-for></div>
+<button type="button" onClick="{{goMods}}" style="margin-top: 14px; background: none; border: 0; padding: 0; font-weight: 700; color: {{acc}}; text-decoration: underline; cursor: pointer;">Gerenciar funcionalidades</button>
+</section>
+</div>
+</sc-if>
+
+<!-- CONTEÚDO: LISTA -->
+<sc-if value="{{isLista}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+<div role="tablist" aria-label="Tipo de conteúdo" style="display: flex; flex-wrap: wrap; gap: 6px;">
+<sc-for list="{{tiposTabs}}" as="t" hint-placeholder-count="6"><button type="button" role="tab" aria-selected="{{t.sel}}" onClick="{{t.go}}" style="min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.bd}}; background: {{t.bg}}; color: {{t.fg}}; font-weight: 600; cursor: pointer;">{{t.t}} <span style="opacity: 0.7;">{{t.n}}</span></button></sc-for>
+</div>
+<div style="display: flex; gap: 8px; align-items: center;">
+<label for="f-st" style="font-size: 13px; font-weight: 600;">Situação</label>
+<select id="f-st" value="{{cSt}}" onChange="{{onCSt}}" style="min-height: 38px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 9px; background: #FFFFFF;"><sc-for list="{{stOpts}}" as="o" hint-placeholder-count="6"><option value="{{o}}">{{o}}</option></sc-for></select>
+<button type="button" onClick="{{novo}}" disabled="{{semCriar}}" style="min-height: 40px; padding: 0 16px; border: 0; border-radius: 9px; background: {{acc}}; color: #FFFFFF; font-weight: 700; cursor: pointer;">+ Novo conteúdo</button>
+</div>
+</div>
+<div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 14px;">
+<table style="width: 100%; min-width: 900px; border-collapse: collapse; font-size: 14px;">
+<caption class="sr">Conteúdos do portal</caption>
+<thead><tr style="text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #4B5563;"><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Título</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Tipo</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Classificação eleitoral</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Situação</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Atualizado</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;"><span class="sr">Ação</span></th></tr></thead>
+<tbody><sc-for list="{{lista}}" as="c" hint-placeholder-count="6"><tr class="row">
+<th scope="row" style="text-align: left; padding: 11px 14px; border-bottom: 1px solid #EEF1F4; font-weight: 600;">{{c.titulo}}<span style="display: block; font-weight: 400; font-size: 12px; color: #4B5563;">{{c.autor}}</span></th>
+<td style="padding: 11px 14px; border-bottom: 1px solid #EEF1F4;">{{c.tipo}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #EEF1F4;"><span style="padding: 2px 8px; border-radius: 6px; background: {{c.clBg}}; color: {{c.clFg}}; font-size: 12px; font-weight: 700;">{{c.classe}}</span></td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #EEF1F4;"><span style="padding: 2px 10px; border-radius: 999px; background: {{c.stBg}}; color: {{c.stFg}}; font-size: 12px; font-weight: 700; white-space: nowrap;">{{c.st}}</span><sc-if value="{{c.temNota}}" hint-placeholder-val="{{false}}"><span style="display: block; margin-top: 3px; font-size: 12px; color: #7A2E0E;">{{c.nota}}</span></sc-if></td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #EEF1F4; color: #4B5563; white-space: nowrap;">{{c.data}}</td>
+<td style="padding: 11px 14px; border-bottom: 1px solid #EEF1F4; text-align: right;"><button type="button" onClick="{{c.abrir}}" style="min-height: 34px; padding: 0 12px; border: 1px solid #C9D1D9; border-radius: 8px; background: #FFFFFF; font-weight: 600; cursor: pointer;">{{c.acaoTxt}}</button></td>
+</tr></sc-for></tbody>
+</table>
+</div>
+<p style="margin: 10px 0 0; font-size: 12px; color: #4B5563;">Conteúdos de exemplo, para testar o fluxo. Nomes entre colchetes são marcadores.</p>
+</sc-if>
+
+<!-- CONTEÚDO: EDITOR -->
+<sc-if value="{{isEditor}}" hint-placeholder-val="{{false}}">
+<button type="button" onClick="{{goLista}}" style="margin-bottom: 12px; background: none; border: 0; padding: 0; font-weight: 600; color: {{acc}}; text-decoration: underline; cursor: pointer;">‹ Voltar para Conteúdo</button>
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start;">
+<form onSubmit="{{noSubmit}}" style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 14px; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 20px;">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center;"><span style="padding: 3px 12px; border-radius: 999px; background: {{ed.stBg}}; color: {{ed.stFg}}; font-size: 13px; font-weight: 700;">{{ed.st}}</span><span style="font-size: 13px; color: #4B5563;">{{ed.meta}}</span></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><label for="e-tipo" style="font-weight: 600; font-size: 14px;">Tipo</label><select id="e-tipo" value="{{fTipo}}" onChange="{{onFTipo}}" disabled="{{edBloq}}" style="min-height: 42px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 9px; background: #FFFFFF;"><sc-for list="{{tiposOpts}}" as="o" hint-placeholder-count="6"><option value="{{o}}">{{o}}</option></sc-for></select></div>
+<div style="display: flex; flex-direction: column; gap: 4px;"><label for="e-sec" style="font-weight: 600; font-size: 14px;">Seção do portal</label><select id="e-sec" value="{{fSec}}" onChange="{{onFSec}}" disabled="{{edBloq}}" style="min-height: 42px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 9px; background: #FFFFFF;"><sc-for list="{{secOpts}}" as="o" hint-placeholder-count="5"><option value="{{o}}">{{o}}</option></sc-for></select></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px;"><label for="e-tit" style="font-weight: 600; font-size: 14px;">Título</label><input id="e-tit" value="{{fTit}}" onChange="{{onFTit}}" disabled="{{edBloq}}" style="min-height: 44px; padding: 0 12px; border: 1px solid #6B7684; border-radius: 9px; font-size: 16px;"></div>
+<div style="display: flex; flex-direction: column; gap: 4px;"><label for="e-res" style="font-weight: 600; font-size: 14px;">Resumo <span style="font-weight: 400; color: #4B5563;">(aparece nos cards e na busca)</span></label><textarea id="e-res" rows="2" value="{{fRes}}" onChange="{{onFRes}}" disabled="{{edBloq}}" style="padding: 10px 12px; border: 1px solid #6B7684; border-radius: 9px;"></textarea></div>
+<div style="display: flex; flex-direction: column; gap: 4px;"><label for="e-txt" style="font-weight: 600; font-size: 14px;">Texto</label><textarea id="e-txt" rows="7" value="{{fTxt}}" onChange="{{onFTxt}}" disabled="{{edBloq}}" style="padding: 10px 12px; border: 1px solid #6B7684; border-radius: 9px;"></textarea></div>
+<fieldset style="margin: 0; padding: 14px; border: 1px solid #DCE1E6; border-radius: 12px;">
+<legend style="padding: 0 6px; font-weight: 700;">Classificação para o período eleitoral <span style="font-weight: 400; color: #4B5563;">(obrigatória)</span></legend>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px;">
+<sc-for list="{{classesOpts}}" as="o" hint-placeholder-count="7"><label style="display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 10px; border: 1px solid {{o.bd}}; background: {{o.bg}}; cursor: pointer;"><input type="radio" name="classe" checked="{{o.sel}}" onChange="{{o.pick}}" disabled="{{edBloq}}" style="margin-top: 4px;"><span><strong style="display: block; font-size: 14px;">{{o.t}}</strong><span style="font-size: 12px; color: #4B5563;">{{o.d}}</span></span></label></sc-for>
+</div>
+<p style="margin: 10px 0 0; font-size: 13px; color: {{regraCor}};"><strong>No defeso:</strong> {{regraTxt}}</p>
+</fieldset>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><label for="e-pub" style="font-weight: 600; font-size: 14px;">Publicar em</label><input id="e-pub" type="date" value="{{fPub}}" onChange="{{onFPub}}" disabled="{{edBloq}}" style="min-height: 42px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 9px;"></div>
+<div style="display: flex; flex-direction: column; gap: 4px;"><label for="e-exp" style="font-weight: 600; font-size: 14px;">Tirar do ar em <span style="font-weight: 400; color: #4B5563;">(opcional)</span></label><input id="e-exp" type="date" value="{{fExp}}" onChange="{{onFExp}}" disabled="{{edBloq}}" style="min-height: 42px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 9px;"></div>
+</div>
+<sc-if value="{{podeComentar}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; gap: 4px;"><label for="e-com" style="font-weight: 600; font-size: 14px;">Comentário para o autor <span style="font-weight: 400; color: #4B5563;">(obrigatório para devolver)</span></label><textarea id="e-com" rows="2" value="{{fCom}}" onChange="{{onFCom}}" style="padding: 10px 12px; border: 1px solid #6B7684; border-radius: 9px;"></textarea></div></sc-if>
+<sc-if value="{{temAviso}}" hint-placeholder-val="{{false}}"><p role="alert" style="margin: 0; padding: 10px 12px; border-radius: 10px; background: #FCEFD9; font-size: 14px;">{{aviso}}</p></sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; border-top: 1px solid #EEF1F4;">
+<sc-for list="{{acoes}}" as="a" hint-placeholder-count="3"><button type="button" onClick="{{a.go}}" disabled="{{a.off}}" style="min-height: 42px; padding: 0 16px; border-radius: 9px; border: 1px solid {{a.bd}}; background: {{a.bg}}; color: {{a.fg}}; font-weight: 700; cursor: pointer;">{{a.t}}</button></sc-for>
+<sc-if value="{{semAcoes}}" hint-placeholder-val="{{false}}"><span style="align-self: center; font-size: 14px; color: #4B5563;">{{semAcoesTxt}}</span></sc-if>
+</div>
+</form>
+<aside style="flex: 0 1 340px; min-width: 280px; display: flex; flex-direction: column; gap: 14px;">
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 16px;">
+<h2 style="margin: 0 0 10px; font-size: 15px;">Prévia no portal</h2>
+<div style="border-radius: 12px; overflow: hidden; border: 1px solid #DCE1E6;">
+<div style="height: 110px; background: linear-gradient(135deg, {{acc}} 0%, #8FA3B5 100%); position: relative;"><span style="position: absolute; left: 10px; bottom: 8px; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.9); font-size: 11px; font-weight: 700;">{{fTipo}} · {{fSec}}</span></div>
+<div style="padding: 12px;"><strong style="display: block; line-height: 1.3;">{{fTitOu}}</strong><span style="display: block; margin-top: 4px; font-size: 13px; color: #4B5563;">{{fResOu}}</span></div>
+</div>
+<sc-if value="{{previaDefeso}}" hint-placeholder-val="{{false}}"><p style="margin: 10px 0 0; font-size: 13px; color: #7A2E0E;">No defeso este conteúdo sai do portal, da busca e do mapa do site; o endereço mostra o aviso legal.</p></sc-if>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 16px;">
+<h2 style="margin: 0 0 10px; font-size: 15px;">Fluxo de aprovação</h2>
+<ol style="list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;">
+<sc-for list="{{passos}}" as="p" hint-placeholder-count="4"><li style="display: flex; gap: 10px; align-items: center; font-size: 14px;"><span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 50%; background: {{p.bg}}; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">{{p.n}}</span><span style="font-weight: {{p.peso}};">{{p.t}}</span></li></sc-for>
+</ol>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 16px;">
+<h2 style="margin: 0 0 10px; font-size: 15px;">Histórico de versões</h2>
+<ol style="list-style: none; margin: 0; padding: 0;">
+<sc-for list="{{hist}}" as="h" hint-placeholder-count="3"><li style="padding: 7px 0; border-top: 1px solid #EEF1F4; font-size: 13px;"><strong>v{{h.v}}</strong> · {{h.quando}} · {{h.quem}}<span style="display: block; color: #4B5563;">{{h.o}}</span></li></sc-for>
+</ol>
+</section>
+</aside>
+</div>
+</sc-if>
+
+<!-- PÁGINA INICIAL (BLOCOS) -->
+<sc-if value="{{isHome}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0 0 14px; max-width: 80ch; color: #4B5563;">Nível 2 de personalização: a página inicial é montada com blocos do tema base. Ligue, desligue, troque a variação e mude a ordem. Alterações vão para homologação antes de publicar.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start;">
+<ol style="flex: 1 1 560px; min-width: 0; list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;">
+<sc-for list="{{blocos}}" as="b" hint-placeholder-count="8"><li style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 14px; background: #FFFFFF; border: 1px solid #DCE1E6; border-left: 5px solid {{b.cor}}; border-radius: 12px; opacity: {{b.op}};">
+<span style="display: flex; flex-direction: column; gap: 2px;"><button type="button" onClick="{{b.up}}" disabled="{{b.primeiro}}" aria-label="Subir {{b.t}}" style="width: 30px; height: 22px; border: 1px solid #C9D1D9; border-radius: 6px; background: #FFFFFF; cursor: pointer; line-height: 1;">▲</button><button type="button" onClick="{{b.down}}" disabled="{{b.ultimo}}" aria-label="Descer {{b.t}}" style="width: 30px; height: 22px; border: 1px solid #C9D1D9; border-radius: 6px; background: #FFFFFF; cursor: pointer; line-height: 1;">▼</button></span>
+<span style="flex: 1 1 200px; min-width: 0;"><strong style="display: block;">{{b.t}}</strong><span style="font-size: 13px; color: #4B5563;">{{b.d}}</span><sc-if value="{{b.temNota}}" hint-placeholder-val="{{false}}"><span style="display: block; font-size: 12px; color: #7A2E0E;">{{b.nota}}</span></sc-if></span>
+<label style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; font-weight: 600;">Variação<select value="{{b.var}}" onChange="{{b.onVar}}" style="min-height: 34px; padding: 0 8px; border: 1px solid #6B7684; border-radius: 8px; background: #FFFFFF; font-weight: 400;"><sc-for list="{{b.vars}}" as="v" hint-placeholder-count="2"><option value="{{v}}">{{v}}</option></sc-for></select></label>
+<button type="button" role="switch" aria-checked="{{b.on}}" aria-label="Exibir {{b.t}}" onClick="{{b.tog}}" disabled="{{b.fixo}}" style="display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; cursor: pointer;"><span class="sw" data-on="{{b.on}}" style="background: {{b.swBg}};"></span><span style="font-size: 13px; font-weight: 600; min-width: 52px;">{{b.onTxt}}</span></button>
+</li></sc-for>
+</ol>
+<aside style="flex: 0 1 300px; min-width: 260px; position: sticky; top: 16px;">
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 16px;">
+<h2 style="margin: 0 0 10px; font-size: 15px;">Prévia da estrutura</h2>
+<div style="border: 1px solid #DCE1E6; border-radius: 10px; padding: 8px; display: grid; gap: 5px; background: #F7F9FB;">
+<span style="height: 16px; border-radius: 4px; background: #17212B;"></span>
+<sc-for list="{{previa}}" as="p" hint-placeholder-count="6"><span style="height: {{p.h}}px; border-radius: 5px; background: {{p.cor}}; color: #FFFFFF; font-size: 11px; font-weight: 700; display: flex; align-items: center; padding: 0 8px;">{{p.t}}</span></sc-for>
+<span style="height: 26px; border-radius: 4px; background: #17212B;"></span>
+</div>
+<p style="margin: 10px 0 12px; font-size: 13px; color: #4B5563;">{{homeEstado}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;"><button type="button" onClick="{{homeHomolog}}" style="min-height: 40px; padding: 0 14px; border: 1px solid #C9D1D9; border-radius: 9px; background: #FFFFFF; font-weight: 700; cursor: pointer;">Enviar para homologação</button><button type="button" onClick="{{homePublicar}}" disabled="{{homeSemPub}}" style="min-height: 40px; padding: 0 14px; border: 0; border-radius: 9px; background: {{acc}}; color: #FFFFFF; font-weight: 700; cursor: pointer;">Publicar</button></div>
+</section>
+</aside>
+</div>
+</sc-if>
+
+<!-- FUNCIONALIDADES -->
+<sc-if value="{{isMods}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0 0 14px; max-width: 86ch; color: #4B5563;">Cada funcionalidade liga ou desliga menu, páginas, busca e mapa do site do portal. Desligar não apaga dados. As exigidas por lei ficam travadas e mostram a base legal.</p>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 12px;">
+<sc-for list="{{mods}}" as="m" hint-placeholder-count="9"><section style="display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 14px;">
+<span style="flex: 1; min-width: 0;"><strong style="display: block;">{{m.t}}</strong><span style="display: block; font-size: 13px; color: #4B5563;">{{m.d}}</span><span style="display: inline-block; margin-top: 6px; padding: 1px 8px; border-radius: 6px; background: {{m.tagBg}}; color: {{m.tagFg}}; font-size: 12px; font-weight: 700;">{{m.tag}}</span><sc-if value="{{m.temLei}}" hint-placeholder-val="{{false}}"><span style="display: block; margin-top: 4px; font-size: 12px; color: #4B5563;">Base legal: {{m.lei}}</span></sc-if></span>
+<button type="button" role="switch" aria-checked="{{m.on}}" aria-label="{{m.t}}" onClick="{{m.tog}}" disabled="{{m.trava}}" style="display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0; padding: 0; cursor: pointer;"><span class="sw" data-on="{{m.on}}" style="background: {{m.swBg}};"></span><span style="font-size: 12px; font-weight: 700; color: #4B5563;">{{m.onTxt}}</span></button>
+</section></sc-for>
+</div>
+<p style="margin: 12px 0 0; font-size: 13px; color: #4B5563;">{{modsNota}}</p>
+</sc-if>
+
+<!-- PERÍODO ELEITORAL -->
+<sc-if value="{{isEleicao}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; margin-bottom: 16px;">
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-top: 5px solid #B4540A; border-radius: 16px; padding: 18px 20px;">
+<p style="margin: 0; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #B4540A;">Próximo período</p>
+<h2 style="margin: 2px 0 6px; font-size: 22px;">{{ele.nome}}</h2>
+<dl style="margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 14px;">
+<dt style="color: #4B5563;">Eleição</dt><dd style="margin: 0; font-weight: 600;">{{ele.pleito}}</dd>
+<dt style="color: #4B5563;">Defeso</dt><dd style="margin: 0; font-weight: 600;">{{ele.janela}}</dd>
+<dt style="color: #4B5563;">Faltam</dt><dd style="margin: 0; font-weight: 600;">{{ele.dias}} {{ele.diasTxt}}</dd>
+<dt style="color: #4B5563;">Cargos</dt><dd style="margin: 0;">{{ele.cargos}}</dd>
+</dl>
+<p style="margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: #F4F6F8; font-size: 13px;">{{ele.nota2026}}</p>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 6px; font-size: 18px;">Simular a data</h2>
+<p style="margin: 0 0 10px; font-size: 14px; color: #4B5563;">Veja o portal e o painel como ficarão no dia escolhido. Nada é publicado.</p>
+<div role="radiogroup" aria-label="Data simulada" style="display: grid; gap: 8px;">
+<sc-for list="{{datasSim}}" as="d" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{d.sel}}" onClick="{{d.go}}" style="display: flex; justify-content: space-between; gap: 10px; text-align: left; padding: 10px 12px; border-radius: 10px; border: 2px solid {{d.bd}}; background: {{d.bg}}; cursor: pointer;"><span><strong style="display: block;">{{d.t}}</strong><span style="font-size: 13px; color: #4B5563;">{{d.d}}</span></span></button></sc-for>
+</div>
+<h3 style="margin: 16px 0 6px; font-size: 15px;">Aprovação do plano</h3>
+<p style="margin: 0 0 8px; font-size: 14px;">Situação: <strong style="color: {{planoCor}};">{{planoTxt}}</strong></p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;"><sc-for list="{{planoAcoes}}" as="a" hint-placeholder-count="2"><button type="button" onClick="{{a.go}}" disabled="{{a.off}}" style="min-height: 40px; padding: 0 14px; border-radius: 9px; border: 1px solid {{a.bd}}; background: {{a.bg}}; color: {{a.fg}}; font-weight: 700; cursor: pointer;">{{a.t}}</button></sc-for></div>
+<p style="margin: 8px 0 0; font-size: 12px; color: #4B5563;">O administrador do órgão monta o plano; a Procuradoria (ou o controle interno) aprova. Sem plano aprovado, vale a regra padrão da tabela abaixo.</p>
+</section>
+</div>
+
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px; margin-bottom: 16px;">
+<h2 style="margin: 0 0 4px; font-size: 18px;">Regras por classificação</h2>
+<p style="margin: 0 0 12px; font-size: 14px; color: #4B5563;">Todo conteúdo é classificado na criação. No primeiro dia do defeso, o sistema aplica a regra sozinho; no dia seguinte à eleição, devolve o que suspendeu.</p>
+<div style="overflow-x: auto;"><table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px;">
+<thead><tr style="text-align: left; font-size: 12px; text-transform: uppercase; color: #4B5563;"><th scope="col" style="padding: 8px 10px; border-bottom: 1px solid #DCE1E6;">Classificação</th><th scope="col" style="padding: 8px 10px; border-bottom: 1px solid #DCE1E6;">No defeso</th><th scope="col" style="padding: 8px 10px; border-bottom: 1px solid #DCE1E6;">Por quê</th><th scope="col" style="padding: 8px 10px; border-bottom: 1px solid #DCE1E6; text-align: right;">Itens hoje</th></tr></thead>
+<tbody><sc-for list="{{regras}}" as="r" hint-placeholder-count="7"><tr><th scope="row" style="text-align: left; padding: 9px 10px; border-bottom: 1px solid #EEF1F4;"><span style="padding: 2px 8px; border-radius: 6px; background: {{r.bg}}; color: {{r.fg}}; font-size: 12px; font-weight: 700;">{{r.t}}</span></th><td style="padding: 9px 10px; border-bottom: 1px solid #EEF1F4; font-weight: 700; color: {{r.efCor}};">{{r.ef}}</td><td style="padding: 9px 10px; border-bottom: 1px solid #EEF1F4; color: #374151;">{{r.pq}}</td><td style="padding: 9px 10px; border-bottom: 1px solid #EEF1F4; text-align: right; font-variant-numeric: tabular-nums;">{{r.n}}</td></tr></sc-for></tbody>
+</table></div>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; margin-bottom: 16px;">
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 10px; font-size: 18px;">Ações em todo o portal</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;">
+<sc-for list="{{globais}}" as="g" hint-placeholder-count="5"><li style="display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-top: 1px solid #EEF1F4;"><span style="flex: 1;"><strong style="display: block; font-size: 14px;">{{g.t}}</strong><span style="font-size: 13px; color: #4B5563;">{{g.d}}</span></span><button type="button" role="switch" aria-checked="{{g.on}}" aria-label="{{g.t}}" onClick="{{g.tog}}" disabled="{{g.trava}}" style="background: none; border: 0; padding: 0; cursor: pointer;"><span class="sw" data-on="{{g.on}}" style="background: {{g.swBg}};"></span></button></li></sc-for>
+</ul>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 4px; font-size: 18px;">O que sai do ar ({{impN}})</h2>
+<p style="margin: 0 0 10px; font-size: 13px; color: #4B5563;">Conteúdos publicados ou agendados que serão suspensos. Exceção só com autorização da Justiça Eleitoral (grave e urgente necessidade pública).</p>
+<ul style="list-style: none; margin: 0; padding: 0;">
+<sc-for list="{{impacto}}" as="i" hint-placeholder-count="4"><li style="padding: 9px 0; border-top: 1px solid #EEF1F4;"><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 10px; align-items: center;"><span style="min-width: 0;"><strong style="display: block; font-size: 14px;">{{i.titulo}}</strong><span style="font-size: 12px; color: #4B5563;">{{i.tipo}} · {{i.classe}}</span></span><sc-if value="{{i.temExc}}" hint-placeholder-val="{{false}}"><span style="padding: 2px 8px; border-radius: 999px; background: #E3F2E9; color: #146C43; font-size: 12px; font-weight: 700;">Exceção: {{i.exc}}</span></sc-if><sc-if value="{{i.podeExc}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{i.abrirExc}}" style="min-height: 32px; padding: 0 10px; border: 1px solid #C9D1D9; border-radius: 8px; background: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer;">Registrar exceção</button></sc-if></div>
+<sc-if value="{{i.excAberta}}" hint-placeholder-val="{{false}}"><div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end;"><label style="display: flex; flex-direction: column; gap: 2px; font-size: 13px; font-weight: 600; flex: 1 1 220px;">Nº da decisão da Justiça Eleitoral<input value="{{excNum}}" onChange="{{onExcNum}}" placeholder="ex.: [processo nº 0600000-00.2028.6.26.0000]" style="min-height: 38px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 8px; font-weight: 400;"></label><button type="button" onClick="{{i.salvarExc}}" disabled="{{excVazia}}" style="min-height: 38px; padding: 0 12px; border: 0; border-radius: 8px; background: #17212B; color: #FFFFFF; font-weight: 700; cursor: pointer;">Salvar exceção</button></div></sc-if>
+</li></sc-for>
+</ul>
+<sc-if value="{{impVazio}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 12px; border-radius: 10px; background: #F4F6F8; color: #4B5563;">Nenhum conteúdo publicado nas classes vedadas.</p></sc-if>
+</section>
+</div>
+<p style="margin: 0; max-width: 120ch; font-size: 12px; line-height: 1.5; color: #4B5563;"><strong style="font-weight: 600;">Base legal:</strong> Lei 9.504/1997, art. 73, VI, b (publicidade institucional nos 3 meses antes do pleito, salvo grave e urgente necessidade pública reconhecida pela Justiça Eleitoral), § 3º (só alcança as esferas com cargos em disputa) e VII (limite de gastos com publicidade); Constituição, art. 37, § 1º (vedada promoção pessoal); conteúdo exigido pela LRF, pela LAI e pela Lei do Governo Digital permanece (Res. TSE 23.735/2024, conforme alterada). As regras finais de cada eleição dependem da resolução do TSE do ano e de parecer da Procuradoria.</p>
+</sc-if>
+
+<!-- USUÁRIOS E PERFIS -->
+<sc-if value="{{isUsers}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 14px;">
+<div role="tablist" aria-label="Usuários e perfis" style="display: flex; gap: 6px;"><sc-for list="{{uAbas}}" as="t" hint-placeholder-count="2"><button type="button" role="tab" aria-selected="{{t.sel}}" onClick="{{t.go}}" style="min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.bd}}; background: {{t.bg}}; color: {{t.fg}}; font-weight: 700; cursor: pointer;">{{t.t}}</button></sc-for></div>
+<p style="margin: 0; font-size: 13px; color: #4B5563;">Login com conta gov.br (nível prata ou ouro) e segundo fator obrigatório.</p>
+</div>
+
+<sc-if value="{{uIsLista}}" hint-placeholder-val="{{true}}">
+<dl style="margin: 0 0 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;"><sc-for list="{{uKpis}}" as="k" hint-placeholder-count="4"><div style="padding: 10px 14px; border-radius: 12px; background: #FFFFFF; border: 1px solid #DCE1E6; border-left: 4px solid {{k.cor}};"><dt style="font-size: 13px; color: #4B5563;">{{k.l}}</dt><dd style="margin: 0; font-size: 22px; font-weight: 800;">{{k.v}}</dd></div></sc-for></dl>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;">
+<div style="flex: 1 1 640px; min-width: 0;">
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+<label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;">Buscar<input value="{{uBusca}}" onChange="{{onUBusca}}" placeholder="nome, setor ou perfil" style="min-height: 38px; width: 240px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 9px; font-weight: 400;"></label>
+<button type="button" onClick="{{uConvidar}}" disabled="{{uSemGestao}}" style="min-height: 40px; padding: 0 16px; border: 0; border-radius: 9px; background: {{acc}}; color: #FFFFFF; font-weight: 700; cursor: pointer;">+ Cadastrar usuário</button>
+</div>
+<div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 14px;">
+<table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px;">
+<thead><tr style="text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #4B5563;"><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DCE1E6;">Usuário</th><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DCE1E6;">Perfil e escopo</th><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DCE1E6;">Segurança</th><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DCE1E6;">Último acesso</th><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DCE1E6;">Situação</th></tr></thead>
+<tbody><sc-for list="{{uLista}}" as="u" hint-placeholder-count="6"><tr class="row" style="background: {{u.bg}};">
+<th scope="row" style="text-align: left; padding: 10px 12px; border-bottom: 1px solid #EEF1F4;"><button type="button" onClick="{{u.abrir}}" style="background: none; border: 0; padding: 0; font-weight: 700; color: #17212B; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: #C9D1D9; text-underline-offset: 3px;">{{u.nome}}</button><span style="display: block; font-weight: 400; font-size: 12px; color: #4B5563;">{{u.setor}} · {{u.email}}</span></th>
+<td style="padding: 10px 12px; border-bottom: 1px solid #EEF1F4;"><strong style="font-size: 13px;">{{u.perfil}}</strong><span style="display: block; font-size: 12px; color: #4B5563;">{{u.escopo}}</span></td>
+<td style="padding: 10px 12px; border-bottom: 1px solid #EEF1F4; font-size: 13px; color: {{u.mfaCor}}; font-weight: 600;">{{u.mfa}}<sc-if value="{{u.temVal}}" hint-placeholder-val="{{false}}"><span style="display: block; color: #7A4A00; font-weight: 400;">{{u.validade}}</span></sc-if></td>
+<td style="padding: 10px 12px; border-bottom: 1px solid #EEF1F4; color: #4B5563; white-space: nowrap;">{{u.ultimo}}</td>
+<td style="padding: 10px 12px; border-bottom: 1px solid #EEF1F4;"><span style="padding: 2px 9px; border-radius: 999px; background: {{u.stBg}}; color: {{u.stFg}}; font-size: 12px; font-weight: 700; white-space: nowrap;">{{u.st}}</span></td>
+</tr></sc-for></tbody>
+</table>
+</div>
+</div>
+<sc-if value="{{uTemSel}}" hint-placeholder-val="{{false}}">
+<aside aria-label="Cadastro do usuário" style="flex: 0 1 380px; min-width: 300px; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;">
+<div style="display: flex; justify-content: space-between; gap: 10px;"><h2 style="margin: 0; font-size: 17px;">{{uSelNome}}</h2><button type="button" onClick="{{uFechar}}" aria-label="Fechar cadastro" style="background: none; border: 0; font-size: 20px; line-height: 1; cursor: pointer;">×</button></div>
+<sc-for list="{{uForm}}" as="f" hint-placeholder-count="8"><div style="display: flex; flex-direction: column; gap: 3px;"><span style="font-size: 13px; font-weight: 600;">{{f.label}}</span>
+<sc-if value="{{f.isTxt}}" hint-placeholder-val="{{true}}"><input aria-label="{{f.label}}" value="{{f.v}}" onChange="{{f.set}}" disabled="{{f.off}}" style="min-height: 38px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 8px;"></sc-if>
+<sc-if value="{{f.isData}}" hint-placeholder-val="{{false}}"><input aria-label="{{f.label}}" type="date" value="{{f.v}}" onChange="{{f.set}}" disabled="{{f.off}}" style="min-height: 38px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 8px;"></sc-if>
+<sc-if value="{{f.isSel}}" hint-placeholder-val="{{false}}"><select aria-label="{{f.label}}" value="{{f.v}}" onChange="{{f.set}}" disabled="{{f.off}}" style="min-height: 38px; padding: 0 8px; border: 1px solid #6B7684; border-radius: 8px; background: #FFFFFF;"><sc-for list="{{f.opts}}" as="o" hint-placeholder-count="5"><option value="{{o.v}}">{{o.t}}</option></sc-for></select></sc-if>
+<sc-if value="{{f.isRO}}" hint-placeholder-val="{{false}}"><span style="padding: 8px 10px; border-radius: 8px; background: #F4F6F8;">{{f.v}}</span></sc-if>
+</div></sc-for>
+<sc-if value="{{uTemAviso}}" hint-placeholder-val="{{false}}"><p role="alert" style="margin: 0; padding: 8px 10px; border-radius: 8px; background: #FCEFD9; font-size: 13px;">{{uAviso}}</p></sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;"><sc-for list="{{uAcoes}}" as="a" hint-placeholder-count="3"><button type="button" onClick="{{a.go}}" disabled="{{a.off}}" style="min-height: 38px; padding: 0 14px; border-radius: 9px; border: 1px solid {{a.bd}}; background: {{a.bg}}; color: {{a.fg}}; font-weight: 700; cursor: pointer;">{{a.t}}</button></sc-for></div>
+</aside>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{uIsPerfis}}" hint-placeholder-val="{{false}}">
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px; overflow-x: auto;">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 10px;"><h2 style="margin: 0; font-size: 18px;">O que cada perfil pode fazer</h2><button type="button" onClick="{{novoPerfil}}" disabled="{{uSemGestao}}" style="min-height: 38px; padding: 0 14px; border: 0; border-radius: 9px; background: {{acc}}; color: #FFFFFF; font-weight: 700; cursor: pointer;">+ Criar perfil personalizado</button></div>
+<table style="width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px;">
+<thead><tr><th scope="col" style="text-align: left; padding: 8px; border-bottom: 1px solid #DCE1E6;">Permissão</th><sc-for list="{{perfisCols}}" as="c" hint-placeholder-count="5"><th scope="col" style="padding: 8px; border-bottom: 1px solid #DCE1E6; font-size: 12px; vertical-align: bottom;">{{c.nome}}<span style="display: block; font-weight: 400; color: #4B5563;">{{c.sub}} · {{c.n}}</span></th></sc-for></tr></thead>
+<tbody><sc-for list="{{perfisMat}}" as="m" hint-placeholder-count="10"><tr><th scope="row" style="text-align: left; padding: 7px 8px; border-bottom: 1px solid #EEF1F4; font-weight: 600;">{{m.t}}</th><sc-for list="{{m.c}}" as="c" hint-placeholder-count="5"><td style="padding: 4px; border-bottom: 1px solid #EEF1F4; text-align: center; background: {{c.bg}};"><button type="button" onClick="{{c.go}}" disabled="{{c.trava}}" aria-label="{{c.al}}" style="min-width: 36px; min-height: 30px; border: 0; background: none; font-size: 15px; font-weight: 800; color: {{c.cor}}; cursor: pointer;">{{c.s}}</button></td></sc-for></tr></sc-for></tbody>
+</table>
+<p style="margin: 10px 0 0; font-size: 13px; color: #4B5563;">{{perfisNota}}</p>
+</section>
+</sc-if>
+</sc-if>
+
+<!-- MEU PERFIL -->
+<sc-if value="{{isPerfil}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px;">
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<div style="display: flex; gap: 14px; align-items: center; margin-bottom: 14px;"><span aria-hidden="true" style="width: 56px; height: 56px; border-radius: 50%; background: {{acc}}; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800;">{{roleIni}}</span><span><strong style="display: block; font-size: 18px;">{{eu.nome}}</strong><span style="color: #4B5563;">{{eu.perfil}}</span></span></div>
+<dl style="margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px;">
+<dt style="color: #4B5563;">Órgão</dt><dd style="margin: 0;">{{eu.orgao}}</dd>
+<dt style="color: #4B5563;">Setor</dt><dd style="margin: 0;">{{eu.setor}}</dd>
+<dt style="color: #4B5563;">E-mail</dt><dd style="margin: 0;">{{eu.email}}</dd>
+<dt style="color: #4B5563;">CPF</dt><dd style="margin: 0;">{{eu.cpf}}</dd>
+<dt style="color: #4B5563;">Escopo</dt><dd style="margin: 0;">{{eu.escopo}}</dd>
+<dt style="color: #4B5563;">Login</dt><dd style="margin: 0;">{{eu.nivel}}</dd>
+<dt style="color: #4B5563;">2º fator</dt><dd style="margin: 0;">{{eu.mfa}}</dd>
+</dl>
+<p style="margin: 12px 0 0; font-size: 13px; color: #4B5563;">Nome, CPF e e-mail vêm do gov.br e do cadastro feito pelo administrador; para corrigir, fale com ele.</p>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 8px; font-size: 18px;">Avisos que quero receber</h2>
+<ul style="list-style: none; margin: 0; padding: 0;"><sc-for list="{{euNotif}}" as="n" hint-placeholder-count="5"><li style="display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid #EEF1F4;"><span style="font-size: 14px;">{{n.t}}</span><button type="button" role="switch" aria-checked="{{n.on}}" aria-label="{{n.t}}" onClick="{{n.tog}}" style="background: none; border: 0; padding: 0; cursor: pointer;"><span class="sw" data-on="{{n.on}}" style="background: {{n.swBg}};"></span></button></li></sc-for></ul>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 8px; font-size: 18px;">Sessões abertas</h2>
+<ul style="list-style: none; margin: 0; padding: 0;"><sc-for list="{{euSessoes}}" as="x" hint-placeholder-count="2"><li style="display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 9px 0; border-top: 1px solid #EEF1F4;"><span><strong style="display: block; font-size: 14px;">{{x.disp}}</strong><span style="font-size: 13px; color: #4B5563;">{{x.local}} · {{x.quando}}</span></span><sc-if value="{{x.podeEnc}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{x.encerrar}}" style="min-height: 34px; padding: 0 12px; border: 1px solid #E8B4B4; border-radius: 8px; background: #FFFFFF; color: #9B1C1C; font-weight: 600; cursor: pointer;">Encerrar</button></sc-if></li></sc-for></ul>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 8px; font-size: 18px;">Minhas últimas ações</h2>
+<ol style="list-style: none; margin: 0; padding: 0;"><sc-for list="{{euAcessos}}" as="l" hint-placeholder-count="3"><li style="display: grid; grid-template-columns: 92px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid #EEF1F4; font-size: 14px;"><span style="color: #4B5563;">{{l.quando}}</span><span>{{l.acao}}</span></li></sc-for></ol>
+</section>
+</div>
+</sc-if>
+
+<!-- ÓRGÃOS -->
+<sc-if value="{{isOrgaos}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; background: #FFF4D6; font-size: 14px;">O cadastro de órgãos, contratos, licenças, catálogo de módulos e layout padrão fica no <a href="Console.dc.html" style="color: #17212B; font-weight: 700;">Console do gestor da plataforma</a>. Aqui o órgão só vê a própria situação.</p>
+<sc-if value="{{semOrgaos}}" hint-placeholder-val="{{false}}"><p style="margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; background: #FCEFD9;">Somente o superadministrador (DTIC) gerencia órgãos. Troque o perfil simulado para ver as ações.</p></sc-if>
+<div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 14px; margin-bottom: 16px;">
+<table style="width: 100%; min-width: 900px; border-collapse: collapse; font-size: 14px;">
+<thead><tr style="text-align: left; font-size: 12px; text-transform: uppercase; color: #4B5563;"><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Órgão</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Domínio</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Banco</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Tema</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Conector</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Situação</th></tr></thead>
+<tbody><sc-for list="{{orgaos}}" as="o" hint-placeholder-count="2"><tr><th scope="row" style="text-align: left; padding: 11px 14px; border-bottom: 1px solid #EEF1F4;">{{o.nome}}<span style="display: block; font-weight: 400; font-size: 12px; color: #4B5563;">{{o.tipoTxt}} · município IBGE 3507209</span></th><td style="padding: 11px 14px; border-bottom: 1px solid #EEF1F4;">{{o.dominio}}</td><td style="padding: 11px 14px; border-bottom: 1px solid #EEF1F4; font-family: ui-monospace, monospace; font-size: 13px;">{{o.banco}}</td><td style="padding: 11px 14px; border-bottom: 1px solid #EEF1F4;">{{o.tema}}</td><td style="padding: 11px 14px; border-bottom: 1px solid #EEF1F4;">{{o.conector}}</td><td style="padding: 11px 14px; border-bottom: 1px solid #EEF1F4;"><span style="padding: 2px 10px; border-radius: 999px; background: #FCEFD9; color: #7A4A00; font-size: 12px; font-weight: 700;">Homologação</span></td></tr></sc-for></tbody>
+</table>
+</div>
+<section style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px 20px;">
+<h2 style="margin: 0 0 4px; font-size: 18px;">Cadastrar novo órgão</h2>
+<p style="margin: 0 0 12px; font-size: 14px; color: #4B5563;">Passo {{wiz.n}} de 5 · {{wiz.t}}</p>
+<ol style="list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px;"><sc-for list="{{wizPassos}}" as="w" hint-placeholder-count="5"><li style="padding: 4px 12px; border-radius: 999px; background: {{w.bg}}; color: {{w.fg}}; font-size: 13px; font-weight: 700;">{{w.n}}. {{w.t}}</li></sc-for></ol>
+<p style="margin: 0 0 12px; padding: 12px 14px; border-radius: 10px; background: #F4F6F8; font-size: 14px;">{{wiz.d}}</p>
+<div style="display: flex; gap: 8px;"><button type="button" onClick="{{wizVoltar}}" disabled="{{wizPrimeiro}}" style="min-height: 40px; padding: 0 14px; border: 1px solid #C9D1D9; border-radius: 9px; background: #FFFFFF; font-weight: 700; cursor: pointer;">Voltar</button><button type="button" onClick="{{wizAvancar}}" disabled="{{wizBloq}}" style="min-height: 40px; padding: 0 14px; border: 0; border-radius: 9px; background: #17212B; color: #FFFFFF; font-weight: 700; cursor: pointer;">{{wizBtn}}</button></div>
+</section>
+</sc-if>
+
+<!-- AUDITORIA -->
+<sc-if value="{{isAud}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0 0 12px; color: #4B5563;">Registro imutável de quem fez o quê, quando e de onde. Guardado por 5 anos; IP mascarado na tela (LGPD).</p>
+<div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 14px;">
+<table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px;">
+<thead><tr style="text-align: left; font-size: 12px; text-transform: uppercase; color: #4B5563;"><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Quando</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Quem</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Ação</th><th scope="col" style="padding: 10px 14px; border-bottom: 1px solid #DCE1E6;">Origem</th></tr></thead>
+<tbody><sc-for list="{{logAll}}" as="l" hint-placeholder-count="8"><tr><td style="padding: 9px 14px; border-bottom: 1px solid #EEF1F4; white-space: nowrap; font-variant-numeric: tabular-nums;">{{l.quando}}</td><td style="padding: 9px 14px; border-bottom: 1px solid #EEF1F4; font-weight: 600;">{{l.quem}}</td><td style="padding: 9px 14px; border-bottom: 1px solid #EEF1F4;">{{l.acao}}</td><td style="padding: 9px 14px; border-bottom: 1px solid #EEF1F4; color: #4B5563;">{{l.ip}}</td></tr></sc-for></tbody>
+</table>
+</div>
+</sc-if>
+
+
+<!-- MÓDULO GENÉRICO (lista + detalhe) -->
+<sc-if value="{{isGen}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0 0 14px; max-width: 96ch; color: #4B5563;">{{gen.intro}}</p>
+<sc-if value="{{gen.temKpis}}" hint-placeholder-val="{{false}}">
+<dl style="margin: 0 0 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;">
+<sc-for list="{{gen.kpis}}" as="k" hint-placeholder-count="4"><div style="padding: 12px 14px; border-radius: 12px; background: #FFFFFF; border: 1px solid #DCE1E6; border-left: 4px solid {{k.cor}};"><dt style="font-size: 13px; color: #4B5563;">{{k.l}}</dt><dd style="margin: 0; font-size: 24px; font-weight: 800;">{{k.v}}</dd></div></sc-for>
+</dl>
+</sc-if>
+<sc-if value="{{gen.temTabs}}" hint-placeholder-val="{{false}}">
+<div role="tablist" aria-label="Seções do módulo" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+<sc-for list="{{gen.tabs}}" as="t" hint-placeholder-count="3"><button type="button" role="tab" aria-selected="{{t.sel}}" onClick="{{t.go}}" style="min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.bd}}; background: {{t.bg}}; color: {{t.fg}}; font-weight: 600; cursor: pointer;">{{t.t}}</button></sc-for>
+</div>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;">
+<div style="flex: 1 1 620px; min-width: 0;">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px;"><span style="font-size: 14px; color: #4B5563;">{{gen.count}}</span><sc-if value="{{gen.temNovo}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{gen.novo}}" disabled="{{gen.semEdicao}}" style="min-height: 38px; padding: 0 14px; border: 0; border-radius: 9px; background: {{acc}}; color: #FFFFFF; font-weight: 700; cursor: pointer;">+ Adicionar</button></sc-if></div>
+<div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 14px;">
+<table style="width: 100%; min-width: 640px; border-collapse: collapse; font-size: 14px;">
+<thead><tr style="text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #4B5563;"><sc-for list="{{gen.cols}}" as="c" hint-placeholder-count="5"><th scope="col" style="padding: 10px 12px; border-bottom: 1px solid #DCE1E6;">{{c}}</th></sc-for></tr></thead>
+<tbody><sc-for list="{{gen.rows}}" as="r" hint-placeholder-count="6"><tr class="row" style="background: {{r.bg}};">
+<sc-for list="{{r.cells}}" as="c" hint-placeholder-count="5"><td style="padding: 10px 12px; border-bottom: 1px solid #EEF1F4; vertical-align: top;">
+<sc-if value="{{c.primeiro}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{r.abrir}}" style="background: none; border: 0; padding: 0; font-weight: 700; color: #17212B; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: #C9D1D9; text-underline-offset: 3px;">{{c.v}}</button></sc-if>
+<sc-if value="{{c.chip}}" hint-placeholder-val="{{false}}"><span style="padding: 2px 9px; border-radius: 999px; background: {{c.bg}}; color: {{c.fg}}; font-size: 12px; font-weight: 700; white-space: nowrap;">{{c.v}}</span></sc-if>
+<sc-if value="{{c.txt}}" hint-placeholder-val="{{true}}"><span style="color: {{c.cor}};">{{c.v}}</span></sc-if>
+</td></sc-for>
+</tr></sc-for></tbody>
+</table>
+</div>
+</div>
+<sc-if value="{{gen.temSel}}" hint-placeholder-val="{{false}}">
+<aside aria-label="Detalhe" style="flex: 0 1 380px; min-width: 300px; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;">
+<div style="display: flex; justify-content: space-between; gap: 10px; align-items: flex-start;"><h2 style="margin: 0; font-size: 17px; line-height: 1.3;">{{gen.selTitulo}}</h2><button type="button" onClick="{{gen.fechar}}" aria-label="Fechar detalhe" style="background: none; border: 0; font-size: 20px; line-height: 1; cursor: pointer;">×</button></div>
+<sc-for list="{{gen.campos}}" as="f" hint-placeholder-count="5"><div style="display: flex; flex-direction: column; gap: 3px;">
+<span style="font-size: 13px; font-weight: 600;">{{f.label}}</span>
+<sc-if value="{{f.isTxt}}" hint-placeholder-val="{{true}}"><input aria-label="{{f.label}}" value="{{f.v}}" onChange="{{f.set}}" disabled="{{f.off}}" style="min-height: 38px; padding: 0 10px; border: 1px solid #6B7684; border-radius: 8px;"></sc-if>
+<sc-if value="{{f.isArea}}" hint-placeholder-val="{{false}}"><textarea aria-label="{{f.label}}" rows="3" value="{{f.v}}" onChange="{{f.set}}" disabled="{{f.off}}" style="padding: 8px 10px; border: 1px solid #6B7684; border-radius: 8px;"></textarea></sc-if>
+<sc-if value="{{f.isSel}}" hint-placeholder-val="{{false}}"><select aria-label="{{f.label}}" value="{{f.v}}" onChange="{{f.set}}" disabled="{{f.off}}" style="min-height: 38px; padding: 0 8px; border: 1px solid #6B7684; border-radius: 8px; background: #FFFFFF;"><sc-for list="{{f.opts}}" as="o" hint-placeholder-count="3"><option value="{{o}}">{{o}}</option></sc-for></select></sc-if>
+<sc-if value="{{f.isRO}}" hint-placeholder-val="{{false}}"><span style="padding: 8px 10px; border-radius: 8px; background: #F4F6F8;">{{f.v}}</span></sc-if>
+</div></sc-for>
+<sc-if value="{{gen.temAviso}}" hint-placeholder-val="{{false}}"><p role="alert" style="margin: 0; padding: 8px 10px; border-radius: 8px; background: #FCEFD9; font-size: 13px;">{{gen.aviso}}</p></sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;"><sc-for list="{{gen.acoes}}" as="a" hint-placeholder-count="2"><button type="button" onClick="{{a.go}}" disabled="{{a.off}}" style="min-height: 38px; padding: 0 14px; border-radius: 9px; border: 1px solid {{a.bd}}; background: {{a.bg}}; color: {{a.fg}}; font-weight: 700; cursor: pointer;">{{a.t}}</button></sc-for></div>
+</aside>
+</sc-if>
+</div>
+<p style="margin: 14px 0 0; max-width: 120ch; font-size: 12px; color: #4B5563;"><strong style="font-weight: 600;">Base legal:</strong> {{gen.base}}</p>
+</sc-if>
+
+<!-- IDENTIDADE DO ÓRGÃO -->
+<sc-if value="{{isIdent}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0 0 14px; max-width: 90ch; color: #4B5563;">Nível 1 do tema: dados e marca que aparecem no cabeçalho, no rodapé, nos cards e nas páginas de contato. Campos entre colchetes ainda não foram informados.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start;">
+<form onSubmit="{{noSubmit}}" style="flex: 1 1 520px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px;">
+<sc-for list="{{idCampos}}" as="f" hint-placeholder-count="10"><label style="display: flex; flex-direction: column; gap: 3px; font-size: 13px; font-weight: 600;">{{f.label}}<input value="{{f.v}}" onChange="{{f.set}}" disabled="{{idBloq}}" style="min-height: 40px; padding: 0 10px; border: 1px solid {{f.bd}}; border-radius: 8px; font-weight: 400; font-size: 15px;"></label></sc-for>
+<div style="grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;"><span style="font-size: 13px; font-weight: 600;">Cor principal</span><sc-for list="{{idCores}}" as="c" hint-placeholder-count="4"><button type="button" onClick="{{c.go}}" aria-label="Cor {{c.v}}" aria-pressed="{{c.sel}}" disabled="{{idBloq}}" style="width: 34px; height: 34px; border-radius: 50%; background: {{c.v}}; border: 3px solid {{c.bd}}; cursor: pointer;"></button></sc-for></div>
+<div style="grid-column: 1 / -1; display: flex; gap: 8px;"><button type="button" onClick="{{idSalvar}}" disabled="{{idBloq}}" style="min-height: 42px; padding: 0 16px; border: 0; border-radius: 9px; background: {{acc}}; color: #FFFFFF; font-weight: 700; cursor: pointer;">Salvar identidade</button></div>
+</form>
+<aside style="flex: 0 1 380px; min-width: 300px; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 16px;">
+<h2 style="margin: 0 0 10px; font-size: 15px;">Prévia</h2>
+<div style="border: 1px solid #DCE1E6; border-radius: 12px; overflow: hidden; font-size: 12px;">
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #FFFFFF; border-bottom: 4px solid {{acc}};"><span style="width: 34px; height: 34px; border-radius: 50%; background: #FFFFFF; border: 1px solid #DCE1E6; display: inline-flex; align-items: center; justify-content: center;"><img src="/_blob/79fc486baceda13dd406893eb98e8d87" alt="" style="width: 26px; height: auto;"></span><strong style="font-size: 14px;">{{idv.nome}}</strong></div>
+<div style="height: 70px; background: linear-gradient(135deg, {{acc}}, #8FA3B5);"></div>
+<div style="padding: 12px; background: #17212B; color: #C9D1D9; line-height: 1.6;"><strong style="color: #FFFFFF;">{{idv.nome}}</strong><br>{{idv.endereco}}<br>{{idv.tel}} · {{idv.email}}<br>{{idv.horario}}<br>CNPJ {{idv.cnpj}}<br>Encarregado de dados: {{idv.enc}}</div>
+</div>
+</aside>
+</div>
+<p style="margin: 14px 0 0; font-size: 12px; color: #4B5563;"><strong style="font-weight: 600;">Base legal:</strong> LAI, art. 8º, § 1º, I (endereços, telefones e horários); LGPD, art. 41 (identidade e contato do encarregado); Lei 13.460/2017 (Carta de Serviços).</p>
+</sc-if>
+
+<!-- SESSÕES -->
+<sc-if value="{{isSess}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0 0 14px; max-width: 96ch; color: #4B5563;">Cada sessão reúne pauta, presença, votação nominal, ata e vídeo. As datas são reais; pautas antigas, presença e votos são registrados aqui pela Secretaria Legislativa e publicados no portal.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;">
+<ul style="flex: 0 1 320px; min-width: 260px; list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;">
+<sc-for list="{{sessoes}}" as="x" hint-placeholder-count="6"><li><button type="button" onClick="{{x.go}}" aria-current="{{x.cur}}" style="width: 100%; text-align: left; padding: 10px 12px; border-radius: 12px; border: 2px solid {{x.bd}}; background: #FFFFFF; cursor: pointer;"><strong style="display: block;">{{x.nome}}</strong><span style="font-size: 13px; color: #4B5563;">{{x.data}}</span><span style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;"><sc-for list="{{x.docs}}" as="d" hint-placeholder-count="4"><span style="padding: 1px 7px; border-radius: 6px; background: {{d.bg}}; color: {{d.fg}}; font-size: 11px; font-weight: 700;">{{d.t}}</span></sc-for></span></button></li></sc-for>
+</ul>
+<section style="flex: 1 1 560px; min-width: 0; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; padding: 18px;">
+<h2 style="margin: 0 0 4px; font-size: 20px;">{{sx.nome}}</h2>
+<p style="margin: 0 0 12px; color: #4B5563;">{{sx.data}} · Plenário da Câmara</p>
+<div role="tablist" aria-label="Partes da sessão" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;"><sc-for list="{{sxAbas}}" as="t" hint-placeholder-count="4"><button type="button" role="tab" aria-selected="{{t.sel}}" onClick="{{t.go}}" style="min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid {{t.bd}}; background: {{t.bg}}; color: {{t.fg}}; font-weight: 600; cursor: pointer;">{{t.t}}</button></sc-for></div>
+<sc-if value="{{sxPauta}}" hint-placeholder-val="{{true}}">
+<ol style="margin: 0 0 12px; padding-left: 20px; display: grid; gap: 6px;"><sc-for list="{{sx.pauta}}" as="p" hint-placeholder-count="3"><li>{{p}}</li></sc-for></ol>
+</sc-if>
+<sc-if value="{{sxPres}}" hint-placeholder-val="{{false}}">
+<ul style="list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px;"><sc-for list="{{sx.pres}}" as="v" hint-placeholder-count="9"><li style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid #EEF1F4;"><span style="font-weight: 600;">{{v.nome}}</span><span role="radiogroup" aria-label="Presença de {{v.nome}}" style="display: flex; gap: 4px;"><sc-for list="{{v.opts}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.sel}}" onClick="{{o.go}}" disabled="{{sxBloq}}" style="min-height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid {{o.bd}}; background: {{o.bg}}; color: {{o.fg}}; font-size: 13px; font-weight: 600; cursor: pointer;">{{o.t}}</button></sc-for></span></li></sc-for></ul>
+</sc-if>
+<sc-if value="{{sxVotos}}" hint-placeholder-val="{{false}}">
+<sc-for list="{{sx.votos}}" as="it" hint-placeholder-count="2"><div style="margin-bottom: 14px; padding: 12px; border-radius: 12px; background: #F7F9FB;"><strong style="display: block; margin-bottom: 6px;">{{it.t}}</strong><span style="display: block; margin-bottom: 6px; font-size: 13px; color: #4B5563;">{{it.placar}}</span>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 4px;"><sc-for list="{{it.vs}}" as="v" hint-placeholder-count="9"><li style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; align-items: center;"><span style="font-size: 14px;">{{v.nome}}</span><span style="display: flex; gap: 4px;"><sc-for list="{{v.opts}}" as="o" hint-placeholder-count="4"><button type="button" aria-pressed="{{o.sel}}" onClick="{{o.go}}" disabled="{{sxBloq}}" style="min-height: 28px; padding: 0 8px; border-radius: 7px; border: 1px solid {{o.bd}}; background: {{o.bg}}; color: {{o.fg}}; font-size: 12px; font-weight: 600; cursor: pointer;">{{o.t}}</button></sc-for></span></li></sc-for></ul></div></sc-for>
+</sc-if>
+<sc-if value="{{sxAta}}" hint-placeholder-val="{{false}}">
+<label style="display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px; margin-bottom: 12px;">Texto da ata<textarea rows="8" value="{{sx.ata}}" onChange="{{onAta}}" disabled="{{sxBloq}}" style="padding: 10px 12px; border: 1px solid #6B7684; border-radius: 9px; font-weight: 400;"></textarea></label>
+<label style="display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px; margin-bottom: 12px;">Vídeo da sessão<select value="{{sx.video}}" onChange="{{onVideo}}" disabled="{{sxBloq}}" style="min-height: 40px; padding: 0 8px; border: 1px solid #6B7684; border-radius: 8px; background: #FFFFFF; font-weight: 400;"><sc-for list="{{videoOpts}}" as="o" hint-placeholder-count="3"><option value="{{o}}">{{o}}</option></sc-for></select></label>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; border-top: 1px solid #EEF1F4;"><sc-for list="{{sxAcoes}}" as="a" hint-placeholder-count="2"><button type="button" onClick="{{a.go}}" disabled="{{a.off}}" style="min-height: 40px; padding: 0 14px; border-radius: 9px; border: 1px solid {{a.bd}}; background: {{a.bg}}; color: {{a.fg}}; font-weight: 700; cursor: pointer;">{{a.t}}</button></sc-for></div>
+<p style="margin: 10px 0 0; font-size: 12px; color: #4B5563;">{{sxNota}}</p>
+</section>
+</div>
+<p style="margin: 14px 0 0; font-size: 12px; color: #4B5563;"><strong style="font-weight: 600;">Base legal:</strong> PNTP 2026, critérios 20.4 (pauta), 20.6 (atas com presença), 20.7 (votações nominais) e 20.9 (transmissão); Regimento Interno da Câmara.</p>
+</sc-if>
+
+<!-- BIBLIOTECA DE MÍDIA -->
+<sc-if value="{{isMidia}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0 0 14px; max-width: 96ch; color: #4B5563;">Toda imagem tem crédito, licença e texto alternativo. Sem texto alternativo, a imagem não pode ser publicada (eMAG). Fotos com rostos de pessoas que não são agentes públicos pedem autorização de uso de imagem (LGPD).</p>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px;"><span style="font-size: 14px; color: #4B5563;">{{midiaResumo}}</span><button type="button" onClick="{{midiaEnviar}}" style="min-height: 38px; padding: 0 14px; border: 0; border-radius: 9px; background: {{acc}}; color: #FFFFFF; font-weight: 700; cursor: pointer;">+ Enviar arquivo</button></div>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px;">
+<sc-for list="{{midia}}" as="m" hint-placeholder-count="6"><li style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;">
+<span style="position: relative; display: block; aspect-ratio: 4 / 3; background: #EEF2F6;"><img src="{{m.src}}" alt="{{m.alt}}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: {{m.fit}};"><span style="position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 999px; background: {{m.chBg}}; color: {{m.chFg}}; font-size: 11px; font-weight: 700;">{{m.ch}}</span></span>
+<span style="padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;"><strong>{{m.nome}}</strong><span style="font-size: 12px; color: #4B5563;">{{m.credito}}</span>
+<label style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; font-weight: 600;">Texto alternativo<input value="{{m.alt}}" onChange="{{m.set}}" placeholder="Descreva o que a imagem mostra" style="min-height: 34px; padding: 0 8px; border: 1px solid {{m.bd}}; border-radius: 7px; font-weight: 400;"></label></span>
+</li></sc-for>
+</ul>
+<p style="margin: 14px 0 0; font-size: 12px; color: #4B5563;"><strong style="font-weight: 600;">Base legal:</strong> Lei 13.146/2015, art. 63; eMAG 3.1 (texto alternativo); Lei 9.610/1998 (direitos autorais); LGPD, arts. 7º e 11.</p>
+</sc-if>
+
+<!-- MÓDULOS QUE JÁ EXISTIAM (Diário Oficial, Integrações e PNTP), EMBUTIDOS -->
+<sc-if value="{{isDiario}}" hint-placeholder-val="{{false}}"><dc-import name="Admin" embutido="{{true}}" secao="diario" hint-size="100%,900px" style="display: block; width: 100%; border: 1px solid #DCE1E6; border-radius: 16px; overflow: hidden;"></dc-import></sc-if>
+<sc-if value="{{isIntegPm}}" hint-placeholder-val="{{false}}"><dc-import name="Admin" embutido="{{true}}" secao="integracoes" hint-size="100%,900px" style="display: block; width: 100%; border: 1px solid #DCE1E6; border-radius: 16px; overflow: hidden;"></dc-import></sc-if>
+<sc-if value="{{isPntpPm}}" hint-placeholder-val="{{false}}"><dc-import name="Admin" embutido="{{true}}" secao="pntp" hint-size="100%,900px" style="display: block; width: 100%; border: 1px solid #DCE1E6; border-radius: 16px; overflow: hidden;"></dc-import></sc-if>
+
+</main>
+</div>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+const HOJE = '2026-11-06';
+const TEN = {
+  pm: { id: 'pm', nome: 'Prefeitura Municipal de Borá', curto: 'Prefeitura', tipo: 'executivo', tipoTxt: 'Poder Executivo', acc: '#1D4E89', banco: 'bd_pm_bora', tema: 'Tema base · nível 2 (blocos)', portal: 'Main.dc.html', dominio: '[domínio da Prefeitura]', conector: 'Fiorilli (API pública)' },
+  cm: { id: 'cm', nome: 'Câmara Municipal de Borá', curto: 'Câmara', tipo: 'legislativo', tipoTxt: 'Poder Legislativo', acc: '#2F5233', banco: 'bd_cm_bora', tema: 'Tema base · nível 2 (blocos)', portal: 'Camara.dc.html', dominio: 'camarabora.sp.gov.br', conector: 'Pronim / Cidade360 (exportação)' }
+};
+const ROLES = [
+  { id: 'dtic', label: 'Superadministrador (DTIC)', curto: 'DTIC', user: '[Analista DTIC]' },
+  { id: 'admin', label: 'Administrador do órgão', curto: 'Admin', user: '[Administrador]' },
+  { id: 'editor', label: 'Editor de conteúdo', curto: 'Editor', user: '[Editor(a)]' },
+  { id: 'pub', label: 'Publicador (Comunicação)', curto: 'Publicador', user: '[Publicador(a)]' },
+  { id: 'proc', label: 'Procuradoria / Controle interno', curto: 'Procuradoria', user: '[Procurador(a)]' }
+];
+// Classificação eleitoral: [chave, rótulo, descrição, efeito no defeso, cor fundo, cor texto, motivo]
+const CLASSES = [
+  ['pub', 'Publicidade institucional', 'Divulga atos, programas, obras, serviços ou campanhas do órgão', 'Suspenso', '#FBE4D8', '#7A2E0E', 'Vedada nos 3 meses antes do pleito (Lei 9.504, art. 73, VI, b).'],
+  ['agente', 'Menciona agente político', 'Nome, foto ou fala de prefeito, vice, secretário ou vereador', 'Suspenso', '#FBE4D8', '#7A2E0E', 'Associa o órgão a quem disputa a eleição; também vedada promoção pessoal (CF, art. 37, § 1º).'],
+  ['slogan', 'Marca ou slogan de gestão', 'Logomarca, slogan ou cores de uma administração', 'Trocar pelo brasão', '#FBE4D8', '#7A2E0E', 'Identidade de gestão é publicidade; o brasão oficial é símbolo do município e permanece.'],
+  ['util', 'Utilidade pública', 'Aviso de saúde, defesa civil, interdição, vacinação, prazos ao cidadão', 'Mantido, com revisão', '#FCEFD9', '#7A4A00', 'Informação necessária ao cidadão, sem nomes, fotos de agentes ou slogans. Em caso de dúvida, consultar a Procuradoria.'],
+  ['serv', 'Serviço ao cidadão', 'Carta de serviços, como pedir, horários, endereços', 'Mantido', '#E3F2E9', '#146C43', 'Lei 13.460/2017 (Carta de Serviços) e Lei 14.129/2021 (Governo Digital).'],
+  ['transp', 'Transparência obrigatória', 'Despesas, receitas, pessoal, contratos, relatórios fiscais, composição da Câmara', 'Mantido', '#E3F2E9', '#146C43', 'Exigida por LRF, LAI e PNTP; não é publicidade.'],
+  ['ato', 'Ato oficial', 'Leis, decretos, editais, licitações, concursos, pautas e atas', 'Mantido', '#E3F2E9', '#146C43', 'Publicação legal obrigatória (Lei 14.133/2021, LAI, Lei Orgânica).']
+];
+const CL = {}; CLASSES.forEach((c) => { CL[c[0]] = c; });
+const VEDADAS = ['pub', 'agente', 'slogan'];
+const TIPOS = ['Notícia', 'Página', 'Banner', 'Aviso', 'Documento', 'Galeria'];
+const SECOES = { pm: ['Notícias', 'Serviços', 'Transparência', 'Cidade', 'Página inicial'], cm: ['Notícias', 'Vereadores', 'Sessões', 'Transparência', 'Página inicial'] };
+const STATUS = ['Rascunho', 'Em revisão', 'Devolvido', 'Agendado', 'Publicado', 'Arquivado'];
+const ST_COR = { 'Rascunho': ['#EEF0F3', '#374151'], 'Em revisão': ['#E5EEFB', '#1D4E89'], 'Devolvido': ['#FCEFD9', '#7A4A00'], 'Agendado': ['#EDE7F6', '#5B3B8C'], 'Publicado': ['#E3F2E9', '#146C43'], 'Arquivado': ['#EEF0F3', '#6B7280'], 'Suspenso (defeso)': ['#FBE4D8', '#7A2E0E'] };
+// Conteúdos de exemplo [id, órgão, tipo, seção, título, resumo, classe, status, autor, atualizado, publicar]
+const IT0 = [
+  ['c1', 'pm', 'Aviso', 'Serviços', 'Vacinação contra a gripe nas unidades de saúde', 'Doses para idosos, gestantes e crianças, de segunda a sexta, 8h às 16h.', 'util', 'Publicado', '[Editor(a)]', '04/11/2026', '2026-11-04'],
+  ['c2', 'pm', 'Notícia', 'Notícias', '[Prefeito] entrega a reforma da quadra do Balneário', 'Exemplo de notícia com nome e foto de agente político.', 'agente', 'Publicado', '[Editor(a)]', '30/10/2026', '2026-10-30'],
+  ['c3', 'pm', 'Banner', 'Página inicial', 'Banner “[slogan da gestão] 2025–2028”', 'Exemplo de banner com slogan de administração.', 'slogan', 'Publicado', '[Comunicação]', '02/02/2026', '2026-02-02'],
+  ['c4', 'pm', 'Página', 'Serviços', 'IPTU 2027: como emitir a guia e pedir isenção', 'Prazos, documentos e canais de atendimento.', 'serv', 'Rascunho', '[Editor(a)]', '05/11/2026', ''],
+  ['c5', 'pm', 'Notícia', 'Notícias', 'Recapeamento da Rua 31 de Agosto começa em dezembro', 'Exemplo de divulgação de obra.', 'pub', 'Em revisão', '[Editor(a)]', '06/11/2026', ''],
+  ['c6', 'pm', 'Documento', 'Transparência', 'Edital de concurso público nº [1]/2026', 'Edital, cronograma e anexos.', 'ato', 'Publicado', '[RH]', '20/10/2026', '2026-10-20'],
+  ['c7', 'pm', 'Galeria', 'Cidade', 'Fotos do Rodeio de Borá 2026', 'Exemplo de galeria de evento apoiado pela Prefeitura.', 'pub', 'Agendado', '[Comunicação]', '05/11/2026', '2026-11-10'],
+  ['c8', 'pm', 'Aviso', 'Serviços', 'Interdição parcial da vicinal Borá–Quatá', 'Desvio sinalizado pelo Bairro Aguinha durante a manutenção.', 'util', 'Devolvido', '[Editor(a)]', '05/11/2026', ''],
+  ['k1', 'cm', 'Notícia', 'Notícias', 'Câmara aprova a LOA 2027 em 1º turno', 'Exemplo de notícia institucional do Legislativo.', 'pub', 'Rascunho', '[Editor(a)]', '06/11/2026', ''],
+  ['k2', 'cm', 'Notícia', 'Notícias', '[Vereador(a)] apresenta indicação para a vicinal', 'Exemplo de notícia que promove um vereador.', 'agente', 'Publicado', '[Editor(a)]', '28/10/2026', '2026-10-28'],
+  ['k3', 'cm', 'Documento', 'Sessões', 'Pauta da 18ª Sessão Ordinária (16/11/2026)', 'Ordem do dia e documentos da sessão.', 'ato', 'Agendado', '[Secretaria]', '06/11/2026', '2026-11-13'],
+  ['k4', 'cm', 'Página', 'Vereadores', 'Composição e Mesa Diretora da 15ª Legislatura', 'Nomes, partidos e cargos (PNTP 20.1).', 'transp', 'Publicado', '[Secretaria]', '06/11/2026', '2025-01-01'],
+  ['k5', 'cm', 'Banner', 'Página inicial', 'Audiência pública da LOA 2027 — 12/11, 19h', 'Convite à população para a audiência no Plenário.', 'util', 'Publicado', '[Comunicação]', '03/11/2026', '2026-11-03']
+];
+const mkItem = (r) => ({ id: r[0], ten: r[1], tipo: r[2], sec: r[3], titulo: r[4], res: r[5], txt: '', classe: r[6], status: r[7], autor: r[8], data: r[9], pub: r[10], exp: '', com: r[0] === 'c8' ? 'Tirar a foto do secretário e informar o prazo previsto da interdição.' : '', exc: '', hist: [{ v: 1, quando: r[9], quem: r[8], o: 'Criação' }] });
+// Funcionalidades [chave, nome, descrição, órgãos, obrigatória?, base legal]
+const MODS = [
+  ['transp', 'Portal da Transparência', 'Receitas, despesas, pessoal, contratos, relatórios fiscais', 'pm cm', true, 'LRF, arts. 48 e 48-A; LAI, art. 8º; PNTP 2026'],
+  ['sic', 'e-SIC (pedido de informação)', 'Pedidos com protocolo, prazos e recursos', 'pm cm', true, 'LAI, arts. 10 a 15'],
+  ['ouv', 'Ouvidoria', 'Manifestações com protocolo e acompanhamento', 'pm cm', true, 'Lei 13.460/2017, arts. 10 a 13'],
+  ['dados', 'Dados abertos', 'Bases em CSV e JSON com API', 'pm cm', true, 'LAI, art. 8º, § 3º; Lei 14.129/2021'],
+  ['carta', 'Carta de Serviços', 'Serviços, requisitos, prazos e canais', 'pm', true, 'Lei 13.460/2017, art. 7º'],
+  ['licit', 'Licitações e contratos (PNCP)', 'Editais, atas, contratos e itens', 'pm cm', true, 'Lei 14.133/2021, arts. 94 e 174'],
+  ['ver', 'Vereadores e Mesa Diretora', 'Perfis, Mesas e galeria de legislaturas', 'cm', true, 'PNTP 2026, critério 20.1'],
+  ['sess', 'Sessões e votações', 'Pautas, atas, presença e votação nominal', 'cm', true, 'PNTP 2026, critérios 20.4 a 20.7'],
+  ['prop', 'Proposições', 'Projetos com autor, relator e tramitação', 'cm', true, 'PNTP 2026, critérios 20.2 e 20.3'],
+  ['emend', 'Emendas impositivas', 'Emendas por vereador e execução na Prefeitura', 'cm', false, 'STF, ADPF 854 (rastreabilidade)'],
+  ['transm', 'Transmissões ao vivo', 'Sessões e audiências com gravação', 'cm', true, 'PNTP 2026, critério 20.9'],
+  ['transmpm', 'Transmissões ao vivo', 'Audiências públicas e eventos oficiais', 'pm', false, ''],
+  ['diario', 'Diário Oficial eletrônico', 'Atos assinados com ICP-Brasil, por edição', 'pm', false, 'Lei Orgânica do Município (se instituído por lei)'],
+  ['bi', 'Painel de indicadores', 'Saúde, educação, social e gestão', 'pm', false, ''],
+  ['noticias', 'Notícias', 'Publicação de notícias e avisos', 'pm cm', false, ''],
+  ['agenda', 'Agenda de autoridades', 'Compromissos públicos do prefeito e secretários', 'pm', false, 'Boa prática (Lei 12.813/2013 no âmbito federal)'],
+  ['galeria', 'Galerias de fotos e vídeos', 'Álbuns de eventos e obras', 'pm cm', false, ''],
+  ['redes', 'Redes sociais no portal', 'Feeds de Instagram, Facebook e YouTube', 'pm cm', false, '']
+];
+const MOD_ON0 = { pm: { transmpm: true, diario: true, bi: true, noticias: true, agenda: false, galeria: true, redes: true }, cm: { emend: true, noticias: true, galeria: false, redes: true } };
+// Blocos da página inicial [chave, nome, descrição, variações, fixo?, classe eleitoral, altura prévia]
+const BLOCOS = {
+  pm: [['hero', 'Destaque com foto', 'Foto da cidade com busca', ['Foto inteira', 'Foto + texto ao lado'], false, '', 46], ['busca', 'Busca e acesso direto', 'Atalhos para serviços e transparência', ['Cartões', 'Lista'], true, '', 22], ['servicos', 'Serviços mais procurados', 'Cartões com imagem em degradê', ['Cartões com foto', 'Ícones'], false, '', 34], ['painel', 'Borá em números', 'Indicadores do painel de BI', ['Números', 'Gráfico'], false, '', 26], ['noticias', 'Notícias', 'Últimas notícias publicadas', ['3 colunas', 'Lista'], false, 'pub', 30], ['banner', 'Banner da gestão', 'Campanhas e slogans', ['Faixa larga', 'Card'], false, 'slogan', 18], ['agenda', 'Agenda', 'Próximos eventos e audiências', ['Linha do tempo', 'Lista'], false, '', 20], ['cidade', 'Conheça Borá', 'Mosaico de fotos e história', ['Mosaico', 'Carrossel'], false, '', 30], ['redes', 'Redes sociais', 'Últimas postagens', ['Faixa', 'Grade'], false, 'pub', 16]],
+  cm: [['live', 'Transmissão ao vivo', 'Aparece quando há sessão no ar', ['Faixa', 'Player grande'], false, '', 22], ['hero', 'Destaque com foto do prédio', 'Próxima sessão e busca', ['Foto inteira', 'Foto + texto'], false, '', 40], ['atalhos', 'Acesso direto', 'Sessões, projetos, gastos, fale com a Câmara', ['Cartões', 'Lista'], true, '', 20], ['ver', 'Vereadores e Mesa Diretora', 'Cards com presidente em destaque', ['Grade', 'Carrossel'], true, 'transp', 40], ['contas', 'Prestação de contas + Emendas', 'Lado a lado 55% / 45%', ['Lado a lado', 'Empilhado'], false, '', 30], ['noticias', 'Notícias da Câmara', 'Últimas notícias', ['3 colunas', 'Lista'], false, 'pub', 26], ['sessoes', 'Últimas sessões e projetos', 'Listas resumidas', ['Duas colunas', 'Abas'], false, '', 26]]
+};
+// Usuários de exemplo (marcadores). CPF sempre mascarado na tela (LGPD).
+const USU0 = {
+  pm: [
+    { id: 'u1', nome: '[Analista DTIC]', email: '[analista]@[dominio].sp.gov.br', cpf: '***.***.***-12', setor: 'DTIC', perfil: 'dtic', escopo: 'Todos os órgãos', st: 'Ativo', mfa: 'Ativo', ultimo: '06/11/2026 09:12', validade: '' },
+    { id: 'u2', nome: '[Administrador]', email: '[gabinete]@[dominio].sp.gov.br', cpf: '***.***.***-34', setor: 'Gabinete', perfil: 'admin', escopo: 'Prefeitura inteira', st: 'Ativo', mfa: 'Ativo', ultimo: '06/11/2026 08:40', validade: '' },
+    { id: 'u3', nome: '[Editor(a)]', email: '[comunicacao]@[dominio].sp.gov.br', cpf: '***.***.***-56', setor: 'Comunicação', perfil: 'editor', escopo: 'Notícias, Serviços, Página inicial', st: 'Ativo', mfa: 'Ativo', ultimo: '06/11/2026 09:10', validade: '' },
+    { id: 'u4', nome: '[Publicador(a)]', email: '[secom]@[dominio].sp.gov.br', cpf: '***.***.***-78', setor: 'Comunicação', perfil: 'pub', escopo: 'Todas as seções', st: 'Ativo', mfa: 'Ativo', ultimo: '05/11/2026 17:05', validade: '' },
+    { id: 'u5', nome: '[Procurador(a)]', email: '[procuradoria]@[dominio].sp.gov.br', cpf: '***.***.***-90', setor: 'Procuradoria Jurídica', perfil: 'proc', escopo: 'Período eleitoral', st: 'Ativo', mfa: 'Pendente', ultimo: '28/10/2026 14:22', validade: '' },
+    { id: 'u6', nome: '[Servidor(a) do RH]', email: '[rh]@[dominio].sp.gov.br', cpf: '***.***.***-11', setor: 'Recursos Humanos', perfil: 'editor', escopo: 'Transparência · Pessoal e concursos', st: 'Ativo', mfa: 'Ativo', ultimo: '20/10/2026 10:02', validade: '' },
+    { id: 'u7', nome: '[Estagiário(a)]', email: '[estagio]@[dominio].sp.gov.br', cpf: '***.***.***-22', setor: 'Comunicação', perfil: 'editor', escopo: 'Galerias', st: 'Convite enviado', mfa: 'Pendente', ultimo: '—', validade: '2026-12-19' },
+    { id: 'u8', nome: '[Ex-servidor(a)]', email: '[antigo]@[dominio].sp.gov.br', cpf: '***.***.***-33', setor: 'Saúde', perfil: 'editor', escopo: 'Serviços · Saúde', st: 'Suspenso', mfa: 'Ativo', ultimo: '12/08/2026 16:40', validade: '' }
+  ],
+  cm: [
+    { id: 'u1', nome: '[Analista DTIC]', email: '[analista]@[dominio].sp.gov.br', cpf: '***.***.***-12', setor: 'DTIC (suporte)', perfil: 'dtic', escopo: 'Todos os órgãos', st: 'Ativo', mfa: 'Ativo', ultimo: '06/11/2026 09:12', validade: '' },
+    { id: 'c2', nome: '[Administrador]', email: '[diretoria]@camarabora.sp.gov.br', cpf: '***.***.***-44', setor: 'Diretoria da Câmara', perfil: 'admin', escopo: 'Câmara inteira', st: 'Ativo', mfa: 'Ativo', ultimo: '06/11/2026 08:31', validade: '' },
+    { id: 'c3', nome: '[Editor(a)]', email: '[secretaria]@camarabora.sp.gov.br', cpf: '***.***.***-55', setor: 'Secretaria Legislativa', perfil: 'editor', escopo: 'Sessões, Proposições, Vereadores', st: 'Ativo', mfa: 'Ativo', ultimo: '06/11/2026 08:40', validade: '' },
+    { id: 'c4', nome: '[Publicador(a)]', email: '[comunicacao]@camarabora.sp.gov.br', cpf: '***.***.***-66', setor: 'Diretoria da Câmara', perfil: 'pub', escopo: 'Todas as seções', st: 'Ativo', mfa: 'Ativo', ultimo: '03/11/2026 15:12', validade: '' },
+    { id: 'c5', nome: '[Procurador(a)]', email: '[juridico]@camarabora.sp.gov.br', cpf: '***.***.***-77', setor: 'Assessoria Jurídica da Câmara', perfil: 'proc', escopo: 'Período eleitoral', st: 'Convite enviado', mfa: 'Pendente', ultimo: '—', validade: '' }
+  ]
+};
+const ST_U = ['Ativo', 'Convite enviado', 'Suspenso'];
+
+const USERS = { pm: [['[Analista DTIC]', 'DTIC', 'dtic'], ['[Administrador]', 'Gabinete', 'admin'], ['[Editor(a)]', 'Comunicação', 'editor'], ['[Publicador(a)]', 'Comunicação', 'pub'], ['[Procurador(a)]', 'Procuradoria Jurídica', 'proc'], ['[RH]', 'Recursos Humanos', 'editor']], cm: [['[Analista DTIC]', 'DTIC (suporte)', 'dtic'], ['[Administrador]', 'Diretoria da Câmara', 'admin'], ['[Editor(a)]', 'Secretaria Legislativa', 'editor'], ['[Publicador(a)]', 'Diretoria da Câmara', 'pub'], ['[Procurador(a)]', 'Assessoria Jurídica da Câmara', 'proc']] };
+// Matriz de permissões: [permissão, dtic, admin, editor, pub, proc] (2 = sim, 1 = só leitura/parcial, 0 = não)
+const MATRIZ = [['Criar e editar conteúdo', 2, 2, 2, 2, 0], ['Aprovar e publicar', 2, 2, 0, 2, 0], ['Devolver com comentário', 2, 2, 0, 2, 1], ['Montar a página inicial (blocos)', 2, 2, 0, 1, 0], ['Ligar e desligar funcionalidades', 2, 2, 0, 0, 0], ['Montar o plano do período eleitoral', 2, 2, 0, 0, 1], ['Aprovar plano e exceções eleitorais', 0, 0, 0, 0, 2], ['Gerenciar usuários do órgão', 2, 2, 0, 0, 0], ['Cadastrar órgãos e temas', 2, 0, 0, 0, 0], ['Ver registro de ações', 2, 2, 1, 1, 2]];
+const LOG0 = [['06/11 09:12', '[Editor(a)]', 'Enviou para revisão: Recapeamento da Rua 31 de Agosto começa em dezembro', 'pm'], ['06/11 08:40', '[Secretaria]', 'Agendou: Pauta da 18ª Sessão Ordinária (16/11/2026)', 'cm'], ['05/11 17:05', '[Publicador(a)]', 'Devolveu: Interdição parcial da vicinal Borá–Quatá', 'pm'], ['05/11 16:20', '[Comunicação]', 'Agendou: Fotos do Rodeio de Borá 2026', 'pm'], ['05/11 10:02', '[Analista DTIC]', 'Atualizou o tema base para a versão 1.4 (homologação)', 'pm'], ['04/11 14:31', '[Publicador(a)]', 'Publicou: Vacinação contra a gripe nas unidades de saúde', 'pm']];
+const ELEICOES = {
+  nome: 'Eleições municipais 2028', pleito: '1º turno em 01/10/2028 (domingo); sem 2º turno em municípios com menos de 200 mil eleitores', janela: '01/07/2028 a 01/10/2028', ini: '2028-07-01', fim: '2028-10-01',
+  cargos: { pm: 'Prefeito e vice-prefeito em disputa: o Executivo municipal entra no defeso.', cm: 'Vereadores em disputa: a Câmara entra no defeso.' },
+  nota2026: 'Eleições gerais de 2026 (04/10 e 25/10/2026): cargos municipais não estavam em disputa. Pelo art. 73, § 3º, a vedação de publicidade não alcançou o município, mas continuou proibido usar o portal para promover candidatos estaduais ou federais.'
+};
+const diasEntre = (a, b) => Math.round((Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10)) - Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10))) / 86400000);
+const brData = (iso) => iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4) : '';
+const agora = () => { try { const d = new Date(); return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); } catch (e) { return '06/11 09:45'; } };
+
+// ===== Módulos genéricos (lista + detalhe) =====
+const addDias = (iso, n) => { const d = new Date(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10) + n)); return d.toISOString().slice(0, 10); };
+const prazoTxt = (iso) => { const n = diasEntre(HOJE, iso); return n < 0 ? 'vencido há ' + (-n) + (n === -1 ? ' dia' : ' dias') : n === 0 ? 'vence hoje' : n === 1 ? 'falta 1 dia' : 'faltam ' + n + ' dias'; };
+const CHIP = { verde: ['#E3F2E9', '#146C43'], vermelho: ['#FBE4D8', '#9B1C1C'], amarelo: ['#FCEFD9', '#7A4A00'], azul: ['#E5EEFB', '#1D4E89'], cinza: ['#EEF0F3', '#374151'], roxo: ['#EDE7F6', '#5B3B8C'] };
+const COR_ST = { 'Em dia': 'verde', 'Respondido': 'verde', 'Publicada': 'verde', 'Publicado': 'verde', 'Aprovado': 'verde', 'Aprovada': 'verde', 'Conferido': 'verde', 'OK': 'verde', 'Ativo': 'verde', 'Automático': 'verde', 'Concluído': 'verde', 'Deferida': 'verde', 'Respondida': 'verde', 'Com texto alternativo': 'verde', 'Atendido': 'verde', 'Real': 'verde',
+  'Atrasado': 'vermelho', 'Vencido': 'vermelho', 'Divergente': 'vermelho', 'Falha': 'vermelho', 'Bloqueado': 'vermelho', 'Negado': 'vermelho', 'Sem texto alternativo': 'vermelho', 'Pendente': 'vermelho', 'Rejeitada': 'vermelho', 'Crítico': 'vermelho',
+  'Em análise': 'azul', 'Recebido': 'azul', 'Recebida': 'azul', 'Encaminhada ao Executivo': 'azul', 'Lida em plenário': 'azul', 'Em tramitação': 'azul', 'Manual': 'azul', 'Agendada': 'azul', 'Inscrito': 'azul', 'Em moderação': 'azul', 'Informativo': 'azul',
+  'Prorrogado': 'amarelo', 'Em recurso': 'amarelo', 'Exemplo': 'amarelo', 'Aguardando': 'amarelo', 'Sem execução': 'amarelo', 'Atenção': 'amarelo', 'Foto ilustrativa': 'amarelo', 'Parcial': 'amarelo', 'A carregar': 'amarelo', 'Retirada': 'cinza', 'Arquivado': 'cinza', 'Não se aplica': 'cinza' };
+const chipDe = (v) => CHIP[COR_ST[v] || 'cinza'];
+const L = (iso) => brData(iso);
+// Vereadores — dados reais do portal da Câmara (06/11/2026)
+const VER_ROWS = [
+  ['Advaldo Celestino Teixeira', 'Du', 'PSD', '15ª (2025–2028)', 'Presidente 2025–2026', 63], ['Danilo Pietro', '', 'PODE', '15ª (2025–2028)', 'Vice-presidente 2025–2026', 51], ['Paulo Roberto Gonçalves Gusmão', 'Paulinho', 'MDB', '15ª (2025–2028)', '1º secretário 2025–2026', 99], ['Luis Antonio Vinhando', '', 'MDB', '15ª (2025–2028)', '2º secretário 2025–2026', 35], ['Cecilia Macedo de Amorim', '', 'PODE', '15ª (2025–2028)', '', 59], ['Igor Donisete Guido', '', 'PODE', '15ª (2025–2028)', '', 87], ['Ivanete Maximina de Carvalho', '', 'MDB', '15ª (2025–2028)', '', 38], ['Paulo Sergio dos Santos', 'Paulo Mecânico', 'MDB', '15ª (2025–2028)', '', 81], ['Pedro Correia da Costa', 'Pedro', 'PSD', '15ª (2025–2028)', '', 46],
+  ['Artur Roque Caldas', 'Artur', 'PSDB', '14ª (2021–2024)', 'Vice-presidente 2021–2022', 37], ['Cristiano Macedo', '', 'PSDB', '14ª (2021–2024)', '1º secretário 2021–2022', 29], ['Domilson Domingos dos Santos', 'Goiano', 'Republicanos', '14ª (2021–2024)', '', 51], ['João Antonio Nespoli', 'João do Posto', 'Republicanos', '14ª (2021–2024)', 'Presidente 2021–2022', 49], ['João Flavio Vieira', 'João Enfermeiro', 'Republicanos', '14ª (2021–2024)', '1º secretário 2023–2024', 62], ['Wilson Canato', 'Neno', 'PSD', '14ª (2021–2024)', '2º secretário 2021–2022', 30],
+  ['Angelo Aparecido da Silva', 'Nico', 'PSDB', '13ª (2017–2020)', 'Vice-presidente 2017–2018', 45], ['Edson Alves dos Santos', '', 'PT', '13ª (2017–2020)', 'Vice-presidente 2019–2020', 36], ['Robson Donley', 'Robson', 'PSB', '13ª (2017–2020)', '2º secretário 2017–2018', 56], ['Valdir Pedro da Silva', 'Tibira', 'PRB', '13ª (2017–2020)', '', 32]
+].map((v, i) => ({ id: 'v' + i, nome: v[0], apelido: v[1], partido: v[2], leg: v[3], mesa: v[4] || '—', votos: String(v[5]), foto: 'Foto ilustrativa', bio: '', contato: '' }));
+const INDIC_ROWS = [[1, 'Igor Donisete Guido', 'Curso de informática e uso de aplicativos bancários'], [2, 'Igor Donisete Guido', 'Frente de Trabalho para munícipes em vulnerabilidade'], [3, 'Igor Donisete Guido', 'Transporte para trabalhadores que atuam em outras cidades'], [4, 'Paulo Roberto Gonçalves Gusmão', 'Projeto de lei do Salário Mínimo Municipal de R$ 2.200'], [5, '—', 'Retirada pelo autor'], [6, 'Igor Donisete Guido', 'Fornecimento de próteses dentárias'], [7, 'Paulo Sergio dos Santos', '[ementa a importar]'], [8, 'Paulo Roberto Gonçalves Gusmão', 'Projeto “Meu Primeiro Emprego Boraense”'], [9, 'Igor Donisete Guido', 'QR Code nos postes para relatar falhas de iluminação'], [10, 'Paulo Roberto Gonçalves Gusmão', 'Revitalização da arena de areia do Balneário'], [11, 'Paulo Roberto Gonçalves Gusmão', 'Lombada na Rua Ver. Herculano Azevedo com Rua 31 de Agosto'], [12, 'Cecilia Macedo de Amorim', 'Programa de Estágio na Administração Pública'], [13, 'Igor Donisete Guido', 'Isenção de IPTU para doadores de sangue'], [14, 'Igor Donisete Guido', 'Enfermagem à noite, fins de semana e feriados'], [15, 'Igor Donisete Guido', 'Quiosque com cozinha e vestiário no balneário'], [16, 'Paulo Sergio dos Santos', 'Lombada próximo ao Sítio Olinda'], [17, 'Pedro Correia da Costa', 'Manutenção da vicinal Borá–Quatá (Bairro Aguinha)'], [18, 'Paulo Roberto Gonçalves Gusmão', 'Drenagem pluvial com canaletas em vicinal'], [19, 'Pedro Correia da Costa', 'Biblioteca e museu no prédio da creche']]
+  .reverse().map((x) => ({ id: 'i' + x[0], tipo: 'Indicação', num: x[0] + '/2026', autor: x[1], ementa: x[2], relator: '—', sit: x[0] === 5 ? 'Retirada' : x[0] >= 17 ? 'Lida em plenário' : 'Encaminhada ao Executivo', origem: 'Real' }));
+const PROP_ROWS = [{ id: 'p1', tipo: 'Projeto de Lei', num: '[32]/2026', autor: 'Poder Executivo', ementa: 'LOA 2027 — estima a receita e fixa a despesa', relator: 'Comissão de Finanças e Orçamento', sit: 'Em tramitação', origem: 'Exemplo' }, { id: 'p2', tipo: 'Requerimento', num: '3/2026', autor: 'Advaldo Celestino Teixeira', ementa: 'Estadualização da estrada vicinal Manoel Caldas', relator: '—', sit: 'Aprovado', origem: 'Real' }, { id: 'p3', tipo: 'Moção', num: '3/2025', autor: 'Igor Donisete Guido; Ivanete Maximina de Carvalho', ementa: 'Congratulação a campeão de rodeio do município', relator: '—', sit: 'Aprovada', origem: 'Real' }].concat(INDIC_ROWS);
+const B64 = (id) => '/_blob/' + id;
+const MIDIA = [
+  ['Brasão de Borá', B64('79fc486baceda13dd406893eb98e8d87'), 'Brasão do Município de Borá', 'Símbolo oficial do município', 'pm cm'], ['Vista aérea de Borá', B64('4f5bd93491764feff15b3ea1f3c5a85e'), 'Vista aérea da cidade de Borá', 'Acervo municipal (enviada pela Prefeitura)', 'pm'], ['Praça central', B64('887441ac482ea37439d1b5dc91fb941e'), 'Praça central de Borá com árvores e bancos', 'Acervo municipal (enviada pela Prefeitura)', 'pm'], ['Igreja matriz', B64('7d33961a017ae121513986cb68d82c5f'), '', 'Acervo municipal (enviada pela Prefeitura)', 'pm'], ['Prédio do Paço e da Câmara', B64('ad1fce202a11ca1cda37d6fafa190c72'), 'Fachada do prédio da Câmara Municipal de Borá', 'Acervo municipal (enviada pela Prefeitura)', 'pm cm'], ['Usina', B64('e47e8854f8cdd622e0f7ff94ecca88e4'), '', 'Acervo municipal (enviada pela Prefeitura)', 'pm'],
+  ['Retrato ilustrativo 1', B64('fb926394ab99c3fa0b6f13afa61d9f25'), 'Foto ilustrativa de banco de imagens', 'CC0 · Unsplash via Wikimedia Commons', 'cm'], ['Retrato ilustrativo 2', B64('3ac888601bab37d2a12f63d7ef49ee20'), 'Foto ilustrativa de banco de imagens', 'CC0 · Unsplash via Wikimedia Commons', 'cm'], ['Retrato ilustrativo 3', B64('0da7967571e6d1f68fbb363997e757f7'), 'Foto ilustrativa de banco de imagens', 'CC0 · Unsplash via Wikimedia Commons', 'cm'], ['Retrato ilustrativo 4', B64('d9797aa3016df2fcbb6534c7060cce9b'), 'Foto ilustrativa de banco de imagens', 'CC0 · Unsplash via Wikimedia Commons', 'cm']
+].map((m, i) => ({ id: 'm' + i, nome: m[0], src: m[1], alt: m[2], credito: m[3], orgaos: m[4] }));
+// Definições: cada módulo tem abas; cada aba tem colunas, campos do detalhe, ações e dados iniciais por órgão
+const GEN = {
+  vereadores: { label: 'Vereadores e legislaturas', orgaos: 'cm', mod: 'ver', intro: 'Cadastro que alimenta os cards, os perfis, a Mesa Diretora e a galeria de legislaturas do portal da Câmara. Nomes, partidos, votos e Mesas são dados reais; fotos oficiais e biografias faltam.', base: 'PNTP 2026, critérios 20.1 e 20.11; LAI, art. 8º.',
+    tabs: [{ id: 'ver', label: 'Vereadores', titulo: 'nome', cols: [['nome', 'Nome'], ['partido', 'Partido'], ['leg', 'Legislatura'], ['mesa', 'Cargo na Mesa'], ['votos', 'Votos'], ['foto', 'Foto', 1]], campos: [['nome', 'Nome civil', 'txt'], ['apelido', 'Nome parlamentar', 'txt'], ['partido', 'Partido', 'txt'], ['leg', 'Legislatura', 'sel', ['15ª (2025–2028)', '14ª (2021–2024)', '13ª (2017–2020)']], ['mesa', 'Cargo na Mesa', 'txt'], ['votos', 'Votos na eleição', 'txt'], ['foto', 'Foto', 'sel', ['Foto ilustrativa', 'Pendente', 'OK']], ['bio', 'Biografia (enviada pelo gabinete)', 'area'], ['contato', 'E-mail e telefone do gabinete', 'txt']], acoes: [['Marcar foto oficial recebida', { foto: 'OK' }, (r) => r.foto !== 'OK']], novo: { nome: 'Novo vereador', apelido: '', partido: '', leg: '15ª (2025–2028)', mesa: '—', votos: '', foto: 'Pendente', bio: '', contato: '' }, rows: { cm: VER_ROWS } },
+      { id: 'mesa', label: 'Mesas Diretoras', titulo: 'bienio', cols: [['bienio', 'Biênio'], ['pres', 'Presidente'], ['vice', 'Vice'], ['sec1', '1º secretário'], ['sec2', '2º secretário'], ['sit', 'Situação', 1]], campos: [['bienio', 'Biênio', 'ro'], ['pres', 'Presidente', 'txt'], ['vice', 'Vice-presidente', 'txt'], ['sec1', '1º secretário', 'txt'], ['sec2', '2º secretário', 'txt'], ['sit', 'Situação', 'sel', ['Ativo', 'Aguardando', 'Concluído']]], acoes: [['Registrar posse da nova Mesa', { sit: 'Ativo' }, (r) => r.sit === 'Aguardando']], novo: null,
+        rows: { cm: [{ id: 'b1', bienio: '2027–2028', pres: 'a eleger', vice: 'a eleger', sec1: 'a eleger', sec2: 'a eleger', sit: 'Aguardando' }, { id: 'b2', bienio: '2025–2026', pres: 'Advaldo Celestino Teixeira', vice: 'Danilo Pietro', sec1: 'Paulo Roberto Gonçalves Gusmão', sec2: 'Luis Antonio Vinhando', sit: 'Ativo' }, { id: 'b3', bienio: '2023–2024', pres: 'Paulo Roberto Gonçalves Gusmão', vice: 'João Antonio Nespoli', sec1: 'João Flavio Vieira', sec2: 'Paulo Sergio dos Santos', sit: 'Concluído' }, { id: 'b4', bienio: '2021–2022', pres: 'João Antonio Nespoli', vice: 'Artur Roque Caldas', sec1: 'Cristiano Macedo', sec2: 'Wilson Canato', sit: 'Concluído' }, { id: 'b5', bienio: '2019–2020', pres: 'Paulo Roberto Gonçalves Gusmão', vice: 'Edson Alves dos Santos', sec1: 'Robson Donley', sec2: 'Paulo Sergio dos Santos', sit: 'Concluído' }, { id: 'b6', bienio: '2017–2018', pres: 'Advaldo Celestino Teixeira', vice: 'Angelo Aparecido da Silva', sec1: 'Paulo Roberto Gonçalves Gusmão', sec2: 'Robson Donley', sit: 'Concluído' }] } }] },
+  proposicoes: { label: 'Proposições', orgaos: 'cm', mod: 'prop', intro: 'Projetos, indicações, requerimentos e moções, com autor, relator e tramitação. As indicações de 2026 são reais (portal da Câmara, 06/11/2026); o projeto da LOA é exemplo de estrutura.', base: 'PNTP 2026, critérios 20.2 e 20.3; Regimento Interno.',
+    tabs: [{ id: 'prop', label: 'Todas', titulo: 'ementa', cols: [['tipo', 'Tipo'], ['num', 'Número'], ['ementa', 'Ementa'], ['autor', 'Autoria'], ['sit', 'Situação', 1], ['origem', 'Dado', 1]], campos: [['tipo', 'Tipo', 'sel', ['Projeto de Lei', 'Projeto de Resolução', 'Projeto de Decreto Legislativo', 'Indicação', 'Requerimento', 'Moção']], ['num', 'Número', 'txt'], ['ementa', 'Ementa', 'area'], ['autor', 'Autoria', 'txt'], ['relator', 'Relator / Comissão', 'txt'], ['sit', 'Situação', 'sel', ['Recebida', 'Lida em plenário', 'Em tramitação', 'Encaminhada ao Executivo', 'Aprovado', 'Aprovada', 'Rejeitada', 'Retirada', 'Arquivado']]], acoes: [['Registrar leitura em plenário', { sit: 'Lida em plenário' }, (r) => r.sit === 'Recebida'], ['Encaminhar ao Executivo', { sit: 'Encaminhada ao Executivo' }, (r) => r.tipo === 'Indicação' && r.sit === 'Lida em plenário'], ['Registrar aprovação', { sit: 'Aprovado' }, (r) => r.sit === 'Em tramitação']], novo: { tipo: 'Indicação', num: '20/2026', ementa: '', autor: '', relator: '—', sit: 'Recebida', origem: 'Exemplo' }, rows: { cm: PROP_ROWS } }] },
+  emendas: { label: 'Emendas impositivas', orgaos: 'cm', mod: 'emend', intro: 'Conferência entre o cadastro de emendas e os empenhos da Prefeitura. Dados reais do sistema contábil da Prefeitura (Fiorilli), lidos em 05/11/2026. Cota de R$ 45.360 por vereador; 29 emendas.', base: 'Lei Orgânica do Município, art. 127; STF, ADPF 854; PNTP 2026, critérios 17.2 e 17.3.',
+    tabs: [{ id: 'conf', label: 'Conferência', titulo: 'num', cols: [['num', 'Emenda'], ['autor', 'Vereador'], ['cad', 'Pago no cadastro'], ['emp', 'Pago no empenho'], ['sit', 'Situação', 1]], campos: [['num', 'Emenda', 'ro'], ['autor', 'Vereador', 'ro'], ['obj', 'Objeto', 'ro'], ['cad', 'Pago segundo o cadastro', 'ro'], ['emp', 'Pago segundo o empenho', 'ro'], ['obs', 'Observação da conferência', 'area'], ['sit', 'Situação', 'sel', ['Divergente', 'Conferido', 'Sem execução']]], acoes: [['Pedir esclarecimento à Prefeitura', { obs: 'Ofício enviado à Secretaria de Finanças pedindo a conciliação entre cadastro e empenho.' }, (r) => r.sit === 'Divergente' && !r.obs], ['Marcar como conferido', { sit: 'Conferido' }, (r) => r.sit === 'Divergente']], novo: null,
+      rows: { cm: [{ id: 'e13', num: '13/2026', autor: 'Pedro Correia da Costa', obj: 'Custeio das ações e projetos do CCI · empenho 83/2026', cad: 'R$ 7.200,00', emp: 'R$ 3.600,00', obs: '', sit: 'Divergente' }, { id: 'e12', num: '12/2026', autor: 'Paulo Roberto Gonçalves Gusmão', obj: 'Custeio das ações e projetos do CCI · empenho 111/2026', cad: 'R$ 2.450,00', emp: 'R$ 1.225,00', obs: '', sit: 'Divergente' }, { id: 'e22', num: '22/2026', autor: 'Cecilia Macedo de Amorim', obj: 'Prestadores de serviço — fisioterapia · empenho 426/2026', cad: 'R$ 1.160,00', emp: 'R$ 1.160,00', obs: 'Valores conferem (liquidado 12/02, pago 12/03/2026).', sit: 'Conferido' }, { id: 'eX', num: '26 emendas', autor: 'Todos os vereadores', obj: 'Sem empenho localizado até 05/11/2026', cad: 'R$ 0,00', emp: 'R$ 0,00', obs: '', sit: 'Sem execução' }] } }] },
+  transm: { label: 'Transmissões', orgaos: 'pm cm', mod: { pm: 'transmpm', cm: 'transm' }, intro: 'Agenda, transmissão ao vivo e gravações, com legendas e Libras. O botão de iniciar liga a faixa “Ao vivo” e o aviso no portal.', base: 'PNTP 2026, critério 20.9; Lei 13.146/2015, art. 63; Lei 10.098/2000.', kpi: true,
+    tabs: [{ id: 'ag', label: 'Agenda e ao vivo', titulo: 't', cols: [['t', 'Evento'], ['data', 'Data'], ['hora', 'Hora'], ['leg', 'Legendas'], ['libras', 'Libras'], ['sit', 'Situação', 1]], campos: [['t', 'Evento', 'txt'], ['data', 'Data', 'txt'], ['hora', 'Hora', 'txt'], ['leg', 'Legendas', 'sel', ['Automáticas revisadas', 'Automáticas', 'Sem legenda']], ['libras', 'Intérprete de Libras', 'sel', ['Sim', 'Não']], ['sit', 'Situação', 'sel', ['Agendada', 'Ao vivo', 'Concluído']]], acoes: [['Iniciar transmissão', { sit: 'Ao vivo' }, (r) => r.sit === 'Agendada'], ['Encerrar e gerar gravação', { sit: 'Concluído' }, (r) => r.sit === 'Ao vivo']], novo: { t: 'Novo evento', data: '', hora: '19h', leg: 'Automáticas revisadas', libras: 'Sim', sit: 'Agendada' },
+      rows: { cm: [{ id: 't1', t: '18ª Sessão Ordinária de 2026', data: '16/11/2026', hora: '19h', leg: 'Automáticas revisadas', libras: 'Sim', sit: 'Agendada' }, { id: 't2', t: 'Audiência pública: LOA 2027 (exemplo)', data: '12/11/2026', hora: '19h', leg: 'Automáticas revisadas', libras: 'Sim', sit: 'Agendada' }], pm: [{ id: 't3', t: 'Audiência pública: LOA 2027 (exemplo)', data: '12/11/2026', hora: '19h', leg: 'Automáticas revisadas', libras: 'Sim', sit: 'Agendada' }] } },
+      { id: 'grav', label: 'Gravações', titulo: 't', cols: [['t', 'Gravação'], ['data', 'Data'], ['dur', 'Duração'], ['cap', 'Capítulos'], ['sit', 'Situação', 1]], campos: [['t', 'Título', 'txt'], ['data', 'Data', 'ro'], ['dur', 'Duração', 'ro'], ['cap', 'Capítulos', 'area'], ['sit', 'Situação', 'sel', ['Publicado', 'Pendente', 'Arquivado']]], acoes: [['Publicar gravação', { sit: 'Publicado' }, (r) => r.sit === 'Pendente']], novo: null,
+        rows: { cm: [{ id: 'g1', t: '3ª Sessão Extraordinária de 2026', data: '03/07/2026', dur: '[duração]', cap: 'Abertura; Ordem do dia', sit: 'Pendente' }, { id: 'g2', t: '10ª Sessão Ordinária de 2026', data: '15/06/2026', dur: '[duração]', cap: 'Abertura; Expediente; Ordem do dia', sit: 'Pendente' }], pm: [] } }] },
+  esic: { label: 'e-SIC (pedidos de informação)', orgaos: 'pm cm', mod: 'sic', intro: 'Fila de pedidos com prazo legal: 20 dias, prorrogáveis por mais 10 com justificativa; recurso decidido em 5 dias. Pedidos de exemplo, com solicitante anonimizado.', base: 'LAI, arts. 10 a 16 e 30; Decreto municipal que regulamenta a LAI (a confirmar).', kpi: true,
+    tabs: [{ id: 'ped', label: 'Pedidos', titulo: 'assunto', cols: [['prot', 'Protocolo'], ['assunto', 'Assunto'], ['receb', 'Recebido'], ['prazo', 'Prazo'], ['setor', 'Setor'], ['sit', 'Situação', 1]], campos: [['prot', 'Protocolo', 'ro'], ['assunto', 'Assunto', 'ro'], ['solic', 'Solicitante', 'ro'], ['setor', 'Setor responsável', 'sel', ['Ouvidoria / SIC', 'Finanças', 'Saúde', 'Educação', 'Recursos Humanos', 'Licitações', 'Secretaria da Câmara']], ['resp', 'Resposta', 'area'], ['just', 'Justificativa da prorrogação', 'txt'], ['sit', 'Situação', 'ro']],
+      acoes: [['Responder', { sit: 'Respondido' }, (r) => ['Recebido', 'Em análise', 'Prorrogado'].indexOf(r.sit) >= 0, 'resp'], ['Prorrogar por 10 dias', { sit: 'Prorrogado' }, (r) => (r.sit === 'Recebido' || r.sit === 'Em análise'), 'just'], ['Encaminhar ao setor', { sit: 'Em análise' }, (r) => r.sit === 'Recebido'], ['Decidir recurso', { sit: 'Respondido' }, (r) => r.sit === 'Em recurso']], novo: null,
+      rows: { pm: [{ id: 's1', prot: '2026-0043', assunto: 'Contrato de transporte escolar', solic: '[anonimizado]', recebIso: '2026-10-28', setor: 'Educação', resp: '', just: '', sit: 'Recebido' }, { id: 's2', prot: '2026-0041', assunto: 'Folha de pagamento da Saúde', solic: '[anonimizado]', recebIso: '2026-10-19', setor: 'Recursos Humanos', resp: '', just: '', sit: 'Em análise' }, { id: 's3', prot: '2026-0038', assunto: 'Cópia de processo licitatório', solic: '[anonimizado]', recebIso: '2026-10-08', setor: 'Licitações', resp: '', just: 'Volume de documentos a digitalizar', sit: 'Prorrogado' }, { id: 's4', prot: '2026-0035', assunto: 'Gastos com combustível em 2025', solic: '[anonimizado]', recebIso: '2026-09-30', setor: 'Finanças', resp: 'Planilha enviada e publicada em dados abertos.', just: '', sit: 'Respondido' }, { id: 's5', prot: '2026-0033', assunto: 'Lista de servidores comissionados', solic: '[anonimizado]', recebIso: '2026-09-22', setor: 'Recursos Humanos', resp: 'Indicado o link do portal.', just: '', sit: 'Em recurso' }],
+        cm: [{ id: 's6', prot: 'CM-2026-0007', assunto: 'Atas das sessões de agosto a outubro', solic: '[anonimizado]', recebIso: '2026-10-25', setor: 'Secretaria da Câmara', resp: '', just: '', sit: 'Em análise' }, { id: 's7', prot: 'CM-2026-0006', assunto: 'Diárias pagas a vereadores em 2026', solic: '[anonimizado]', recebIso: '2026-10-02', setor: 'Secretaria da Câmara', resp: 'Relação enviada; base publicada no portal.', just: '', sit: 'Respondido' }] } }] },
+  ouvidoria: { label: 'Ouvidoria', orgaos: 'pm cm', mod: 'ouv', intro: 'Manifestações com protocolo: reclamação, sugestão, elogio, denúncia e solicitação. Resposta em até 30 dias, prorrogáveis por mais 30. Exemplos.', base: 'Lei 13.460/2017, arts. 10 a 16 e 23.', kpi: true,
+    tabs: [{ id: 'man', label: 'Manifestações', titulo: 'assunto', cols: [['prot', 'Protocolo'], ['tipo', 'Tipo'], ['assunto', 'Assunto'], ['receb', 'Recebida'], ['prazo', 'Prazo'], ['sit', 'Situação', 1]], campos: [['prot', 'Protocolo', 'ro'], ['tipo', 'Tipo', 'ro'], ['assunto', 'Assunto', 'ro'], ['setor', 'Setor', 'txt'], ['resp', 'Resposta conclusiva', 'area'], ['sit', 'Situação', 'ro']], acoes: [['Responder', { sit: 'Respondida' }, (r) => r.sit !== 'Respondida', 'resp'], ['Encaminhar ao setor', { sit: 'Em análise' }, (r) => r.sit === 'Recebida']], novo: null, dias: 30,
+      rows: { pm: [{ id: 'o1', prot: 'OUV-2026-0112', tipo: 'Reclamação', assunto: 'Buraco na Rua 31 de Agosto', recebIso: '2026-10-30', setor: 'Obras', resp: '', sit: 'Recebida' }, { id: 'o2', prot: 'OUV-2026-0109', tipo: 'Sugestão', assunto: 'Horário estendido na unidade de saúde', recebIso: '2026-10-12', setor: 'Saúde', resp: '', sit: 'Em análise' }, { id: 'o3', prot: 'OUV-2026-0101', tipo: 'Elogio', assunto: 'Atendimento no setor de tributos', recebIso: '2026-09-29', setor: 'Finanças', resp: 'Elogio repassado à equipe.', sit: 'Respondida' }], cm: [{ id: 'o4', prot: 'OUV-CM-2026-0004', tipo: 'Solicitação', assunto: 'Publicar as atas das sessões', recebIso: '2026-10-20', setor: 'Secretaria da Câmara', resp: '', sit: 'Em análise' }] } }] },
+  participacao: { label: 'Participação', orgaos: 'pm cm', intro: 'Inscrições na Tribuna Livre, opiniões sobre projetos (publicadas sem dados pessoais, depois de moderadas) e resultado do “Avalie este portal”. Exemplos.', base: 'Lei Orgânica e Regimento Interno; Lei 13.460/2017, art. 23 (avaliação dos serviços); LGPD.',
+    tabs: [{ id: 'trib', label: 'Tribuna Livre', orgaos: 'cm', titulo: 'tema', cols: [['sessao', 'Sessão'], ['tema', 'Tema'], ['insc', 'Inscrito'], ['sit', 'Situação', 1]], campos: [['sessao', 'Sessão', 'ro'], ['tema', 'Tema', 'ro'], ['insc', 'Inscrito', 'ro'], ['sit', 'Situação', 'sel', ['Inscrito', 'Deferida', 'Negado']]], acoes: [['Deferir inscrição', { sit: 'Deferida' }, (r) => r.sit === 'Inscrito'], ['Indeferir (fora do regimento)', { sit: 'Negado' }, (r) => r.sit === 'Inscrito']], novo: null, rows: { cm: [{ id: 'tr1', sessao: '18ª Ordinária · 16/11/2026', tema: 'Iluminação da estrada rural', insc: '[cidadão 1]', sit: 'Inscrito' }, { id: 'tr2', sessao: '18ª Ordinária · 16/11/2026', tema: 'Transporte de estudantes', insc: '[cidadão 2]', sit: 'Inscrito' }] } },
+      { id: 'opin', label: 'Opiniões sobre projetos', orgaos: 'cm', titulo: 'texto', cols: [['proj', 'Projeto'], ['texto', 'Opinião'], ['pos', 'Posição'], ['sit', 'Situação', 1]], campos: [['proj', 'Projeto', 'ro'], ['texto', 'Texto', 'area'], ['pos', 'Posição', 'ro'], ['sit', 'Situação', 'ro']], acoes: [['Publicar (sem dados pessoais)', { sit: 'Publicado' }, (r) => r.sit === 'Em moderação'], ['Rejeitar (ofensa ou dado pessoal)', { sit: 'Rejeitada' }, (r) => r.sit === 'Em moderação']], novo: null, rows: { cm: [{ id: 'op1', proj: 'PL [32]/2026 — LOA 2027', texto: 'Pedir mais recursos para a manutenção das estradas rurais.', pos: 'A favor com ajustes', sit: 'Em moderação' }, { id: 'op2', proj: 'PL [32]/2026 — LOA 2027', texto: '[texto com telefone pessoal]', pos: 'Contra', sit: 'Em moderação' }] } },
+      { id: 'aval', label: 'Avalie este portal', titulo: 'pag', cols: [['pag', 'Página'], ['nota', 'Nota média'], ['resp', 'Respostas'], ['coment', 'Comentário mais frequente']], campos: [['pag', 'Página', 'ro'], ['nota', 'Nota média', 'ro'], ['resp', 'Respostas', 'ro'], ['coment', 'Comentário', 'ro']], acoes: [], novo: null, rows: { pm: [{ id: 'av1', pag: 'Serviços mais procurados', nota: '4,4 (exemplo)', resp: '38', coment: 'Encontrei a guia do IPTU rápido' }, { id: 'av2', pag: 'Transparência · despesas', nota: '3,6 (exemplo)', resp: '12', coment: 'Queria filtrar por fornecedor' }], cm: [{ id: 'av3', pag: 'Sessões e votações', nota: '3,1 (exemplo)', resp: '9', coment: 'Faltam as atas' }] } }] },
+  bases: { label: 'Bases manuais de transparência', orgaos: 'pm cm', mod: 'transp', intro: 'O que não chega por API: o setor responsável envia o arquivo (CSV, planilha ou PDF), o sistema confere e publica. A situação mostra o que ainda é exemplo no protótipo.', base: 'LRF, arts. 48 e 48-A; LAI, art. 8º; PNTP 2026 (critérios por base).', kpi: true,
+    tabs: [{ id: 'b', label: 'Bases', titulo: 'base', cols: [['base', 'Base'], ['setor', 'Setor responsável'], ['period', 'Periodicidade'], ['ult', 'Última atualização'], ['sit', 'Situação', 1]], campos: [['base', 'Base', 'ro'], ['setor', 'Setor responsável', 'txt'], ['period', 'Periodicidade', 'sel', ['Mensal', 'Quadrimestral', 'Anual', 'Quando houver']], ['ult', 'Última atualização', 'ro'], ['sit', 'Situação', 'ro']], acoes: [['Enviar arquivo e publicar', { sit: 'Em dia', ult: '06/11/2026' }, (r) => r.sit !== 'Em dia']], novo: null,
+      rows: { pm: [['PPA, LDO e LOA', 'Planejamento', 'Anual', '—', 'Exemplo'], ['Prestação de contas e parecer do TCESP', 'Contabilidade', 'Anual', '—', 'Exemplo'], ['Convênios e transferências', 'Finanças', 'Mensal', '—', 'Exemplo'], ['Renúncia de receita', 'Tributos', 'Anual', '—', 'Exemplo'], ['Terceirizados', 'Recursos Humanos', 'Mensal', '—', 'Exemplo'], ['Estagiários', 'Recursos Humanos', 'Mensal', '—', 'Exemplo'], ['Concursos e processos seletivos', 'Recursos Humanos', 'Quando houver', '—', 'Exemplo'], ['Gastos com publicidade', 'Comunicação', 'Mensal', '—', 'Exemplo'], ['Tabela de diárias', 'Finanças', 'Quando houver', '—', 'Exemplo'], ['Fiscais de contratos', 'Licitações', 'Mensal', '—', 'Exemplo'], ['Lista de espera da saúde', 'Saúde', 'Mensal', '—', 'Exemplo'], ['Obras (PNCP)', 'Obras', 'Mensal', '05/11/2026', 'Em dia'], ['Despesa com pessoal (RGF)', 'Contabilidade', 'Quadrimestral', '21/09/2026', 'Em dia']].map((x, i) => ({ id: 'bp' + i, base: x[0], setor: x[1], period: x[2], ult: x[3], sit: x[4] })),
+        cm: [['Duodécimo recebido', 'Contabilidade da Câmara', 'Mensal', '05/11/2026', 'Em dia'], ['RGF do Legislativo', 'Contabilidade da Câmara', 'Quadrimestral', '21/09/2026', 'Em dia'], ['Remuneração de vereadores e servidores', 'Secretaria da Câmara', 'Mensal', '—', 'Pendente'], ['Diárias e adiantamentos', 'Secretaria da Câmara', 'Mensal', '—', 'Pendente'], ['Contratos e licitações (PNCP)', 'Secretaria da Câmara', 'Quando houver', '—', 'Pendente'], ['Atas e listas de presença', 'Secretaria Legislativa', 'Quando houver', '03/07/2026', 'Atrasado']].map((x, i) => ({ id: 'bc' + i, base: x[0], setor: x[1], period: x[2], ult: x[3], sit: x[4] })) } }] },
+  indicadores: { label: 'Painel de indicadores', orgaos: 'pm', mod: 'bi', intro: 'Indicadores do painel de saúde, educação, social e gestão: fonte, periodicidade, meta e forma de atualização.', base: 'LAI, art. 8º; Lei 14.129/2021 (dados abertos e indicadores).',
+    tabs: [{ id: 'ind', label: 'Indicadores', titulo: 'ind', cols: [['tema', 'Tema'], ['ind', 'Indicador'], ['fonte', 'Fonte'], ['period', 'Periodicidade'], ['modo', 'Atualização', 1]], campos: [['tema', 'Tema', 'ro'], ['ind', 'Indicador', 'ro'], ['fonte', 'Fonte', 'ro'], ['period', 'Periodicidade', 'ro'], ['meta', 'Meta (opcional)', 'txt'], ['modo', 'Atualização', 'sel', ['Automático', 'Manual']]], acoes: [], novo: null,
+      rows: { pm: [['Educação', 'IDEB anos iniciais', 'INEP', 'Bienal', 'Manual'], ['Educação', 'Taxa de escolarização 6 a 14 anos', 'IBGE Censo', 'Decenal', 'Automático'], ['Saúde', 'Estabelecimentos de saúde', 'CNES', 'Mensal', 'Automático'], ['Saúde', 'Aplicação mínima em saúde (15%)', 'Siconfi / SIOPS', 'Bimestral', 'Automático'], ['Educação', 'Aplicação mínima em educação (25%)', 'Siconfi / SIOPE', 'Bimestral', 'Automático'], ['Gestão', 'IEG-M (TCESP)', 'TCESP', 'Anual', 'Manual'], ['Município', 'População estimada', 'IBGE', 'Anual', 'Automático'], ['Município', 'PIB per capita', 'IBGE', 'Anual', 'Automático']].map((x, i) => ({ id: 'id' + i, tema: x[0], ind: x[1], fonte: x[2], period: x[3], modo: x[4], meta: '' })) } }] },
+  pntpcm: { label: 'Autoavaliação PNTP', orgaos: 'cm', intro: 'Dimensão 20 do PNTP 2026 (atividades finalísticas do Legislativo), com a situação de cada critério no portal da Câmara.', base: 'PNTP 2026 — Programa Nacional de Transparência Pública (Atricon), dimensão 20.',
+    tabs: [{ id: 'c', label: 'Dimensão 20', titulo: 'crit', cols: [['cod', 'Critério'], ['crit', 'O que exige'], ['onde', 'Onde está no portal'], ['sit', 'Situação', 1]], campos: [['cod', 'Critério', 'ro'], ['crit', 'Exigência', 'ro'], ['onde', 'Onde está', 'ro'], ['sit', 'Situação', 'sel', ['Atendido', 'Parcial', 'Pendente']]], acoes: [], novo: null,
+      rows: { cm: [['20.1', 'Composição da Casa e biografia dos parlamentares', 'Vereadores e perfis', 'Parcial'], ['20.2', 'Leis e atos produzidos', 'Projetos', 'Pendente'], ['20.3', 'Projetos com tramitação, autor, relator e documentos', 'Projetos', 'Parcial'], ['20.4', 'Pauta das sessões do Plenário', 'Sessões', 'Parcial'], ['20.5', 'Pauta das Comissões', 'Sessões', 'Pendente'], ['20.6', 'Atas das sessões com presença', 'Sessões', 'Pendente'], ['20.7', 'Votações nominais', 'Sessões', 'Pendente'], ['20.8', 'Julgamento das contas do Prefeito', 'Projetos', 'Pendente'], ['20.9', 'Transmissão das sessões e audiências', 'Transmissões', 'Atendido'], ['20.10', 'Diárias e verbas dos parlamentares', 'Transparência', 'Pendente'], ['20.11', 'Atividade dos parlamentares', 'Perfis dos vereadores', 'Parcial']].map((x, i) => ({ id: 'pn' + i, cod: x[0], crit: x[1], onde: x[2], sit: x[3] })) } }] },
+  integcm: { label: 'Integrações de dados', orgaos: 'cm', intro: 'Fontes que alimentam o portal da Câmara e como cada uma é coletada.', base: 'LAI, art. 8º, § 3º; LRF, art. 48-A.',
+    tabs: [{ id: 'f', label: 'Fontes', titulo: 'fonte', cols: [['fonte', 'Fonte'], ['dado', 'Dado'], ['modo', 'Coleta'], ['sit', 'Situação', 1]], campos: [['fonte', 'Fonte', 'ro'], ['dado', 'Dado', 'ro'], ['modo', 'Coleta', 'ro'], ['obs', 'Observação', 'ro'], ['sit', 'Situação', 'ro']], acoes: [], novo: null,
+      rows: { cm: [['Siconfi (co_poder = L)', 'RGF e despesa com pessoal', 'Automático', 'Entregas de 2024 a 2026 lidas', 'OK'], ['Prefeitura (API Fiorilli)', 'Execução das emendas impositivas', 'Automático', 'Leitura pela API pública da Prefeitura', 'OK'], ['Pronim / Cidade360', 'Remuneração, dados abertos', 'Exportação', 'Área de dados abertos vazia; tabela de remuneração sem dados', 'Falha'], ['Portal atual da Câmara', 'Proposições, legislaturas, pautas', 'Exportação', 'Consulta automática bloqueada por reCAPTCHA; pedir exportação ao fornecedor', 'Bloqueado'], ['PNCP', 'Contratos e licitações', 'Automático', 'Nenhuma publicação da Câmara encontrada', 'Atenção'], ['Canal de vídeo', 'Gravações das sessões', 'Automático', 'Canal a informar', 'Pendente']].map((x, i) => ({ id: 'ic' + i, fonte: x[0], dado: x[1], modo: x[2], obs: x[3], sit: x[4] })) } }] },
+  estrutura: { label: 'Estrutura e busca', orgaos: 'pm cm', intro: 'Menus do portal, redirecionamento dos endereços antigos (para não quebrar links e buscadores) e sinônimos da busca.', base: 'eMAG 3.1 (navegação consistente); LAI, art. 8º, § 3º, I (busca).',
+    tabs: [{ id: 'menu', label: 'Menu principal', titulo: 'item', cols: [['ordem', 'Ordem'], ['item', 'Item'], ['destino', 'Destino'], ['sit', 'Situação', 1]], campos: [['item', 'Rótulo', 'txt'], ['destino', 'Destino', 'txt'], ['ordem', 'Ordem', 'txt'], ['sit', 'Situação', 'sel', ['Ativo', 'Arquivado']]], acoes: [], novo: { ordem: '9', item: 'Novo item', destino: '/', sit: 'Ativo' },
+      rows: { pm: [['1', 'Início', '/'], ['2', 'Serviços', '/servicos'], ['3', 'Transparência', '/transparencia'], ['4', 'Painel de indicadores', '/painel'], ['5', 'Cidade', '/cidade'], ['6', 'Notícias', '/noticias'], ['7', 'Acesso à informação', '/acesso']].map((x, i) => ({ id: 'mn' + i, ordem: x[0], item: x[1], destino: x[2], sit: 'Ativo' })), cm: [['1', 'Início', '/'], ['2', 'Transmissões', '/transmissoes'], ['3', 'Vereadores', '/vereadores'], ['4', 'Sessões', '/sessoes'], ['5', 'Projetos', '/proposicoes'], ['6', 'Emendas impositivas', '/emendas'], ['7', 'Transparência', '/transparencia'], ['8', 'Acesso à informação', '/acesso']].map((x, i) => ({ id: 'mc' + i, ordem: x[0], item: x[1], destino: x[2], sit: 'Ativo' })) } },
+      { id: 'redir', label: 'Redirecionamentos', titulo: 'antigo', cols: [['antigo', 'Endereço antigo'], ['novo', 'Novo endereço'], ['sit', 'Situação', 1]], campos: [['antigo', 'Endereço antigo', 'txt'], ['novo', 'Novo endereço', 'txt'], ['sit', 'Situação', 'sel', ['Ativo', 'Pendente']]], acoes: [['Ativar redirecionamento', { sit: 'Ativo' }, (r) => r.sit === 'Pendente']], novo: { antigo: '/', novo: '/', sit: 'Pendente' },
+        rows: { cm: [{ id: 'rd1', antigo: '/?pag=…&view=DET-LEG&idleg=15', novo: '/vereadores/legislaturas/15', sit: 'Pendente' }, { id: 'rd2', antigo: '/?pag=…&tp=6&ano=2026', novo: '/emendas?ano=2026', sit: 'Pendente' }], pm: [{ id: 'rd3', antigo: '[endereço do portal atual]/transparencia', novo: '/transparencia', sit: 'Pendente' }] } },
+      { id: 'sin', label: 'Sinônimos da busca', titulo: 'termo', cols: [['termo', 'Quem digita'], ['enc', 'Encontra']], campos: [['termo', 'Termo digitado', 'txt'], ['enc', 'Também busca por', 'txt']], acoes: [], novo: { termo: '', enc: '' },
+        rows: { pm: [{ id: 'sn1', termo: 'holerite', enc: 'contracheque, remuneração' }, { id: 'sn2', termo: 'IPTU', enc: 'imposto predial, carnê, guia' }, { id: 'sn3', termo: 'posto', enc: 'unidade de saúde, UBS' }], cm: [{ id: 'sn4', termo: 'vereança', enc: 'vereadores' }, { id: 'sn5', termo: 'votação', enc: 'sessão, ata, votação nominal' }] } }] },
+  lgpd: { label: 'LGPD e cookies', orgaos: 'pm cm', intro: 'Encarregado de dados, política de privacidade, cookies (só os necessários) e pedidos de titulares. Exemplos.', base: 'LGPD (Lei 13.709/2018), arts. 9º, 18, 23 e 41.',
+    tabs: [{ id: 'tit', label: 'Pedidos de titulares', titulo: 'pedido', cols: [['prot', 'Protocolo'], ['pedido', 'Pedido'], ['receb', 'Recebido'], ['sit', 'Situação', 1]], campos: [['prot', 'Protocolo', 'ro'], ['pedido', 'Pedido', 'ro'], ['resp', 'Resposta', 'area'], ['sit', 'Situação', 'ro']], acoes: [['Responder', { sit: 'Respondido' }, (r) => r.sit !== 'Respondido', 'resp']], novo: null,
+      rows: { pm: [{ id: 'lg1', prot: 'LGPD-2026-003', pedido: 'Remover meu nome de ata antiga publicada', receb: '29/10/2026', resp: '', sit: 'Em análise' }], cm: [{ id: 'lg2', prot: 'LGPD-CM-2026-001', pedido: 'Retirar telefone pessoal de opinião enviada', receb: '04/11/2026', resp: '', sit: 'Recebido' }] } },
+      { id: 'ck', label: 'Cookies', titulo: 'nome', cols: [['nome', 'Cookie'], ['fin', 'Finalidade'], ['tipo', 'Tipo'], ['sit', 'Situação', 1]], campos: [['nome', 'Cookie', 'ro'], ['fin', 'Finalidade', 'ro'], ['tipo', 'Tipo', 'ro'], ['sit', 'Situação', 'ro']], acoes: [], novo: null,
+        rows: { pm: [{ id: 'ck1', nome: 'sessao', fin: 'Manter preferências de acessibilidade', tipo: 'Necessário', sit: 'Ativo' }, { id: 'ck2', nome: 'aviso-live', fin: 'Não repetir o aviso de transmissão no mesmo dia', tipo: 'Necessário', sit: 'Ativo' }], cm: [{ id: 'ck3', nome: 'cm-aviso-live', fin: 'Não repetir o aviso de transmissão no mesmo dia', tipo: 'Necessário', sit: 'Ativo' }, { id: 'ck4', nome: 'painel-orgao', fin: 'Lembrar o órgão no painel administrativo', tipo: 'Necessário', sit: 'Ativo' }] } }] },
+  operacao: { label: 'Notificações e operação', orgaos: 'pm cm', intro: 'Alertas de prazos e falhas, backups e certificados. Os alertas vão por e-mail para os responsáveis de cada item.', base: 'LAI, art. 11 (prazos); LGPD, art. 46 (segurança).',
+    tabs: [{ id: 'al', label: 'Alertas', titulo: 'alerta', cols: [['nivel', 'Nível', 1], ['alerta', 'Alerta'], ['quando', 'Quando'], ['resp', 'Responsável']], campos: [['alerta', 'Alerta', 'ro'], ['resp', 'Responsável', 'ro'], ['nivel', 'Nível', 'ro']], acoes: [['Marcar como resolvido', { nivel: 'OK' }, (r) => r.nivel !== 'OK']], novo: null,
+      rows: { pm: [{ id: 'al1', nivel: 'Crítico', alerta: 'Pedido e-SIC 2026-0038 vence amanhã (07/11)', quando: 'hoje 08:00', resp: 'Licitações' }, { id: 'al2', nivel: 'Atenção', alerta: 'Pedido e-SIC 2026-0041 vence em 2 dias', quando: 'hoje 08:00', resp: 'Recursos Humanos' }, { id: 'al3', nivel: 'Atenção', alerta: '11 bases manuais ainda com conteúdo de exemplo', quando: 'hoje 08:00', resp: 'DTIC' }, { id: 'al4', nivel: 'Informativo', alerta: 'Galeria “Fotos do Rodeio” entra no ar em 10/11', quando: 'ontem 16:20', resp: 'Comunicação' }],
+        cm: [{ id: 'al5', nivel: 'Crítico', alerta: 'Atas e presença sem publicação desde 03/07/2026', quando: 'hoje 08:00', resp: 'Secretaria Legislativa' }, { id: 'al6', nivel: 'Atenção', alerta: 'Coleta do portal atual bloqueada por reCAPTCHA', quando: '06/11 07:30', resp: 'DTIC' }, { id: 'al7', nivel: 'Atenção', alerta: '2 emendas com pagamento divergente entre cadastro e empenho', quando: '05/11 18:00', resp: 'Diretoria da Câmara' }] } },
+      { id: 'bk', label: 'Backups e certificados', titulo: 'item', cols: [['item', 'Item'], ['ult', 'Último'], ['prox', 'Próximo'], ['sit', 'Situação', 1]], campos: [['item', 'Item', 'ro'], ['ult', 'Último', 'ro'], ['prox', 'Próximo', 'ro'], ['sit', 'Situação', 'ro']], acoes: [], novo: null,
+        rows: { pm: [{ id: 'bk1', item: 'Backup do banco bd_pm_bora', ult: '06/11 02:00', prox: '07/11 02:00', sit: 'OK' }, { id: 'bk2', item: 'Certificado SSL do domínio', ult: 'emitido 01/11', prox: 'renova 30/01/2027', sit: 'OK' }], cm: [{ id: 'bk3', item: 'Backup do banco bd_cm_bora', ult: '06/11 02:05', prox: '07/11 02:05', sit: 'OK' }, { id: 'bk4', item: 'Certificado SSL camarabora.sp.gov.br', ult: 'emitido 01/11', prox: 'renova 30/01/2027', sit: 'OK' }] } }] }
+};
+const GEN_KEYS = Object.keys(GEN);
+
+const VER15 = ['Advaldo Celestino Teixeira', 'Danilo Pietro', 'Paulo Roberto Gonçalves Gusmão', 'Luis Antonio Vinhando', 'Cecilia Macedo de Amorim', 'Igor Donisete Guido', 'Ivanete Maximina de Carvalho', 'Paulo Sergio dos Santos', 'Pedro Correia da Costa'];
+const mkSess = (id, nome, data, prox, pautaPub, pauta, itensVoto) => ({ id: id, nome: nome, data: data, prox: prox, pautaPub: pautaPub, pauta: pauta, itensVoto: itensVoto, pres: {}, votos: {}, ata: '', video: 'Não vinculado', presPub: false, votosPub: false, ataPub: false });
+const PAUTA_IMP = ['Pauta publicada no portal atual — importar os itens'];
+const SESS0 = [mkSess('s18', '18ª Sessão Ordinária de 2026', '16/11/2026 · 19h', true, false, ['Projeto de Lei [32]/2026 — LOA 2027, discussão em 1º turno (exemplo)', 'Parecer da Comissão de Finanças sobre as contas do Prefeito de 2024 (exemplo)', 'Leitura de indicações e requerimentos', 'Tribuna Livre'], ['Projeto de Lei [32]/2026 — LOA 2027 (exemplo)', 'Parecer sobre as contas do Prefeito de 2024 (exemplo)']),
+  mkSess('sx3', '3ª Sessão Extraordinária de 2026', '03/07/2026 · 19h', false, true, PAUTA_IMP, ['Itens da ordem do dia (importar da pauta)']), mkSess('s10', '10ª Sessão Ordinária de 2026', '15/06/2026 · 19h', false, true, PAUTA_IMP, ['Itens da ordem do dia (importar da pauta)']), mkSess('s9', '9ª Sessão Ordinária de 2026', '01/06/2026 · 19h', false, true, PAUTA_IMP, ['Itens da ordem do dia (importar da pauta)']), mkSess('s8', '8ª Sessão Ordinária de 2026', '18/05/2026 · 19h', false, true, PAUTA_IMP, ['Itens da ordem do dia (importar da pauta)']), mkSess('s5', '5ª Sessão Ordinária de 2026', '06/04/2026 · 19h', false, true, PAUTA_IMP, ['Itens da ordem do dia (importar da pauta)']), mkSess('s2', '2ª Sessão Ordinária de 2026', '23/02/2026 · 19h', false, true, PAUTA_IMP, ['Itens da ordem do dia (importar da pauta)'])];
+const IDENT0 = { pm: { nome: 'Prefeitura Municipal de Borá', cnpj: '[00.000.000/0001-00]', endereco: '[Endereço do Paço Municipal] · Borá (SP)', tel: '[(00) 0000-0000]', whats: '[(00) 00000-0000]', email: '[e-mail de atendimento]', horario: 'Segunda a sexta, 8h às 17h', redes: 'Instagram, Facebook, YouTube', enc: '[nome do encarregado]', encEmail: '[e-mail do encarregado]', cor: '#1D4E89' },
+  cm: { nome: 'Câmara Municipal de Borá', cnpj: '[CNPJ da Câmara]', endereco: 'Rua Vereador Herculano Azevedo, 10 · Centro · Borá (SP) · CEP 19740-000', tel: '(18) 3367-1146', whats: '—', email: 'camara@camarabora.sp.gov.br', horario: 'Segunda a sexta, 9h às 11h e 13h às 17h', redes: '[redes da Câmara]', enc: '[nome do encarregado]', encEmail: '[e-mail do encarregado]', cor: '#2F5233' } };
+// Menu: [view, rótulo, órgãos, funcionalidade que precisa estar ligada]
+const MENU = [['painel', 'Visão geral'], ['G', 'Conteúdo'], ['lista', 'Conteúdos'], ['home', 'Página inicial (blocos)'], ['midia', 'Biblioteca de mídia'], ['estrutura', 'Estrutura e busca'], ['G', 'Órgão'], ['ident', 'Identidade do órgão'],
+  ['G', 'Legislativo', 'cm'], ['vereadores', 'Vereadores e legislaturas', 'cm', 'ver'], ['sessoes', 'Sessões e votações', 'cm', 'sess'], ['proposicoes', 'Proposições', 'cm', 'prop'], ['emendas', 'Emendas impositivas', 'cm', 'emend'],
+  ['G', 'Publicações oficiais'], ['diario', 'Diário Oficial', 'pm', 'diario'], ['transm', 'Transmissões', 'pm cm', { pm: 'transmpm', cm: 'transm' }],
+  ['G', 'Transparência'], ['bases', 'Bases manuais'], ['integ', 'Integrações de dados'], ['indicadores', 'Painel de indicadores', 'pm', 'bi'], ['pntp', 'Autoavaliação PNTP'],
+  ['G', 'Atendimento'], ['esic', 'e-SIC', 'pm cm', 'sic'], ['ouvidoria', 'Ouvidoria', 'pm cm', 'ouv'], ['participacao', 'Participação'],
+  ['G', 'Configuração'], ['mods', 'Funcionalidades'], ['eleicao', 'Período eleitoral'], ['lgpd', 'LGPD e cookies'], ['users', 'Usuários e perfis'], ['perfil', 'Meu perfil'], ['orgaos', 'Órgãos (tenants)'], ['operacao', 'Notificações e operação'], ['aud', 'Registro de ações']];
+// Ícones do menu (traço 24×24)
+const ICON = {
+  painel: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+  lista: 'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',
+  home: 'M3 4h18v6H3zM3 14h8v6H3zM15 14h6v6h-6z',
+  midia: 'M3 5h18v14H3zM3 16l5-5 4 4 3-3 6 6M14 9.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0',
+  estrutura: 'M10 3h4v4h-4zM3 17h4v4H3zM17 17h4v4h-4zM10 17h4v4h-4zM12 7v10M5 17v-3h14v3',
+  ident: 'M3 5h18v14H3zM6 16c.8-2 5.2-2 6 0M7 10.5a2 2 0 1 0 4 0a2 2 0 1 0-4 0M15 9h3M15 12h3M15 15h2',
+  vereadores: 'M5 7.5a4 4 0 1 0 8 0a4 4 0 1 0-8 0M2 21c0-4 3-6 7-6s7 2 7 6M16 3.5a4 4 0 0 1 0 7.5M18 15c2.5.5 4 2.5 4 6',
+  sessoes: 'M4 5h16v16H4zM4 9h16M8 3v4M16 3v4M9 15l2 2 4-4',
+  proposicoes: 'M6 3h9l4 4v14H6zM15 3v4h4M9 11h6M9 14h6M9 17h4',
+  emendas: 'M4 6a8 3 0 1 0 16 0a8 3 0 1 0-16 0M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6',
+  diario: 'M4 5h13v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2zM17 9h3v10a2 2 0 0 1-2 2M7 9h7M7 13h7M7 17h4',
+  transm: 'M3 6h13v12H3zM16 10l5-3v10l-5-3',
+  bases: 'M4 6a8 3 0 1 0 16 0a8 3 0 1 0-16 0M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
+  integ: 'M4 12a8 8 0 0 1 14-5.3L20 5v6h-6l2.3-2.3A5 5 0 0 0 7 12M20 12a8 8 0 0 1-14 5.3L4 19v-6h6l-2.3 2.3A5 5 0 0 0 17 12',
+  indicadores: 'M4 4v16h16M8 16v-5M12 16V8M16 16v-3',
+  pntp: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM8.5 12l2.5 2.5 4.5-5',
+  esic: 'M3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 11v6M12 7.5v.01',
+  ouvidoria: 'M4 5h16v11H9l-5 4zM8 9h8M8 12h5',
+  participacao: 'M3 10v4h4l6 5V5l-6 5zM16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11',
+  mods: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 4v6M9 14v6',
+  eleicao: 'M4 11h16v9H4zM8 11V4h8v7M10 7h4M4 15h16',
+  lgpd: 'M5 11h14v10H5zM8 11V8a4 4 0 0 1 8 0v3M12 15v2',
+  users: 'M5 7.5a4 4 0 1 0 8 0a4 4 0 1 0-8 0M2 21c0-4 3-6 7-6 1.6 0 3 .3 4.1.9M18 14v7M14.5 17.5h7',
+  perfil: 'M8 8a4 4 0 1 0 8 0a4 4 0 1 0-8 0M4 21c0-4 3.5-6 8-6s8 2 8 6',
+  orgaos: 'M4 21V9l8-5 8 5v12M9 21v-6h6v6M8 11h.01M12 11h.01M16 11h.01M2 21h20',
+  operacao: 'M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0',
+  aud: 'M3 12a9 9 0 1 0 3-6.7M3 4v4h4M12 7v5l3 2'
+};
+
+const disponivel = (m, ten, mods) => { if (m[2] && m[2].indexOf(ten) < 0) return false; if (m[3]) { const k = typeof m[3] === 'string' ? m[3] : m[3][ten]; if (k && mods[ten][k] === false) return false; } return true; };
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const mods = {}; ['pm', 'cm'].forEach((t) => { mods[t] = {}; MODS.forEach((m) => { if (m[3].indexOf(t) >= 0) mods[t][m[0]] = m[4] ? true : !!MOD_ON0[t][m[0]]; }); });
+    const blocos = {}; ['pm', 'cm'].forEach((t) => { blocos[t] = BLOCOS[t].map((b) => ({ k: b[0], on: !(t === 'pm' && b[0] === 'redes'), var: b[3][0] })); });
+    let ten0 = 'pm';
+    try { const v = window.localStorage.getItem('painel-orgao'); if (v === 'cm' || v === 'pm') ten0 = v; } catch (e) { }
+    this.state = {
+      view: 'painel', tenant: ten0, role: 'admin', itens: IT0.map(mkItem), sel: null, cTipo: 'Todos', cSt: 'Todas',
+      fTipo: 'Notícia', fSec: 'Notícias', fTit: '', fRes: '', fTxt: '', fClasse: '', fPub: '', fExp: '', fCom: '',
+      mods: mods, blocos: blocos, homeSt: { pm: 'publicada', cm: 'publicada' },
+      dataSim: 'hoje', plano: { pm: 'rascunho', cm: 'rascunho' }, globais: { pm: { logo: true, redes: true, aviso: true, bloqueio: true, restaura: true }, cm: { logo: true, redes: true, aviso: true, bloqueio: true, restaura: true } },
+      excAberta: null, excNum: '', wiz: 1, gd: (() => { const gd = {}; ['pm', 'cm'].forEach((t) => { gd[t] = {}; GEN_KEYS.forEach((k) => { gd[t][k] = {}; GEN[k].tabs.forEach((tb) => { gd[t][k][tb.id] = ((tb.rows || {})[t] || []).map((x) => Object.assign({}, x)); }); }); }); return gd; })(),
+      gTab: {}, gSel: null, menuFech: {}, usuarios: JSON.parse(JSON.stringify(USU0)), uSel: null, uAba: 'lista', uBusca: '', perfisCustom: [], pfSel: null, notif: { esic: true, revisao: true, coleta: true, eleicao: true, resumo: false }, sessoesAtivas: [['Chrome · Windows', 'Paço Municipal', 'agora (esta sessão)'], ['Celular · Android', 'Rede móvel', 'hoje, 07:52']], ident: JSON.parse(JSON.stringify(IDENT0)), sess: SESS0.map((x) => Object.assign({}, x)), sessSel: 's18', sessAba: 'pauta', midia: MIDIA.map((m) => Object.assign({}, m)), log: LOG0.map((l) => ({ quando: l[0], quem: l[1], acao: l[2], ten: l[3], ip: '200.***.***.' + (10 + l[0].length) })), msg: '', msgOk: true
+    };
+  }
+  user() { return (ROLES.find((r) => r.id === this.state.role) || ROLES[0]).user; }
+  reg(acao, extra) { const s = this.state; const log = [{ quando: agora(), quem: this.user(), acao: acao, ten: s.tenant, ip: '200.***.***.14' }].concat(s.log); this.setState(Object.assign({ log: log }, extra || {})); }
+  updItem(id, patch, hist) { return this.state.itens.map((c) => { if (c.id !== id) return c; const n = Object.assign({}, c, patch); if (hist) n.hist = [{ v: c.hist.length + 1, quando: agora(), quem: this.user(), o: hist }].concat(c.hist); return n; }); }
+  go(view, extra) { this.setState(Object.assign({ view: view, msg: '', gSel: null }, extra || {})); try { window.scrollTo(0, 0); } catch (e) { } }
+
+  renderVals() {
+    const s = this.state; const T = Object.assign({}, TEN[s.tenant], { nome: s.ident[s.tenant].nome }); const acc = s.ident[s.tenant].cor || TEN[s.tenant].acc; const r = s.role;
+    const role = ROLES.find((x) => x.id === r) || ROLES[0];
+    const pode = (k) => { const m = MATRIZ.find((x) => x[0] === k); return m ? m[1 + ROLES.findIndex((x) => x.id === r)] === 2 : false; };
+    const dataSim = s.dataSim === 'defeso' ? '2028-07-15' : HOJE;
+    const defeso = dataSim >= ELEICOES.ini && dataSim <= ELEICOES.fim;
+    const G = s.globais[s.tenant];
+    const meus = s.itens.filter((c) => c.ten === s.tenant);
+    const suspende = (c) => defeso && VEDADAS.indexOf(c.classe) >= 0 && (c.status === 'Publicado' || c.status === 'Agendado') && !c.exc;
+    const stEf = (c) => suspende(c) ? 'Suspenso (defeso)' : c.status;
+    const notaDe = (c) => suspende(c) ? 'Volta em 02/10/2028' : (defeso && c.classe === 'util' && c.status === 'Publicado') ? 'Mantido: revisar nomes e fotos' : c.exc ? 'Exceção: ' + c.exc : '';
+    const ini = role.user.replace(/[\[\]()]/g, '').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+
+    // menu
+    const nRev = meus.filter((c) => c.status === 'Em revisão').length;
+    const nDev = meus.filter((c) => c.status === 'Devolvido').length;
+    const nImp = meus.filter((c) => VEDADAS.indexOf(c.classe) >= 0 && (c.status === 'Publicado' || c.status === 'Agendado') && !c.exc).length;
+    const cur = (v) => s.view === v || (v === 'lista' && s.view === 'editor');
+    const MI = (v, label, n, alerta) => ({ item: true, grupo: false, label: label, go: () => this.go(v), cur: cur(v) ? 'page' : undefined, bg: cur(v) ? '#2E3A46' : 'transparent', n: n, temN: n > 0, nBg: alerta ? '#F0B429' : '#3A4856', nFg: alerta ? '#17212B' : '#FFFFFF' });
+    const MG = (label) => ({ item: false, grupo: true, label: label, go: () => { }, n: 0, temN: false, aberto: 'true', rot: 0 });
+
+    const titles = { painel: 'Visão geral', lista: 'Conteúdos do portal', editor: s.sel ? 'Editar conteúdo' : 'Novo conteúdo', home: 'Página inicial', mods: 'Funcionalidades do portal', eleicao: 'Período eleitoral', users: 'Usuários e perfis', orgaos: 'Órgãos atendidos', aud: 'Registro de ações', perfil: 'Meu perfil', ident: 'Identidade do órgão', sessoes: 'Sessões e votações', midia: 'Biblioteca de mídia', diario: 'Diário Oficial eletrônico', integ: 'Integrações de dados', pntp: 'Autoavaliação PNTP' };
+    GEN_KEYS.forEach((k) => { if (!titles[k]) titles[k] = GEN[k].label; });
+
+    // lista de conteúdo
+    const abrir = (c) => () => this.go('editor', { sel: c.id, fTipo: c.tipo, fSec: c.sec, fTit: c.titulo, fRes: c.res, fTxt: c.txt, fClasse: c.classe, fPub: c.pub, fExp: c.exp, fCom: '' });
+    const acaoTxt = (c) => (r === 'pub' && c.status === 'Em revisão') ? 'Revisar' : (r === 'editor' && (c.status === 'Rascunho' || c.status === 'Devolvido')) ? 'Editar' : 'Abrir';
+    const mkRow = (c) => { const st = stEf(c); const cl = CL[c.classe]; const nota = notaDe(c); return { titulo: c.titulo, autor: c.autor, tipo: c.tipo, classe: cl[1], clBg: cl[4], clFg: cl[5], st: st, stBg: ST_COR[st][0], stFg: ST_COR[st][1], nota: nota, temNota: !!nota, data: c.data, abrir: abrir(c), acaoTxt: acaoTxt(c) }; };
+    const filtrados = meus.filter((c) => (s.cTipo === 'Todos' || c.tipo === s.cTipo) && (s.cSt === 'Todas' || stEf(c) === s.cSt));
+    const tiposTabs = ['Todos'].concat(TIPOS).map((t) => ({ t: t, n: t === 'Todos' ? meus.length : meus.filter((c) => c.tipo === t).length, sel: s.cTipo === t ? 'true' : 'false', bg: s.cTipo === t ? '#17212B' : '#FFFFFF', fg: s.cTipo === t ? '#FFFFFF' : '#17212B', bd: s.cTipo === t ? '#17212B' : '#C9D1D9', go: () => this.setState({ cTipo: t }) })).filter((t) => t.n > 0 || t.t === 'Todos');
+
+    // editor
+    const it = s.sel ? s.itens.find((c) => c.id === s.sel) : null;
+    const stAtual = it ? stEf(it) : 'Rascunho';
+    const edBloq = !pode('Criar e editar conteúdo') || !!(it && (it.status === 'Arquivado' || it.status === 'Publicado' || it.status === 'Agendado' || (it.status === 'Em revisão' && r === 'editor')));
+    const vazio = !s.fTit.trim() || !s.fClasse;
+    const vedada = VEDADAS.indexOf(s.fClasse) >= 0;
+    const bloqueioEle = defeso && G.bloqueio && vedada;
+    const salvar = (status, hist, msg, extra) => {
+      const base = { tipo: s.fTipo, sec: s.fSec, titulo: s.fTit.trim(), res: s.fRes, txt: s.fTxt, classe: s.fClasse, pub: s.fPub, exp: s.fExp, data: brData(dataSim) };
+      if (it) { this.reg(hist + ': ' + base.titulo, Object.assign({ itens: this.updItem(it.id, Object.assign(base, { status: status }, extra || {}), hist), msg: msg, msgOk: true, view: 'lista', sel: null }, {})); }
+      else { const id = 'n' + (s.itens.length + 1); const novo = Object.assign(mkItem([id, s.tenant, s.fTipo, s.fSec, base.titulo, s.fRes, s.fClasse, status, this.user(), brData(dataSim), s.fPub]), base, extra || {}); this.reg(hist + ': ' + base.titulo, { itens: s.itens.concat([novo]), msg: msg, msgOk: true, view: 'lista', sel: null }); }
+    };
+    const B = (t, go, tipo, off) => ({ t: t, go: go, off: !!off, bg: tipo === 'pri' ? acc : tipo === 'perigo' ? '#FFFFFF' : '#FFFFFF', fg: tipo === 'pri' ? '#FFFFFF' : tipo === 'perigo' ? '#9B1C1C' : '#17212B', bd: tipo === 'pri' ? acc : tipo === 'perigo' ? '#E8B4B4' : '#C9D1D9' });
+    const agendar = s.fPub && s.fPub > dataSim;
+    let acoes = [];
+    if (!edBloq && (r === 'editor' || r === 'admin' || r === 'dtic' || r === 'pub') && (!it || ['Rascunho', 'Devolvido'].indexOf(it.status) >= 0)) {
+      acoes.push(B('Salvar rascunho', () => salvar('Rascunho', 'Salvou rascunho', 'Rascunho salvo.'), 'sec', !s.fTit.trim()));
+      acoes.push(B('Enviar para revisão', () => salvar('Em revisão', 'Enviou para revisão', 'Enviado para revisão. O publicador será avisado.'), 'pri', vazio));
+    }
+    if (it && it.status === 'Em revisão' && pode('Aprovar e publicar')) {
+      acoes.push(B(agendar ? 'Aprovar e agendar para ' + brData(s.fPub) : 'Aprovar e publicar', () => salvar(agendar ? 'Agendado' : 'Publicado', agendar ? 'Aprovou e agendou' : 'Aprovou e publicou', agendar ? 'Aprovado e agendado.' : 'Publicado no portal.'), 'pri', vazio || bloqueioEle));
+      acoes.push(B('Devolver ao autor', () => salvar('Devolvido', 'Devolveu', 'Devolvido ao autor com comentário.', { com: s.fCom }), 'sec', !s.fCom.trim()));
+    }
+    if (it && (it.status === 'Publicado' || it.status === 'Agendado') && pode('Aprovar e publicar')) {
+      acoes.push(B('Criar nova versão', () => this.reg('Abriu nova versão: ' + it.titulo, { itens: this.updItem(it.id, { status: 'Rascunho' }, 'Nova versão aberta para edição'), msg: 'Nova versão em rascunho. A versão publicada continua no ar até a aprovação.', msgOk: true }), 'sec'));
+      acoes.push(B('Tirar do ar e arquivar', () => this.reg('Arquivou: ' + it.titulo, { itens: this.updItem(it.id, { status: 'Arquivado' }, 'Arquivado'), msg: 'Conteúdo retirado do portal e arquivado.', msgOk: true, view: 'lista', sel: null }), 'perigo'));
+    }
+    let aviso = '';
+    if (bloqueioEle && it && it.status === 'Em revisão') aviso = 'Período eleitoral: conteúdos classificados como “' + CL[s.fClasse][1] + '” não podem ser publicados até 01/10/2028, salvo autorização da Justiça Eleitoral.';
+    else if (it && it.status === 'Devolvido' && it.com) aviso = 'Comentário do publicador: ' + it.com;
+    else if (vedada && !defeso && s.fExp === '' ) aviso = 'Esta classificação sai do ar automaticamente no defeso (01/07 a 01/10/2028) e volta depois da eleição.';
+    if (edBloq && !aviso) aviso = !pode('Criar e editar conteúdo') ? 'Seu perfil não edita conteúdo.' : (it && it.status === 'Em revisão') ? 'Em revisão: aguarde o publicador ou peça a devolução.' : '';
+    const semAcoes = acoes.length === 0;
+    const passosDef = ['Rascunho', 'Em revisão', 'Aprovado', 'No ar'];
+    const idx = { 'Rascunho': 0, 'Devolvido': 0, 'Em revisão': 1, 'Agendado': 2, 'Publicado': 3, 'Arquivado': 3, 'Suspenso (defeso)': 3 }[stAtual] || 0;
+    const passos = passosDef.map((p, i) => ({ n: i + 1, t: i === 3 && stAtual === 'Suspenso (defeso)' ? 'Suspenso no defeso' : i === 2 && stAtual === 'Agendado' ? 'Agendado para ' + brData(it ? it.pub : '') : p, bg: i <= idx ? acc : '#C9D1D9', peso: i === idx ? 800 : 500 }));
+    const classesOpts = CLASSES.map((c) => ({ t: c[1], d: c[2], sel: s.fClasse === c[0], bg: s.fClasse === c[0] ? '#F2F6FB' : '#FFFFFF', bd: s.fClasse === c[0] ? acc : '#DCE1E6', pick: () => this.setState({ fClasse: c[0] }) }));
+    const regra = s.fClasse ? CL[s.fClasse] : null;
+
+    // página inicial
+    const blocos = s.blocos[s.tenant]; const BD = BLOCOS[s.tenant];
+    const defB = (k) => BD.find((b) => b[0] === k);
+    const ocultoDefeso = (k) => { const c = defB(k)[5]; return defeso && VEDADAS.indexOf(c) >= 0; };
+    const mover = (i, d) => () => { const arr = blocos.slice(); const j = i + d; const t = arr[i]; arr[i] = arr[j]; arr[j] = t; const nb = Object.assign({}, s.blocos); nb[s.tenant] = arr; const hs = Object.assign({}, s.homeSt); hs[s.tenant] = 'alterada'; this.setState({ blocos: nb, homeSt: hs }); };
+    const setB = (i, patch) => { const arr = blocos.map((b, j) => j === i ? Object.assign({}, b, patch) : b); const nb = Object.assign({}, s.blocos); nb[s.tenant] = arr; const hs = Object.assign({}, s.homeSt); hs[s.tenant] = 'alterada'; this.setState({ blocos: nb, homeSt: hs }); };
+    const podeHome = pode('Montar a página inicial (blocos)');
+    const blocosV = blocos.map((b, i) => { const d = defB(b.k); const od = ocultoDefeso(b.k); const on = b.on && !od; return { t: d[1], d: d[2] + (d[4] ? ' · obrigatório no tema' : ''), cor: on ? acc : '#C9D1D9', op: on ? 1 : 0.7, primeiro: i === 0 || !podeHome, ultimo: i === blocos.length - 1 || !podeHome, up: mover(i, -1), down: mover(i, 1), var: b.var, vars: d[3], onVar: (e) => setB(i, { var: e.target.value }), on: on ? 'true' : 'false', onTxt: od ? 'Defeso' : b.on ? 'Exibido' : 'Oculto', swBg: on ? '#146C43' : '#9AA5B1', tog: () => setB(i, { on: !b.on }), fixo: d[4] || !podeHome || od, nota: od ? 'Oculto automaticamente no período eleitoral' : '', temNota: od }; });
+    const previa = blocos.filter((b) => b.on && !ocultoDefeso(b.k)).map((b) => { const d = defB(b.k); return { t: d[1], h: d[6], cor: b.k === 'hero' ? acc : '#8FA3B5' }; });
+    const hst = s.homeSt[s.tenant];
+    const homeEstado = hst === 'publicada' ? 'A estrutura acima é a que está no ar.' : hst === 'homologacao' ? 'Em homologação: confira em novo.' + (s.tenant === 'cm' ? 'camarabora.sp.gov.br' : '[domínio]') + ' antes de publicar.' : 'Alterações não publicadas.';
+    const setHome = (v, acao, msg) => () => { const hs = Object.assign({}, s.homeSt); hs[s.tenant] = v; this.reg(acao, { homeSt: hs, msg: msg, msgOk: true }); };
+
+    // funcionalidades
+    const modsT = MODS.filter((m) => m[3].indexOf(s.tenant) >= 0);
+    const podeMods = pode('Ligar e desligar funcionalidades');
+    const mods = modsT.map((m) => { const on = s.mods[s.tenant][m[0]]; const vedadoDef = defeso && (m[0] === 'redes' || m[0] === 'noticias' || m[0] === 'galeria') && on; return { t: m[1], d: m[2] + (vedadoDef ? ' · conteúdo vedado suspenso no defeso' : ''), tag: m[4] ? 'Exigida por lei' : 'Opcional', tagBg: m[4] ? '#E5EEFB' : '#EEF0F3', tagFg: m[4] ? '#1D4E89' : '#374151', lei: m[5], temLei: !!m[5], on: on ? 'true' : 'false', onTxt: m[4] ? 'Travada' : on ? 'Ligada' : 'Desligada', swBg: on ? '#146C43' : '#9AA5B1', trava: m[4] || !podeMods, tog: () => { const nm = Object.assign({}, s.mods); nm[s.tenant] = Object.assign({}, nm[s.tenant]); nm[s.tenant][m[0]] = !on; this.reg((on ? 'Desligou' : 'Ligou') + ' a funcionalidade ' + m[1], { mods: nm, msg: m[1] + (on ? ' desligada: sai do menu, da busca e do mapa do site. Os dados ficam guardados.' : ' ligada.'), msgOk: true }); } }; });
+    const ativos = modsT.filter((m) => s.mods[s.tenant][m[0]]);
+
+    // eleição
+    const dias = diasEntre(dataSim, ELEICOES.ini);
+    const ele = { nome: ELEICOES.nome, pleito: ELEICOES.pleito, janela: ELEICOES.janela, cargos: ELEICOES.cargos[s.tenant], nota2026: ELEICOES.nota2026, dias: defeso ? 'Em vigor' : String(dias), diasTxt: defeso ? 'até 01/10/2028' : 'dias para o início do defeso' };
+    const pl = s.plano[s.tenant];
+    const planoTxt = pl === 'aprovado' ? 'Aprovado pela Procuradoria' : pl === 'enviado' ? 'Aguardando a Procuradoria' : 'Em montagem';
+    const planoCor = pl === 'aprovado' ? '#146C43' : pl === 'enviado' ? '#1D4E89' : '#7A4A00';
+    const setPlano = (v, acao, msg) => () => { const np = Object.assign({}, s.plano); np[s.tenant] = v; this.reg(acao, { plano: np, msg: msg, msgOk: true }); };
+    const planoAcoes = [];
+    if (pode('Montar o plano do período eleitoral') && pl === 'rascunho') planoAcoes.push(B('Enviar para a Procuradoria', setPlano('enviado', 'Enviou o plano do período eleitoral para aprovação', 'Plano enviado para a Procuradoria.'), 'pri'));
+    if (r === 'proc' && pl === 'enviado') { planoAcoes.push(B('Aprovar plano', setPlano('aprovado', 'Aprovou o plano do período eleitoral', 'Plano aprovado. Será aplicado em 01/07/2028.'), 'pri')); planoAcoes.push(B('Devolver com ajustes', setPlano('rascunho', 'Devolveu o plano do período eleitoral', 'Plano devolvido ao administrador.'), 'sec')); }
+    if (pl === 'aprovado' && pode('Montar o plano do período eleitoral')) planoAcoes.push(B('Reabrir plano', setPlano('rascunho', 'Reabriu o plano do período eleitoral', 'Plano reaberto; precisa de nova aprovação.'), 'sec'));
+    if (!planoAcoes.length) planoAcoes.push(B(pl === 'enviado' ? 'Aguardando a Procuradoria' : 'Sem ação para este perfil', () => { }, 'sec', true));
+    const regras = CLASSES.map((c) => ({ t: c[1], bg: c[4], fg: c[5], ef: c[3], efCor: c[5], pq: c[6], n: meus.filter((x) => x.classe === c[0] && x.status !== 'Arquivado').length }));
+    const GL = [['logo', 'Trocar a marca de gestão pelo brasão oficial', 'Cabeçalho, rodapé e cards passam a usar só o brasão e o nome do órgão.'], ['redes', 'Ocultar feeds de redes sociais', 'Blocos e páginas com postagens das redes oficiais saem do portal.'], ['aviso', 'Mostrar aviso legal no topo', '“Em cumprimento à Lei 9.504/1997, parte do conteúdo está suspensa até 01/10/2028.”'], ['bloqueio', 'Bloquear publicação das classes vedadas', 'O botão de publicar fica desativado para publicidade, agentes e marcas de gestão.'], ['restaura', 'Restaurar automaticamente após a eleição', 'Em 02/10/2028 o sistema devolve o que suspendeu e registra cada item.']];
+    const podePlano = pode('Montar o plano do período eleitoral') && pl !== 'aprovado';
+    const globais = GL.map((g) => ({ t: g[1], d: g[2], on: G[g[0]] ? 'true' : 'false', swBg: G[g[0]] ? '#146C43' : '#9AA5B1', trava: !podePlano, tog: () => { const ng = Object.assign({}, s.globais); ng[s.tenant] = Object.assign({}, G); ng[s.tenant][g[0]] = !G[g[0]]; this.reg((G[g[0]] ? 'Desativou' : 'Ativou') + ' no plano eleitoral: ' + g[1], { globais: ng }); } }));
+    const impItens = meus.filter((c) => VEDADAS.indexOf(c.classe) >= 0 && (c.status === 'Publicado' || c.status === 'Agendado'));
+    const podeExc = r === 'proc' || pode('Montar o plano do período eleitoral');
+    const impacto = impItens.map((c) => ({ titulo: c.titulo, tipo: c.tipo, classe: CL[c.classe][1], exc: c.exc, temExc: !!c.exc, podeExc: !c.exc && podeExc, excAberta: s.excAberta === c.id, abrirExc: () => this.setState({ excAberta: s.excAberta === c.id ? null : c.id, excNum: '' }), salvarExc: () => this.reg('Registrou exceção eleitoral (' + s.excNum + '): ' + c.titulo, { itens: this.updItem(c.id, { exc: s.excNum.trim() }, 'Exceção eleitoral registrada'), excAberta: null, excNum: '', msg: 'Exceção registrada. O item fica no ar durante o defeso, com a decisão anexada ao registro.', msgOk: true }) }));
+    const nSusp = meus.filter(suspende).length;
+    const impactoTxt = defeso ? nSusp + ' conteúdos suspensos agora; ' + meus.filter((c) => c.classe === 'util' && c.status === 'Publicado').length + ' de utilidade pública em revisão.' : impItens.filter((c) => !c.exc).length + ' conteúdos sairão do ar no início do defeso.';
+    const datasSim = [['hoje', 'Hoje · 06/11/2026', 'Fora do período eleitoral'], ['defeso', 'Simular 15/07/2028', 'Durante o defeso das eleições municipais']].map((d) => ({ t: d[1], d: d[2], sel: s.dataSim === d[0] ? 'true' : 'false', bd: s.dataSim === d[0] ? acc : '#DCE1E6', bg: s.dataSim === d[0] ? '#F2F6FB' : '#FFFFFF', go: () => this.setState({ dataSim: d[0] }) }));
+
+    // ===== módulos integrados =====
+    const genKeyOf = (v) => GEN[v] ? v : (v === 'integ' && s.tenant === 'cm') ? 'integcm' : (v === 'pntp' && s.tenant === 'cm') ? 'pntpcm' : null;
+    const gk = genKeyOf(s.view);
+    let gen = { intro: '', base: '', tabs: [], temTabs: false, cols: [], rows: [], count: '', temNovo: false, semEdicao: true, novo: () => { }, temSel: false, selTitulo: '', fechar: () => { }, campos: [], acoes: [], temAviso: false, aviso: '', kpis: [], temKpis: false };
+    if (gk) {
+      const D = GEN[gk];
+      const tabsT = D.tabs.filter((tb) => !tb.orgaos || tb.orgaos.indexOf(s.tenant) >= 0);
+      const TB = tabsT.find((tb) => tb.id === s.gTab[gk]) || tabsT[0];
+      const tabId = TB.id;
+      const rowsRaw = (s.gd[s.tenant][gk] || {})[tabId] || [];
+      const calc = (x) => { const o = Object.assign({}, x); if (x.recebIso) { o.receb = brData(x.recebIso); const done = /Respondid/.test(x.sit); const lim = addDias(x.recebIso, (TB.dias || 20) + (x.sit === 'Prorrogado' ? 10 : 0)); o.prazo = done ? 'concluído' : x.sit === 'Em recurso' ? 'decidir em até 5 dias' : prazoTxt(lim) + ' (' + brData(lim) + ')'; o._lim = (done || x.sit === 'Em recurso') ? '' : lim; } return o; };
+      const rows = rowsRaw.map(calc);
+      const podeEd = r !== 'proc';
+      const setRow = (id, patch, logTxt, msg) => { const gd = Object.assign({}, s.gd); gd[s.tenant] = Object.assign({}, gd[s.tenant]); gd[s.tenant][gk] = Object.assign({}, gd[s.tenant][gk]); gd[s.tenant][gk][tabId] = rowsRaw.map((x) => x.id === id ? Object.assign({}, x, patch) : x); const extra = { gd: gd }; if (msg) { extra.msg = msg; extra.msgOk = true; } if (logTxt) this.reg(logTxt, extra); else this.setState(extra); };
+      const selR = rows.find((x) => x.id === s.gSel);
+      const tk = TB.titulo;
+      const sits = {}; rows.forEach((x) => { if (x.sit) sits[x.sit] = (sits[x.sit] || 0) + 1; });
+      let kp = Object.keys(sits).map((k) => ({ l: k, v: String(sits[k]), cor: chipDe(k)[1] }));
+      if (rows.some((x) => x.recebIso)) { const venc = rows.filter((x) => x._lim && x._lim < HOJE).length; const ate5 = rows.filter((x) => x._lim && x._lim >= HOJE && diasEntre(HOJE, x._lim) <= 5).length; kp = [{ l: 'Vencem em até 5 dias', v: String(ate5), cor: '#B4540A' }, { l: 'Vencidos', v: String(venc), cor: '#9B1C1C' }].concat(kp); }
+      let aviso = '';
+      const acoesG = selR ? TB.acoes.filter((a) => a[2](selR)).map((a) => { const req = a[3]; const falta = !!(req && !String(selR[req] || '').trim()); if (falta && !aviso) { const f = TB.campos.find((c) => c[0] === req); aviso = 'Para “' + a[0] + '”, preencha “' + (f ? f[1] : req) + '”.'; } return B(a[0], () => setRow(selR.id, Object.assign({}, a[1], a[1].sit === 'Respondido' || a[1].sit === 'Respondida' ? { respIso: HOJE } : {}), a[0] + ': ' + selR[tk], a[0] + ' — registrado.'), 'pri', !podeEd || falta); }) : [];
+      gen = {
+        intro: D.intro, base: D.base, temKpis: !!D.kpi, kpis: kp.slice(0, 6),
+        tabs: tabsT.map((tb) => ({ t: tb.label, sel: tb.id === tabId ? 'true' : 'false', bg: tb.id === tabId ? '#17212B' : '#FFFFFF', fg: tb.id === tabId ? '#FFFFFF' : '#17212B', bd: tb.id === tabId ? '#17212B' : '#C9D1D9', go: () => { const g = Object.assign({}, s.gTab); g[gk] = tb.id; this.setState({ gTab: g, gSel: null }); } })), temTabs: tabsT.length > 1,
+        cols: TB.cols.map((c) => c[1]),
+        rows: rows.map((x) => ({ bg: x.id === s.gSel ? '#F2F6FB' : 'transparent', abrir: () => this.setState({ gSel: x.id }), cells: TB.cols.map((c, i) => { const v = x[c[0]] == null || x[c[0]] === '' ? '—' : String(x[c[0]]); const chip = !!c[2] && i > 0; const ch = chipDe(v); return { v: v, primeiro: i === 0, chip: chip, txt: i > 0 && !chip, bg: ch[0], fg: ch[1], cor: c[0] === 'prazo' && /vencido|vence hoje|falta 1 dia|faltam [2-5] dias/.test(v) ? '#9B1C1C' : '#17212B' }; }) })),
+        count: rows.length + (rows.length === 1 ? ' registro' : ' registros') + ' · ' + T.curto,
+        temNovo: !!TB.novo, semEdicao: !podeEd, novo: () => { const id = tabId + '_' + (rowsRaw.length + 1) + '_' + s.log.length; const gd = Object.assign({}, s.gd); gd[s.tenant] = Object.assign({}, gd[s.tenant]); gd[s.tenant][gk] = Object.assign({}, gd[s.tenant][gk]); gd[s.tenant][gk][tabId] = [Object.assign({ id: id }, TB.novo)].concat(rowsRaw); this.reg('Adicionou registro em ' + D.label, { gd: gd, gSel: id }); },
+        temSel: !!selR, selTitulo: selR ? String(selR[tk] || 'Registro') : '', fechar: () => this.setState({ gSel: null }),
+        campos: selR ? TB.campos.map((f) => ({ label: f[1], v: selR[f[0]] == null ? '' : String(selR[f[0]]), isTxt: f[2] === 'txt', isArea: f[2] === 'area', isSel: f[2] === 'sel', isRO: f[2] === 'ro', opts: f[3] || [], off: !podeEd, set: (e) => { const pt = {}; pt[f[0]] = e.target.value; setRow(selR.id, pt); } })) : [],
+        acoes: acoesG, temAviso: !!aviso, aviso: aviso
+      };
+    }
+    const contaAbertos = (k, tab) => ((s.gd[s.tenant][k] || {})[tab] || []).filter((x) => !/Respondid|Conferido|OK|Concluído|Sem execução|Publicado|Deferida|Negado|Rejeitada/.test(x.sit || x.nivel || '')).length;
+    const aoVivo = ((s.gd[s.tenant].transm || {}).ag || []).find((x) => x.sit === 'Ao vivo');
+
+    // identidade
+    const ID = s.ident[s.tenant];
+    const idBloq = !(r === 'admin' || r === 'dtic');
+    const ID_C = [['nome', 'Nome do órgão'], ['cnpj', 'CNPJ'], ['endereco', 'Endereço completo'], ['tel', 'Telefone'], ['whats', 'WhatsApp'], ['email', 'E-mail de atendimento'], ['horario', 'Horário de atendimento'], ['redes', 'Redes sociais oficiais'], ['enc', 'Encarregado de dados (LGPD)'], ['encEmail', 'E-mail do encarregado']];
+    const setId = (k) => (e) => { const ni = Object.assign({}, s.ident); ni[s.tenant] = Object.assign({}, ID); ni[s.tenant][k] = e.target.value; this.setState({ ident: ni }); };
+    const idCampos = ID_C.map((c) => ({ label: c[1], v: ID[c[0]], set: setId(c[0]), bd: /^\[/.test(ID[c[0]]) ? '#D9A441' : '#6B7684' }));
+    const idCores = ['#1D4E89', '#0E4D64', '#2F5233', '#6B2D5C', '#8A5A00'].map((c) => ({ v: c, sel: ID.cor === c ? 'true' : 'false', bd: ID.cor === c ? '#17212B' : '#FFFFFF', go: () => { const ni = Object.assign({}, s.ident); ni[s.tenant] = Object.assign({}, ID, { cor: c }); this.setState({ ident: ni }); } }));
+    const idFalta = ID_C.filter((c) => /^\[/.test(ID[c[0]])).length;
+
+    // sessões
+    const sxS = s.sess.find((x) => x.id === s.sessSel) || s.sess[0];
+    const docChip = (t, ok) => ({ t: t, bg: ok ? '#E3F2E9' : '#EEF0F3', fg: ok ? '#146C43' : '#6B7280' });
+    const setS = (patch, logTxt, msg) => { const ns = s.sess.map((x) => x.id === sxS.id ? Object.assign({}, x, patch) : x); if (logTxt) this.reg(logTxt + ': ' + sxS.nome, { sess: ns, msg: msg || '', msgOk: true }); else this.setState({ sess: ns }); };
+    const sxBloq = !pode('Criar e editar conteúdo');
+    const optB = (t, sel, go) => ({ t: t, sel: sel ? 'true' : 'false', bg: sel ? '#17212B' : '#FFFFFF', fg: sel ? '#FFFFFF' : '#17212B', bd: sel ? '#17212B' : '#C9D1D9', go: go });
+    const sessoes = s.sess.map((x) => ({ nome: x.nome, data: x.data + (x.prox ? ' · próxima' : ''), cur: x.id === sxS.id ? 'page' : undefined, bd: x.id === sxS.id ? acc : '#DCE1E6', go: () => this.setState({ sessSel: x.id }), docs: [docChip('Pauta', x.pautaPub), docChip('Presença', x.presPub), docChip('Votos', x.votosPub), docChip('Ata', x.ataPub)] }));
+    const presOk = VER15.every((n) => sxS.pres[n]);
+    const votosOk = sxS.itensVoto.every((t, i) => VER15.every((n) => (sxS.votos[i] || {})[n]));
+    const sx = {
+      nome: sxS.nome, data: sxS.data, pauta: sxS.pauta, ata: sxS.ata, video: sxS.video,
+      pres: VER15.map((n) => ({ nome: n, opts: ['Presente', 'Ausente', 'Justificada'].map((o) => optB(o, sxS.pres[n] === o, () => { const np = Object.assign({}, sxS.pres); np[n] = o; setS({ pres: np, presPub: false }); })) })),
+      votos: sxS.itensVoto.map((t, i) => { const vv = sxS.votos[i] || {}; const c = (o) => VER15.filter((n) => vv[n] === o).length; return { t: t, placar: 'Sim ' + c('Sim') + ' · Não ' + c('Não') + ' · Abstenção ' + c('Abst.') + ' · Não votou ' + c('—') + ' · sem registro ' + VER15.filter((n) => !vv[n]).length, vs: VER15.map((n, j) => ({ nome: n + (j === 0 ? ' (Presidente: vota no desempate)' : ''), opts: ['Sim', 'Não', 'Abst.', '—'].map((o) => optB(o, vv[n] === o, () => { const nv = Object.assign({}, sxS.votos); nv[i] = Object.assign({}, vv); nv[i][n] = o; setS({ votos: nv, votosPub: false }); })) })) }; })
+    };
+    const ABAS_S = [['pauta', 'Pauta'], ['pres', 'Presença'], ['votos', 'Votação nominal'], ['ata', 'Ata e vídeo']];
+    const sxAbas = ABAS_S.map((a) => ({ t: a[1], sel: s.sessAba === a[0] ? 'true' : 'false', bg: s.sessAba === a[0] ? '#17212B' : '#FFFFFF', fg: s.sessAba === a[0] ? '#FFFFFF' : '#17212B', bd: s.sessAba === a[0] ? '#17212B' : '#C9D1D9', go: () => this.setState({ sessAba: a[0] }) }));
+    const podePub = pode('Aprovar e publicar');
+    const sxAcoes = s.sessAba === 'pauta' ? [B(sxS.pautaPub ? 'Pauta publicada' : 'Publicar pauta', () => setS({ pautaPub: true }, 'Publicou a pauta', 'Pauta publicada no portal.'), 'pri', sxS.pautaPub || !podePub)]
+      : s.sessAba === 'pres' ? [B(sxS.presPub ? 'Presença publicada' : 'Publicar presença', () => setS({ presPub: true }, 'Publicou a presença', 'Presença publicada. No sistema real, ela atualiza “Presença e faltas” no perfil de cada vereador.'), 'pri', sxS.presPub || !presOk || !podePub)]
+        : s.sessAba === 'votos' ? [B(sxS.votosPub ? 'Votação publicada' : 'Publicar votação nominal', () => setS({ votosPub: true }, 'Publicou a votação nominal', 'Votação nominal publicada.'), 'pri', sxS.votosPub || !votosOk || !podePub)]
+          : [B(sxS.ataPub ? 'Ata publicada' : 'Publicar ata e vídeo', () => setS({ ataPub: true }, 'Publicou a ata', 'Ata publicada com o vídeo vinculado.'), 'pri', sxS.ataPub || (sxS.ata || '').trim().length < 20 || !podePub)];
+    const sxNota = s.sessAba === 'pres' ? (presOk ? 'Presença completa.' : 'Marque os 9 vereadores para publicar.') + ' A presença publicada alimenta “Presença e faltas” no perfil de cada vereador.' : s.sessAba === 'votos' ? (votosOk ? 'Votação completa.' : 'Registre o voto de todos em cada item para publicar.') + ' Nada vem preenchido: votos só entram depois da sessão.' : s.sessAba === 'ata' ? 'A ata precisa de ao menos 20 caracteres para ser publicada.' : sxS.prox ? 'Prazo regimental de publicação da pauta: [conferir no Regimento Interno].' : 'Pauta antiga: importar os itens do portal atual.';
+    const videoOpts = ['Não vinculado'].concat(((s.gd.cm.transm || {}).grav || []).map((g) => g.t + ' (' + g.data + ')'));
+
+    // mídia
+    const midiaT = s.midia.filter((m) => m.orgaos.indexOf(s.tenant) >= 0);
+    const midia = midiaT.map((m) => ({ nome: m.nome, src: m.src, alt: m.alt, credito: m.credito, fit: /Brasão/.test(m.nome) ? 'contain' : 'cover', ch: m.alt ? 'Com texto alternativo' : 'Sem texto alternativo', chBg: chipDe(m.alt ? 'Com texto alternativo' : 'Sem texto alternativo')[0], chFg: chipDe(m.alt ? 'Com texto alternativo' : 'Sem texto alternativo')[1], bd: m.alt ? '#6B7684' : '#D9A441', set: (e) => this.setState({ midia: s.midia.map((x) => x.id === m.id ? Object.assign({}, x, { alt: e.target.value }) : x) }) }));
+    const semAlt = midiaT.filter((m) => !m.alt).length;
+
+    const badge = { users: s.usuarios[s.tenant].filter((u) => u.st === 'Convite enviado').length, lista: r === 'pub' ? nRev : r === 'editor' ? nDev : nRev + nDev, eleicao: s.plano[s.tenant] === 'aprovado' ? 0 : 1, esic: contaAbertos('esic', 'ped'), ouvidoria: contaAbertos('ouvidoria', 'man'), operacao: contaAbertos('operacao', 'al'), emendas: ((s.gd[s.tenant].emendas || {}).conf || []).filter((x) => x.sit === 'Divergente').length, midia: semAlt };
+    const alertaV = { eleicao: true, esic: true, operacao: true, emendas: true, midia: true };
+    let grpAtual = '';
+    const grupoDe = {}; MENU.forEach((m) => { if (m[0] === 'G') grpAtual = m[1]; else grupoDe[m[0]] = grpAtual; });
+    const grpCur = grupoDe[s.view === 'editor' ? 'lista' : s.view] || '';
+    const fechado = (g) => !!s.menuFech[g] && g !== grpCur;
+    const menu = [];
+    MENU.filter((m) => disponivel(m, s.tenant, s.mods) && m[0] !== 'perfil').forEach((m) => {
+      if (m[0] === 'G') { const g = m[1]; menu.push(Object.assign(MG(g), { aberto: fechado(g) ? 'false' : 'true', rot: fechado(g) ? -90 : 0, go: () => { const f = Object.assign({}, s.menuFech); f[g] = !s.menuFech[g]; this.setState({ menuFech: f }); } })); return; }
+      if (fechado(grupoDe[m[0]])) return;
+      const it = MI(m[0], m[1], badge[m[0]] || 0, !!alertaV[m[0]]); const on = it.cur === 'page';
+      menu.push(Object.assign(it, { ic: ICON[m[0]] || ICON.painel, icBg: on ? acc : '#243241', icFg: on ? '#FFFFFF' : '#C9D1D9', fg: on ? '#FFFFFF' : '#D5DCE3', barra: on ? '#F0B429' : 'transparent' }));
+    });
+    // fila do painel
+    const filaDe = r === 'pub' ? meus.filter((c) => c.status === 'Em revisão') : r === 'editor' ? meus.filter((c) => c.status === 'Devolvido' || c.status === 'Rascunho') : r === 'proc' ? [] : meus.filter((c) => c.status === 'Em revisão' || c.status === 'Devolvido');
+    const fila = filaDe.map(mkRow);
+    const filaSub = r === 'pub' ? 'Conteúdos aguardando sua revisão' : r === 'editor' ? 'Rascunhos e devolvidos para você corrigir' : r === 'proc' ? (pl === 'enviado' ? 'O plano do período eleitoral aguarda sua aprovação' : 'Sem itens de conteúdo para a Procuradoria') : 'Conteúdos parados no fluxo';
+    const kpis = [
+      { l: 'Aguardando revisão', v: String(nRev), d: 'no fluxo de aprovação', cor: '#1D4E89', go: () => this.go('lista', { cSt: 'Em revisão', cTipo: 'Todos' }) },
+      { l: 'Devolvidos', v: String(nDev), d: 'precisam de correção', cor: '#B4540A', go: () => this.go('lista', { cSt: 'Devolvido', cTipo: 'Todos' }) },
+      { l: 'Agendados', v: String(meus.filter((c) => c.status === 'Agendado').length), d: 'entram no ar sozinhos', cor: '#5B3B8C', go: () => this.go('lista', { cSt: 'Agendado', cTipo: 'Todos' }) },
+      { l: 'Publicados', v: String(meus.filter((c) => stEf(c) === 'Publicado').length), d: defeso ? nSusp + ' suspensos pelo defeso' : 'no ar agora', cor: '#146C43', go: () => this.go('lista', { cSt: 'Publicado', cTipo: 'Todos' }) },
+      { l: 'Sairão no defeso', v: String(nImp), d: 'a partir de 01/07/2028', cor: '#7A2E0E', go: () => this.go('eleicao') }
+    ];
+    const logT = s.log.filter((l) => l.ten === s.tenant);
+
+    // órgãos
+    const WIZ = [['Município', 'Informe o código IBGE. O sistema preenche nome, UF e liga os dados públicos compartilhados (IBGE, INEP, Siconfi, PNCP).'], ['Tipo de órgão', 'Executivo ou Legislativo. O tipo define as funcionalidades obrigatórias e a dimensão do PNTP usada na autoavaliação.'], ['Banco e conector', 'Cria um banco próprio no servidor PostgreSQL (bd_<órgão>_<município>) e escolhe o conector do sistema contábil ou legislativo.'], ['Identidade e tema', 'Brasão, cores, fotos e contatos; tema base no nível 2. Tema próprio (nível 3) só por pedido do órgão.'], ['Domínio e publicação', 'O órgão aponta o DNS para a VPS; o certificado SSL é emitido sozinho. O portal nasce em homologação.']];
+    const wiz = { n: s.wiz, t: WIZ[s.wiz - 1][0], d: WIZ[s.wiz - 1][1] };
+    const ehDtic = r === 'dtic';
+
+    // ===== usuários, perfis de acesso e meu perfil =====
+    const podeUsers = pode('Gerenciar usuários do órgão');
+    const perfisTodos = ROLES.map((x, i) => ({ id: x.id, nome: x.label, base: true, perms: MATRIZ.map((m) => m[1 + i]) })).concat(s.perfisCustom);
+    const nomePerfil = (id) => (perfisTodos.find((x) => x.id === id) || {}).nome || id;
+    const US = s.usuarios[s.tenant];
+    const uS = US.find((u) => u.id === s.uSel);
+    const setU = (patch, logTxt, msg) => { const nu = Object.assign({}, s.usuarios); nu[s.tenant] = US.map((u) => u.id === uS.id ? Object.assign({}, u, patch) : u); const ex = { usuarios: nu }; if (msg) { ex.msg = msg; ex.msgOk = true; } if (logTxt) this.reg(logTxt, ex); else this.setState(ex); };
+    const q = s.uBusca.trim().toLowerCase();
+    const stCor = (st) => st === 'Ativo' ? CHIP.verde : st === 'Suspenso' ? CHIP.vermelho : CHIP.amarelo;
+    const uLista = US.filter((u) => !q || (u.nome + u.email + u.setor + nomePerfil(u.perfil)).toLowerCase().indexOf(q) >= 0).map((u) => ({ nome: u.nome, email: u.email, setor: u.setor, perfil: nomePerfil(u.perfil), escopo: u.escopo, st: u.st, stBg: stCor(u.st)[0], stFg: stCor(u.st)[1], mfa: u.mfa === 'Ativo' ? '2º fator ativo' : '2º fator pendente', mfaCor: u.mfa === 'Ativo' ? '#146C43' : '#9B1C1C', ultimo: u.ultimo, validade: u.validade ? 'expira ' + brData(u.validade) : '', temVal: !!u.validade, bg: u.id === s.uSel ? '#F2F6FB' : 'transparent', abrir: () => this.setState({ uSel: u.id }) }));
+    const uKpis = [['Ativos', US.filter((u) => u.st === 'Ativo').length, '#146C43'], ['Convites pendentes', US.filter((u) => u.st === 'Convite enviado').length, '#B4540A'], ['Suspensos', US.filter((u) => u.st === 'Suspenso').length, '#9B1C1C'], ['Sem 2º fator', US.filter((u) => u.mfa !== 'Ativo').length, '#9B1C1C']].map((k) => ({ l: k[0], v: String(k[1]), cor: k[2] }));
+    const uConvidar = () => { const id = 'nu' + (US.length + 1) + '_' + s.log.length; const nu = Object.assign({}, s.usuarios); nu[s.tenant] = [{ id: id, nome: '', email: '', cpf: '', setor: '', perfil: 'editor', escopo: '', st: 'Rascunho', mfa: 'Pendente', ultimo: '—', validade: '' }].concat(US); this.setState({ usuarios: nu, uSel: id, uAba: 'lista' }); };
+    const campoU = (k, label, tipo, opts) => ({ label: label, v: uS ? String(uS[k] || '') : '', isTxt: tipo === 'txt', isSel: tipo === 'sel', isRO: tipo === 'ro', isData: tipo === 'data', opts: opts || [], off: !podeUsers || (uS && uS.perfil === 'dtic' && r !== 'dtic'), set: (e) => { const pt = {}; pt[k] = e.target.value; setU(pt); } });
+    const uForm = uS ? [campoU('nome', 'Nome completo', 'txt'), campoU('email', 'E-mail institucional', 'txt'), campoU('cpf', 'CPF (login gov.br)', uS.st === 'Rascunho' ? 'txt' : 'ro'), campoU('setor', 'Setor', 'txt'),
+      Object.assign(campoU('perfil', 'Perfil de acesso', 'sel'), { opts: perfisTodos.filter((x) => r === 'dtic' || x.id !== 'dtic').map((x) => ({ v: x.id, t: x.nome })) }), campoU('escopo', 'Escopo (seções ou módulos que pode mexer)', 'txt'), campoU('validade', 'Acesso válido até (temporário)', 'data'), campoU('st', 'Situação', 'ro'), campoU('mfa', 'Segundo fator', 'ro'), campoU('ultimo', 'Último acesso', 'ro')] : [];
+    let uAviso = '';
+    if (uS && uS.st === 'Rascunho' && (!uS.nome.trim() || !/@/.test(uS.email) || !uS.cpf.trim())) uAviso = 'Para enviar o convite, preencha nome, e-mail institucional e CPF. O CPF só serve para o login gov.br e aparece mascarado.';
+    if (uS && uS.perfil === 'dtic' && r !== 'dtic') uAviso = 'Contas da DTIC só podem ser alteradas pela própria DTIC.';
+    const uAcoes = !uS ? [] : uS.st === 'Rascunho' ? [B('Enviar convite', () => setU({ st: 'Convite enviado', cpf: '***.***.***-' + (uS.cpf.replace(/\D/g, '').slice(-2) || '00') }, 'Convidou usuário: ' + uS.nome + ' (' + nomePerfil(uS.perfil) + ')', 'Convite enviado por e-mail. O acesso só funciona depois do login gov.br e do cadastro do 2º fator.'), 'pri', !podeUsers || !!uAviso)]
+      : [uS.st === 'Convite enviado' ? B('Reenviar convite', () => setU({}, 'Reenviou convite: ' + uS.nome, 'Convite reenviado.'), 'sec', !podeUsers) : null,
+        uS.st === 'Ativo' ? B('Suspender acesso', () => setU({ st: 'Suspenso' }, 'Suspendeu o acesso: ' + uS.nome, 'Acesso suspenso. As sessões abertas foram encerradas.'), 'perigo', !podeUsers || uS.perfil === 'dtic') : null,
+        uS.st === 'Suspenso' ? B('Reativar acesso', () => setU({ st: 'Ativo' }, 'Reativou o acesso: ' + uS.nome, 'Acesso reativado.'), 'sec', !podeUsers) : null,
+        uS.mfa === 'Ativo' ? B('Redefinir 2º fator', () => setU({ mfa: 'Pendente' }, 'Redefiniu o 2º fator: ' + uS.nome, 'No próximo acesso a pessoa cadastra o 2º fator de novo.'), 'sec', !podeUsers) : null,
+        B('Salvar alterações', () => setU({}, 'Alterou o cadastro de ' + uS.nome + ' (perfil ' + nomePerfil(uS.perfil) + ')', 'Cadastro salvo.'), 'pri', !podeUsers)].filter(Boolean);
+    const uAbas = [['lista', 'Usuários'], ['perfis', 'Perfis de acesso']].map((a) => ({ t: a[1], sel: s.uAba === a[0] ? 'true' : 'false', bg: s.uAba === a[0] ? '#17212B' : '#FFFFFF', fg: s.uAba === a[0] ? '#FFFFFF' : '#17212B', bd: s.uAba === a[0] ? '#17212B' : '#C9D1D9', go: () => this.setState({ uAba: a[0] }) }));
+    const perfisCols = perfisTodos.map((x) => ({ nome: x.base ? (ROLES.find((y) => y.id === x.id) || {}).curto : x.nome, sub: x.base ? 'padrão' : 'personalizado', n: String(Object.values(s.usuarios).flat().filter((u) => u.perfil === x.id).length) + ' usuários' }));
+    const SIMB = ['—', '◐', '✓'], AL = ['Não', 'Parcial ou só leitura', 'Sim'], COR = ['#9AA5B1', '#7A4A00', '#146C43'];
+    const perfisMat = MATRIZ.map((m, i) => ({ t: m[0], c: perfisTodos.map((x) => ({ s: SIMB[x.perms[i]], al: AL[x.perms[i]], cor: COR[x.perms[i]], trava: x.base || !podeUsers, bg: x.base ? 'transparent' : '#F7F9FB', go: () => { const pc = s.perfisCustom.map((y) => y.id === x.id ? Object.assign({}, y, { perms: y.perms.map((v, j) => j === i ? (v + 1) % 3 : v) }) : y); this.setState({ perfisCustom: pc }); } })) }));
+    const novoPerfil = () => { const id = 'pc' + (s.perfisCustom.length + 1); this.reg('Criou o perfil personalizado “Editor da Saúde”', { perfisCustom: s.perfisCustom.concat([{ id: id, nome: s.perfisCustom.length ? 'Perfil personalizado ' + (s.perfisCustom.length + 1) : 'Editor da Saúde', base: false, perms: MATRIZ.map((m) => m[3]) }]), msg: 'Perfil criado a partir do Editor. Clique nas células da coluna nova para ajustar as permissões.', msgOk: true }); };
+    const perfisNota = podeUsers ? 'Os 5 perfis padrão ficam travados para ninguém perder o acesso. Crie perfis personalizados (por exemplo, editor só da Saúde) e clique nas células para alternar: — não, ◐ parcial, ✓ sim.' : 'Seu perfil só visualiza as permissões.';
+    // meu perfil (usuário simulado)
+    const euU = US.find((u) => u.perfil === r) || US[0];
+    const eu = { nome: role.user, perfil: role.label, email: euU.email, setor: euU.setor, cpf: euU.cpf, nivel: 'gov.br nível prata (exigido para o painel)', mfa: euU.mfa === 'Ativo' ? 'Aplicativo autenticador · ativo' : 'Pendente: cadastre no próximo acesso', escopo: euU.escopo, orgao: T.nome };
+    const NOTIF = [['esic', 'Prazos do e-SIC e da Ouvidoria'], ['revisao', 'Conteúdos aguardando minha revisão'], ['coleta', 'Falhas nas integrações de dados'], ['eleicao', 'Período eleitoral e exceções'], ['resumo', 'Resumo semanal por e-mail']];
+    const euNotif = NOTIF.map((n) => ({ t: n[1], on: s.notif[n[0]] ? 'true' : 'false', swBg: s.notif[n[0]] ? '#146C43' : '#9AA5B1', tog: () => { const nn = Object.assign({}, s.notif); nn[n[0]] = !s.notif[n[0]]; this.setState({ notif: nn }); } }));
+    const euSessoes = s.sessoesAtivas.map((x, i) => ({ disp: x[0], local: x[1], quando: x[2], atual: i === 0, podeEnc: i > 0, encerrar: () => this.reg('Encerrou a sessão em ' + x[0], { sessoesAtivas: s.sessoesAtivas.filter((y, j) => j !== i), msg: 'Sessão encerrada.', msgOk: true }) }));
+    const euAcessos = s.log.filter((l) => l.quem === role.user).slice(0, 5);
+
+    const users = USERS[s.tenant].map((u) => ({ nome: u[0], setor: u[1], perfil: (ROLES.find((x) => x.id === u[2]) || {}).curto }));
+    const matriz = MATRIZ.map((m) => ({ t: m[0], c: m.slice(1).map((v) => ({ s: v === 2 ? '✓' : v === 1 ? '◐' : '—', al: v === 2 ? 'Sim' : v === 1 ? 'Parcial ou só leitura' : 'Não', cor: v === 2 ? '#146C43' : v === 1 ? '#7A4A00' : '#9AA5B1' })) }));
+
+    return {
+      acc: acc, ten: T, tenants: [TEN.pm, TEN.cm], tenant: s.tenant, onTenant: (e) => { const nt = e.target.value; try { window.localStorage.setItem('painel-orgao', nt); } catch (x) { } const m = MENU.find((x) => x[0] === s.view); const ok = !m || disponivel(m, nt, s.mods); this.setState({ tenant: nt, view: !ok ? 'painel' : s.view === 'editor' ? 'lista' : s.view, sel: null, gSel: null, msg: '', excAberta: null }); },
+      roles: ROLES, role: r, onRole: (e) => this.setState({ role: e.target.value, msg: '' }), roleIni: ini || 'U', roleUser: role.user,
+      menu: menu, viewTitle: titles[s.view] || '',
+      hasMsg: !!s.msg, msg: s.msg, msgBg: s.msgOk ? '#E3F2E9' : '#FBE4D8', limparMsg: () => this.setState({ msg: '' }),
+      defesoAtivo: defeso, dataSimTxt: brData(dataSim), defesoResumo: nSusp + ' conteúdos suspensos, marca de gestão trocada pelo brasão e redes sociais ocultas. Transparência, serviços e atos oficiais seguem no ar.', goEleicao: () => this.go('eleicao'),
+      isGen: !!gk, gen: gen, isIdent: s.view === 'ident', idCampos: idCampos, idCores: idCores, idBloq: idBloq, idv: ID, idSalvar: () => this.reg('Atualizou a identidade do órgão', { msg: 'Identidade salva. No sistema real, cabeçalho, rodapé e contatos dos portais passam a usar estes dados.' + (idFalta ? ' Ainda faltam ' + idFalta + ' campos entre colchetes.' : ''), msgOk: true }),
+      isSess: s.view === 'sessoes', sessoes: sessoes, sx: sx, sxAbas: sxAbas, sxPauta: s.sessAba === 'pauta', sxPres: s.sessAba === 'pres', sxVotos: s.sessAba === 'votos', sxAta: s.sessAba === 'ata', sxAcoes: sxAcoes, sxNota: sxNota, sxBloq: sxBloq, videoOpts: videoOpts, onAta: (e) => setS({ ata: e.target.value, ataPub: false }), onVideo: (e) => setS({ video: e.target.value }),
+      isMidia: s.view === 'midia', midia: midia, midiaResumo: midiaT.length + ' arquivos · ' + semAlt + ' sem texto alternativo', midiaEnviar: () => this.setState({ msg: 'No sistema real, o envio pede crédito, licença e texto alternativo antes de liberar o arquivo para uso.', msgOk: true }),
+      isDiario: s.view === 'diario' && s.tenant === 'pm', isIntegPm: s.view === 'integ' && s.tenant === 'pm', isPntpPm: s.view === 'pntp' && s.tenant === 'pm',
+      temAoVivo: !!aoVivo, aoVivoTxt: aoVivo ? aoVivo.t : '', goTransm: () => this.go('transm'),
+      isPainel: s.view === 'painel', isLista: s.view === 'lista', isEditor: s.view === 'editor', isHome: s.view === 'home', isMods: s.view === 'mods', isEleicao: s.view === 'eleicao', isUsers: s.view === 'users', isOrgaos: s.view === 'orgaos', isAud: s.view === 'aud',
+      kpis: kpis, fila: fila, filaVazia: fila.length === 0, filaSub: filaSub, ele: ele, planoTxt: planoTxt, planoCor: planoCor, impactoTxt: impactoTxt,
+      logTop: logT.slice(0, 5), logAll: logT, modResumo: ativos.length + ' de ' + modsT.length + ' funcionalidades ligadas · ' + modsT.filter((m) => m[4]).length + ' exigidas por lei', modChips: modsT.map((m) => ({ t: m[1], bg: s.mods[s.tenant][m[0]] ? '#E3F2E9' : '#EEF0F3', fg: s.mods[s.tenant][m[0]] ? '#146C43' : '#6B7280' })), goMods: () => this.go('mods'),
+      tiposTabs: tiposTabs, cSt: s.cSt, stOpts: ['Todas'].concat(STATUS).concat(['Suspenso (defeso)']), onCSt: (e) => this.setState({ cSt: e.target.value }), lista: filtrados.map(mkRow), semCriar: !pode('Criar e editar conteúdo'),
+      novo: () => this.go('editor', { sel: null, fTipo: 'Notícia', fSec: SECOES[s.tenant][0], fTit: '', fRes: '', fTxt: '', fClasse: '', fPub: '', fExp: '', fCom: '' }), goLista: () => this.go('lista'), noSubmit: (e) => e.preventDefault(),
+      ed: { st: stAtual, stBg: ST_COR[stAtual][0], stFg: ST_COR[stAtual][1], meta: it ? 'Autor: ' + it.autor + ' · atualizado em ' + it.data : 'Novo conteúdo de ' + T.curto },
+      edBloq: !!edBloq, tiposOpts: TIPOS, secOpts: SECOES[s.tenant], fTipo: s.fTipo, fSec: s.fSec, fTit: s.fTit, fRes: s.fRes, fTxt: s.fTxt, fPub: s.fPub, fExp: s.fExp, fCom: s.fCom,
+      onFTipo: (e) => this.setState({ fTipo: e.target.value }), onFSec: (e) => this.setState({ fSec: e.target.value }), onFTit: (e) => this.setState({ fTit: e.target.value }), onFRes: (e) => this.setState({ fRes: e.target.value }), onFTxt: (e) => this.setState({ fTxt: e.target.value }), onFPub: (e) => this.setState({ fPub: e.target.value }), onFExp: (e) => this.setState({ fExp: e.target.value }), onFCom: (e) => this.setState({ fCom: e.target.value }),
+      classesOpts: classesOpts, regraTxt: regra ? regra[3] + '. ' + regra[6] : 'escolha uma classificação para ver a regra.', regraCor: regra && VEDADAS.indexOf(regra[0]) >= 0 ? '#7A2E0E' : '#374151',
+      podeComentar: !!(it && it.status === 'Em revisão' && pode('Aprovar e publicar')), temAviso: !!aviso, aviso: aviso, acoes: acoes, semAcoes: semAcoes, semAcoesTxt: 'Nenhuma ação disponível para este perfil nesta situação.',
+      fTitOu: s.fTit || 'Título do conteúdo', fResOu: s.fRes || 'O resumo aparece aqui.', previaDefeso: vedada, passos: passos, hist: it ? it.hist : [{ v: 1, quando: 'agora', quem: this.user(), o: 'Ainda não salvo' }],
+      blocos: blocosV, previa: previa, homeEstado: homeEstado, homeHomolog: setHome('homologacao', 'Enviou a página inicial para homologação', 'Página inicial em homologação.'), homePublicar: setHome('publicada', 'Publicou a nova estrutura da página inicial', 'Nova estrutura da página inicial publicada.'), homeSemPub: hst !== 'homologacao' || !pode('Aprovar e publicar'),
+      mods: mods, modsNota: podeMods ? 'Cada mudança fica no registro de ações e pode ser desfeita.' : 'Seu perfil só visualiza. Ligar e desligar é do administrador do órgão ou da DTIC.',
+      datasSim: datasSim, planoAcoes: planoAcoes, regras: regras, globais: globais, impacto: impacto, impN: impItens.filter((c) => !c.exc).length, impVazio: impItens.length === 0, excNum: s.excNum, onExcNum: (e) => this.setState({ excNum: e.target.value }), excVazia: !s.excNum.trim(),
+      usuariosX: users, isPerfil: s.view === 'perfil', goPerfil: () => this.go('perfil'), uAbas: uAbas, uLista: uLista, uIsLista: s.uAba === 'lista', uIsPerfis: s.uAba === 'perfis', uBusca: s.uBusca, onUBusca: (e) => this.setState({ uBusca: e.target.value }), uConvidar: uConvidar, uSemGestao: !podeUsers, uKpis: uKpis, uTemSel: !!uS, uForm: uForm, uAcoes: uAcoes, uSelNome: uS ? uS.nome : '', uFechar: () => this.setState({ uSel: null }), uAviso: uAviso, uTemAviso: !!uAviso, perfisCols: perfisCols, perfisMat: perfisMat, novoPerfil: novoPerfil, perfisNota: perfisNota, eu: eu, euNotif: euNotif, euSessoes: euSessoes, euAcessos: euAcessos, semUsers: !pode('Gerenciar usuários do órgão'), rolesCurto: ROLES.map((x) => x.curto), matriz: matriz,
+      orgaos: [TEN.pm, TEN.cm], semOrgaos: !ehDtic, ehDticV: r === 'dtic', wiz: wiz, wizPassos: WIZ.map((w, i) => ({ n: i + 1, t: w[0], bg: i + 1 === s.wiz ? '#17212B' : i + 1 < s.wiz ? '#E3F2E9' : '#EEF0F3', fg: i + 1 === s.wiz ? '#FFFFFF' : i + 1 < s.wiz ? '#146C43' : '#4B5563' })), wizPrimeiro: s.wiz === 1 || !ehDtic, wizBloq: !ehDtic, wizBtn: s.wiz === 5 ? 'Criar em homologação' : 'Avançar',
+      wizVoltar: () => this.setState({ wiz: Math.max(1, s.wiz - 1) }), wizAvancar: () => { if (s.wiz < 5) this.setState({ wiz: s.wiz + 1 }); else this.reg('Simulou o cadastro de um novo órgão (homologação)', { wiz: 1, msg: 'Simulação concluída: o novo órgão nasceria em homologação, com banco próprio e tema base.', msgOk: true }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

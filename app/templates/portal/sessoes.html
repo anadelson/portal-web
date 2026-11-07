@@ -1,0 +1,5 @@
+{% extends 'portal/base.html' %}
+{% block conteudo %}<h1>Sessões</h1>
+<div class="tabela"><table><thead><tr><th scope="col">Sessão</th><th scope="col">Data</th><th scope="col">Pauta</th><th scope="col">Presença</th><th scope="col">Ata</th></tr></thead><tbody>
+{% for s in sessoes %}<tr><td>{{ s.nome }}</td><td>{{ s.data|br }} · {{ s.hora }}</td><td><span class="chip {{ 'ok' if s.pauta_publicada else 'alerta' }}">{{ 'Publicada' if s.pauta_publicada else 'A publicar' }}</span></td><td><span class="chip {{ 'ok' if s.presenca_publicada else 'alerta' }}">{{ 'Publicada' if s.presenca_publicada else 'A publicar' }}</span></td><td>{% if s.ata_publicada %}<details><summary>Ver ata</summary><div style="white-space:pre-line">{{ s.ata }}</div></details>{% else %}<span class="chip alerta">A publicar</span>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>{% endblock %}

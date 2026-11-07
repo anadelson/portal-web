@@ -1,0 +1,18 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}Painel{% endblock %} — {{ ident.nome }}</title><link rel="stylesheet" href="/static/admin.css"><style>:root{--cor:{{ cor }}}</style></head>
+<body><div class="casca">
+<nav class="lado" aria-label="Menu do painel">
+<div class="marca">Painel administrativo<small>{{ ident.nome }}</small></div>
+<a href="/admin/">Visão geral</a>
+<span class="grupo">Conteúdo</span><a href="/admin/conteudos">Conteúdos</a><a href="/admin/pagina-inicial">Página inicial (blocos)</a>
+{% if orgao.tipo == 'legislativo' %}<span class="grupo">Legislativo</span><a href="/admin/sessoes">Sessões e presença</a>{% if mods.emend %}<a href="/admin/emendas">Emendas impositivas</a>{% endif %}{% endif %}
+{% if mods.diario %}<span class="grupo">Publicações oficiais</span><a href="/admin/diario">Diário Oficial</a>{% endif %}
+<span class="grupo">Atendimento</span><a href="/admin/atendimento">e-SIC e Ouvidoria</a>
+<span class="grupo">Configuração</span><a href="/admin/identidade">Identidade do órgão</a><a href="/admin/funcionalidades">Funcionalidades</a>{% if mods.eleicao %}<a href="/admin/eleicao">Período eleitoral</a>{% endif %}<a href="/admin/usuarios">Usuários e perfis</a><a href="/admin/auditoria">Registro de ações</a>
+<div class="rodape">{{ u.nome }} · {{ PERFIS[u.perfil] }}<br><a href="/admin/senha" style="padding:0;color:#C9D1D9">Trocar senha</a> · <a href="/admin/sair" style="padding:0;color:#C9D1D9">Sair</a><br><a href="/" style="padding:0;color:#C9D1D9">Ver portal ↗</a></div>
+</nav>
+<div class="principal">
+{% if defeso %}<div class="defeso" role="status">Período eleitoral em vigor até {{ eleicao.fim|br }}: conteúdos de publicidade, agentes políticos e marcas de gestão estão fora do ar.</div>{% endif %}
+<header class="barra"><h1>{% block h1 %}{% endblock %}</h1><span class="legal">{{ orgao.dominio }} · banco {{ orgao.banco }}</span></header>
+<main>{% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}{% block conteudo %}{% endblock %}</main>
+</div></div></body></html>

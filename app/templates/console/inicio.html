@@ -1,0 +1,5 @@
+{% extends 'console/base.html' %}{% block h1 %}Órgãos e licenças{% endblock %}
+{% block conteudo %}{% if alertas %}<section class="cx"><h2>Alertas de licença</h2><ul>{% for o in alertas %}<li><a href="/orgao/{{ o.id }}">{{ o.nome }}</a>: {{ o.sit }}</li>{% endfor %}</ul></section>{% endif %}
+<div class="tabela"><table><thead><tr><th>Órgão</th><th>Domínio</th><th>Banco</th><th>Vigência</th><th>Licença</th><th></th></tr></thead><tbody>
+{% for o in orgaos %}<tr><td><strong>{{ o.nome }}</strong><br><small>{{ 'Executivo' if o.tipo == 'executivo' else 'Legislativo' }} · {{ o.municipio }} · {{ o.opc }} opcionais</small></td><td><a href="https://{{ o.dominio }}">{{ o.dominio }}</a></td><td><code>{{ o.banco }}</code></td><td>{{ o.contrato.inicio|br }} a {{ o.contrato.fim|br }}</td><td><span class="chip {{ {'ativa':'ok','alerta':'alerta','impl':'azul'}.get(o.fase, 'erro') }}">{{ o.sit }}</span></td><td><a class="btn sec" href="/orgao/{{ o.id }}">Contrato</a> <a class="btn sec" href="/layout/{{ o.id }}">Layout</a></td></tr>{% endfor %}
+</tbody></table></div>{% endblock %}

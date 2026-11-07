@@ -1,0 +1,54 @@
+# Piloto dos Portais — um código para todos os órgãos.
+# Domínios e senhas vêm do arquivo .env (copie de .env.example).
+services:
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMINIO_GESTAO: ${DOMINIO_GESTAO}
+      DOMINIO_PM: ${DOMINIO_PM}
+      DOMINIO_CM: ${DOMINIO_CM}
+      EMAIL_SSL: ${EMAIL_SSL}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes: ["dados:/srv/dados"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  worker:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    command: ["python", "-m", "app.worker"]
+    volumes: ["dados:/srv/dados"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: plataforma
+      TZ: America/Sao_Paulo
+    volumes: ["pg:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d plataforma"]
+      interval: 5s
+      retries: 20
+
+volumes:
+  pg: {}
+  dados: {}
+  caddy_data: {}
+  caddy_config: {}

@@ -1,0 +1,35 @@
+{% extends 'portal/base.html' %}
+{% macro bloco(b) %}
+{% if b.chave == 'hero' %}
+<section class="secao destaque"><h2>{{ 'O que você procura?' if orgao.tipo == 'executivo' else 'A Câmara de ' ~ orgao.municipio.split(' (')[0] }}</h2>
+<p>{{ 'Serviços, transparência e informações oficiais do município.' if orgao.tipo == 'executivo' else 'Vereadores, sessões, projetos e a prestação de contas do Legislativo.' }}</p>
+<form action="{{ '/servicos' if orgao.tipo == 'executivo' else '/proposicoes' }}" role="search"><label class="pular" for="q">Buscar</label><input id="q" name="q" placeholder="{{ 'Ex.: IPTU, vacinação' if orgao.tipo == 'executivo' else 'Ex.: indicação, requerimento' }}"><button class="btn sec" type="submit">Buscar</button></form></section>
+{% elif b.chave == 'atalhos' %}
+<section class="secao"><h2>Acesso direto</h2><div class="grade">
+{% if orgao.tipo == 'executivo' %}
+<a class="cartao" href="/servicos"><h3>Serviços</h3><span>Como pedir, prazos e canais</span></a><a class="cartao" href="/transparencia"><h3>Transparência</h3><span>Receitas, despesas e contratos</span></a>{% if mods.diario %}<a class="cartao" href="/diario"><h3>Diário Oficial</h3><span>Edições publicadas</span></a>{% endif %}<a class="cartao" href="/acesso"><h3>Fale com a Prefeitura</h3><span>e-SIC e Ouvidoria</span></a>
+{% else %}
+<a class="cartao" href="/sessoes"><h3>Sessões</h3><span>Pauta, ata e presença</span></a><a class="cartao" href="/proposicoes"><h3>Projetos</h3><span>Indicações, requerimentos e moções</span></a><a class="cartao" href="/transparencia"><h3>Gastos da Câmara</h3><span>Duodécimo e pessoal</span></a><a class="cartao" href="/acesso"><h3>Fale com a Câmara</h3><span>e-SIC e Ouvidoria</span></a>
+{% endif %}</div></section>
+{% elif b.chave == 'servicos' %}
+<section class="secao"><h2>Serviços mais procurados</h2><div class="grade">{% for c in d.servicos %}<a class="cartao" href="/conteudo/{{ c.id }}"><h3>{{ c.titulo }}</h3><span>{{ c.resumo }}</span>{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</a>{% else %}<p>Nenhum serviço publicado ainda.</p>{% endfor %}</div></section>
+{% elif b.chave == 'noticias' %}
+<section class="secao"><h2>Notícias e avisos</h2><div class="grade">{% for c in d.noticias %}<a class="cartao" href="/conteudo/{{ c.id }}"><h3>{{ c.titulo }}</h3><span>{{ c.resumo }}</span>{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</a>{% else %}<p>Nenhuma notícia no momento.</p>{% endfor %}</div></section>
+{% elif b.chave == 'diario' %}
+<section class="secao cartao"><h2>Diário Oficial</h2><ul>{% for e in d.edicoes %}<li><a href="/diario/{{ e.id }}.pdf">Edição nº {{ e.numero }}{{ e.letra }} · {{ e.data|br }}</a></li>{% else %}<li>Nenhuma edição publicada.</li>{% endfor %}</ul><a href="/diario">Todas as edições</a></section>
+{% elif b.chave == 'ver' %}
+<section class="secao"><h2>Vereadores{% if d.legislatura %} da {{ d.legislatura }}ª Legislatura{% endif %}</h2>{% if not d.vereadores %}<p>Composição a cadastrar.</p>{% endif %}<div class="grade">
+{% for v in d.vereadores %}<a class="cartao" href="/vereador/{{ v.id }}" style="display:flex;gap:12px;align-items:center;text-decoration:none;color:inherit"><span class="avatar" aria-hidden="true">{{ v.nome.split()[0][:1] }}{{ v.nome.split()[-1][:1] }}</span><span><strong>{{ v.nome }}</strong><br><small>{{ v.apelido and '“' ~ v.apelido ~ '” · ' or '' }}{{ v.partido }}</small></span></a>{% endfor %}</div>
+<div class="cartao" style="margin-top:14px"><h3>Mesa Diretora</h3>{% for g in d.mesa|groupby('bienio') %}<p><strong>{{ g.grouper }}:</strong> {% for m in g.list %}{{ m.cargo }}: {{ m.nome or 'a eleger' }}{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endfor %}</div></section>
+{% elif b.chave == 'contas' %}
+<section class="secao cartao"><h2>Prestação de contas</h2>{% set dtp = d.financas.dtp or [] %}{% if dtp %}{% set u = dtp[-1] %}<p>Despesa com pessoal: <strong>{{ u[3]|string|replace('.', ',') }}%</strong> da receita corrente líquida ({{ u[1] }} de {{ u[0] }}) · limite legal 6%.</p>{% endif %}{% if d.financas.duodecimo_2026 %}<p>Duodécimo 2026: <strong>{{ d.financas.duodecimo_2026|moeda }}</strong></p><p style="font-size:13px;color:#4B5563">Fonte: {{ d.financas.fonte }}</p>{% else %}<p>Dados financeiros a carregar.</p>{% endif %}<a href="/transparencia">Transparência da Câmara</a></section>
+{% elif b.chave == 'emendas' %}
+<section class="secao cartao"><h2>Emendas impositivas</h2><p>{{ d.emendas.n }} emendas · {{ d.emendas.total|moeda }} indicados · {{ d.emendas.pago|moeda }} pagos (cadastro)</p><a class="btn" href="/emendas">+ detalhes das emendas</a></section>
+{% elif b.chave == 'sessoes' %}
+<section class="secao cartao"><h2>Últimas sessões</h2><ul>{% for s in d.sessoes %}<li>{{ s.nome }} · {{ s.data|br }}</li>{% endfor %}</ul><a href="/sessoes">Todas as sessões</a></section>
+{% endif %}
+{% endmacro %}
+{% block conteudo %}
+<h1 class="pular">{{ ident.nome }}</h1>
+<div class="duas"><div>{% for b in principal %}{{ bloco(b) }}{% endfor %}</div><aside>{% for b in lateral %}{{ bloco(b) }}{% endfor %}</aside></div>
+{% endblock %}

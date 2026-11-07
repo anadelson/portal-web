@@ -1,0 +1,5 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block titulo %}Console do gestor{% endblock %}</title><link rel="stylesheet" href="/static/admin.css"><style>:root{--cor:#1B1E30}nav.lado{background:#1B1E30}</style></head>
+<body><div class="casca"><nav class="lado" aria-label="Menu do console"><div class="marca">Console do gestor<small>Plataforma de portais</small></div>
+<a href="/">Órgãos e licenças</a><a href="/orgaos/novo">Cadastrar órgão</a><a href="/catalogo">Catálogo de módulos</a><a href="/log">Registro e coletas</a>
+<div class="rodape">{{ g.nome if g else '' }} · Hoje: {{ hoje|br }}<br><a href="/senha" style="padding:0;color:#C9D1D9">Trocar senha</a> · <a href="/sair" style="padding:0;color:#C9D1D9">Sair</a></div></nav>
+<div class="principal"><header class="barra"><h1>{% block h1 %}{% endblock %}</h1></header><main>{% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}{% block conteudo %}{% endblock %}</main></div></div></body></html>

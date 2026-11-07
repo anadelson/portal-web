@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Câmara Municipal de Borá — protótipo do portal</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2F5233}a:hover{color:#1F3A22}
+.skip{position:absolute;left:-9999px;top:8px;background:#FFFFFF;color:#17212B;padding:8px 12px;border-radius:6px;z-index:10}
+.skip:focus{left:16px}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #F0B429;outline-offset:2px}
+@keyframes pulso{0%,100%{opacity:1}50%{opacity:.35}}
+.pulso{animation:pulso 2s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.pulso{animation:none}}
+.hc,.hc *{background-color:#000 !important;background-image:none !important;color:#FFF !important;border-color:#FFF !important;box-shadow:none !important}
+.hc a,.hc button,.hc a *,.hc button *{color:#FFFF00 !important}
+.hc button{border:2px solid #FFFF00 !important}
+.hc .hc-hide{display:none !important}
+.hc .hc-bar{background-color:#FFFF00 !important}
+@media (max-width: 440px){.pres{grid-column: auto !important}}
+.vcard{transition: transform .15s ease, box-shadow .15s ease}.vcard:hover{transform: translateY(-2px); box-shadow: 0 8px 22px rgba(23,33,43,0.12)}.vcard:focus-visible{outline: 3px solid #F7C948; outline-offset: 2px}
+@media (prefers-reduced-motion: reduce){.vcard{transition: none}.vcard:hover{transform: none}}
+
+.fl{color:inherit;text-decoration:none;text-underline-offset:3px}.fl:hover,.fl:focus-visible{text-decoration:underline;color:#FFFFFF}
+.fbtn{transition:background-color .15s ease,border-color .15s ease}.fbtn:hover{border-color:#FFFFFF !important}
+.fcol h2{margin:0 0 12px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+</style>
+</helmet>
+<div class="{{rootClass}}" style="min-height: 100vh; background: #F5F7F4; color: #17212B; font-family: 'Public Sans', system-ui, sans-serif; font-size: 17px; line-height: 1.55; zoom: {{zoom}};">
+<a class="skip" href="#conteudo-cm">Ir para o conteúdo [1]</a>
+
+<div style="background: #F1F3EF; color: #3D4752; border-bottom: 1px solid #E1E6DE;">
+<div role="region" aria-label="Barra de acessibilidade" style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 0 14px; font-size: 13px; min-height: 32px;">
+<a href="#conteudo-cm" style="color: #3D4752; text-decoration: none; padding: 6px 0;">Ir para o conteúdo [1]</a>
+<span style="margin-left: auto; display: inline-flex; align-items: center; gap: 4px;">
+<button type="button" onClick="{{fonteMenos}}" aria-label="Diminuir texto" style="min-width: 30px; min-height: 30px; font: inherit; font-size: 12px; font-weight: 700; color: #3D4752; background: none; border: 0; cursor: pointer;">A−</button>
+<button type="button" onClick="{{fonteMais}}" aria-label="Aumentar texto" style="min-width: 30px; min-height: 30px; font: inherit; font-size: 15px; font-weight: 700; color: #3D4752; background: none; border: 0; cursor: pointer;">A+</button>
+<button type="button" onClick="{{toggleHc}}" aria-pressed="{{hcPressed}}" style="min-height: 30px; padding: 0 8px; font: inherit; font-size: 13px; color: #3D4752; background: none; border: 0; cursor: pointer;">Alto contraste</button>
+<span style="display: inline-flex; align-items: center; gap: 5px; padding: 0 4px;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#1D4E89"></circle><circle cx="12" cy="6.2" r="1.7" fill="#FFFFFF"></circle><path d="M6.5 9.2l5.5 1.1 5.5-1.1M12 10.3v3.6m0 0l-2.6 4.6M12 13.9l2.6 4.6" stroke="#FFFFFF" stroke-width="1.6" fill="none" stroke-linecap="round"></path></svg>Libras (VLibras)</span>
+</span>
+</div>
+</div>
+
+<div style="background: #1F3A22; color: #FFFFFF;">
+<nav aria-label="Acesso rápido" style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; gap: 0 22px; font-size: 14px;">
+<sc-for list="{{util}}" as="u" hint-placeholder-count="5">
+<button type="button" onClick="{{u.go}}" style="background: none; border: 0; color: #FFFFFF; font: inherit; padding: 10px 0; min-height: 40px; cursor: pointer;">{{u.label}}</button>
+</sc-for>
+<a href="Main.dc.html" style="margin-left: auto; color: #FFFFFF; padding: 10px 0; min-height: 40px; box-sizing: border-box; text-decoration: none; font-weight: 600;">Prefeitura de Borá</a>
+</nav>
+</div>
+
+<header style="background: #FFFFFF; border-bottom: 1px solid #DCE1D9;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 32px;">
+<button type="button" onClick="{{goHome}}" aria-label="Página inicial da Câmara Municipal de Borá" style="display: flex; align-items: center; gap: 12px; background: none; border: 0; padding: 0; cursor: pointer; color: #17212B; font: inherit; text-align: left;">
+<img src="{{brasao}}" alt="" width="64" height="56" style="display: block; width: 64px; height: auto;">
+<span style="display: flex; flex-direction: column; line-height: 1.15;"><span style="font-size: 13px; color: #4B5563;">Poder Legislativo</span><span style="font-size: 25px; font-weight: 800; letter-spacing: -0.01em;">Câmara Municipal de Borá</span><span style="font-size: 12px; color: #4B5563; text-transform: uppercase; letter-spacing: 0.04em;">15ª Legislatura · 2025–2028</span></span>
+</button>
+<nav aria-label="Menu principal" style="display: flex; flex-wrap: wrap; gap: 2px; flex: 1 1 520px; justify-content: flex-end;">
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
+<button type="button" onClick="{{n.go}}" aria-current="{{n.cur}}" style="background: none; border: 0; border-bottom: 3px solid {{n.line}}; color: {{n.fg}}; font: inherit; font-weight: 600; font-size: 16px; padding: 10px 12px; min-height: 44px; cursor: pointer;">{{n.label}}</button>
+</sc-for>
+</nav>
+</div>
+</header>
+
+<sc-if value="{{showLiveBar}}" hint-placeholder-val="{{false}}">
+<section aria-label="Transmissão ao vivo" style="background: #7F1414; color: #FFFFFF;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 15px;">
+<span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; letter-spacing: 0.06em;"><span aria-hidden="true" class="pulso" style="width: 10px; height: 10px; border-radius: 50%; background: #FF6B6B;"></span>AO VIVO</span>
+<span style="flex: 1 1 320px;">{{live.titulo}} · {{live.local}}</span>
+<button type="button" onClick="{{goTransm}}" style="min-height: 40px; padding: 0 16px; font: inherit; font-weight: 700; color: #7F1414; background: #FFFFFF; border: 0; border-radius: 8px; cursor: pointer;">Assistir agora</button>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{isHome}}" hint-placeholder-val="{{true}}">
+<section aria-labelledby="h-cm-hero" style="position: relative; overflow: hidden; background: #1F3A22;">
+<img class="hc-hide" src="{{fotoCasa}}" alt="Fachada do prédio onde funciona a Câmara Municipal, na Rua Vereador Herculano Azevedo" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 40%;">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(20,38,22,0.94) 0%, rgba(20,38,22,0.82) 45%, rgba(20,38,22,0.35) 80%, rgba(20,38,22,0.15) 100%);"></div>
+<div style="position: relative; max-width: 1200px; margin: 0 auto; padding: 56px 24px 64px; display: flex; flex-wrap: wrap; gap: 28px; align-items: center; box-sizing: border-box;">
+<div style="flex: 3 1 520px; color: #FFFFFF; display: flex; flex-direction: column; gap: 14px;">
+<p style="margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #F7C948;">Portal oficial da Câmara Municipal de Borá</p>
+<h1 id="h-cm-hero" style="margin: 0; font-size: 46px; line-height: 1.08; letter-spacing: -0.02em;">Acompanhe o trabalho dos vereadores</h1>
+<p style="margin: 0; font-size: 19px; color: #E3EADF;">Sessões, projetos, votações e gastos da Câmara, num só lugar e em linguagem simples.</p>
+<form role="search" onSubmit="{{noSubmit}}" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+<label for="q-cm" class="sr">Buscar projeto, lei ou vereador</label>
+<input id="q-cm" type="search" placeholder="Busque projeto, lei, sessão ou vereador" style="flex: 1 1 300px; min-height: 54px; padding: 0 18px; font: inherit; border: 0; border-radius: 12px; box-sizing: border-box; color: #17212B;">
+<button type="submit" style="min-height: 54px; padding: 0 26px; font: inherit; font-weight: 700; color: #17212B; background: #F7C948; border: 0; border-radius: 12px; cursor: pointer;">Buscar</button>
+</form>
+</div>
+<aside aria-labelledby="h-prox" style="flex: 2 1 320px; background: #FFFFFF; color: #17212B; border-radius: 18px; padding: 22px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 10px;">
+<p style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #2F5233;">Próxima sessão</p>
+<h2 id="h-prox" style="margin: 0; font-size: 24px; line-height: 1.2;">{{prox.nome}}</h2>
+<p style="margin: 0; font-size: 17px;"><strong>{{prox.data}}</strong>, às {{prox.hora}} · {{prox.local}}</p>
+<p style="margin: 0; font-size: 14px; color: #4B5563;">Transmissão ao vivo no portal e no canal oficial, com legendas e janela de Libras.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+<button type="button" onClick="{{goPauta}}" style="min-height: 44px; padding: 0 16px; font: inherit; font-weight: 700; color: #FFFFFF; background: #2F5233; border: 0; border-radius: 10px; cursor: pointer;">Ver a pauta</button>
+<button type="button" onClick="{{goTribuna}}" style="min-height: 44px; padding: 0 16px; font: inherit; font-weight: 600; color: #2F5233; background: #FFFFFF; border: 1px solid #2F5233; border-radius: 10px; cursor: pointer;">Opinar sobre um projeto</button>
+</div>
+</aside>
+</div>
+</section>
+</sc-if>
+
+<main id="conteudo-cm" tabindex="-1" style="max-width: 1200px; margin: 0 auto; padding: 32px 24px 72px; box-sizing: border-box;">
+
+<sc-if value="{{notHome}}" hint-placeholder-val="{{false}}">
+<nav aria-label="Você está em" style="font-size: 14px; color: #4B5563; display: flex; gap: 6px; margin-bottom: 10px;"><button type="button" onClick="{{goHome}}" style="background: none; border: 0; padding: 4px 0; font: inherit; color: #2F5233; text-decoration: underline; cursor: pointer;">Início</button><span aria-hidden="true">›</span><span aria-current="page">{{pageTitle}}</span></nav>
+<h1 style="margin: 0 0 8px; font-size: 34px; line-height: 1.15; letter-spacing: -0.02em;">{{pageTitle}}</h1>
+<p style="margin: 0 0 6px; color: #4B5563; max-width: 72ch; font-size: 18px;">{{pageIntro}}</p>
+</sc-if>
+<sc-if value="{{hasLegal}}" hint-placeholder-val="{{true}}">
+<p style="margin: 0 0 22px; max-width: 110ch; font-size: 12px; line-height: 1.5; color: #4B5563;"><strong style="font-weight: 600;">Base legal:</strong> {{baseLegal}}</p>
+</sc-if>
+
+<sc-if value="{{homeLive}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="h-live-cm" style="margin-bottom: 32px; background: #0B1620; color: #FFFFFF; border-radius: 22px; overflow: hidden; display: flex; flex-wrap: wrap;">
+<button type="button" onClick="{{goTransm}}" aria-label="Assistir: {{live.titulo}}" style="flex: 3 1 520px; min-width: 0; padding: 0; border: 0; background: none; cursor: pointer; display: block;">
+<dc-import name="Player" cena="administracao" color="#2F5233" live="{{true}}" compacto="{{false}}" info="{{live.espF}}" hint-size="100%,380px" style="display: block; width: 100%;"></dc-import>
+</button>
+<div style="flex: 2 1 300px; padding: 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; justify-content: center;">
+<span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; background: #C81E1E; border-radius: 999px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em;"><span aria-hidden="true" class="pulso" style="width: 8px; height: 8px; border-radius: 50%; background: #FFFFFF;"></span>AO VIVO AGORA</span>
+<h2 id="h-live-cm" style="margin: 0; font-size: 26px; line-height: 1.2;">{{live.titulo}}</h2>
+<p style="margin: 0; color: #C9D1D9;">{{live.desc}}</p>
+<p style="margin: 0; font-size: 15px; color: #C9D1D9;">Início às {{live.inicio}} · {{live.local}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px;">
+<button type="button" onClick="{{goTransm}}" style="min-height: 46px; padding: 0 20px; font: inherit; font-weight: 700; color: #0B1620; background: #FFFFFF; border: 0; border-radius: 10px; cursor: pointer;">Assistir no portal</button>
+<button type="button" onClick="{{goPauta}}" style="min-height: 46px; padding: 0 20px; font: inherit; font-weight: 600; color: #FFFFFF; background: none; border: 2px solid #FFFFFF; border-radius: 10px; cursor: pointer;">Ver a pauta</button>
+</div>
+</div>
+</section>
+</sc-if>
+<sc-if value="{{isHome}}" hint-placeholder-val="{{true}}">
+<nav aria-label="Acesso direto" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 40px;">
+<sc-for list="{{atalhos}}" as="a" hint-placeholder-count="4">
+<button type="button" onClick="{{a.go}}" style="display: flex; flex-direction: column; gap: 4px; text-align: left; background: #FFFFFF; border: 1px solid #DCE1D9; border-top: 4px solid {{a.cor}}; border-radius: 14px; padding: 18px; font: inherit; color: #17212B; cursor: pointer;"><strong style="font-size: 18px;">{{a.t}}</strong><span style="font-size: 15px; color: #4B5563;">{{a.d}}</span></button>
+</sc-for>
+</nav>
+
+<section aria-labelledby="h-cm-ver" style="margin-bottom: 40px;">
+<div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;"><h2 id="h-cm-ver" style="margin: 0; font-size: 26px;">Vereadores da 15ª Legislatura</h2><button type="button" onClick="{{goVereadores}}" style="background: none; border: 0; font: inherit; font-weight: 600; color: #2F5233; text-decoration: underline; cursor: pointer;">Perfis e galeria das legislaturas</button></div>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 1fr)); grid-auto-flow: row dense; gap: 14px;">
+<sc-for list="{{vereadores}}" as="v" hint-placeholder-count="9">
+<sc-if value="{{v.presidente}}" hint-placeholder-val="{{false}}">
+<li class="pres" style="grid-row: span 2; grid-column: span 2; min-width: 0; display: flex;">
+<button type="button" onClick="{{v.go}}" aria-label="Ver perfil de {{v.nome}}, Presidente da Câmara" class="vcard" style="width: 100%; background: #1F3A22; color: #FFFFFF; border: 0; border-radius: 18px; padding: 18px; display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: center; box-sizing: border-box; min-width: 0; font: inherit; text-align: center; cursor: pointer;">
+<span style="position: relative; flex: 0 0 auto; width: 150px; aspect-ratio: 4 / 5; border-radius: 14px; overflow: hidden; background: #2F5233; border: 3px solid #F7C948; box-sizing: border-box;">
+<img src="{{v.foto}}" alt="{{v.fotoAlt}}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%;"><sc-if value="{{v.ilus}}" hint-placeholder-val="{{true}}"><span style="position: absolute; left: 6px; top: 6px; padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,0.55); color: #FFFFFF; font-size: 10px;">foto ilustrativa</span></sc-if>
+</span>
+<span style="flex: 1 1 180px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+<span style="max-width: 100%; box-sizing: border-box; padding: 4px 12px; border-radius: 999px; background: #F7C948; color: #17212B; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;">Presidente da Câmara</span>
+<strong style="font-size: 20px; line-height: 1.2; text-wrap: balance;">{{v.nome}}</strong>
+<span style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;"><sc-if value="{{v.temApelido}}" hint-placeholder-val="{{true}}"><span style="padding: 2px 10px; border-radius: 999px; background: rgba(255,255,255,0.14); font-size: 13px;">{{v.apelido}}</span></sc-if><span style="padding: 2px 10px; border-radius: 999px; background: rgba(255,255,255,0.14); font-size: 13px; font-weight: 700;">{{v.partido}}</span></span>
+<span style="font-size: 13px; color: #C9D8C4;">Mesa Diretora 2025–2026 · {{v.votos}}</span>
+<span style="font-size: 14px; font-weight: 700; color: #F7C948; text-decoration: underline;">Ver perfil e atuação</span>
+</span>
+</button>
+</li>
+</sc-if>
+<sc-if value="{{v.comum}}" hint-placeholder-val="{{true}}">
+<li style="min-width: 0; display: flex;">
+<button type="button" onClick="{{v.go}}" aria-label="Ver perfil de {{v.nome}}" class="vcard" style="width: 100%; padding: 0; font: inherit; color: #17212B; text-align: left; cursor: pointer; background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; min-width: 0;">
+<span style="position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; background: #EEF3EC; overflow: hidden;">
+<img src="{{v.foto}}" alt="{{v.fotoAlt}}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 22%;"><sc-if value="{{v.ilus}}" hint-placeholder-val="{{true}}"><span style="position: absolute; left: 6px; top: 6px; padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,0.55); color: #FFFFFF; font-size: 10px;">foto ilustrativa</span></sc-if>
+<span style="position: absolute; right: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px; background: {{v.cor}}; color: #FFFFFF; font-size: 12px; font-weight: 700;">{{v.partido}}</span>
+</span>
+<span style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 2px;">
+<strong style="font-size: 15px; line-height: 1.25; text-wrap: balance;">{{v.nome}}</strong>
+<span style="font-size: 13px; color: #4B5563;">{{v.sub}}</span>
+</span>
+</button>
+</li>
+</sc-if>
+</sc-for>
+<li style="grid-column: 1 / -1; min-width: 0; background: #FFFFFF; border: 1px solid #DCE1D9; border-left: 6px solid #F7C948; border-radius: 18px; padding: 20px 22px; box-sizing: border-box;">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; margin-bottom: 12px;"><h3 style="margin: 0; font-size: 20px;">Mesa Diretora da 15ª Legislatura</h3><span style="font-size: 13px; color: #4B5563;">Eleita para dois biênios · Regimento Interno</span></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px;">
+<sc-for list="{{mesas15}}" as="m" hint-placeholder-count="2">
+<div style="border: 1px solid #E5E9E2; border-radius: 14px; padding: 14px; background: #FAFBF9;">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px;"><strong style="font-size: 15px;">{{m.rot}}</strong><span style="padding: 2px 10px; border-radius: 999px; background: {{m.stBg}}; color: {{m.stFg}}; font-size: 12px; font-weight: 700; white-space: nowrap;">{{m.st}}</span></div>
+<sc-if value="{{m.tem}}" hint-placeholder-val="{{true}}">
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 8px;">
+<sc-for list="{{m.itens}}" as="x" hint-placeholder-count="4"><li><button type="button" onClick="{{x.go}}" style="width: 100%; display: flex; align-items: center; gap: 10px; padding: 6px; background: #FFFFFF; border: 1px solid #E5E9E2; border-radius: 12px; font: inherit; color: #17212B; text-align: left; cursor: pointer;"><img src="{{x.foto}}" alt="" style="width: 40px; height: 48px; object-fit: cover; object-position: center 20%; border-radius: 8px; flex: 0 0 auto;"><span style="min-width: 0;"><span style="display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #2F5233;">{{x.cargo}}</span><span style="display: block; font-size: 14px; font-weight: 600; line-height: 1.25;">{{x.nome}}</span></span></button></li></sc-for>
+</ul>
+</sc-if>
+<sc-if value="{{m.vazio}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 14px; color: #4B5563;">{{m.txt}}</p></sc-if>
+</div>
+</sc-for>
+</div>
+<p style="margin: 10px 0 0; font-size: 12px; color: #4B5563;">Fotos dos cards: imagens ilustrativas de banco livre (CC0), não são os vereadores. As fotos oficiais entram pelo painel administrativo.</p>
+</li>
+</ul>
+</section>
+
+<div style="margin-bottom: 40px; display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch;">
+<section aria-labelledby="h-cm-gastos" style="flex: 55 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #DCE1D9; border-top: 6px solid #2F5233; border-radius: 22px; padding: 26px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px 16px;">
+<div>
+<p style="margin: 0 0 4px; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #2F5233;">Prestação de contas</p>
+<h2 id="h-cm-gastos" style="margin: 0; font-size: 30px; line-height: 1.15; letter-spacing: -0.01em;">Quanto custa a Câmara</h2>
+</div>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #4B5563;"><span aria-hidden="true" class="pulso" style="width: 8px; height: 8px; border-radius: 50%; background: #146C43;"></span>Dados de 06/11/2026</span>
+</div>
+<dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px;">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+<div style="padding: 14px 16px; border-radius: 14px; background: #F4F7F2; border-left: 4px solid {{k.cor}};"><dt style="font-size: 14px; color: #4B5563;">{{k.l}}</dt><dd style="margin: 2px 0 0; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums;">{{k.v}}</dd><dd style="margin: 0; font-size: 13px; color: #4B5563;">{{k.d}}</dd></div>
+</sc-for>
+</dl>
+<div>
+<p style="margin: 0 0 6px; font-size: 14px;"><strong>Despesa com pessoal:</strong> {{pesLast}} da receita corrente líquida · limite legal 6%</p>
+<div aria-hidden="true" style="position: relative; height: 14px; border-radius: 7px; background: #EEF1EC;"><span class="hc-bar" style="position: absolute; left: 0; top: 0; bottom: 0; width: {{pesW}}%; background: #2F5233; border-radius: 7px;"></span><span style="position: absolute; top: -4px; bottom: -4px; left: 90%; border-left: 2px dashed #9B1C1C;"></span></div>
+<p style="margin: 4px 0 0; font-size: 12px; color: #4B5563;">Linha tracejada: limite de alerta (5,4%). Fonte: RGF do Legislativo no Siconfi.</p>
+</div>
+<button type="button" onClick="{{goTransp}}" style="margin-top: auto; align-self: flex-start; min-height: 46px; padding: 0 20px; font: inherit; font-weight: 700; color: #FFFFFF; background: #2F5233; border: 0; border-radius: 999px; cursor: pointer;">Transparência da Câmara</button>
+</section>
+
+<section aria-labelledby="h-cm-emendas" style="flex: 45 1 400px; min-width: 0; border-radius: 22px; overflow: hidden; background: linear-gradient(135deg, #1F3A22 0%, #2F5233 55%, #3E6B43 100%); color: #FFFFFF; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px;">
+<div>
+<span style="display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 12px; border-radius: 999px; background: #F7C948; color: #17212B; white-space: nowrap;">Destaque · Orçamento 2026</span>
+<h2 id="h-cm-emendas" style="margin: 10px 0 4px; font-size: 24px; line-height: 1.2;">Emendas impositivas dos vereadores</h2>
+<p style="margin: 0; font-size: 15px; color: #D7E3D2;">Parte do orçamento que cada vereador direcionou para a cidade. A Prefeitura é obrigada a executar.</p>
+</div>
+<dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 10px;">
+<sc-for list="{{emKpis}}" as="k" hint-placeholder-count="4">
+<div style="padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);"><dt style="font-size: 13px; color: #D7E3D2;">{{k.l}}</dt><dd style="margin: 2px 0 0; font-size: 19px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums;">{{k.v}}</dd><dd style="margin: 2px 0 0; font-size: 12px; color: #D7E3D2;">{{k.d}}</dd></div>
+</sc-for>
+</dl>
+<div>
+<p style="margin: 0 0 6px; font-size: 14px; color: #D7E3D2;">Execução: {{emPagoPct}} pago</p>
+<div aria-hidden="true" style="height: 10px; border-radius: 5px; background: rgba(255,255,255,0.2); overflow: hidden;"><span class="hc-bar" style="display: block; height: 100%; width: {{emPctW}}%; min-width: 4px; background: #F7C948;"></span></div>
+</div>
+<button type="button" onClick="{{goEmendas}}" style="margin-top: auto; align-self: flex-start; min-height: 46px; padding: 0 20px; font: inherit; font-weight: 700; color: #17212B; background: #F7C948; border: 0; border-radius: 12px; cursor: pointer;">+ detalhes das emendas</button>
+</section>
+</div>
+
+<section aria-labelledby="h-cm-ult" style="margin-bottom: 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px;">
+<div style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 18px; padding: 22px;">
+<h2 id="h-cm-ult" style="margin: 0 0 12px; font-size: 22px;">Últimas sessões</h2>
+<ul style="list-style: none; margin: 0; padding: 0;">
+<sc-for list="{{sessoesHome}}" as="s" hint-placeholder-count="4">
+<li style="border-bottom: 1px solid #EEF1EC;"><button type="button" onClick="{{s.go}}" style="width: 100%; display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; background: none; border: 0; font: inherit; color: #17212B; text-align: left; cursor: pointer;"><span><strong>{{s.nome}}</strong><span style="display: block; font-size: 14px; color: #4B5563;">{{s.data}}</span></span><span style="font-size: 13px; font-weight: 700; color: {{s.stCor}}; white-space: nowrap;">{{s.st}}</span></button></li>
+</sc-for>
+</ul>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 18px; padding: 22px;">
+<h2 style="margin: 0 0 12px; font-size: 22px;">Projetos em tramitação</h2>
+<ul style="list-style: none; margin: 0; padding: 0;">
+<sc-for list="{{propHome}}" as="p" hint-placeholder-count="3">
+<li style="padding: 12px 0; border-bottom: 1px solid #EEF1EC;"><strong>{{p.num}}</strong> <span style="font-size: 13px; padding: 2px 8px; border-radius: 999px; background: #EAF2E6; color: #2F5233; font-weight: 700;">{{p.fase}}</span><span style="display: block; font-size: 15px;">{{p.ementa}}</span><span style="display: block; font-size: 13px; color: #4B5563;">Autoria: {{p.autor}}</span></li>
+</sc-for>
+</ul>
+<button type="button" onClick="{{goProp}}" style="margin-top: 12px; background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: #2F5233; text-decoration: underline; cursor: pointer;">Todos os projetos</button>
+</div>
+</section>
+
+
+</sc-if>
+
+<sc-if value="{{isVereadores}}" hint-placeholder-val="{{false}}">
+<nav aria-label="Legislaturas" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px; margin-bottom: 22px;">
+<sc-for list="{{legTabs}}" as="l" hint-placeholder-count="4"><button type="button" aria-pressed="{{l.sel}}" onClick="{{l.go}}" style="display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 12px 16px; border-radius: 14px; border: 1px solid #DCE1D9; background: {{l.bg}}; color: {{l.fg}}; font: inherit; cursor: pointer;"><strong style="font-size: 16px;">{{l.t}}</strong><span style="font-size: 13px; color: {{l.sub}};">{{l.d}}</span></button></sc-for>
+</nav>
+<sc-if value="{{galTem}}" hint-placeholder-val="{{true}}">
+<section aria-labelledby="h-gal" style="margin-bottom: 24px;">
+<h2 id="h-gal" style="margin: 0 0 4px; font-size: 24px;">{{gal.titulo}}</h2>
+<p style="margin: 0 0 14px; font-size: 15px; color: #4B5563;">{{gal.exec}}</p>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; margin-bottom: 18px;">
+<sc-for list="{{gal.mesas}}" as="m" hint-placeholder-count="2">
+<div style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; padding: 16px;">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px;"><strong>Mesa Diretora · {{m.rot}}</strong><span style="padding: 2px 10px; border-radius: 999px; background: {{m.stBg}}; color: {{m.stFg}}; font-size: 12px; font-weight: 700; white-space: nowrap;">{{m.st}}</span></div>
+<sc-if value="{{m.tem}}" hint-placeholder-val="{{true}}"><ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;"><sc-for list="{{m.itens}}" as="x" hint-placeholder-count="4"><li><button type="button" onClick="{{x.go}}" style="width: 100%; display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #F4F7F2; border: 0; font: inherit; color: #17212B; text-align: left; cursor: pointer;"><span style="font-size: 13px; font-weight: 700; color: #2F5233; text-transform: uppercase;">{{x.cargo}}</span><span style="font-weight: 600; text-align: right;">{{x.nome}}</span></button></li></sc-for></ul></sc-if>
+<sc-if value="{{m.vazio}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 14px; color: #4B5563;">{{m.txt}}</p></sc-if>
+</div>
+</sc-for>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 14px;">
+<sc-for list="{{gal.ver}}" as="v" hint-placeholder-count="9"><li style="display: flex; min-width: 0;"><button type="button" onClick="{{v.go}}" aria-label="Ver perfil de {{v.nome}}" class="vcard" style="width: 100%; padding: 0; font: inherit; color: #17212B; text-align: left; cursor: pointer; background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;">
+<span style="position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; background: #EEF3EC;"><img src="{{v.foto}}" alt="{{v.fotoAlt}}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 22%;"><sc-if value="{{v.ilus}}" hint-placeholder-val="{{true}}"><span style="position: absolute; left: 6px; top: 6px; padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,0.55); color: #FFFFFF; font-size: 10px;">foto ilustrativa</span></sc-if><span style="position: absolute; right: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px; background: {{v.cor}}; color: #FFFFFF; font-size: 12px; font-weight: 700;">{{v.partido}}</span></span>
+<span style="padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 2px;"><strong style="font-size: 15px; line-height: 1.25;">{{v.nome}}</strong><span style="font-size: 13px; color: #4B5563;">{{v.apelido}} {{v.votos}}</span><sc-if value="{{v.temCargo}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; font-weight: 700; color: #2F5233;">{{v.cargo}}</span></sc-if></span>
+</button></li></sc-for>
+</ul>
+<p style="margin: 12px 0 0; font-size: 13px; color: #4B5563;">Nomes, partidos, votos, prefeito, vice e Mesas: dados reais da página de legislaturas do portal da Câmara (consulta em 06/11/2026). Fotos: imagens ilustrativas de banco livre (CC0), não são os vereadores.</p>
+</section>
+</sc-if>
+<sc-if value="{{galAcervo}}" hint-placeholder-val="{{false}}">
+<section style="background: #FFFFFF; border: 1px dashed #B9C3B4; border-radius: 16px; padding: 22px; margin-bottom: 24px;">
+<h2 style="margin: 0 0 6px; font-size: 22px;">1ª a 12ª Legislatura (1965–2016)</h2>
+<p style="margin: 0; color: #4B5563;">O portal da Câmara lista as legislaturas desde 1965, mas a composição de cada uma não foi importada neste protótipo. O coletor do backend vai trazer vereadores, partidos, votos e Mesas de cada legislatura, com perfil igual ao das legislaturas recentes.</p>
+</section>
+</sc-if>
+<sc-if value="{{gal15}}" hint-placeholder-val="{{true}}">
+<h2 style="margin: 0 0 10px; font-size: 22px;">Atuação dos vereadores da 15ª Legislatura</h2>
+<div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 14px;">
+<table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 15px;">
+<caption class="sr">Vereadores da 15ª Legislatura</caption>
+<thead><tr><th scope="col" style="text-align: left; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Vereador(a)</th><th scope="col" style="text-align: left; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Partido</th><th scope="col" style="text-align: left; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Mesa</th><th scope="col" style="text-align: right; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Presença</th><th scope="col" style="text-align: right; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Proposições</th><th scope="col" style="text-align: left; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Perfil</th></tr></thead>
+<tbody><sc-for list="{{vereadores}}" as="v" hint-placeholder-count="9"><tr>
+<th scope="row" style="text-align: left; padding: 12px 14px; border-bottom: 1px solid #EEF1EC;">{{v.nome}}<span style="display: block; font-weight: 400; font-size: 13px; color: #4B5563;">{{v.apelido}}</span></th>
+<td style="padding: 12px 14px; border-bottom: 1px solid #EEF1EC;">{{v.partido}}</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #EEF1EC;">{{v.cargo}}</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #EEF1EC; text-align: right; color: #4B5563;">a carregar</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #EEF1EC; text-align: right; color: #4B5563;">a carregar</td>
+<td style="padding: 12px 14px; border-bottom: 1px solid #EEF1EC;"><button type="button" onClick="{{v.go}}" style="background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: #2F5233; text-decoration: underline; cursor: pointer;">Ver perfil</button></td>
+</tr></sc-for></tbody>
+</table>
+</div>
+<p style="margin: 12px 0 0; font-size: 13px; color: #4B5563;">Nomes, partidos e Mesa: dados reais do portal atual da Câmara (consulta em 06/11/2026). Presença e número de proposições por vereador vêm do sistema legislativo e só aparecem quando as atas e votações forem registradas nele.</p>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{isPerfil}}" hint-placeholder-val="{{false}}">
+<button type="button" onClick="{{pf.voltar}}" style="margin: 0 0 16px; background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 600; color: #2F5233; text-decoration: underline; cursor: pointer;">‹ Voltar para Vereadores · {{pf.legNome}}</button>
+<section aria-label="Identificação" style="display: flex; flex-wrap: wrap; gap: 24px; background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 22px; padding: 22px; margin-bottom: 20px;">
+<figure style="margin: 0; flex: 0 1 240px; min-width: 200px;">
+<span style="position: relative; display: block; aspect-ratio: 4 / 5; border-radius: 16px; overflow: hidden; background: #EEF3EC;"><img src="{{pf.foto}}" alt="{{pf.fotoAlt}}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 22%;"><sc-if value="{{pf.ilus}}" hint-placeholder-val="{{true}}"><span style="position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 4px; background: rgba(0,0,0,0.55); color: #FFFFFF; font-size: 11px;">foto ilustrativa</span></sc-if></span>
+<sc-if value="{{pf.ilus}}" hint-placeholder-val="{{true}}"><figcaption style="margin-top: 8px; font-size: 12px; line-height: 1.45; color: #4B5563;">{{pf.credito}}</figcaption></sc-if>
+</figure>
+<div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;"><sc-if value="{{pf.temApelido}}" hint-placeholder-val="{{true}}"><span style="padding: 3px 12px; border-radius: 999px; background: #EAF2E6; color: #1F3A22; font-weight: 700;">{{pf.apelido}}</span></sc-if><span style="padding: 3px 12px; border-radius: 999px; background: {{pf.cor}}; color: #FFFFFF; font-weight: 700;">{{pf.partido}}</span><sc-if value="{{pf.temCargo}}" hint-placeholder-val="{{true}}"><span style="padding: 3px 12px; border-radius: 999px; background: #F7C948; color: #17212B; font-size: 13px; font-weight: 800;">{{pf.cargo}}</span></sc-if></div>
+<dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px;">
+<div><dt style="font-size: 13px; color: #4B5563;">Mandato</dt><dd style="margin: 0; font-weight: 700;">{{pf.legNome}}</dd></div>
+<div><dt style="font-size: 13px; color: #4B5563;">Eleição</dt><dd style="margin: 0; font-weight: 700;">{{pf.eleicao}}</dd></div>
+<div><dt style="font-size: 13px; color: #4B5563;">Trajetória na Câmara</dt><dd style="margin: 0; font-weight: 700;">{{pf.mandatos}}</dd></div>
+<div><dt style="font-size: 13px; color: #4B5563;">Biografia e contato</dt><dd style="margin: 0; color: #4B5563;">[texto enviado pelo gabinete]</dd></div>
+</dl>
+<dl style="margin: 4px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 10px;">
+<sc-for list="{{pf.kpis}}" as="k" hint-placeholder-count="4"><div style="padding: 12px 14px; border-radius: 14px; background: #F4F7F2;"><dt style="font-size: 13px; color: #4B5563;">{{k.l}}</dt><dd style="margin: 2px 0 0; font-size: 22px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums;">{{k.v}}</dd><dd style="margin: 0; font-size: 12px; color: #4B5563;">{{k.d}}</dd></div></sc-for>
+</dl>
+</div>
+</section>
+
+<sc-if value="{{pf.temEm}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="h-pf-em" style="border-radius: 20px; background: linear-gradient(135deg, #1F3A22 0%, #2F5233 70%); color: #FFFFFF; padding: 22px; margin-bottom: 20px;">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 12px;"><h2 id="h-pf-em" style="margin: 0; font-size: 22px;">Emendas impositivas 2026</h2><span style="font-size: 14px; color: #D7E3D2;">{{pf.emTot}} indicados · {{pf.emPago}} pagos</span></div>
+<ul style="list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px;">
+<sc-for list="{{pf.em}}" as="e" hint-placeholder-count="4"><li style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.1);"><span><strong>{{e.num}}</strong> · {{e.obj}}</span><span style="font-variant-numeric: tabular-nums; white-space: nowrap;">{{e.valor}} · <span style="color: #F7C948;">{{e.pago}}</span></span></li></sc-for>
+</ul>
+<button type="button" onClick="{{pf.verEm}}" style="min-height: 44px; padding: 0 18px; font: inherit; font-weight: 700; color: #17212B; background: #F7C948; border: 0; border-radius: 12px; cursor: pointer;">Ver o caminho de cada emenda na Prefeitura</button>
+<p style="margin: 10px 0 0; font-size: 12px; color: #D7E3D2;">Fonte: cadastro de emendas e empenhos do sistema contábil da Prefeitura (Fiorilli), lido em 05/11/2026.</p>
+</section>
+</sc-if>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; margin-bottom: 20px;">
+<sc-for list="{{pf.blocos}}" as="b" hint-placeholder-count="4">
+<section style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 18px; padding: 20px; min-width: 0;">
+<h2 style="margin: 0; font-size: 20px;">{{b.t}}</h2>
+<p style="margin: 2px 0 12px; font-size: 13px; color: #4B5563;">{{b.sub}}</p>
+<sc-if value="{{b.temItens}}" hint-placeholder-val="{{true}}"><ul style="list-style: none; margin: 0; padding: 0; max-height: 420px; overflow-y: auto;"><sc-for list="{{b.itens}}" as="x" hint-placeholder-count="3"><li style="padding: 10px 0; border-bottom: 1px solid #EEF1EC;"><strong style="font-size: 14px;">{{x.num}}</strong><span style="display: block; font-size: 15px;">{{x.txt}}</span><span style="display: block; font-size: 12px; color: #4B5563;">{{x.info}}</span></li></sc-for></ul></sc-if>
+<sc-if value="{{b.vazio}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 12px 14px; border-radius: 12px; background: #F4F6F8; font-size: 14px; color: #374151;"><strong>A carregar.</strong> {{b.vazioTxt}}</p></sc-if>
+</section>
+</sc-for>
+</div>
+
+<section aria-labelledby="h-pf-hist" style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 18px; padding: 20px;">
+<h2 id="h-pf-hist" style="margin: 0 0 12px; font-size: 20px;">Mandatos na Câmara de Borá</h2>
+<ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px;">
+<sc-for list="{{pf.hist}}" as="m" hint-placeholder-count="2"><li><button type="button" onClick="{{m.go}}" aria-current="{{m.cur}}" style="width: 100%; text-align: left; padding: 12px 14px; border-radius: 14px; border: 1px solid {{m.bd}}; background: {{m.bg}}; font: inherit; color: #17212B; cursor: pointer;"><strong style="display: block;">{{m.leg}} · {{m.anos}}</strong><span style="display: block; font-size: 14px; color: #4B5563;">{{m.partido}} · {{m.votos}}</span><span style="display: block; font-size: 13px; color: #2F5233; font-weight: 600;">{{m.mesa}}</span></button></li></sc-for>
+</ol>
+<p style="margin: 10px 0 0; font-size: 12px; color: #4B5563;">Registros consultados: 13ª, 14ª e 15ª Legislaturas no portal da Câmara (06/11/2026). Mandatos anteriores a 2017 entram com a importação do acervo.</p>
+</section>
+</sc-if>
+
+<sc-if value="{{isSessoes}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+<section aria-labelledby="h-lista-s" style="flex: 1 1 320px; background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; padding: 18px;">
+<h2 id="h-lista-s" style="margin: 0 0 10px; font-size: 20px;">Sessões</h2>
+<ul style="list-style: none; margin: 0; padding: 0;">
+<sc-for list="{{sessoes}}" as="s" hint-placeholder-count="8">
+<li><button type="button" onClick="{{s.go}}" aria-pressed="{{s.sel}}" style="width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 4px; border-radius: 10px; border: 1px solid {{s.bd}}; background: {{s.bg}}; font: inherit; color: #17212B; cursor: pointer;"><strong style="display: block; font-size: 15px;">{{s.nome}}</strong><span style="font-size: 13px; color: #4B5563;">{{s.data}} · </span><span style="font-size: 13px; font-weight: 700; color: {{s.stCor}};">{{s.st}}</span></button></li>
+</sc-for>
+</ul>
+</section>
+<section aria-labelledby="h-sess" style="flex: 3 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+<div style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; padding: 22px;">
+<h2 id="h-sess" style="margin: 0; font-size: 24px;">{{ss.nome}}</h2>
+<p style="margin: 4px 0 12px; color: #4B5563;">{{ss.data}} · Plenário da Câmara Municipal de Borá</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+<sc-for list="{{ss.docs}}" as="d" hint-placeholder-count="4"><span style="padding: 6px 12px; border-radius: 999px; background: {{d.bg}}; color: {{d.fg}}; font-size: 14px; font-weight: 600;">{{d.t}}</span></sc-for>
+</div>
+<sc-if value="{{ss.aviso}}" hint-placeholder-val="{{false}}"><p style="margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: #FCEFD9; font-size: 14px;">{{ss.avisoTxt}}</p></sc-if>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; padding: 22px;">
+<h3 style="margin: 0 0 10px; font-size: 19px;">Pauta (ordem do dia)</h3>
+<ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<sc-for list="{{pauta}}" as="i" hint-placeholder-count="4"><li><strong>{{i.t}}</strong> <span style="color: #4B5563;">— {{i.d}}</span></li></sc-for>
+</ol>
+<p style="margin: 10px 0 0; font-size: 13px; color: #4B5563;">Itens de exemplo (consistentes com o protótipo da Prefeitura). A pauta real é publicada até 48 horas antes, conforme o Regimento Interno.</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; padding: 22px;">
+<h3 style="margin: 0 0 4px; font-size: 19px;">Votação nominal (exemplo de estrutura)</h3>
+<p style="margin: 0 0 12px; font-size: 14px; color: #4B5563;">Cada voto aparece com o nome do vereador assim que a ata é aprovada. Aqui, nomes genéricos: não atribuímos votos a vereadores reais.</p>
+<div style="overflow-x: auto;">
+<table style="width: 100%; min-width: 520px; border-collapse: collapse; font-size: 14px;">
+<thead><tr><th scope="col" style="text-align: left; padding: 8px; border-bottom: 1px solid #DCE1D9;">Vereador(a)</th><th scope="col" style="text-align: left; padding: 8px; border-bottom: 1px solid #DCE1D9;">Presença</th><th scope="col" style="text-align: left; padding: 8px; border-bottom: 1px solid #DCE1D9;">Item 1</th><th scope="col" style="text-align: left; padding: 8px; border-bottom: 1px solid #DCE1D9;">Item 2</th></tr></thead>
+<tbody><sc-for list="{{votos}}" as="v" hint-placeholder-count="9"><tr><th scope="row" style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #EEF1EC; font-weight: 500;">{{v.n}}</th><td style="padding: 6px 8px; border-bottom: 1px solid #EEF1EC;">{{v.p}}</td><td style="padding: 6px 8px; border-bottom: 1px solid #EEF1EC; font-weight: 700; color: {{v.c1}};">{{v.v1}}</td><td style="padding: 6px 8px; border-bottom: 1px solid #EEF1EC; font-weight: 700; color: {{v.c2}};">{{v.v2}}</td></tr></sc-for></tbody>
+</table>
+</div>
+<p style="margin: 10px 0 0; font-size: 14px;"><strong>Resultado:</strong> item 1 aprovado por 7 votos a 1, com 1 ausência; item 2 aprovado por unanimidade dos presentes (o presidente só vota em caso de empate ou quórum qualificado, conforme o Regimento).</p>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{isProp}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="Tipo de proposição" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+<sc-for list="{{propTabs}}" as="t" hint-placeholder-count="5"><button type="button" onClick="{{t.go}}" aria-pressed="{{t.pressed}}" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #6B7684; background: {{t.bg}}; color: {{t.fg}}; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;">{{t.label}}</button></sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<sc-for list="{{props}}" as="p" hint-placeholder-count="5">
+<article style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 14px; padding: 18px;">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px;"><h2 style="margin: 0; font-size: 18px;">{{p.num}}</h2><span style="font-size: 13px; padding: 3px 10px; border-radius: 999px; background: {{p.stBg}}; color: {{p.stFg}}; font-weight: 700;">{{p.situacao}}</span></div>
+<p style="margin: 6px 0;">{{p.ementa}}</p>
+<p style="margin: 0 0 10px; font-size: 14px; color: #4B5563;">Autoria: {{p.autor}} · Relatoria: {{p.relator}} · Protocolo: {{p.data}}</p>
+<ol aria-label="Tramitação" style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px;">
+<sc-for list="{{p.fases}}" as="f" hint-placeholder-count="5"><li style="padding: 4px 10px; border-radius: 8px; font-size: 13px; background: {{f.bg}}; color: {{f.fg}}; font-weight: 600;">{{f.t}}</li></sc-for>
+</ol>
+</article>
+</sc-for>
+</div>
+<p style="margin: 14px 0 0; font-size: 13px; color: #4B5563;">Proposições de exemplo: números, ementas e relatoria ilustrativos. No portal definitivo, vêm do sistema legislativo, com íntegra, emendas, pareceres e votações anexados.</p>
+</sc-if>
+
+<sc-if value="{{isEmendas}}" hint-placeholder-val="{{false}}">
+<dl style="margin: 0 0 18px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+<sc-for list="{{emKpis}}" as="k" hint-placeholder-count="4">
+<div style="padding: 14px 16px; border-radius: 14px; background: #FFFFFF; border: 1px solid #DCE1D9; border-top: 4px solid #2F5233;"><dt style="font-size: 14px; color: #4B5563;">{{k.l}}</dt><dd style="margin: 2px 0 0; font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums;">{{k.v}}</dd><dd style="margin: 0; font-size: 13px; color: #4B5563;">{{k.d}}</dd></div>
+</sc-for>
+</dl>
+<div style="margin-bottom: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px;">
+<div style="background: #FFFFFF; color: #17212B; border: 1px solid #DCE1D9; border-radius: 16px; padding: 18px;">
+<h2 style="margin: 0 0 10px; font-size: 18px;">Por vereador</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+<sc-for list="{{emVer}}" as="v" hint-placeholder-count="9">
+<li><button type="button" onClick="{{v.go}}" style="width: 100%; display: grid; grid-template-columns: minmax(150px, 1.3fr) 2fr 110px; gap: 10px; align-items: center; background: none; border: 0; padding: 2px 0; font: inherit; font-size: 14px; color: #17212B; text-align: left; cursor: pointer;"><span>{{v.nome}}</span><span aria-hidden="true" style="position: relative; height: 12px; background: #EEF1EC; border-radius: 6px; overflow: hidden;"><span style="position: absolute; left: 0; top: 0; bottom: 0; width: {{v.w}}%; background: #B7CDB0;"></span><span class="hc-bar" style="position: absolute; left: 0; top: 0; bottom: 0; width: {{v.wp}}%; background: #146C43;"></span></span><span style="text-align: right; font-variant-numeric: tabular-nums;"><strong>{{v.vF}}</strong></span></button></li>
+</sc-for>
+</ul>
+<p style="margin: 10px 0 0; font-size: 12px; color: #4B5563;">Barra clara: cota indicada · barra escura: já pago. Ordenado pelo valor pago. Clique para ver as emendas de cada vereador e o caminho de cada uma na Prefeitura.</p>
+</div>
+<div style="background: #FFFFFF; color: #17212B; border: 1px solid #DCE1D9; border-radius: 16px; padding: 18px;">
+<h2 style="margin: 0 0 10px; font-size: 18px;">Para onde vai o dinheiro</h2>
+<div role="img" aria-label="Distribuição do valor das emendas por área" style="display: flex; height: 22px; border-radius: 6px; overflow: hidden; margin-bottom: 12px;">
+<sc-for list="{{emAreas}}" as="a" hint-placeholder-count="5"><span style="width: {{a.w}}%; background: {{a.cor}};"></span></sc-for>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+<sc-for list="{{emAreas}}" as="a" hint-placeholder-count="5">
+<li style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; background: {{a.cor}}; flex: 0 0 auto;"></span><span style="flex: 1;">{{a.a}} <span style="color: #4B5563;">· {{a.n}}</span></span><strong style="font-variant-numeric: tabular-nums;">{{a.vF}}</strong><span style="width: 52px; text-align: right; color: #4B5563;">{{a.pct}}</span></li>
+</sc-for>
+</ul>
+</div>
+</div>
+
+<sc-if value="{{temCam}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="h-cam" style="background: #FFFFFF; border: 2px solid #2F5233; border-radius: 18px; padding: 22px; margin-bottom: 18px;">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: flex-start;">
+<div>
+<p style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #2F5233;">Caminho da emenda na Prefeitura</p>
+<h2 id="h-cam" style="margin: 2px 0 2px; font-size: 22px;">Emenda {{cam.num}} · {{cam.autor}}</h2>
+<p style="margin: 0; color: #4B5563;">{{cam.objeto}}</p>
+</div>
+<button type="button" onClick="{{fecharCam}}" style="min-height: 40px; padding: 0 14px; font: inherit; font-weight: 600; color: #17212B; background: #FFFFFF; border: 1px solid #6B7684; border-radius: 8px; cursor: pointer;">Fechar</button>
+</div>
+<dl style="margin: 16px 0 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px;">
+<sc-for list="{{cam.kp}}" as="k" hint-placeholder-count="4"><div style="padding: 10px 12px; border-radius: 10px; background: #F4F7F2;"><dt style="font-size: 13px; color: #4B5563;">{{k.l}}</dt><dd style="margin: 2px 0 0; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums;">{{k.v}}</dd></div></sc-for>
+</dl>
+<p style="margin: 0 0 6px; font-size: 14px; color: #4B5563;">Executado: {{cam.pctF}} do valor indicado</p>
+<div aria-hidden="true" style="height: 10px; border-radius: 5px; background: #EEF1EC; overflow: hidden; margin-bottom: 18px;"><span class="hc-bar" style="display: block; height: 100%; width: {{cam.pctW}}%; min-width: 3px; background: #146C43;"></span></div>
+<sc-if value="{{cam.div}}" hint-placeholder-val="{{false}}"><p role="note" style="margin: 0 0 16px; padding: 10px 12px; border-radius: 8px; background: #FCEFD9; font-size: 14px;">{{cam.divTxt}}</p></sc-if>
+<ol style="list-style: none; margin: 0; padding: 0; position: relative;">
+<sc-for list="{{cam.passos}}" as="x" hint-placeholder-count="6">
+<li style="display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; padding-bottom: 14px; position: relative;">
+<span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: {{x.bg}}; color: {{x.cor}}; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; border: 2px solid {{x.cor}};">{{x.ico}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px;"><strong style="font-size: 16px;">{{x.t}}</strong><span style="font-size: 14px; color: #374151;">{{x.d}}</span></span>
+<span style="text-align: right; display: flex; flex-direction: column; gap: 2px; min-width: 120px;"><span style="font-size: 13px; color: #4B5563;">{{x.data}}</span><sc-if value="{{x.temV}}" hint-placeholder-val="{{true}}"><strong style="font-variant-numeric: tabular-nums; color: {{x.cor}};">{{x.vF}}</strong></sc-if></span>
+</li>
+</sc-for>
+</ol>
+<p style="margin: 6px 0 0; font-size: 12px; color: #4B5563;">Fonte: dados abertos do sistema contábil da Prefeitura de Borá: cadastro de emendas, empenhos e consultas de liquidação e pagamento por número de empenho, lidos em 06/11/2026. A Câmara exibe sem sair do portal, pelo mesmo backend. Base legal: Lei Orgânica, art. 127; Lei 4.320/1964, arts. 58 a 65 (empenho, liquidação e pagamento); LRF, art. 48-A, I.</p>
+</section>
+</sc-if>
+<form onSubmit="{{noSubmit}}" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 14px; padding: 16px; margin-bottom: 14px;">
+<div style="display: flex; flex-direction: column; gap: 4px; flex: 1 1 260px;">
+<label for="f-ever" style="font-size: 14px; font-weight: 600;">Vereador(a)</label>
+<select id="f-ever" value="{{eVerSel}}" onChange="{{onEVer}}" style="min-height: 44px; font: inherit; padding: 0 10px; border: 1px solid #6B7684; border-radius: 8px; background: #FFFFFF; color: #17212B;"><sc-for list="{{eOpts}}" as="o" hint-placeholder-count="10"><option value="{{o}}">{{o}}</option></sc-for></select>
+</div>
+<p aria-live="polite" style="margin: 0; font-size: 15px;"><strong>{{emCount}}</strong></p>
+</form>
+<div style="overflow-x: auto; background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 14px;">
+<table style="width: 100%; min-width: 860px; border-collapse: collapse; font-size: 15px;">
+<caption class="sr">Emendas impositivas de 2026</caption>
+<thead><tr><th scope="col" style="text-align: left; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Emenda</th><th scope="col" style="text-align: left; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Vereador(a)</th><th scope="col" style="text-align: left; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Objeto</th><th scope="col" style="text-align: right; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Indicado</th><th scope="col" style="text-align: right; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Pago</th><th scope="col" style="text-align: left; padding: 12px 14px; font-size: 13px; text-transform: uppercase; color: #4B5563; border-bottom: 1px solid #DCE1D9;">Situação</th><th scope="col" style="padding: 12px 14px; border-bottom: 1px solid #DCE1D9;"><span class="sr">Ação</span></th></tr></thead>
+<tbody><sc-for list="{{emRows}}" as="e" hint-placeholder-count="10"><tr>
+<td style="padding: 10px 14px; border-bottom: 1px solid #EEF1EC; white-space: nowrap;">{{e.num}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #EEF1EC; font-weight: 600;">{{e.autor}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #EEF1EC;">{{e.objeto}}<span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #4B5563;"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; background: {{e.cor}};"></span>{{e.area}}</span></td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #EEF1EC; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;">{{e.vF}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #EEF1EC; text-align: right; font-variant-numeric: tabular-nums;">{{e.pF}}</td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #EEF1EC;"><span style="padding: 3px 10px; border-radius: 999px; background: {{e.stBg}}; color: {{e.stFg}}; font-size: 13px; font-weight: 700; white-space: nowrap;">{{e.st}}</span></td>
+<td style="padding: 10px 14px; border-bottom: 1px solid #EEF1EC;"><button type="button" onClick="{{e.ver}}" style="min-height: 36px; padding: 0 12px; font: inherit; font-size: 14px; font-weight: 600; color: #2F5233; background: #FFFFFF; border: 1px solid #2F5233; border-radius: 8px; cursor: pointer; white-space: nowrap;">Ver o caminho</button></td>
+</tr></sc-for></tbody>
+</table>
+</div>
+<p style="margin: 12px 0 0; font-size: 13px; color: #4B5563;">Fonte: dados abertos do sistema contábil da Prefeitura de Borá (consulta de emendas impositivas), lidos em 05/11/2026; no portal definitivo, atualização automática a cada hora pelo mesmo backend. Cada emenda ganha página própria com o plano de trabalho, o empenho, os pagamentos e a nota fiscal.</p>
+</sc-if>
+
+<sc-if value="{{isTransm}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+<section aria-labelledby="h-tv" style="flex: 999 1 620px; min-width: 0; background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 18px; overflow: hidden;">
+<dc-import name="Player" cena="administracao" color="#2F5233" live="{{tv.live}}" compacto="{{false}}" info="{{tv.info}}" hint-size="100%,420px" style="display: block; width: 100%;"></dc-import>
+<div style="padding: 20px 22px; display: flex; flex-direction: column; gap: 8px;">
+<sc-if value="{{tv.live}}" hint-placeholder-val="{{true}}"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 3px 10px; background: #C81E1E; color: #FFFFFF; border-radius: 999px; font-size: 13px; font-weight: 700;"><span aria-hidden="true" class="pulso" style="width: 8px; height: 8px; border-radius: 50%; background: #FFFFFF;"></span>AO VIVO</span></sc-if>
+<h2 id="h-tv" style="margin: 0; font-size: 24px; line-height: 1.2;">{{tv.titulo}}</h2>
+<p style="margin: 0; color: #4B5563;">{{tv.sub}}</p>
+<p style="margin: 0;">{{tv.desc}}</p>
+<h3 style="margin: 10px 0 4px; font-size: 16px;">Ir para o momento da sessão</h3>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+<sc-for list="{{tv.cap}}" as="c" hint-placeholder-count="4"><span style="padding: 6px 12px; border-radius: 8px; background: #F1F3EF; font-size: 14px;"><strong style="font-variant-numeric: tabular-nums;">{{c.t}}</strong> · {{c.d}}</span></sc-for>
+</div>
+<p style="margin: 8px 0 0; font-size: 13px; color: #4B5563;">Legendas automáticas revisadas, janela de Libras e transcrição completa publicada com a ata. O vídeo começa sem som.</p>
+<sc-if value="{{voltarLive}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{assistirLive}}" style="align-self: flex-start; margin-top: 6px; min-height: 42px; padding: 0 16px; font: inherit; font-weight: 700; color: #FFFFFF; background: #C81E1E; border: 0; border-radius: 10px; cursor: pointer;">Voltar para o ao vivo</button></sc-if>
+</div>
+</section>
+<aside style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 16px;">
+<section aria-labelledby="h-agenda-cm" style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; padding: 18px;">
+<h2 id="h-agenda-cm" style="margin: 0 0 10px; font-size: 19px;">Próximas transmissões</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px;">
+<sc-for list="{{agenda}}" as="a" hint-placeholder-count="2"><li style="display: flex; gap: 12px; align-items: center;"><span style="width: 52px; flex: 0 0 auto; text-align: center; border-radius: 10px; background: #EAF2E6; color: #2F5233; padding: 6px 0; line-height: 1.1;"><strong style="display: block; font-size: 20px;">{{a.dia}}</strong><span style="font-size: 12px; text-transform: uppercase;">{{a.mes}}</span></span><span><strong style="display: block; font-size: 15px;">{{a.t}}</strong><span style="font-size: 13px; color: #4B5563;">{{a.hora}} · {{a.local}}</span></span></li></sc-for>
+</ul>
+</section>
+<section aria-labelledby="h-grav" style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; padding: 18px;">
+<h2 id="h-grav" style="margin: 0 0 10px; font-size: 19px;">Sessões gravadas</h2>
+<ul style="list-style: none; margin: 0; padding: 0;">
+<sc-for list="{{gravs}}" as="g" hint-placeholder-count="4"><li><button type="button" onClick="{{g.go}}" aria-pressed="{{g.sel}}" style="width: 100%; text-align: left; padding: 10px; margin-bottom: 4px; border-radius: 10px; border: 1px solid {{g.bd}}; background: {{g.bg}}; font: inherit; color: #17212B; cursor: pointer;"><strong style="display: block; font-size: 15px;">{{g.t}}</strong><span style="font-size: 13px; color: #4B5563;">{{g.data}} · {{g.dur}}</span></button></li></sc-for>
+</ul>
+</section>
+</aside>
+</div>
+<p style="margin: 14px 0 0; font-size: 13px; color: #4B5563;">No portal definitivo, a transmissão ao vivo é detectada automaticamente no canal oficial da Câmara (mesma integração do portal da Prefeitura) e cada gravação fica ligada à pauta, à ata e às votações da sessão. Durações e marcadores de tempo desta tela são exemplos.</p>
+</sc-if>
+
+<sc-if value="{{isTransp}}" hint-placeholder-val="{{false}}">
+<dl style="margin: 0 0 18px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+<div style="padding: 14px 16px; border-radius: 14px; background: #FFFFFF; border: 1px solid #DCE1D9; border-top: 4px solid {{k.cor}};"><dt style="font-size: 14px; color: #4B5563;">{{k.l}}</dt><dd style="margin: 2px 0 0; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums;">{{k.v}}</dd><dd style="margin: 0; font-size: 13px; color: #4B5563;">{{k.d}}</dd></div>
+</sc-for>
+</dl>
+<section aria-labelledby="h-lim" style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; padding: 22px; margin-bottom: 18px;">
+<h2 id="h-lim" style="margin: 0 0 4px; font-size: 20px;">Despesa com pessoal da Câmara e o limite da LRF</h2>
+<p style="margin: 0 0 14px; font-size: 15px; color: #4B5563;">Limite máximo: 6% da receita corrente líquida do município. A linha tracejada marca o limite de alerta (5,4%).</p>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px;">
+<sc-for list="{{dtp}}" as="d" hint-placeholder-count="4">
+<li style="display: grid; grid-template-columns: 130px 1fr 150px; gap: 12px; align-items: center;"><span>{{d.l}}</span><span aria-hidden="true" style="position: relative; height: 16px; background: #EEF1EC; border-radius: 8px;"><span class="hc-bar" style="position: absolute; left: 0; top: 0; bottom: 0; width: {{d.w}}%; background: #2F5233; border-radius: 8px;"></span><span style="position: absolute; top: -4px; bottom: -4px; left: 90%; border-left: 2px dashed #9B1C1C;"></span></span><span style="text-align: right; font-variant-numeric: tabular-nums;"><strong>{{d.pct}}</strong> <span style="font-size: 13px; color: #4B5563;">{{d.v}}</span></span></li>
+</sc-for>
+</ul>
+<p style="margin: 12px 0 0; font-size: 12px; color: #4B5563;">Fonte: Siconfi (Tesouro Nacional), RGF Anexo 1 do Poder Legislativo de Borá, consulta em 06/11/2026.</p>
+</section>
+<section aria-labelledby="h-modulos" style="margin-bottom: 18px;">
+<h2 id="h-modulos" style="margin: 0 0 12px; font-size: 20px;">Bases da transparência da Câmara</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
+<sc-for list="{{modulos}}" as="m" hint-placeholder-count="9">
+<div style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 4px;"><strong>{{m.t}}</strong><span style="font-size: 14px; color: #4B5563;">{{m.d}}</span><span style="margin-top: 6px; align-self: flex-start; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: {{m.bg}}; color: {{m.fg}};">{{m.st}}</span><span style="font-size: 11px; color: #4B5563;">{{m.lei}}</span></div>
+</sc-for>
+</div>
+</section>
+<section aria-labelledby="h-rgf" style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; padding: 22px;">
+<h2 id="h-rgf" style="margin: 0 0 10px; font-size: 20px;">Relatórios de Gestão Fiscal enviados ao Tesouro</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px;">
+<sc-for list="{{rgf}}" as="r" hint-placeholder-count="8"><li style="padding: 10px 12px; border-radius: 10px; background: #F4F7F2; font-size: 14px;"><strong>RGF {{r.p}}</strong><span style="display: block; color: #4B5563;">enviado em {{r.d}}</span></li></sc-for>
+</ul>
+<p style="margin: 12px 0 0; font-size: 12px; color: #4B5563;">Fonte: Siconfi, extrato de entregas da Câmara de Vereadores de Borá (dado real).</p>
+</section>
+</sc-if>
+
+<sc-if value="{{isAcesso}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px;">
+<sc-for list="{{canais}}" as="c" hint-placeholder-count="4">
+<section style="background: #FFFFFF; border: 1px solid #DCE1D9; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 6px;"><h2 style="margin: 0; font-size: 20px;">{{c.t}}</h2><p style="margin: 0; color: #374151;">{{c.d}}</p><p style="margin: 0; font-size: 13px; color: #4B5563;">{{c.lei}}</p></section>
+</sc-for>
+</div>
+</sc-if>
+
+</main>
+
+<footer style="background: #1F3A22; color: #D7E3D2; font-size: 15px;">
+<div style="background: #264A2A; border-bottom: 1px solid #335C38;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 22px 24px; display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between;">
+<div style="display: flex; align-items: center; gap: 14px; min-width: 0;">
+<span style="width: 60px; height: 60px; border-radius: 50%; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;"><img src="{{brasao}}" alt="" width="46" height="40" style="display: block; width: 46px; height: auto;"></span>
+<span style="min-width: 0;"><strong style="display: block; font-size: 19px; color: #FFFFFF; line-height: 1.2;">Câmara Municipal de Borá</strong><span style="font-size: 14px;">Poder Legislativo · 15ª Legislatura (2025–2028)</span></span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<a href="https://radardatransparencia.atricon.org.br/" class="fbtn" style="display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 16px; border-radius: 10px; background: #F0B429; color: #17212B; font-weight: 700; font-size: 14px; text-decoration: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 auto;"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 12l6-6"></path></svg>Radar da Transparência Pública</a>
+<button type="button" onClick="{{goTransm}}" class="fbtn" style="display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 16px; border-radius: 10px; background: transparent; border: 1px solid #5C8562; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #E5484D;"></span>Assista às sessões</button>
+</div>
+</div>
+</div>
+<div style="max-width: 1200px; margin: 0 auto; padding: 40px 24px 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 32px 40px;">
+<section aria-labelledby="f-cm-atend" class="fcol" style="min-width: 0;">
+<h2 id="f-cm-atend" style="color: #F7C948;">Atendimento</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; line-height: 1.45;">
+<li style="display: flex; gap: 10px; align-items: flex-start;"><span style="color: #F7C948; margin-top: 2px; display: inline-flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 auto;"><path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg></span><span>Rua Vereador Herculano Azevedo, 10 · Centro<br>Borá (SP) · CEP 19740-000</span></li>
+<li style="display: flex; gap: 10px; align-items: flex-start;"><span style="color: #F7C948; margin-top: 2px; display: inline-flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 auto;"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span><span>Segunda a sexta, 9h às 11h e 13h às 17h</span></li>
+<li style="display: flex; gap: 10px; align-items: flex-start;"><span style="color: #F7C948; margin-top: 2px; display: inline-flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 auto;"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"></path></svg></span><span>(18) 3367-1146</span></li>
+<li style="display: flex; gap: 10px; align-items: flex-start;"><span style="color: #F7C948; margin-top: 2px; display: inline-flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 auto;"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg></span><span>camara@camarabora.sp.gov.br</span></li>
+</ul>
+</section>
+<nav aria-label="A Câmara" class="fcol" style="min-width: 0;">
+<h2 style="color: #F7C948;">A Câmara</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 2px;">
+<sc-for list="{{footCam}}" as="f" hint-placeholder-count="5"><li><button type="button" onClick="{{f.go}}" class="fl" style="background: none; border: 0; padding: 5px 0; font: inherit; font-size: 15px; text-align: left; cursor: pointer;">{{f.label}}</button></li></sc-for>
+</ul>
+</nav>
+<section aria-labelledby="f-cm-sic" class="fcol" style="min-width: 0;">
+<h2 id="f-cm-sic" style="color: #F7C948;">Acesso à informação</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; gap: 2px;">
+<sc-for list="{{footAcesso}}" as="f" hint-placeholder-count="4"><li><button type="button" onClick="{{f.go}}" class="fl" style="background: none; border: 0; padding: 5px 0; font: inherit; font-size: 15px; text-align: left; cursor: pointer;">{{f.label}}</button></li></sc-for>
+</ul>
+<p style="margin: 10px 0 0; font-size: 13px; line-height: 1.5;">e-SIC sem exigir justificativa. Resposta em até 20 dias, prorrogáveis por mais 10.</p>
+</section>
+<nav aria-label="Outros poderes" class="fcol" style="min-width: 0;">
+<h2 style="color: #F7C948;">Poder Executivo</h2>
+<a href="Main.dc.html" class="fbtn" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid #3E6B43; background: #264A2A; color: #FFFFFF; text-decoration: none;"><span><span style="display: block; font-size: 12px; color: #D7E3D2;">Portal oficial</span><strong style="font-size: 15px;">Prefeitura Municipal de Borá</strong></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 auto;"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+<p style="margin: 10px 0 0; font-size: 13px; line-height: 1.5;">Mesmo backend e mesmas regras de transparência, acessibilidade e LGPD do portal do Executivo.</p>
+</nav>
+</div>
+<div style="max-width: 1200px; margin: 0 auto; padding: 18px 24px; border-top: 1px solid #335C38; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between;">
+<span style="font-size: 14px;">Sessões ordinárias quinzenais, às segundas-feiras, 19h, no Plenário · abertas ao público</span>
+<button type="button" onClick="{{goTopo}}" class="fbtn" style="display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border-radius: 999px; background: transparent; border: 1px solid #3E6B43; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 auto;"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>Voltar ao topo</button>
+</div>
+<div style="background: #17301A;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 16px 24px 24px; display: flex; flex-wrap: wrap; gap: 6px 24px; justify-content: space-between; font-size: 13px; line-height: 1.5; color: #A9BCA4;">
+<span style="display: flex; flex-direction: column; gap: 4px;"><span>© 2026 Câmara Municipal de Borá · Dados atualizados em 06/11/2026</span><a href="Backend.dc.html" onClick="{{marcaPainel}}" class="fl" style="display: inline-flex; align-items: center; gap: 6px; color: #D7E3D2; font-weight: 600;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>Área restrita · painel administrativo</a></span>
+<span style="max-width: 70ch;">Protótipo de referência. Vereadores, Mesas, endereço, sessões, RGF e despesa com pessoal: dados reais. Pautas, votações e projetos marcados como exemplo são ilustrativos. Fotos de vereadores: banco livre CC0, ilustrativas.</span>
+</div>
+</div>
+</footer>
+
+<sc-if value="{{showModal}}" hint-placeholder-val="{{false}}">
+<div onClick="{{fecharModal}}" style="position: fixed; inset: 0; background: rgba(11,22,32,0.72); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
+<div role="dialog" aria-modal="true" aria-labelledby="h-modal-cm" onClick="{{stopProp}}" style="width: 100%; max-width: 820px; max-height: 100%; overflow: auto; background: #FFFFFF; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px 12px 22px;">
+<span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #C81E1E; letter-spacing: 0.06em;"><span aria-hidden="true" class="pulso" style="width: 9px; height: 9px; border-radius: 50%; background: #C81E1E;"></span>AO VIVO AGORA NA CÂMARA</span>
+<button type="button" onClick="{{fecharModal}}" autofocus aria-label="Fechar aviso de transmissão" style="width: 44px; height: 44px; background: #F1F3EF; border: 0; border-radius: 50%; cursor: pointer; font-size: 20px; line-height: 1;">×</button>
+</div>
+<dc-import name="Player" cena="administracao" color="#2F5233" live="{{true}}" compacto="{{false}}" info="{{live.espF}}" hint-size="100%,440px" style="display: block; width: 100%;"></dc-import>
+<div style="padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 8px;">
+<h2 id="h-modal-cm" style="margin: 0; font-size: 22px; line-height: 1.2;">{{live.titulo}}</h2>
+<p style="margin: 0; color: #4B5563;">Início às {{live.inicio}} · {{live.local}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px;">
+<button type="button" onClick="{{modalAssistir}}" style="min-height: 46px; padding: 0 20px; font: inherit; font-weight: 700; color: #FFFFFF; background: #2F5233; border: 0; border-radius: 10px; cursor: pointer;">Assistir na página de transmissões</button>
+<button type="button" onClick="{{fecharModal}}" style="min-height: 46px; padding: 0 20px; font: inherit; font-weight: 600; color: #17212B; background: #FFFFFF; border: 1px solid #6B7684; border-radius: 10px; cursor: pointer;">Agora não</button>
+</div>
+<p style="margin: 4px 0 0; font-size: 13px; color: #4B5563;">O vídeo começa sem som. Este aviso aparece só no primeiro acesso do dia.</p>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"aoVivo":{"editor":"boolean","default":true,"section":"Transmissão"},"$preview":{"width":1440,"height":2400}}'>
+const BRASAO = '/_blob/79fc486baceda13dd406893eb98e8d87';
+const FOTO_CASA = '/_blob/ad1fce202a11ca1cda37d6fafa190c72';
+// Dados reais: portal da Câmara de Borá, consulta em 06/11/2026
+const VEREADORES = [
+  ['Advaldo Celestino Teixeira', 'Du', 'PSD', 'Presidente'], ['Danilo Pietro', '', 'PODE', 'Vice-presidente'], ['Paulo Roberto Gonçalves Gusmão', 'Paulinho', 'MDB', '1º secretário'],
+  ['Luis Antonio Vinhando', '', 'MDB', '2º secretário'], ['Cecilia Macedo de Amorim', 'Cecilia', 'PODE', ''], ['Igor Donisete Guido', '', 'PODE', ''],
+  ['Ivanete Maximina de Carvalho', '', 'MDB', ''], ['Paulo Sergio dos Santos', 'Paulo Mecânico', 'MDB', ''], ['Pedro Correia da Costa', 'Pedro', 'PSD', '']
+];
+// Fotos oficiais: preencher com o endereço do arquivo enviado pela Câmara (painel administrativo). Vazio = usa a foto ilustrativa.
+const FOTOS_VER = {};
+// Fotos ilustrativas de banco de imagens livre (CC0 — Unsplash, via Wikimedia Commons). NÃO são os vereadores.
+const B = (id) => '/_blob/' + id;
+const FOTO_ILUS = {
+  'cecilia macedo de amorim': B('3ac888601bab37d2a12f63d7ef49ee20'), 'ivanete maximina de carvalho': B('e7991d42a54ff86aca57bec12b50d99e'),
+  'advaldo celestino teixeira': B('fb926394ab99c3fa0b6f13afa61d9f25'), 'danilo pietro': B('bdd03ac434f003e497e144d7c504c329'),
+  'paulo roberto goncalves gusmao': B('0da7967571e6d1f68fbb363997e757f7'), 'luis antonio vinhando': B('5f6ce1e6b23f38d41f0311b230e6424a'),
+  'igor donisete guido': B('d9797aa3016df2fcbb6534c7060cce9b'), 'paulo sergio dos santos': B('fc1a4f53cb7ff1a28318aeb4d842e003'),
+  'pedro correia da costa': B('d16853fec36826fc19c1e45c16caf029'), 'artur roque caldas': B('60e1d545934bfb97145853a07ce20a2b'),
+  'cristiano macedo': B('ffa0029263ed8ad6549751fde1472347'), 'domilson domingos dos santos': B('62fb8e236427370485caa182131468db'),
+  'joao antonio nespoli': B('8ac545f176c6f5b600425d5dee66ad54'), 'joao flavio vieira': B('beef224c3a5a74504dd5ce9ff8657c4d'),
+  'wilson canato': B('78f39bf4481cf44775417ce3467a54b8'), 'angelo aparecido da silva': B('e986f4726e50a70a4987d2781c120bf9'),
+  'edson alves dos santos': B('b8c898ff1fbeaf8854ecfbf2bfb64cbf'), 'robson donley': B('5789562a479ea5fe1c1fb4110aa94e03'),
+  'valdir pedro da silva': B('f80d5c0756986aaaacdc58f1647e131d')
+};
+const CREDITO_FOTO = 'Foto ilustrativa de banco de imagens livre (CC0, Unsplash via Wikimedia Commons). Não é o(a) vereador(a); a foto oficial entra pelo painel administrativo.';
+// Legislaturas — dados reais do portal da Câmara (consulta em 06/11/2026). [nome, apelido, partido, votos]
+const LEGIS = [
+  { n: 15, anos: '2025–2028', prefeito: 'Luiz Carlos Rodrigues (PODE)', vice: 'Claudio Augusto Merci (PSD)',
+    ver: [['Advaldo Celestino Teixeira', 'Du', 'PSD', 63], ['Cecilia Macedo de Amorim', '', 'PODE', 59], ['Danilo Pietro', '', 'PODE', 51], ['Igor Donisete Guido', '', 'PODE', 87], ['Ivanete Maximina de Carvalho', '', 'MDB', 38], ['Luis Antonio Vinhando', '', 'MDB', 35], ['Paulo Roberto Gonçalves Gusmão', 'Paulinho', 'MDB', 99], ['Paulo Sergio dos Santos', 'Paulo Mecânico', 'MDB', 81], ['Pedro Correia da Costa', 'Pedro', 'PSD', 46]],
+    mesas: [{ b: '2025–2026', m: [['Presidente', 'Advaldo Celestino Teixeira'], ['Vice-presidente', 'Danilo Pietro'], ['1º secretário', 'Paulo Roberto Gonçalves Gusmão'], ['2º secretário', 'Luis Antonio Vinhando']] }, { b: '2027–2028', m: null }] },
+  { n: 14, anos: '2021–2024', prefeito: 'Luiz Carlos Rodrigues (PTB)', vice: 'Claudio Augusto Merci (PSD)',
+    ver: [['Artur Roque Caldas', 'Artur', 'PSDB', 37], ['Cecilia Macedo de Amorim', '', 'PTB', 70], ['Cristiano Macedo', '', 'PSDB', 29], ['Domilson Domingos dos Santos', 'Goiano', 'Republicanos', 51], ['João Antonio Nespoli', 'João do Posto', 'Republicanos', 49], ['João Flavio Vieira', 'João Enfermeiro', 'Republicanos', 62], ['Paulo Roberto Gonçalves Gusmão', 'Paulinho', 'Republicanos', 70], ['Paulo Sergio dos Santos', 'Paulo Mecânico', 'PTB', 45], ['Wilson Canato', 'Neno', 'PSD', 30]],
+    mesas: [{ b: '2021–2022', m: [['Presidente', 'João Antonio Nespoli'], ['Vice-presidente', 'Artur Roque Caldas'], ['1º secretário', 'Cristiano Macedo'], ['2º secretário', 'Wilson Canato']] }, { b: '2023–2024', m: [['Presidente', 'Paulo Roberto Gonçalves Gusmão'], ['Vice-presidente', 'João Antonio Nespoli'], ['1º secretário', 'João Flavio Vieira'], ['2º secretário', 'Paulo Sergio dos Santos']] }] },
+  { n: 13, anos: '2017–2020', prefeito: 'Wilson Ferreira da Costa (PRB)', vice: 'Carlos Nogueira da Silva (PRB)',
+    ver: [['Advaldo Celestino Teixeira', 'Du', 'PSDB', 78], ['Angelo Aparecido da Silva', 'Nico', 'PSDB', 45], ['Domilson Domingos dos Santos', 'Goiano', 'PRB', 44], ['Edson Alves dos Santos', '', 'PT', 36], ['Paulo Roberto Gonçalves Gusmão', 'Paulinho', 'PT', 80], ['Paulo Sergio dos Santos', 'Paulo Mecânico', 'PSB', 84], ['Pedro Correia da Costa', 'Pedro', 'PRB', 34], ['Robson Donley', 'Robson', 'PSB', 56], ['Valdir Pedro da Silva', 'Tibira', 'PRB', 32]],
+    mesas: [{ b: '2017–2018', m: [['Presidente', 'Advaldo Celestino Teixeira'], ['Vice-presidente', 'Angelo Aparecido da Silva'], ['1º secretário', 'Paulo Roberto Gonçalves Gusmão'], ['2º secretário', 'Robson Donley']] }, { b: '2019–2020', m: [['Presidente', 'Paulo Roberto Gonçalves Gusmão'], ['Vice-presidente', 'Edson Alves dos Santos'], ['1º secretário', 'Robson Donley'], ['2º secretário', 'Paulo Sergio dos Santos']] }] }
+];
+// Indicações reais (portal da Câmara, 06/11/2026). 2026: todas (nº 1 a 19; a nº 5 foi retirada). 2025: só as 20 mais recentes (nº 84 a 110).
+const INDIC = [
+  [2026, 1, 'Igor Donisete Guido', 'Curso de informática e treinamento no uso de aplicativos bancários, aberto à comunidade.'],
+  [2026, 2, 'Igor Donisete Guido', 'Contratação de Frente de Trabalho para atender munícipes em situação de vulnerabilidade social.'],
+  [2026, 3, 'Igor Donisete Guido', 'Transporte para trabalhadores que precisam se deslocar a outras cidades para trabalhar.'],
+  [2026, 4, 'Paulo Roberto Gonçalves Gusmão', 'Envio de projeto de lei que institua o Salário Mínimo Municipal de R$ 2.200 para os servidores.'],
+  [2026, 6, 'Igor Donisete Guido', 'Fornecimento de próteses dentárias.'],
+  [2026, 7, 'Paulo Sergio dos Santos', ''],
+  [2026, 8, 'Paulo Roberto Gonçalves Gusmão', 'Criação do projeto “Meu Primeiro Emprego Boraense”, de qualificação e inserção no mercado de trabalho.'],
+  [2026, 9, 'Igor Donisete Guido', 'Placas com QR Code nos postes para a população relatar problemas na iluminação pública pelo celular.'],
+  [2026, 10, 'Paulo Roberto Gonçalves Gusmão', 'Revitalização da arena esportiva de areia do Balneário Municipal, com fechamento em alambrado.'],
+  [2026, 11, 'Paulo Roberto Gonçalves Gusmão', 'Lombada na esquina da Rua Ver. Herculano Azevedo com a Rua 31 de Agosto, perto da Rodoviária.'],
+  [2026, 12, 'Cecilia Macedo de Amorim', 'Programa de Estágio para Estudantes na Administração Pública.'],
+  [2026, 13, 'Igor Donisete Guido', 'Isenção anual de IPTU para doadores de sangue cadastrados no Centro de Saúde, entre outras isenções.'],
+  [2026, 14, 'Igor Donisete Guido', 'Profissional de enfermagem à noite, nos fins de semana e feriados.'],
+  [2026, 15, 'Igor Donisete Guido', 'Troca do banheiro do balneário municipal por quiosque com cozinha, banheiro amplo e vestiário.'],
+  [2026, 16, 'Paulo Sergio dos Santos', 'Lombada próximo ao Sítio Olinda.'],
+  [2026, 17, 'Pedro Correia da Costa', 'Manutenção da estrada vicinal entre Borá e Quatá (Bairro Aguinha).'],
+  [2026, 18, 'Paulo Roberto Gonçalves Gusmão', 'Estudos de drenagem de águas pluviais, com canaletas de escoamento, em estrada vicinal.'],
+  [2026, 19, 'Pedro Correia da Costa', 'Biblioteca e museu no prédio da creche.'],
+  [2025, 110, 'Pedro Correia da Costa', ''], [2025, 109, 'Pedro Correia da Costa', ''], [2025, 108, 'Igor Donisete Guido', ''], [2025, 107, 'Igor Donisete Guido', ''],
+  [2025, 106, 'Igor Donisete Guido', ''], [2025, 105, 'Igor Donisete Guido', ''], [2025, 104, 'Luis Antonio Vinhando', ''],
+  [2025, 103, 'Luis Antonio Vinhando', 'Bicicletas elétricas para os agentes de saúde.'], [2025, 102, 'Paulo Roberto Gonçalves Gusmão', ''],
+  [2025, 101, 'Igor Donisete Guido', ''], [2025, 100, 'Advaldo Celestino Teixeira', 'Reconhecimento de Borá como Município de Interesse Turístico (MIT).'],
+  [2025, 99, 'Igor Donisete Guido', ''], [2025, 97, 'Advaldo Celestino Teixeira', 'Aplicativo de comunicação na rede municipal de ensino.'],
+  [2025, 90, 'Paulo Sergio dos Santos', ''], [2025, 89, 'Paulo Roberto Gonçalves Gusmão', ''], [2025, 88, 'Paulo Roberto Gonçalves Gusmão', ''],
+  [2025, 87, 'Paulo Roberto Gonçalves Gusmão', ''], [2025, 86, 'Igor Donisete Guido', ''], [2025, 85, 'Igor Donisete Guido', ''], [2025, 84, 'Igor Donisete Guido', '']
+];
+// Outras proposições reais localizadas no portal (amostra). [tipo, número, autores, texto, data, situação]
+const OUTRAS = [
+  ['Requerimento', '3/2026', ['Advaldo Celestino Teixeira'], 'Estadualização da estrada vicinal Manoel Caldas.', '23/04/2026', 'Aprovado'],
+  ['Moção', '3/2025', ['Igor Donisete Guido', 'Ivanete Maximina de Carvalho'], 'Moção de congratulação a campeão de rodeio do município.', '20/10/2025', 'Aprovada']
+];
+const PARTIDO_COR = { PSD: '#1D4E89', PODE: '#6B2D5C', MDB: '#2F5233' };
+// Sessões com pauta publicada no portal atual (reais) + próxima sessão anunciada
+const SESSOES = [
+  ['18ª Sessão Ordinária de 2026', '16/11/2026', '19h', 'proxima'],
+  ['Sessões de julho a novembro de 2026', '—', '', 'faltando'],
+  ['3ª Sessão Extraordinária de 2026', '03/07/2026', '19h', 'pauta'], ['10ª Sessão Ordinária de 2026', '15/06/2026', '19h', 'pauta'],
+  ['9ª Sessão Ordinária de 2026', '01/06/2026', '19h', 'pauta'], ['8ª Sessão Ordinária de 2026', '18/05/2026', '19h', 'pauta'],
+  ['5ª Sessão Ordinária de 2026', '06/04/2026', '19h', 'pauta'], ['2ª Sessão Ordinária de 2026', '23/02/2026', '19h', 'pauta'],
+  ['20ª Sessão Ordinária de 2025', '15/12/2025', '19h', 'pauta'], ['19ª Sessão Ordinária de 2025', '01/12/2025', '19h', 'pauta']
+];
+// Proposições de exemplo (estrutura)
+const PROPS = [
+  { tipo: 'Projeto de Lei', num: 'Projeto de Lei nº [32]/2026', ementa: 'Estima a receita e fixa a despesa do Município para 2027 (LOA 2027).', autor: 'Poder Executivo', relator: 'Comissão de Finanças e Orçamento', data: '30/09/2026', situacao: 'Em tramitação', fase: 2 },
+  { tipo: 'Decreto Legislativo', num: 'Projeto de Decreto Legislativo nº [5]/2026', ementa: 'Julga as contas do Prefeito relativas a 2024, com base no parecer prévio do TCESP.', autor: 'Comissão de Finanças e Orçamento', relator: '[vereador relator]', data: '28/10/2026', situacao: 'Aguardando parecer', fase: 1 },
+  { tipo: 'Projeto de Lei', num: 'Projeto de Lei nº [29]/2026', ementa: 'Institui a semana municipal de prevenção de acidentes no campo.', autor: '[vereador autor]', relator: 'Comissão de Justiça e Redação', data: '15/09/2026', situacao: 'Aprovado', fase: 4 },
+  { tipo: 'Indicação', num: 'Indicação nº [87]/2026', ementa: 'Indica ao Executivo a instalação de iluminação na estrada vicinal de acesso ao bairro rural.', autor: '[vereador autor]', relator: '—', data: '20/10/2026', situacao: 'Encaminhada ao Executivo', fase: 4 },
+  { tipo: 'Requerimento', num: 'Requerimento nº [41]/2026', ementa: 'Solicita ao Executivo informações sobre o cronograma da obra da creche municipal.', autor: '[vereador autor]', relator: '—', data: '20/10/2026', situacao: 'Aguardando resposta', fase: 3 },
+  { tipo: 'Moção', num: 'Moção nº [6]/2026', ementa: 'Moção de aplauso aos profissionais da saúde pela campanha de vacinação.', autor: '[vereador autor]', relator: '—', data: '06/10/2026', situacao: 'Aprovada', fase: 4 }
+];
+// Emendas impositivas dos vereadores ao orçamento de 2026 — dado real do sistema contábil da Prefeitura (Fiorilli), lido em 05/11/2026.
+// [número, autor, objeto, valor indicado, origem, tipo, recebido, pago]
+const EMENDAS_IMP = [
+  ['1/2026', 'Advaldo Celestino Teixeira', 'Equipamentos para atendimento educacional especializado (AEE)', 11680, 'M', 'I', 0, 0],
+  ['2/2026', 'Ivanete Maximina de Carvalho', 'Equipamentos para atendimento educacional especializado (AEE)', 11680, 'M', 'I', 0, 0],
+  ['3/2026', 'Luiz Antonio Vinhando', 'Equipamentos para atendimento educacional especializado (AEE)', 11680, 'M', 'I', 0, 0],
+  ['4/2026', 'Pedro Correia da Costa', 'Equipamentos para atendimento educacional especializado (AEE)', 11680, 'M', 'I', 0, 0],
+  ['5/2026', 'Danilo Pietro', 'Locação de brinquedos', 22680, 'M', 'I', 0, 0],
+  ['6/2026', 'Igor Donisete Guido', 'Material esportivo', 5000, 'M', 'I', 0, 0],
+  ['7/2026', 'Ivanete Maximina de Carvalho', 'Material esportivo', 11000, 'M', 'I', 0, 0],
+  ['8/2026', 'Luiz Antonio Vinhando', 'Material esportivo', 11000, 'M', 'I', 0, 0],
+  ['9/2026', 'Paulo Roberto Gonçalves Gusmão', 'Material esportivo', 7669.71, 'M', 'I', 0, 0],
+  ['10/2026', 'Paulo Sérgio dos Santos', 'Equipamentos para oficina mecânica', 22680, 'M', 'I', 0, 0],
+  ['11/2026', 'Advaldo Celestino Teixeira', 'Custeio das ações e projetos do CCI', 11000, 'M', 'I', 0, 0],
+  ['12/2026', 'Paulo Roberto Gonçalves Gusmão', 'Custeio das ações e projetos do CCI', 15000, 'M', 'I', 0, 2450],
+  ['13/2026', 'Pedro Correia da Costa', 'Custeio das ações e projetos do CCI', 11000, 'M', 'I', 0, 7200],
+  ['14/2026', 'Advaldo Celestino Teixeira', 'Veículo e gerador', 20000, 'M', 'I', 0, 0],
+  ['15/2026', 'Danilo Pietro', 'Veículo e gerador', 20000, 'M', 'I', 0, 0],
+  ['16/2026', 'Igor Donisete Guido', 'Veículo e gerador', 37680, 'M', 'I', 0, 0],
+  ['17/2026', 'Ivanete Maximina de Carvalho', 'Veículo e gerador', 20000, 'M', 'I', 0, 0],
+  ['18/2026', 'Luiz Antonio Vinhando', 'Veículo e gerador', 20000, 'M', 'I', 0, 0],
+  ['19/2026', 'Paulo Roberto Gonçalves Gusmão', 'Veículo', 22690.29, 'M', 'I', 0, 0],
+  ['20/2026', 'Paulo Sérgio dos Santos', 'Veículo e gerador', 20000, 'M', 'I', 0, 0],
+  ['21/2026', 'Pedro Correia da Costa', 'Veículo e gerador', 20000, 'M', 'I', 0, 0],
+  ['22/2026', 'Cecilia Macedo de Amorim', 'Prestadores de serviço — fisioterapia', 45360, 'M', 'I', 0, 1160],
+  ['23/2026', 'Advaldo Celestino Teixeira', 'Medicamentos', 2680, 'M', 'I', 0, 0],
+  ['24/2026', 'Danilo Pietro', 'Medicamentos', 2680, 'M', 'I', 0, 0],
+  ['25/2026', 'Igor Donisete Guido', 'Medicamentos', 2680, 'M', 'I', 0, 0],
+  ['26/2026', 'Ivanete Maximina de Carvalho', 'Medicamentos', 2680, 'M', 'I', 0, 0],
+  ['27/2026', 'Luiz Antonio Vinhando', 'Medicamentos', 2680, 'M', 'I', 0, 0],
+  ['28/2026', 'Paulo Sérgio dos Santos', 'Medicamentos', 2680, 'M', 'I', 0, 0],
+  ['29/2026', 'Pedro Correia da Costa', 'Medicamentos', 2680, 'M', 'I', 0, 0]
+];
+const AREA_EMENDA = (o) => /Medicament|fisioterapia/i.test(o) ? 'Saúde' : /AEE|educacional|brinquedos/i.test(o) ? 'Educação' : /esportiv/i.test(o) ? 'Esporte' : /CCI/i.test(o) ? 'Assistência a idosos (CCI)' : 'Veículos e equipamentos';
+const AREA_COR = { 'Saúde': '#C8553D', 'Educação': '#6B2D5C', 'Esporte': '#1D4E89', 'Assistência a idosos (CCI)': '#146C43', 'Veículos e equipamentos': '#8A5A00' };
+const normNome = (n) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace('luiz', 'luis');
+// Execução das emendas na Prefeitura — dado real dos dados abertos do sistema contábil (DespesasGerais, DetalhesEmpenho,
+// EmpenhosDespesas_Liquidado e _Pago por número de empenho), lido em 06/11/2026. Ligação emenda→empenho: vínculo do vereador (804xxx) + objeto.
+const EXEC_EMENDA = {
+  '22/2026': { vinculo: '804002 · Emenda Ver. Cecilia Macedo de Amorim', ato: 'Lei Orgânica do Município, art. 127', destinacao: 'Custeio',
+    orgao: 'Departamento de Saúde · Fundo Municipal de Saúde', programa: '1019 · Saúde Integral e Acesso Humanizado à Atenção Básica', acao: '2260 · Emendas Parlamentares Municipais',
+    natureza: '3.3.90.39.50 · Serviço médico-hospitalar, odontológico e laboratorial', fonte: '08 · Emendas parlamentares individuais (STN 1.500)', ficha: '220',
+    contratacao: 'Dispensa 9/2026 · Lei 14.133/2021, art. 75, II', credor: 'Anesio Rodrigues Junior (pessoa jurídica)',
+    empenhos: [{ num: '426/2026', tipo: 'Ordinário', data: '30/01/2026', valor: 1160, anul: [], liq: [['12/02/2026', 1160]], pag: [['12/03/2026', 1160]] }], pagoCad: 1160 },
+  '13/2026': { vinculo: '804009 · Emenda Ver. Pedro Correia da Costa', ato: 'Lei Orgânica do Município, art. 127', destinacao: 'Custeio',
+    orgao: 'Departamento de Assistência Social · Fundo Municipal de Assistência Social', programa: '1020 · Proteção Social Básica e Inclusão de Famílias Vulneráveis', acao: '2260 · Emendas Parlamentares Municipais',
+    natureza: '3.3.90.39.48 · Serviço de seleção e treinamento', fonte: '08 · Emendas parlamentares individuais (STN 1.659)', ficha: '242',
+    contratacao: 'Dispensa 89/2025 · contrato 10/2025, vigente até 13/11/2026', credor: 'Luciane Rezende Costa Kill (MEI)',
+    empenhos: [{ num: '83/2026', tipo: 'Global', data: '05/01/2026', valor: 10800, anul: [['29/05/2026', 1800], ['03/07/2026', 5400]], liq: [['26/02/2026', 1800], ['06/04/2026', 1800]], pag: [['10/03/2026', 1800], ['10/04/2026', 1800]] }], pagoCad: 7200 },
+  '12/2026': { vinculo: '804007 · Emenda Ver. Paulo Roberto Gonçalves Gusmão', ato: 'Lei Orgânica do Município, art. 127', destinacao: 'Custeio',
+    orgao: 'Departamento de Assistência Social · Fundo Municipal de Assistência Social', programa: '1020 · Proteção Social Básica e Inclusão de Famílias Vulneráveis', acao: '2260 · Emendas Parlamentares Municipais',
+    natureza: '3.3.90.39.48 · Serviço de seleção e treinamento', fonte: '08 · Emendas parlamentares individuais (STN 1.659)', ficha: '241',
+    contratacao: 'Dispensa 153/2023 · contrato 9/2023, vigente até 30/06/2026', credor: 'Renato Gomes Castro (pessoa jurídica)',
+    empenhos: [{ num: '111/2026', tipo: 'Global', data: '05/01/2026', valor: 7350, anul: [['30/04/2026', 6125]], liq: [['10/03/2026', 1225]], pag: [['10/03/2026', 1225]] }], pagoCad: 2450 }
+};
+const FASES = ['Protocolo', 'Comissões', 'Plenário', 'Concluído'];
+// Siconfi: RGF Anexo 1 do Legislativo [ano, período, despesa total com pessoal, % RCL] — dado real
+const DTP_CM = [[2023, '3º quadr.', 699191.32, 3.66], [2024, '3º quadr.', 608568.39, 2.67], [2025, '3º quadr.', 645513.76, 2.53], [2026, '2º quadr.', 943372.29, 3.47]];
+const RGF_CM = [['1º quadr. 2026', '28/05/2026'], ['2º quadr. 2026', '21/09/2026'], ['1º quadr. 2025', '04/06/2025'], ['2º quadr. 2025', '22/09/2025'], ['3º quadr. 2025', '18/02/2026'], ['1º quadr. 2024', '14/05/2024'], ['2º quadr. 2024', '12/09/2024'], ['3º quadr. 2024', '10/02/2025']];
+const LRF = 'LRF (LC 101/2000)', LAI = 'LAI (Lei 12.527/2011)';
+const BASE_LEGAL = {
+  home: LAI + ', art. 8º; ' + LRF + ', arts. 48, 48-A e 54; Constituição, arts. 29, 29-A e 31; PNTP 2026, dimensão 20 (atividades finalísticas do Legislativo).',
+  vereadores: 'PNTP 2026, critérios 20.1 (composição e biografia) e 20.11 (atividade dos parlamentares); Constituição, art. 29, VI, a (subsídio dos vereadores em municípios de até 10 mil habitantes); ' + LAI + ', art. 8º.',
+  sessoes: 'PNTP 2026, critérios 20.4 (pauta do Plenário), 20.5 (pauta das Comissões), 20.6 (atas com presença), 20.7 (votações nominais) e 20.9 (transmissão); Regimento Interno e Lei Orgânica do Município.',
+  proposicoes: 'PNTP 2026, critérios 20.2 (leis e atos produzidos), 20.3 (projetos com tramitação, autor, relator e documentos) e 20.8 (julgamento das contas do Prefeito); Constituição, art. 31, §§ 1º e 2º.',
+  transparencia: LRF + ', arts. 20, III, a (limite de 6% com pessoal), 48, 48-A e 54 a 55 (RGF assinado pelo Presidente da Câmara); Constituição, art. 29-A (limites de gasto da Câmara) e art. 168 (duodécimo); Lei 14.133/2021, arts. 94 e 174 (PNCP); PNTP 2026, critérios 7.1, 7.2 e 20.10.',
+  emendas: 'Lei Orgânica do Município (emendas individuais de execução obrigatória); Constituição, art. 166, §§ 9º a 11 (modelo federal das emendas impositivas); STF, ADPF 854 (transparência e rastreabilidade das emendas); PNTP 2026, critérios 17.2 e 17.3; ' + LRF + ', art. 48-A.',
+  transmissoes: 'PNTP 2026, critério 20.9 (transmissão de sessões, audiências e consultas públicas); Lei 13.146/2015, art. 63, e Lei 10.098/2000 (legendas e Libras); Regimento Interno da Câmara.',
+  acesso: LAI + ', arts. 9º a 11, 15 e 30; Lei 13.460/2017 (ouvidoria e Carta de Serviços); LGPD (Lei 13.709/2018), art. 41; Lei 13.146/2015, art. 63.'
+};
+const fmt = (v) => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const tCase = (s) => s.toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()).replace(/ (De|Da|Dos|Das|Do) /g, (m) => m.toLowerCase());
+
+const hojeISO = () => { try { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); } catch (e) { return ''; } };
+const GRAVS = [
+  { t: '3ª Sessão Extraordinária de 2026', data: '03/07/2026', dur: '0:48:12' }, { t: '10ª Sessão Ordinária de 2026', data: '15/06/2026', dur: '1:22:40' },
+  { t: '9ª Sessão Ordinária de 2026', data: '01/06/2026', dur: '1:05:18' }, { t: '8ª Sessão Ordinária de 2026', data: '18/05/2026', dur: '1:11:03' }
+];
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    let modal = true;
+    try { if (window.localStorage.getItem('cm-aviso-live') === hojeISO()) modal = false; } catch (e) { }
+    this.state = { modalOpen: modal, tvSel: -1, screen: 'home', sel: 0, pTipo: 'Todos', hc: false, fonte: 1, eVer: 'Todos', eSel: null, gLeg: 15, pKey: '', pLeg: 15 };
+  }
+  go(screen, extra) { this.setState(Object.assign({ screen: screen }, extra || {})); try { window.scrollTo(0, 0); } catch (e) { } }
+  renderVals() {
+    const s = this.state;
+    const ZOOM = [0.9, 1, 1.12, 1.25];
+    const isLive = this.props.aoVivo !== false && this.props.aoVivo !== 'false';
+    const live = { titulo: '18ª Sessão Ordinária de 2026', local: 'Plenário da Câmara', inicio: '19h', espF: '23 assistindo', desc: 'Ordem do dia: LOA 2027 em 1º turno e leitura do parecer sobre as contas do Prefeito de 2024 (simulação de sessão ao vivo).' };
+    const fecharModal = () => { try { window.localStorage.setItem('cm-aviso-live', hojeISO()); } catch (e) { } this.setState({ modalOpen: false }); };
+    const tvLive = isLive && s.tvSel < 0;
+    const g0 = GRAVS[Math.max(0, s.tvSel)];
+    const tv = tvLive ? { live: true, titulo: live.titulo, sub: 'Ao vivo do ' + live.local + ', desde as ' + live.inicio, desc: live.desc, info: live.espF, cap: [{ t: '19:00', d: 'Abertura e chamada' }, { t: '19:08', d: 'Expediente' }, { t: '19:35', d: 'Ordem do dia' }, { t: 'a seguir', d: 'Tribuna Livre' }] }
+      : { live: false, titulo: g0.t, sub: 'Gravação de ' + g0.data + ' · ' + g0.dur, desc: 'Gravação integral da sessão, com pauta, ata e votações ligadas.', info: g0.dur, cap: [{ t: '00:00', d: 'Abertura e chamada' }, { t: '00:09', d: 'Expediente' }, { t: '00:37', d: 'Ordem do dia' }, { t: '01:02', d: 'Votações' }] };
+    const gravs = GRAVS.map((g, i) => ({ t: g.t, data: g.data, dur: g.dur, sel: s.tvSel === i ? 'true' : 'false', bg: s.tvSel === i ? '#EAF2E6' : '#FFFFFF', bd: s.tvSel === i ? '#2F5233' : '#DCE1D9', go: () => this.setState({ tvSel: i }) }));
+    const titles = { transmissoes: ['Transmissões', 'Sessões, audiências e consultas públicas ao vivo e gravadas, com legendas e Libras.'], vereadores: ['Vereadores', 'Quem representa a população de Borá na 15ª Legislatura, as Mesas Diretoras e a galeria das legislaturas anteriores. Toque em um vereador para ver o perfil e a atuação.'], sessoes: ['Sessões', 'Pauta, ata, presença e votação nominal de cada sessão, com o vídeo da transmissão.'], proposicoes: ['Projetos e proposições', 'Tudo o que tramita na Câmara: quem apresentou, quem relata, em que fase está e como foi votado.'], emendas: ['Emendas impositivas 2026', 'O dinheiro do orçamento que cada vereador indicou para uma ação na cidade, quanto já foi pago e para onde foi.'], transparencia: ['Transparência da Câmara', 'Quanto a Câmara recebe e gasta, os limites da Constituição e da LRF, e as bases de despesa, contratos e pessoal.'], perfil: ['Perfil', ''], acesso: ['Acesso à informação e participação', 'Pedido de informação, ouvidoria, participação nas sessões e proteção de dados.'] };
+    const t = titles[s.screen] || ['', ''];
+    const navDef = [['home', 'Início'], ['transmissoes', isLive ? '● Ao vivo' : 'Transmissões'], ['vereadores', 'Vereadores'], ['sessoes', 'Sessões'], ['proposicoes', 'Projetos'], ['emendas', 'Emendas impositivas'], ['transparencia', 'Transparência'], ['acesso', 'Acesso à informação']];
+    const fotoDe = (nome) => FOTOS_VER[nome] || FOTO_ILUS[normNome(nome)] || '';
+    const oficial = (nome) => !!FOTOS_VER[nome];
+    const L15 = LEGIS[0];
+    const votosDe = (leg, nome) => { const r = leg.ver.find((x) => normNome(x[0]) === normNome(nome)); return r ? r[3] : 0; };
+    const goPerfil = (nome, n) => () => this.go('perfil', { pKey: normNome(nome), pLeg: n });
+    const vereadores = VEREADORES.map((v) => ({ nome: tCase(v[0]), apelido: v[1] ? '“' + v[1] + '”' : '', partido: v[2], cargo: v[3] || '—', cor: PARTIDO_COR[v[2]] || '#4B5563', presidente: v[3] === 'Presidente', comum: v[3] !== 'Presidente', foto: fotoDe(v[0]), fotoAlt: oficial(v[0]) ? 'Foto oficial de ' + tCase(v[0]) : 'Foto ilustrativa (não é ' + tCase(v[0]) + ')', ilus: !oficial(v[0]), temApelido: !!v[1], votos: votosDe(L15, v[0]) + ' votos', sub: [v[1] ? '“' + v[1] + '”' : '', v[3]].filter(Boolean).join(' · ') || 'Vereador(a)', go: goPerfil(v[0], 15) }));
+    // Mesas e galeria de legislaturas
+    const mkMesas = (leg) => leg.mesas.map((m, k) => ({ b: m.b, rot: (k === 0 ? '1º biênio' : '2º biênio') + ' · ' + m.b, st: !m.m ? 'a eleger' : leg.n === 15 && k === 0 ? 'em exercício' : 'encerrado', stBg: !m.m ? '#FCEFD9' : leg.n === 15 && k === 0 ? '#E3F2E9' : '#EEF0F3', stFg: !m.m ? '#7A4A00' : leg.n === 15 && k === 0 ? '#146C43' : '#374151', vazio: !m.m, tem: !!m.m, txt: 'A Mesa do 2º biênio ainda não foi eleita ou publicada no portal da Câmara (consulta em 06/11/2026). A eleição segue o Regimento Interno e os nomes entram aqui depois da posse.', itens: (m.m || []).map((x) => ({ cargo: x[0], nome: tCase(x[1]), foto: fotoDe(x[1]), go: goPerfil(x[1], leg.n) })) }));
+    const legSel = LEGIS.find((l) => l.n === s.gLeg) || null;
+    const legTabs = LEGIS.map((l) => ({ t: l.n + 'ª Legislatura', d: l.anos + (l.n === 15 ? ' · atual' : ''), sel: s.gLeg === l.n ? 'true' : 'false', bg: s.gLeg === l.n ? '#2F5233' : '#FFFFFF', fg: s.gLeg === l.n ? '#FFFFFF' : '#17212B', sub: s.gLeg === l.n ? '#D7E3D2' : '#4B5563', go: () => this.setState({ gLeg: l.n }) })).concat([{ t: '1ª a 12ª Legislatura', d: '1965–2016 · acervo', sel: s.gLeg === 0 ? 'true' : 'false', bg: s.gLeg === 0 ? '#2F5233' : '#FFFFFF', fg: s.gLeg === 0 ? '#FFFFFF' : '#17212B', sub: s.gLeg === 0 ? '#D7E3D2' : '#4B5563', go: () => this.setState({ gLeg: 0 }) }]);
+    const gal = legSel ? { titulo: legSel.n + 'ª Legislatura (' + legSel.anos + ')', exec: 'Prefeito: ' + legSel.prefeito + ' · Vice-prefeito: ' + legSel.vice, mesas: mkMesas(legSel), ver: legSel.ver.map((x) => ({ nome: tCase(x[0]), apelido: x[1] ? '“' + x[1] + '”' : '', partido: x[2], cor: PARTIDO_COR[x[2]] || '#4B5563', votos: x[3] + ' votos', foto: fotoDe(x[0]), fotoAlt: 'Foto ilustrativa (não é ' + tCase(x[0]) + ')', ilus: !oficial(x[0]), cargo: legSel.mesas.map((m) => (m.m || []).filter((y) => normNome(y[1]) === normNome(x[0])).map((y) => y[0] + ' ' + m.b)).flat().join(' · '), go: goPerfil(x[0], legSel.n) })).map((v) => Object.assign(v, { temCargo: !!v.cargo })) } : null;
+    // Perfil do vereador
+    const pLeg = LEGIS.find((l) => l.n === s.pLeg) || L15;
+    const pRow = pLeg.ver.find((x) => normNome(x[0]) === s.pKey) || pLeg.ver[0];
+    const pNome = tCase(pRow[0]), pK = normNome(pRow[0]);
+    const pHist = LEGIS.filter((l) => l.ver.some((x) => normNome(x[0]) === pK)).map((l) => { const x = l.ver.find((y) => normNome(y[0]) === pK); const cg = l.mesas.map((m) => (m.m || []).filter((y) => normNome(y[1]) === pK).map((y) => y[0] + ' (' + m.b + ')')).flat(); return { leg: l.n + 'ª Legislatura', anos: l.anos, partido: x[2], votos: x[3] + ' votos', mesa: cg.join(' · ') || 'Sem cargo na Mesa', atual: l.n === pLeg.n, bg: l.n === pLeg.n ? '#EAF2E6' : '#FFFFFF', bd: l.n === pLeg.n ? '#2F5233' : '#DCE1D9', cur: l.n === pLeg.n ? 'page' : undefined, go: goPerfil(x[0], l.n) }; });
+    const pCargoAtual = pLeg.mesas.map((m) => (m.m || []).filter((y) => normNome(y[1]) === pK).map((y) => y[0] + ' da Mesa ' + m.b)).flat();
+    const eh15 = pLeg.n === 15;
+    const ind26 = eh15 ? INDIC.filter((x) => x[0] === 2026 && normNome(x[2]) === pK) : [];
+    const ind25 = eh15 ? INDIC.filter((x) => x[0] === 2025 && normNome(x[2]) === pK) : [];
+    const pEm = eh15 ? EMENDAS_IMP.filter((e) => normNome(e[1]) === pK) : [];
+    const pEmTot = pEm.reduce((a, e) => a + e[3], 0), pEmPago = pEm.reduce((a, e) => a + e[7], 0);
+    const pOut = eh15 ? OUTRAS.filter((o) => o[2].some((a) => normNome(a) === pK)) : [];
+    const aCarregar = (t) => ({ vazio: true, temItens: false, vazioTxt: t });
+    const blocos = eh15 ? [
+      Object.assign({ id: 'ind', t: 'Indicações ao Executivo', sub: ind26.length + ' em 2026 (todas) · ' + ind25.length + ' entre as 20 mais recentes de 2025', itens: ind26.concat(ind25).map((x) => ({ num: 'Indicação nº ' + x[1] + '/' + x[0], txt: x[3] || 'Ementa completa no sistema legislativo da Câmara.', info: x[0] === 2026 ? 'Lida em plenário · encaminhada ao Executivo' : 'Encaminhada ao Executivo' })) }, ind26.length + ind25.length ? { vazio: false, temItens: true } : aCarregar('Nenhuma indicação deste vereador nas listas consultadas (2026 completa e as 20 mais recentes de 2025).')),
+      Object.assign({ id: 'pl', t: 'Projetos de lei', sub: 'autoria e coautoria', itens: [] }, aCarregar('A carregar do sistema legislativo. O portal atual não lista projetos por autor de forma consultável; o coletor vai ler cada projeto com autor, relator e tramitação.')),
+      Object.assign({ id: 'req', t: 'Requerimentos e moções', sub: pOut.length ? pOut.length + ' localizado(s) na amostra consultada' : 'amostra consultada', itens: pOut.map((o) => ({ num: o[0] + ' nº ' + o[1], txt: o[3], info: o[5] + ' em ' + o[4] + (o[2].length > 1 ? ' · coautoria com ' + o[2].filter((a) => normNome(a) !== pK).map(tCase).join(', ') : '') })) }, pOut.length ? { vazio: false, temItens: true } : aCarregar('Nenhum na amostra consultada. A lista completa vem do sistema legislativo.')),
+      Object.assign({ id: 'pres', t: 'Presença e faltas', sub: 'sessões ordinárias e extraordinárias', itens: [] }, aCarregar('A carregar das atas. O portal atual não publica lista de presença nem votação nominal por sessão; quando as atas forem registradas, aparecem aqui o número de sessões, presenças, faltas e faltas justificadas.'))
+    ] : [
+      Object.assign({ id: 'hist', t: 'Atuação no mandato ' + pLeg.anos, sub: 'indicações, projetos, moções, requerimentos e presença', itens: [] }, aCarregar('Acervo a carregar. O portal da Câmara guarda as proposições desta legislatura, mas a consulta automática foi bloqueada por verificação anti-robô (reCAPTCHA). O coletor do backend vai importar o acervo com autorização da Câmara.'))
+    ];
+    const pf = {
+      nome: pNome, apelido: pRow[1] ? '“' + pRow[1] + '”' : '', temApelido: !!pRow[1], partido: pRow[2], cor: PARTIDO_COR[pRow[2]] || '#4B5563', votos: pRow[3] + ' votos', foto: fotoDe(pRow[0]), fotoAlt: oficial(pRow[0]) ? 'Foto oficial de ' + pNome : 'Foto ilustrativa de banco de imagens, não é ' + pNome, ilus: !oficial(pRow[0]), credito: CREDITO_FOTO,
+      legNome: pLeg.n + 'ª Legislatura (' + pLeg.anos + ')', cargo: pCargoAtual.join(' · '), temCargo: pCargoAtual.length > 0, eleicao: 'Eleito(a) em ' + (Number(pLeg.anos.slice(0, 4)) - 1) + ' com ' + pRow[3] + ' votos', mandatos: pHist.length + (pHist.length === 1 ? ' mandato' : ' mandatos') + ' entre 2017 e 2028, nos registros consultados',
+      kpis: eh15 ? [
+        { l: 'Indicações em 2026', v: String(ind26.length), d: 'lista completa do ano' },
+        { l: 'Emendas impositivas 2026', v: fmt(pEmTot), d: pEm.length + ' emendas · ' + fmt(pEmPago) + ' pago' },
+        { l: 'Requerimentos e moções', v: String(pOut.length), d: 'na amostra consultada' },
+        { l: 'Presença nas sessões', v: 'a carregar', d: 'depende das atas' }
+      ] : [
+        { l: 'Votos na eleição', v: String(pRow[3]), d: 'eleição de ' + (Number(pLeg.anos.slice(0, 4)) - 1) },
+        { l: 'Partido no mandato', v: pRow[2], d: pLeg.n + 'ª Legislatura' },
+        { l: 'Cargos na Mesa', v: String(pCargoAtual.length), d: pCargoAtual.length ? 'no mandato' : 'nenhum no mandato' },
+        { l: 'Proposições', v: 'a carregar', d: 'acervo da legislatura' }
+      ],
+      blocos: blocos, hist: pHist, eh15: eh15, temEm: pEm.length > 0,
+      em: pEm.map((e) => ({ num: 'Emenda nº ' + e[0], obj: e[2], valor: fmt(e[3]), pago: e[7] ? fmt(e[7]) + ' pago' : 'sem pagamento', pc: e[7] ? '#146C43' : '#4B5563' })),
+      emTot: fmt(pEmTot), emPago: fmt(pEmPago), verEm: () => this.go('emendas', { eVer: tCase(VEREADORES.find((v) => normNome(v[0]) === pK) ? VEREADORES.find((v) => normNome(v[0]) === pK)[0] : pRow[0]) }),
+      voltar: () => this.go('vereadores', { gLeg: pLeg.n })
+    };
+    const stInfo = (k) => k === 'proxima' ? ['Próxima sessão', '#1D4E89'] : k === 'faltando' ? ['Pautas e atas não publicadas', '#9B1C1C'] : ['Pauta publicada; ata e votos a publicar', '#7A4A00'];
+    const sessoes = SESSOES.map((x, i) => ({ nome: x[0], data: x[1] + (x[2] ? ', ' + x[2] : ''), st: stInfo(x[3])[0], stCor: stInfo(x[3])[1], sel: s.sel === i ? 'true' : 'false', bg: s.sel === i ? '#EAF2E6' : '#FFFFFF', bd: s.sel === i ? '#2F5233' : '#DCE1D9', go: () => this.go('sessoes', { sel: i }) }));
+    const sx = SESSOES[s.sel] || SESSOES[0];
+    const doc = (t, ok) => ({ t: t, bg: ok ? '#E3F2E9' : '#EEF0F3', fg: ok ? '#146C43' : '#374151' });
+    const ss = { nome: sx[0], data: sx[1] + (sx[2] ? ', ' + sx[2] : ''), docs: sx[3] === 'proxima' ? [doc('Pauta: publicar até 14/11', false), doc('Transmissão ao vivo', true), doc('Inscrição para a Tribuna Livre', true)] : sx[3] === 'faltando' ? [doc('Pauta ausente', false), doc('Ata ausente', false)] : [doc('Pauta publicada', true), doc('Ata', false), doc('Lista de presença', false), doc('Votação nominal', false), doc('Vídeo', false)], aviso: sx[3] !== 'proxima', avisoTxt: sx[3] === 'faltando' ? 'Lacuna real no portal atual: as últimas pautas publicadas são de julho de 2026, embora as sessões continuem. Pelo PNTP (20.4 e 20.6), pauta e ata com presença precisam estar no portal.' : 'No portal atual só a pauta está publicada. Ata com presença e votação nominal (PNTP 20.6 e 20.7) ainda não aparecem.' };
+    const pauta = [{ t: 'Projeto de Lei do Executivo — LOA 2027', d: 'discussão e votação em 1º turno (exemplo)' }, { t: 'Projeto de Decreto Legislativo — contas do Prefeito de 2024', d: 'leitura do parecer da Comissão de Finanças (exemplo)' }, { t: 'Indicações e requerimentos dos vereadores', d: 'leitura no expediente (exemplo)' }, { t: 'Tribuna Livre', d: 'até 2 cidadãos inscritos, 5 minutos cada (exemplo)' }];
+    const vv = ['Sim', 'Sim', 'Sim', 'Não', 'Sim', 'Sim', 'Ausente', 'Sim', 'Presidente'];
+    const votos = vv.map((v, i) => ({ n: 'Vereador(a) ' + String.fromCharCode(65 + i), p: v === 'Ausente' ? 'Ausente' : 'Presente', v1: v, v2: v === 'Ausente' ? 'Ausente' : v === 'Presidente' ? 'Presidente' : 'Sim', c1: v === 'Sim' ? '#146C43' : v === 'Não' ? '#9B1C1C' : '#4B5563', c2: v === 'Ausente' || v === 'Presidente' ? '#4B5563' : '#146C43' }));
+    // Emendas impositivas
+    const vNomes = VEREADORES.map((v) => tCase(v[0]));
+    const autorCanon = (a) => { const n = normNome(a); const k = VEREADORES.findIndex((v) => normNome(v[0]) === n); return k >= 0 ? vNomes[k] : a; };
+    const em = EMENDAS_IMP.map((e) => ({ num: e[0], autor: autorCanon(e[1]), objeto: e[2], valor: e[3], pago: e[7], area: AREA_EMENDA(e[2]) }));
+    const emTot = em.reduce((a, e) => a + e.valor, 0), emPago = em.reduce((a, e) => a + e.pago, 0);
+    const pctF = (x) => (x * 100).toFixed(1).replace('.', ',') + '%';
+    const porVer = vNomes.map((n) => { const es = em.filter((e) => e.autor === n); return { nome: n, n: es.length, valor: es.reduce((a, e) => a + e.valor, 0), pago: es.reduce((a, e) => a + e.pago, 0) }; }).sort((a, b) => b.pago - a.pago || b.valor - a.valor);
+    const maxV = Math.max.apply(null, porVer.map((v) => v.valor));
+    const cotaIgual = porVer.every((v) => v.valor === porVer[0].valor);
+    const emVer = porVer.map((v) => ({ nome: v.nome, nF: v.n + (v.n === 1 ? ' emenda' : ' emendas'), vF: fmt(v.valor), pF: v.pago ? 'pago ' + fmt(v.pago) : 'nada pago ainda', w: Math.round(v.valor / maxV * 100), wp: v.valor ? Math.max(v.pago ? 2 : 0, Math.round(v.pago / maxV * 100)) : 0, pcor: v.pago ? '#146C43' : '#6B7684', go: () => this.go('emendas', { eVer: v.nome }) }));
+    const areas = Object.keys(AREA_COR).map((a) => { const es = em.filter((e) => e.area === a); return { a: a, v: es.reduce((x, e) => x + e.valor, 0), n: es.length }; }).filter((x) => x.n).sort((x, y) => y.v - x.v);
+    const emAreas = areas.map((x) => ({ a: x.a, vF: fmt(x.v), pct: pctF(x.v / emTot), w: (x.v / emTot * 100).toFixed(2), cor: AREA_COR[x.a], n: x.n + (x.n === 1 ? ' emenda' : ' emendas') }));
+    const emKpis = [
+      { l: 'Indicado pelos vereadores', v: fmt(emTot), d: em.length + ' emendas ao orçamento de 2026' },
+      { l: 'Já pago', v: fmt(emPago), d: pctF(emPago / emTot) + ' do indicado, até 05/11/2026' },
+      { l: 'Cota por vereador', v: fmt(porVer[0].valor), d: cotaIgual ? 'valor igual para os 9 vereadores' : 'valores diferentes entre vereadores' },
+      { l: 'Maior destino', v: areas[0].a, d: pctF(areas[0].v / emTot) + ' do valor' }
+    ];
+    const eVer = s.eVer || 'Todos';
+    const emFil = em.filter((e) => eVer === 'Todos' || e.autor === eVer);
+    const emRows = emFil.map((e) => ({ ver: () => this.setState({ eSel: e.num }), temExec: !!EXEC_EMENDA[e.num], num: e.num, autor: e.autor, objeto: e.objeto, area: e.area, cor: AREA_COR[e.area], vF: fmt(e.valor), pF: e.pago ? fmt(e.pago) : '—', st: e.pago >= e.valor ? 'Paga' : e.pago ? 'Paga em parte (' + pctF(e.pago / e.valor) + ')' : 'Aguardando execução', stBg: e.pago >= e.valor ? '#E3F2E9' : e.pago ? '#E4ECF7' : '#FCEFD9', stFg: e.pago >= e.valor ? '#146C43' : e.pago ? '#1D4E89' : '#7A4A00' }));
+    const eOpts = ['Todos'].concat(vNomes);
+    const eSel = em.find((e) => e.num === s.eSel) || null;
+    let cam = null;
+    if (eSel) {
+      const x = EXEC_EMENDA[eSel.num];
+      const soma = (arr) => arr.reduce((a, r) => a + r[1], 0);
+      const passos = [];
+      const P = (t, d, data, v, st) => passos.push({ t: t, d: d, data: data, vF: v === null ? '' : (v < 0 ? '− ' + fmt(-v) : fmt(v)), temV: v !== null, cor: st === 'ok' ? '#146C43' : st === 'an' ? '#9B1C1C' : st === 'pend' ? '#8A5A00' : '#1D4E89', bg: st === 'ok' ? '#E3F2E9' : st === 'an' ? '#FBE9E9' : st === 'pend' ? '#FCEFD9' : '#E4ECF7', ico: st === 'ok' ? '✓' : st === 'an' ? '−' : st === 'pend' ? '…' : '•' });
+      P('Emenda aprovada na Câmara', 'Emenda individual nº ' + eSel.num + ' ao orçamento de 2026, de ' + eSel.autor + '. ' + (x ? 'Base: ' + x.ato + '.' : 'Base: Lei Orgânica do Município.'), 'LOA 2026', eSel.valor, 'info');
+      if (!x) {
+        P('Reservada no orçamento da Prefeitura', 'Ação 2260 · Emendas Parlamentares Municipais. Área: ' + eSel.area + '.', '—', eSel.valor, 'info');
+        P('Aguardando empenho', 'A Prefeitura ainda não empenhou esta emenda. Nenhum valor foi comprometido.', '—', null, 'pend');
+      } else {
+        P('Origem e destino do dinheiro', 'Fonte ' + x.fonte + '. Vínculo ' + x.vinculo + '. Destino: ' + x.orgao + ', programa ' + x.programa + ', ação ' + x.acao + ', ficha ' + x.ficha + '.', 'dotação', null, 'info');
+        P('Contratação', x.contratacao + '. Credor: ' + x.credor + '. Natureza: ' + x.natureza + '.', '—', null, 'info');
+        const ev = [];
+        const kd = (d) => d.slice(6, 10) + d.slice(3, 5) + d.slice(0, 2);
+        x.empenhos.forEach((e) => {
+          ev.push([e.data, 0, 'Empenho nº ' + e.num + ' (' + e.tipo.toLowerCase() + ')', 'Reserva o valor para pagar o credor.', e.valor, 'ok']);
+          e.anul.forEach((a) => ev.push([a[0], 3, 'Anulação parcial do empenho ' + e.num, 'Parte do valor empenhado foi cancelada e volta para a dotação.', -a[1], 'an']));
+          e.liq.forEach((l, i) => ev.push([l[0], 1, 'Liquidação nº ' + (i + 1) + ' do empenho ' + e.num, 'Serviço entregue e atestado: a dívida passa a existir.', l[1], 'ok']));
+          e.pag.forEach((g, i) => ev.push([g[0], 2, 'Pagamento nº ' + (i + 1) + ' do empenho ' + e.num, 'Dinheiro transferido ao credor.', g[1], 'ok']));
+        });
+        ev.sort((a, b) => kd(a[0]).localeCompare(kd(b[0])) || a[1] - b[1]).forEach((q) => P(q[2], q[3], q[0], q[4], q[5]));
+      }
+      const emp = x ? x.empenhos.reduce((a, e) => a + e.valor - soma(e.anul), 0) : 0;
+      const liq = x ? x.empenhos.reduce((a, e) => a + soma(e.liq), 0) : 0;
+      const pag = x ? x.empenhos.reduce((a, e) => a + soma(e.pag), 0) : 0;
+      P('Saldo da emenda a executar', 'Valor indicado menos o que já foi pago.', 'hoje', eSel.valor - pag, eSel.valor - pag > 0 ? 'pend' : 'ok');
+      const div = x && x.pagoCad !== pag;
+      cam = { num: eSel.num, autor: eSel.autor, objeto: eSel.objeto, passos: passos,
+        kp: [['Indicado', fmt(eSel.valor)], ['Empenhado (líquido)', fmt(emp)], ['Liquidado', fmt(liq)], ['Pago', fmt(pag)]].map((k) => ({ l: k[0], v: k[1] })),
+        pctW: (pag / eSel.valor * 100).toFixed(1), pctF: pctF(pag / eSel.valor),
+        div: div, divTxt: div ? 'Conferência automática: o cadastro de emendas da Prefeitura informa ' + fmt(x.pagoCad) + ' pagos, mas os pagamentos do empenho somam ' + fmt(pag) + '. O portal sinaliza a diferença para a Contabilidade corrigir.' : '' };
+    }
+    const tipos = ['Todos', 'Projeto de Lei', 'Decreto Legislativo', 'Indicação', 'Requerimento', 'Moção'];
+    const propTabs = tipos.map((x) => ({ label: x, go: () => this.setState({ pTipo: x }), pressed: s.pTipo === x ? 'true' : 'false', bg: s.pTipo === x ? '#2F5233' : '#FFFFFF', fg: s.pTipo === x ? '#FFFFFF' : '#17212B' }));
+    const stCor = (st) => /Aprovad|Encaminhada/.test(st) ? ['#E3F2E9', '#146C43'] : /Aguardando/.test(st) ? ['#FCEFD9', '#7A4A00'] : ['#E4ECF7', '#1D4E89'];
+    const mkProp = (p) => ({ num: p.num, ementa: p.ementa, autor: p.autor, relator: p.relator, data: p.data, situacao: p.situacao, stBg: stCor(p.situacao)[0], stFg: stCor(p.situacao)[1], fase: FASES[Math.min(p.fase, 4) - 1], fases: FASES.map((f, i) => ({ t: (i < p.fase ? '✓ ' : '') + f, bg: i < p.fase ? '#EAF2E6' : '#F1F3EF', fg: i < p.fase ? '#2F5233' : '#6B7684' })) });
+    const props = PROPS.filter((p) => s.pTipo === 'Todos' || p.tipo === s.pTipo).map(mkProp);
+    const ult = DTP_CM[DTP_CM.length - 1];
+    const kpis = [
+      { l: 'Duodécimo recebido em 2026', v: fmt(1458400), d: 'janeiro a outubro, repasses da Prefeitura (dado real)', cor: '#2F5233' },
+      { l: 'Despesa com pessoal', v: String(ult[3]).replace('.', ',') + '%', d: 'da receita corrente líquida; limite da LRF: 6% (dado real)', cor: '#1D4E89' },
+      { l: 'Vereadores', v: '9', d: '15ª Legislatura, 2025–2028', cor: '#6B2D5C' },
+      { l: 'Contratações no PNCP', v: 'nenhuma', d: 'a Câmara não publica no PNCP (consulta real em 06/11/2026)', cor: '#9B1C1C' }
+    ];
+    const dtp = DTP_CM.map((d) => ({ l: d[0] + ' · ' + d[1], pct: String(d[3]).replace('.', ',') + '%', v: fmt(d[2]), w: Math.round(d[3] / 6 * 100) }));
+    const M = (t, d, st, lei) => ({ t: t, d: d, st: st[0], bg: st[1], fg: st[2], lei: 'Base legal: ' + lei });
+    const REAL = ['Dado real', '#E3F2E9', '#146C43'], INT = ['Integrar do sistema da Câmara', '#E4ECF7', '#1D4E89'], LAC = ['Lacuna no portal atual', '#FBE9E9', '#9B1C1C'];
+    const modulos = [
+      M('Duodécimo e execução orçamentária', 'Repasses mensais da Prefeitura e o que a Câmara empenhou, liquidou e pagou.', REAL, 'Constituição, arts. 29-A e 168; LRF, art. 48-A'),
+      M('Subsídio dos vereadores e folha', 'Valor do subsídio fixado em lei, remuneração nominal dos servidores e tabela de cargos.', LAC, 'Constituição, art. 29, VI e VII, e art. 39, § 6º; STF, Tema 483'),
+      M('Diárias e viagens', 'Vereador ou servidor, destino, motivo, período e valor, mais a tabela de diárias.', INT, 'PNTP 2026, critérios 7.1 e 7.2'),
+      M('Verba indenizatória', 'Se existir, a lei que a regula e os gastos por vereador; se não existir, declarar isso no portal.', INT, 'PNTP 2026, critério 20.10'),
+      M('Licitações e contratos', 'Processos, íntegra dos documentos, contratos, aditivos e fiscais, com publicação no PNCP.', LAC, 'Lei 14.133/2021, arts. 54, 94 e 174'),
+      M('Relatórios fiscais', 'RGF quadrimestral do Legislativo, assinado pelo Presidente da Câmara.', REAL, 'LRF, arts. 54 e 55'),
+      M('Dados abertos', 'Bases em CSV e JSON com API; hoje a área de dados abertos do portal Pronim da Câmara abre vazia.', LAC, 'LAI, art. 8º, § 3º; Lei 14.129/2021'),
+      M('Julgamento das contas do Prefeito', 'Parecer prévio do TCESP, parecer da Comissão, votação nominal e decreto legislativo.', INT, 'Constituição, art. 31; PNTP 2026, critério 20.8'),
+      M('Transmissões', 'Sessões, audiências e consultas públicas ao vivo, com gravação, legendas e Libras.', INT, 'PNTP 2026, critério 20.9; Lei 13.146/2015, art. 63')
+    ];
+    const canais = [
+      { t: 'Pedido de informação (e-SIC)', d: 'Qualquer pessoa pede, sem justificar o motivo. Resposta em até 20 dias, prorrogáveis por 10; recurso ao Presidente da Câmara em 10 dias.', lei: 'Base legal: LAI, arts. 10, 11 e 15.' },
+      { t: 'Ouvidoria', d: 'Reclamações, sugestões, elogios e denúncias, com número de protocolo e acompanhamento online.', lei: 'Base legal: Lei 13.460/2017, arts. 10 a 13.' },
+      { t: 'Tribuna Livre e opinião sobre projetos', d: 'Inscrição para falar na sessão e envio de opinião sobre cada projeto em tramitação, publicada sem dados pessoais.', lei: 'Base legal: Regimento Interno e Lei Orgânica do Município.' },
+      { t: 'Proteção de dados', d: 'Encarregado de dados da Câmara: [nome] · [e-mail]. Política de privacidade e de cookies, só com cookies necessários.', lei: 'Base legal: LGPD, arts. 9º, 23 e 41.' }
+    ];
+    return {
+      rootClass: s.hc ? 'hc' : '', zoom: ZOOM[s.fonte] || 1, hcPressed: s.hc ? 'true' : 'false',
+      toggleHc: () => this.setState({ hc: !s.hc }), fonteMais: () => this.setState({ fonte: Math.min(3, s.fonte + 1) }), fonteMenos: () => this.setState({ fonte: Math.max(0, s.fonte - 1) }),
+      brasao: BRASAO, fotoCasa: FOTO_CASA,
+      util: [['Emendas impositivas', 'emendas'], ['Portal da Transparência', 'transparencia'], ['e-SIC', 'acesso'], ['Ouvidoria', 'acesso'], ['Sessões ao vivo', 'transmissoes']].map((u) => ({ label: u[0], go: () => this.go(u[1]) })),
+      nav: navDef.map((n) => ({ label: n[1], go: () => this.go(n[0]), cur: (s.screen === 'perfil' ? 'vereadores' : s.screen) === n[0] ? 'page' : undefined, line: (s.screen === 'perfil' ? 'vereadores' : s.screen) === n[0] ? '#2F5233' : 'transparent', fg: (s.screen === 'perfil' ? 'vereadores' : s.screen) === n[0] ? '#2F5233' : '#17212B' })),
+      goHome: () => this.go('home'), goVereadores: () => this.go('vereadores', { gLeg: 15 }), goGaleria: () => this.go('vereadores', { gLeg: 14 }), goProp: () => this.go('proposicoes', { pTipo: 'Todos' }), goTransp: () => this.go('transparencia'), goAcesso: () => this.go('acesso'),
+      goPauta: () => this.go('sessoes', { sel: 0 }), goTribuna: () => this.go('acesso'), noSubmit: (e) => e.preventDefault(),
+      isHome: s.screen === 'home', notHome: s.screen !== 'home', isVereadores: s.screen === 'vereadores', isSessoes: s.screen === 'sessoes', isProp: s.screen === 'proposicoes', isTransp: s.screen === 'transparencia', isTransm: s.screen === 'transmissoes', live: live, showLiveBar: isLive && s.screen !== 'transmissoes', homeLive: isLive && s.screen === 'home', showModal: isLive && s.modalOpen,
+      fecharModal: fecharModal, stopProp: (e) => e.stopPropagation(), modalAssistir: () => { fecharModal(); this.go('transmissoes', { tvSel: -1 }); },
+      goTransm: () => this.go('transmissoes', { tvSel: -1 }), tv: tv, gravs: gravs, voltarLive: isLive && s.tvSel >= 0, assistirLive: () => this.setState({ tvSel: -1 }),
+      agenda: [{ dia: '12', mes: 'nov', t: 'Audiência pública: LOA 2027', hora: '19h', local: 'Plenário' }, { dia: '16', mes: 'nov', t: '18ª Sessão Ordinária', hora: '19h', local: 'Plenário' }], isEmendas: s.screen === 'emendas', emKpis: emKpis, emVer: emVer, emAreas: emAreas, emRows: emRows, cam: cam, temCam: !!cam, fecharCam: () => this.setState({ eSel: null }), emCount: emRows.length + (emRows.length === 1 ? ' emenda' : ' emendas'), eOpts: eOpts, eVerSel: eVer, onEVer: (e) => this.setState({ eVer: e.target.value }), goEmendas: () => this.go('emendas', { eVer: 'Todos' }), emPctW: (emPago / emTot * 100).toFixed(1), emPagoPct: pctF(emPago / emTot), isAcesso: s.screen === 'acesso',
+      pageTitle: s.screen === 'perfil' ? pf.nome : t[0], pageIntro: s.screen === 'perfil' ? 'Vereador(a) da ' + pf.legNome + '. Dados públicos do mandato: votação, cargos, proposições, emendas e presença.' : t[1], baseLegal: BASE_LEGAL[s.screen === 'perfil' ? 'vereadores' : s.screen] || '', hasLegal: !!BASE_LEGAL[s.screen === 'perfil' ? 'vereadores' : s.screen],
+      prox: { nome: '18ª Sessão Ordinária', data: '16 de novembro de 2026', hora: '19h', local: 'Plenário da Câmara' },
+      atalhos: [
+        { t: 'Sessões e votações', d: 'Pauta, ata, presença e como cada vereador votou', cor: '#2F5233', go: () => this.go('sessoes', { sel: 0 }) },
+        { t: 'Projetos em tramitação', d: 'Acompanhe e opine sobre cada projeto', cor: '#1D4E89', go: () => this.go('proposicoes', { pTipo: 'Todos' }) },
+        { t: 'Gastos da Câmara', d: 'Duodécimo, pessoal, diárias e contratos', cor: '#8A5A00', go: () => this.go('transparencia') },
+        { t: 'Fale com a Câmara', d: 'e-SIC, ouvidoria e Tribuna Livre', cor: '#6B2D5C', go: () => this.go('acesso') }
+      ],
+      marcaPainel: () => { try { window.localStorage.setItem('painel-orgao', 'cm'); } catch (e) { } },
+      goTopo: () => { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { } },
+      footCam: [['Vereadores e Mesa Diretora', 'vereadores', { gLeg: 15 }], ['Galeria de legislaturas', 'vereadores', { gLeg: 14 }], ['Sessões e votações', 'sessoes', { sel: 0 }], ['Projetos e proposições', 'proposicoes', { pTipo: 'Todos' }], ['Emendas impositivas', 'emendas', { eVer: 'Todos' }], ['Transmissões', 'transmissoes', { tvSel: -1 }]].map((x) => ({ label: x[0], go: () => this.go(x[1], x[2]) })),
+      footAcesso: [['Transparência da Câmara', 'transparencia'], ['Pedido de informação (e-SIC)', 'acesso'], ['Ouvidoria', 'acesso'], ['Privacidade e encarregado (LGPD)', 'acesso']].map((x) => ({ label: x[0], go: () => this.go(x[1]) })),
+      vereadores: vereadores, mesas15: mkMesas(L15), legTabs: legTabs, gal: gal, galTem: !!gal, galAcervo: !gal, gal15: s.gLeg === 15, isPerfil: s.screen === 'perfil', pf: pf, credito: CREDITO_FOTO,
+      sessoesHome: sessoes.slice(0, 4), sessoes: sessoes, ss: ss, pauta: pauta, votos: votos,
+      propHome: PROPS.slice(0, 3).map(mkProp), propTabs: propTabs, props: props,
+      kpis: kpis, dtp: dtp, pesLast: String(ult[3]).replace('.', ',') + '%', pesW: Math.round(ult[3] / 6 * 100), rgf: RGF_CM.map((r) => ({ p: r[0], d: r[1] })), modulos: modulos, canais: canais
+    };
+  }
+}
+</script>
+</body>
+</html>

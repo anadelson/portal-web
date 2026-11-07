@@ -1,0 +1,63 @@
+# Piloto dos Portais — um código para todos os órgãos.
+# Domínios e senhas vêm do arquivo .env (copie de .env.example).
+# Versão da VPS: sem Caddy — o HTTPS fica no nginx do hotspot (80/443), que alcança o app
+# pela rede hotspot_shared-net (alias portal-web-app). Limites de memória: ver Docs/PROGRESSO.md.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes: ["dados:/srv/dados"]
+    depends_on:
+      db: { condition: service_healthy }
+    networks:
+      default: {}
+      proxy: { aliases: [portal-web-app] }
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 0.5
+    labels: { autoheal: "true" }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/saude', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  worker:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    command: ["python", "-m", "app.worker"]
+    volumes: ["dados:/srv/dados"]
+    depends_on:
+      db: { condition: service_healthy }
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    command: ["postgres", "-c", "shared_buffers=96MB", "-c", "work_mem=4MB", "-c", "max_connections=40", "-c", "effective_cache_size=256MB"]
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: plataforma
+      TZ: America/Sao_Paulo
+    volumes: ["pg:/var/lib/postgresql/data"]
+    mem_limit: 384m
+    memswap_limit: 384m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d plataforma"]
+      interval: 5s
+      retries: 20
+
+networks:
+  proxy:
+    external: true
+    name: hotspot_shared-net
+
+volumes:
+  pg: {}
+  dados: {}

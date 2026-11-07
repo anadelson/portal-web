@@ -1,0 +1,11 @@
+{% extends 'portal/base.html' %}
+{% block conteudo %}<p><a href="/emendas">‹ Emendas impositivas</a></p><h1>Emenda nº {{ e.numero }}</h1>
+<p>{{ e.autor }} · {{ e.objeto }}</p>
+<div class="grade"><div class="cartao"><h3>Valor indicado</h3><p>{{ e.valor|moeda }}</p></div><div class="cartao"><h3>Pago segundo o cadastro</h3><p>{{ e.pago_cadastro|moeda }}</p></div><div class="cartao"><h3>Pago segundo o empenho</h3><p>{{ e.pago_empenho|moeda }}</p></div></div>
+{% if e.conferencia == 'divergente' %}<p class="msg" style="background:#FCEFD9">O valor pago no cadastro de emendas é diferente do valor pago nos empenhos. A Câmara pediu esclarecimento.</p>{% endif %}
+{% set d = e.detalhe %}{% if d %}
+<section class="secao cartao"><h2>Caminho na Prefeitura</h2><dl>
+<dt>Órgão</dt><dd>{{ d.orgao }}</dd><dt>Programa e ação</dt><dd>{{ d.programa }} · {{ d.acao }}</dd><dt>Natureza</dt><dd>{{ d.natureza }}</dd><dt>Fonte</dt><dd>{{ d.fonte }}</dd><dt>Contratação</dt><dd>{{ d.contratacao }}</dd><dt>Credor</dt><dd>{{ d.credor }}</dd></dl>
+{% for em in d.empenhos %}<h3>Empenho {{ em.num }} ({{ em.tipo }}) · {{ em.data }} · {{ em.valor|moeda }}</h3><ul>{% for a in em.anul %}<li>Anulação {{ a[0] }}: {{ a[1]|moeda }}</li>{% endfor %}{% for l in em.liq %}<li>Liquidação {{ l[0] }}: {{ l[1]|moeda }}</li>{% endfor %}{% for p in em.pag %}<li>Pagamento {{ p[0] }}: {{ p[1]|moeda }}</li>{% endfor %}</ul>{% endfor %}
+</section>{% else %}<p>Nenhum empenho localizado para esta emenda até a última leitura.</p>{% endif %}
+<p class="legal">Fonte: {{ e.fonte }}.</p>{% endblock %}

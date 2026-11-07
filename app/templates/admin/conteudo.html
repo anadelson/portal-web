@@ -1,0 +1,22 @@
+{% extends 'admin/base.html' %}{% block h1 %}{{ c.titulo if c else 'Novo conteúdo' }}{% endblock %}
+{% block conteudo %}{% set editavel = pode('editar') and (not c or c.situacao in ('rascunho','devolvido','revisao')) %}
+{% if c and c.situacao == 'devolvido' and c.comentario %}<p class="msg" style="background:#FCEFD9">Comentário do publicador: {{ c.comentario }}</p>{% endif %}
+<form class="campos" method="post" action="/admin/conteudos/salvar"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="id" value="{{ c.id if c else '' }}">
+{% if c %}<p>Situação: <span class="chip">{{ SITUACOES[c.situacao] }}</span> · autor: {{ c.autor }}</p>{% endif %}
+<label>Tipo<select name="tipo">{% for t in ['Notícia','Página','Aviso','Banner','Documento'] %}<option {{ 'selected' if c and c.tipo == t }}>{{ t }}</option>{% endfor %}</select></label>
+<label>Seção do portal<select name="secao">{% for t in ['Notícias','Serviços','Transparência','Página inicial'] %}<option {{ 'selected' if c and c.secao == t }}>{{ t }}</option>{% endfor %}</select></label>
+<label>Título<input name="titulo" value="{{ c.titulo if c else '' }}" required></label>
+<label>Resumo<textarea name="resumo" rows="2">{{ c.resumo if c else '' }}</textarea></label>
+<label>Texto<textarea name="texto" rows="8">{{ c.texto if c else '' }}</textarea></label>
+<fieldset style="border:1px solid #DCE1E6;border-radius:12px;padding:12px"><legend><strong>Classificação para o período eleitoral (obrigatória)</strong></legend>
+{% for k, v in CLASSES.items() %}<label style="flex-direction:row;gap:8px;font-weight:400"><input type="radio" name="classe" value="{{ k }}" {{ 'checked' if c and c.classe == k }} required> <span><strong>{{ v[0] }}</strong> — no defeso: {{ v[1] }}</span></label>{% endfor %}</fieldset>
+<label>Publicar em (vazio = ao aprovar)<input type="date" name="publicar_em" value="{{ c.publicar_em or '' if c else '' }}"></label>
+<label>Tirar do ar em (opcional)<input type="date" name="tirar_em" value="{{ c.tirar_em or '' if c else '' }}"></label>
+{% if c and c.situacao == 'revisao' and pode('publicar') %}<label>Comentário para o autor (obrigatório para devolver)<textarea name="comentario" rows="2"></textarea></label>{% endif %}
+<div class="acoes">
+{% if editavel and (not c or c.situacao in ('rascunho','devolvido')) %}<button class="btn sec" name="acao" value="rascunho">Salvar rascunho</button><button class="btn" name="acao" value="revisao">Enviar para revisão</button>{% endif %}
+{% if c and c.situacao == 'revisao' and pode('publicar') %}<button class="btn" name="acao" value="aprovar">Aprovar e publicar</button><button class="btn sec" name="acao" value="devolver">Devolver ao autor</button>{% endif %}
+{% if c and c.situacao in ('publicado','agendado') and pode('publicar') %}<button class="btn perigo" name="acao" value="arquivar">Tirar do ar e arquivar</button>{% endif %}
+</div></form>
+{% if versoes %}<section class="cx" style="margin-top:18px"><h2>Histórico</h2><ul>{% for v in versoes %}<li>{{ v.quando|br }} · {{ v.quem }} · {{ v.obs }}</li>{% endfor %}</ul></section>{% endif %}
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.noticias }}</p>{% endblock %}

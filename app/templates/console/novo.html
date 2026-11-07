@@ -1,0 +1,5 @@
+{% extends 'console/base.html' %}{% block h1 %}Cadastrar órgão{% endblock %}
+{% block conteudo %}<p>Cria o banco próprio do órgão, aplica o esquema, o layout padrão do plano e o usuário administrador inicial (admin@&lt;domínio&gt;, senha SENHA_INICIAL_ADMIN do .env). O órgão nasce em implantação.</p>
+<form class="campos" method="post" action="/orgaos/novo"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<label>Nome<input name="nome" required placeholder="Câmara Municipal de ..."></label><label>Tipo<select name="tipo"><option value="executivo">Prefeitura (Executivo)</option><option value="legislativo">Câmara (Legislativo)</option></select></label>
+<label>Identificador (ex.: cm-paraguacu)<input name="slug" required pattern="[a-z0-9-]{3,30}"></label><label>Domínio<input name="dominio" required placeholder="cmxxx.conectatech.tech"></label><label>Município (UF)<input name="municipio"></label><label>Código IBGE<input name="ibge"></label><button class="btn">Cadastrar</button></form>{% endblock %}

@@ -1,0 +1,3 @@
+{% extends 'admin/base.html' %}{% block h1 %}Identidade do órgão{% endblock %}
+{% block conteudo %}<form class="campos" method="post" action="/admin/identidade"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">{% for k, t in campos %}<label>{{ t }}<input name="{{ k }}" value="{{ ident.get(k, '') }}" {{ 'disabled' if not pode('config') }}></label>{% endfor %}{% if pode('config') %}<button class="btn">Salvar</button>{% endif %}</form>
+<p class="legal"><strong>Base legal:</strong> LAI, art. 8º, § 1º, I; LGPD, art. 41.</p>{% endblock %}

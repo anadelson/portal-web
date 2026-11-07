@@ -1,0 +1,12 @@
+DIAGNÓSTICO DA VPS (somente leitura)
+
+1. Abra o "Prompt de Comando" (cmd) do Windows - não o PowerShell.
+2. Entre nesta pasta:
+   cd %USERPROFILE%\Documents\portais-bora
+3. Rode (troque usuario e IP):
+   ssh usuario@IP-DA-VPS "tr -d '\r' | bash -s -- gestao.conectatech.tech pmbora.conectatech.tech cmbora.conectatech.tech" < diag-vps.sh > diagnostico-vps.txt
+4. Se pedir a senha do SSH, digite no próprio terminal (nunca no chat).
+5. Quando terminar, avise o Claude: ele lê o arquivo diagnostico-vps.txt desta pasta.
+
+O script não instala, não altera e não reinicia nada, e não lê senhas, chaves ou arquivos .env.
+Se o usuário tiver sudo com senha, algumas seções aparecem como "(sem sudo sem senha)"; tudo bem.

@@ -1,0 +1,4 @@
+{% extends 'portal/base.html' %}
+{% block conteudo %}<h1>{{ titulo }}</h1>
+<div class="grade" style="margin-top:16px">{% for c in itens %}<a class="cartao" href="/conteudo/{{ c.id }}"><h3>{{ c.titulo }}</h3><span>{{ c.resumo }}</span><br><small>{{ c.publicar_em|br }}</small>{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</a>{% else %}<p>Nada publicado por enquanto.</p>{% endfor %}</div>
+{% endblock %}

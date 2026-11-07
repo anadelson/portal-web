@@ -1,0 +1,7 @@
+{% extends 'admin/base.html' %}{% block h1 %}Funcionalidades{% endblock %}
+{% block conteudo %}<p>Ligar ou desligar tira do menu, das páginas e da busca; os dados ficam guardados. Opcionais só aparecem se estiverem no contrato (console do gestor).</p>
+<div class="tabela"><table><thead><tr><th>Funcionalidade</th><th>Oferta</th><th>Situação</th><th></th></tr></thead><tbody>
+{% for m in lista %}<tr><td><strong>{{ m.nome }}</strong><br><small>{{ m.desc }}</small></td><td>{{ {'obr':'Exigida por lei','plano':'Incluída no plano','opc':'Opcional'}[m.oferta] }}</td>
+<td>{% if not m.disponivel %}<span class="chip alerta">Não contratada</span>{% else %}<span class="chip {{ 'ok' if m.ligado else '' }}">{{ 'Ligada' if m.ligado else 'Desligada' }}</span>{% endif %}</td>
+<td>{% if m.oferta != 'obr' and m.disponivel and pode('config') %}<form class="inline" method="post" action="/admin/funcionalidades"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="chave" value="{{ m.chave }}"><button class="btn sec">{{ 'Desligar' if m.ligado else 'Ligar' }}</button></form>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>{% endblock %}

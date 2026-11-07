@@ -1,0 +1,4 @@
+{% extends 'admin/base.html' %}{% block h1 %}e-SIC e Ouvidoria{% endblock %}
+{% block conteudo %}<div class="tabela"><table><thead><tr><th>Protocolo</th><th>Tipo</th><th>Assunto</th><th>Recebido</th><th>Prazo</th><th>Situação</th></tr></thead><tbody>
+{% for p in itens %}<tr><td><a href="/admin/atendimento/{{ p.id }}">{{ p.protocolo }}</a></td><td>{{ 'Pedido (LAI)' if p.tipo == 'pedido' else 'Ouvidoria · ' ~ p.categoria }}</td><td>{{ p.assunto }}</td><td>{{ p.recebido|br }}</td><td><span class="chip {{ p.prazo_cls }}">{{ p.prazo }}</span></td><td>{{ p.situacao }}</td></tr>{% else %}<tr><td colspan="6">Nenhum pedido ou manifestação.</td></tr>{% endfor %}
+</tbody></table></div><p class="legal">Prazos: LAI, art. 11 (20 dias + 10 com justificativa); Lei 13.460/2017, art. 16 (30 dias).</p>{% endblock %}

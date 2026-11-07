@@ -1,0 +1,6 @@
+{% extends 'portal/base.html' %}
+{% block conteudo %}<h1>Emendas impositivas</h1>
+<p>{{ tot.n }} emendas · {{ tot.total|moeda }} indicados · {{ tot.pago|moeda }} pagos segundo o cadastro.</p>
+<div class="tabela"><table><thead><tr><th scope="col">Emenda</th><th scope="col">Vereador</th><th scope="col">Objeto</th><th scope="col">Valor</th><th scope="col">Pago (cadastro)</th><th scope="col">Conferência</th></tr></thead><tbody>
+{% for e in emendas %}<tr><td><a href="/emendas/{{ e.numero.split('/')[1] }}/{{ e.numero.split('/')[0] }}">{{ e.numero }}</a></td><td>{{ e.autor }}</td><td>{{ e.objeto }}</td><td>{{ e.valor|moeda }}</td><td>{{ e.pago_cadastro|moeda }}</td><td><span class="chip {{ 'ok' if e.conferencia == 'conferido' else 'erro' if e.conferencia == 'divergente' else '' }}">{{ {'conferido':'Confere com o empenho','divergente':'Diverge do empenho','sem_execucao':'Sem execução','pendente':'Pendente'}[e.conferencia] }}</span></td></tr>{% endfor %}
+</tbody></table></div><p class="legal">Fonte: sistema contábil da Prefeitura (Fiorilli).</p>{% endblock %}

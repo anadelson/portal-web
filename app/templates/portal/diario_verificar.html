@@ -1,0 +1,5 @@
+{% extends 'portal/base.html' %}
+{% block conteudo %}<h1>Verificar edição do Diário Oficial</h1>
+{% if e %}<p class="msg">Edição autêntica: nº {{ e.numero }}{{ e.letra }} de {{ e.data|br }}.</p><p>Impressão digital do arquivo (SHA-256): <code style="word-break:break-all">{{ e.sha256 }}</code></p><p>Assinatura digital: {{ 'ICP-Brasil com carimbo do tempo' if e.assinatura == 'assinada' else 'pendente (piloto sem certificado)' }}</p><p><a class="btn" href="/diario/{{ e.id }}.pdf">Baixar a edição</a></p>
+{% elif codigo %}<p class="msg" style="background:#FBE4D8">Nenhuma edição publicada com o código {{ codigo }}.</p>{% endif %}
+<p><a href="/diario">Voltar às edições</a></p>{% endblock %}
