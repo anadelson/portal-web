@@ -374,3 +374,23 @@ Registros sorteados do portal público (`/dados/<base>.json`) comparados com nov
 
 ## Onde parou
 **Fases 3 e 4 concluídas e implantadas em 2026-11-07.** `main` com merge de `fase-4` e tag **`fase-4`**. Nenhuma ação em andamento.
+
+---
+
+# Fase 5 — Câmara completa (iniciada em 2026-11-07)
+
+## Passo 0 — Conferência (só leitura)
+`Docs/fase56.tgz` extraído (PEDIDO-FASE5, PEDIDO-FASE6, modelos/README). Fases 3 e 4 conferidas: tags `fase-3`/`fase-4`, `main` no merge da Fase 4; pmbora `/transparencia` 200 com "Atualizado em" e CSV/JSON; cmbora com "Próxima sessão", card do presidente 2×2 (`vcard pres`) e faixa 55/45 (`l55`/`l45`). Nada faltando.
+
+## Implementação (branch `fase-5`)
+- Migração `006_orgao_legislativo.sql`: Mesa por biênio (eleição, posse, ato), autoria estruturada, tramitação, documentos PDF, comissões (membros, reuniões, pareceres), pauta, votos nominais, contas do Prefeito, diárias da Câmara, transmissões, Tribuna Livre, opiniões, avaliações, histórico de importações.
+- `app/legislativo.py`: numeração automática por tipo/ano; votação nominal com quórum simples/absoluta/2/3; Presidente só vota no desempate (maioria simples), computado nos quóruns qualificados; resultado atualiza tramitação e situação; estatísticas do vereador só de sessões publicadas; autoavaliação PNTP 20.1–20.11 (critérios do protótipo).
+- `app/admin_leg.py` (painel): Legislaturas e Mesas, Proposições (autores, relator, tramitação, PDFs com descrição obrigatória), Comissões, Sessões (pauta → presença → votação → ata → publicação separada; presença e votos só no dia da sessão ou depois; votação publicada não muda), Contas do Prefeito (parecer TCESP, comissão, pauta com 2/3, decreto), Diárias (lançamento, importação, declaração "sem diárias"), Transmissões (canal, agenda, iniciar/encerrar, capítulos, legendas/Libras), Participação (Tribuna Livre, moderação de opiniões com detecção de dado pessoal/ofensa, avaliação por página), Importar dados antigos (CSV), Autoavaliação PNTP.
+- `app/portal_leg.py` (portal): proposições com filtros e página com linha do tempo, documentos, pareceres, votações nominais e opiniões; sessões com pauta/presença/votação/ata/vídeo publicados; comissões; contas; transmissões com player youtube-nocookie; Tribuna Livre; "Avalie esta página"; PDFs em `/documento/`.
+- Faixa "● Ao vivo" + aviso uma vez por dia em todos os portais com transmissão; módulo novo `audiencias` (opcional, Prefeitura).
+- Base "Diárias e verbas dos vereadores" (`/transparencia/diarias-camara`, CSV/JSON).
+- `app/importar.py` + `Docs/modelos/*.csv`: 9 modelos, simulação, relatório por linha, tudo ou nada, recusa CPF. CLI: `python -m app.importar MODELO arquivo.csv --orgao cm-bora [--gravar]`.
+- Testes `tests/teste_legislativo.py`: legislatura e pessoas FICTÍCIAS (16ª, 2029–2032), data simulada 10/03/2029.
+
+## Onde parou
+Código pronto. Aguardando aprovação de build → testes (3 suítes) → implantação.
