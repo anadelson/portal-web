@@ -1,0 +1,26 @@
+{% extends 'console/base.html' %}{% block h1 %}Credenciais de fontes{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<p>Credenciais usadas pelos coletores para consultar fontes que exigem acesso. Os valores são gravados <strong>cifrados</strong> no banco da plataforma e <strong>nunca são exibidos</strong> de volta, nem no registro de ações. Para mudar, use “Trocar”.</p>
+{% if not chave_ok %}<p class="msg" role="alert" style="background:#FBE4D8;color:#9B1C1C"><strong>Cadastro desligado:</strong> a chave CHAVE_CREDENCIAIS não está configurada no .env do servidor.</p>{% endif %}
+{% for x in itens %}
+<section class="cx" aria-labelledby="h-{{ x.chave }}"><h2 id="h-{{ x.chave }}">{{ x.nome }} <small>(fonte <code>{{ x.chave }}</code>)</small></h2>
+<p class="legal">{{ x.explica }}</p>
+{% if x.sit %}
+<p><span class="chip {{ 'ok' if x.sit.legivel else 'erro' }}">{{ 'configurada' if x.sit.legivel else 'ilegível: recadastre (chave trocada?)' }}</span> em {{ x.sit.configurada_em|br }} por {{ x.sit.configurada_por }}</p>
+{% if x.sit.testada_em %}<p>Último teste: {{ x.sit.testada_em|br }} por {{ x.sit.testada_por }} — {{ x.sit.teste_resultado }}</p>{% endif %}
+<div class="acoes" style="display:flex;gap:8px;flex-wrap:wrap">
+<form class="inline" method="post" action="/credenciais"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="fonte" value="{{ x.chave }}"><button class="btn" name="acao" value="testar">Testar conexão</button></form>
+<form class="inline" method="post" action="/credenciais"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="fonte" value="{{ x.chave }}"><button class="btn sec" name="acao" value="apagar">Apagar</button></form>
+</div>
+<details style="margin-top:12px"><summary>Trocar</summary>
+{% else %}
+<p><span class="chip alerta">não configurada</span> — a coleta usa a reserva do .env, se houver; senão, fica desligada.</p>
+<details open><summary>Cadastrar</summary>
+{% endif %}
+<form class="campos" method="post" action="/credenciais" autocomplete="off"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="fonte" value="{{ x.chave }}"><input type="hidden" name="acao" value="salvar">
+<div class="grade2"><label>Usuário<input name="usuario" type="password" autocomplete="off" required></label><label>Senha<input name="senha" type="password" autocomplete="new-password" required></label></div>
+<p class="legal">Só gravação: depois de salvar, o valor não volta para a tela.</p>
+<button class="btn" {{ 'disabled' if not chave_ok }}>Salvar</button></form></details>
+</section>
+{% endfor %}
+{% endblock %}
