@@ -691,3 +691,28 @@ Fontes da Fase 7 concluídas: INEP e IEG-M no ar, credencial pelo console. Próx
     - falta a lista "Ainda não disponíveis";
     - o foco amarelo tem contraste baixo sobre fundo branco.
 - **Parado aguardando aprovação das correções** e de 5 decisões: cálculo por habitante, coletor mensal da Fiorilli, semântica das abas, comparação do IDEB com SP e Brasil, e novos dados agregados do CNES e do IEG-M.
+
+### ETAPA 2 — Correção (07/11/2026, aprovada com as 5 decisões do usuário)
+- **Abas e selo:** links com `aria-current`, em pílula (44 px, raio 999 px), `?tema=` (o `?aba=` antigo redireciona com 301). Selo "Finanças lidas do sistema contábil em <data/hora>" com a última coleta Fiorilli ok; o ponto pulsante desliga com `prefers-reduced-motion`.
+- **Dinheiro público:**
+  - KPIs no padrão do protótipo. Os valores por habitante mostram o ano da estimativa do IBGE e "cálculo do portal: valor oficial ÷ população estimada".
+  - "Receita e despesa paga, mês a mês" (SVG + tabela) vem da nova fonte `financas` (Fiorilli por mês, diária de madrugada, tabela `fin_mensal`, migrações 013/014). A API devolve o movimento do período; janeiro + fevereiro = acumulado, conferido.
+  - "Para onde vai o dinheiro" usa o agrupamento editável das unidades por área (`areas_unidades`): a sugestão é a função de governo predominante nos empenhos, e o administrador troca em /admin/indicadores, com auditoria.
+  - "De onde vem o dinheiro": repasses 1700 + 2400 sobre a receita bruta, e as 5 maiores origens.
+  - "Execução do orçamento": 3 barras e a linha do ritmo do ano.
+  - Sem dado do ano, cada bloco não aparece.
+- **Contratações:** barras por modalidade.
+- **Saúde, Educação e Assistência social:** KPIs; mínimos legais com linha tracejada; CNES com nome, tipo e endereço (dado institucional, tabela compartilhada `dados_publicos/cnes_lista`); nascimentos e óbitos, com "menos de 5"; orçamento da área por unidade; benefícios com o aviso do MDS.
+- **IDEB:** comparação com SP e Brasil só na mesma etapa e na rede pública, pelas planilhas `divulgacao_regioes_ufs_ideb_{ANO}` e `divulgacao_brasil_ideb_{ANO}` do INEP; sem linha equivalente, não aparece. Em 2025 a planilha de SP não tem rede pública no ensino médio, então essa comparação fica fora.
+- **IEG-M:** faixa em destaque, dimensões, "Como os municípios paulistas ficaram" (contagem agregada por faixa em `dados_publicos/iegm_distribuicao`) e evolução em `details`.
+- **Demais blocos:** "O município"; "Acesso à informação"; "Ainda não disponíveis", gerado do catálogo (indicadores visíveis sem dado, com o motivo).
+- **Acessibilidade e datas:**
+  - Foco em anel duplo (amarelo + escuro) no portal, no admin e no console; ESPEC-VISUAL.md atualizado.
+  - O filtro de datas passa a converter para o horário local.
+- **Testes:** `tests/teste_painel_layout.py` (dados fictícios) e as 6 suítes anteriores: todas com ERROS: 0.
+- **Capturas "depois":**
+  - Feitas numa prévia descartável: PostgreSQL de teste com cópia dos bancos atuais (`pg_dump`, só leitura), app com o código novo e as coletas novas rodando contra a cópia. A prévia foi desligada e a cópia apagada.
+  - Arquivos em `Docs/avaliacao-painel/depois/` e, lado a lado com as atuais, em `Docs/avaliacao-painel/lado-a-lado/`.
+  - Sem rolagem horizontal em 390 px; pílulas com 44 px.
+  - O brasão quebrado aparece só na prévia: as imagens `.webp` são geradas no build.
+- **Onde parou:** aguardando aprovação para implantar (build, testes, backup, `up -d`, `provision atualizar`, primeiras coletas `financas`, `cnes`, `inep` e `iegm`), merge e tag.
