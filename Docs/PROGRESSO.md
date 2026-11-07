@@ -417,3 +417,18 @@ Registros sorteados do portal público (`/dados/<base>.json`) comparados com nov
 
 ## Onde parou
 **Fase 5 concluída e implantada em 2026-11-07**; `main` com merge de `fase-5` e tag **`fase-5`**. Aguardando o "ok" do usuário para a Fase 6 (modo teste).
+
+---
+
+# Fase 6 — Diário assinado, remessa da Câmara e login gov.br (MODO TESTE, iniciada em 2026-11-07)
+
+## Implementação (branch `fase-6`)
+- **Assinatura** (`app/assinatura.py`, pyHanko 0.37.0): PAdES com carimbo do tempo RFC 3161 e LTV quando a cadeia permite; provedores **A1** (PKCS#12 em `segredos/a1`, senha em variável do .env indicada na designação), **nuvem** (interface pronta; sem endpoint inventado — falta o provedor fornecer API/credenciais), **A3** (download do PDF, assinatura no computador do signatário, upload validado: preserva o documento, exatamente 1 assinatura nova, todas íntegras, signatário designado); **MODO TESTE** com AC raiz, signatários e ACT de TESTE gerados localmente (`python -m app.assinatura gerar-teste`) e marca “SEM VALOR OFICIAL — TESTE”.
+- **Diário** (`app/diario.py`, `app/diario_servico.py`): capa (Lei 910, art. 6º), página de cada ato, PDF/A-2b (Ghostscript) antes de assinar, assinaturas por caderno (Executivo, Legislativo, final), publicação só com edição totalmente assinada, edição de teste nunca oficial; calendário (feriado/sem expediente sem edição; ponto facultativo é dia útil), corte das 16h, edição “sem atos” automática às 16h (assinada por A1 ou teste), alerta às 16h30, publicação às 17h, extra com letra, retificação apontando o ato original, invalidação por ato do Prefeito com comunicado e prorrogação de prazos; verificação pública com signatários, carimbo, SHA-256 e link ao validar.iti.gov.br.
+- **Remessa Câmara → Prefeitura** (`app/remessa.py`): API interna com token por par de órgãos (banco de controle), assinatura HMAC, janela de 5 min e registro; retorno com situação, número da edição e página. A Câmara não acessa o banco da Prefeitura.
+- **Acesso** (`app/acesso.py`): segundo fator TOTP obrigatório (painéis e console) com QR code e 10 códigos de recuperação (só hash); segredo cifrado (Fernet); bloqueio após 5 falhas (15 min) por conta e por origem; sessão expira após 30 min sem uso; Login Único gov.br (OIDC + PKCE, id_token validado pela JWKS, nível prata/ouro) com vínculo pelo HMAC do CPF + 2 últimos dígitos (CPF completo nunca gravado); cabeçalhos CSP (`frame-ancestors 'none'`), X-Frame-Options, Referrer-Policy, Permissions-Policy, no-store nos painéis.
+- Migrações `007_orgao_diario_seguranca.sql` e `008_plataforma_seguranca.sql`.
+- Testes: suítes anteriores adaptadas ao 2º fator (`tests/apoio.py`) e nova `tests/teste_diario_seguranca.py`.
+
+## Onde parou
+Código pronto. Aguardando aprovação de: build → 4 suítes de teste → criação de `segredos/` + cadeia de teste + chaves no .env → implantação.
