@@ -467,3 +467,13 @@ Comando para editar na VPS: `nano /opt/portal_web/.env` (depois `docker compose 
 **Fase 6 concluída em MODO TESTE (07/11/2026).** Correção da rotina automática reimplantada (backup antes; 4 suítes com ERROS: 0 na imagem nova): em modo teste o worker não cria/publica edições sozinho (`DIARIO_AUTOMATICO_TESTE=0`); produção com 0 edições do Diário em pm-bora e cm-bora; branch `fase-6` mesclada em `main` com tag `fase-6`.
 
 Para passar a OFICIAL falta (com o órgão): certificados A1/A3 ICP-Brasil reais em `segredos/a1` e raízes em `segredos/icp`, contrato com ACT (preencher `ACT_*`), credenciais gov.br (`GOVBR_CLIENT_ID`/`GOVBR_CLIENT_SECRET`), lei municipal do Diário e designações; depois `DIARIO_MODO=oficial` e `python -m app.diario_servico limpar-teste` — cada passo com aprovação.
+
+## Fase 7 — Painel de indicadores (módulo "bi")
+
+### ETAPA 0 — Descoberta (07/11/2026, só leitura, a partir da VPS)
+- Fase 6 conferida: tag `fase-6` contida em `main`. **`Docs/fase7.tgz` não existe na VPS**; `Docs/PEDIDO-FASE7.md` e as referências (FONTES-DADOS.md de 05/11, protótipos) já estavam presentes e foram usados.
+- Respondem: Fiorilli (receitas/despesas 2026 até 06/11), PNCP (falhou na 1ª tentativa, respondeu na 2ª), TCESP receitas (último mês com dados: set/2026; out/2026 vazio), Siconfi RREO Anexo 14 (último com saúde/MDE/FUNDEB: 2026 3º bim; 1º, 2º e 4º bim. vêm sem essas linhas), CNES (2 estabelecimentos), SIDRA 2612/2654 (até 2024), SIDRA 6449 (até 2021), IBGE agregados v3 (população estimada 2026, Censo 2022, PIB até 2023), IBGE pesquisas v1 (PIB per capita, IDEB 40, CEMPRE 19 até 2024, Censo 2022 alfabetização e esgotamento).
+- Não respondem / bloqueados: TCESP IEG-M Pentaho (401 — exige autenticação, não contornado), MDS MI Social (302 para aviso de manutenção), INEP download.inep.gov.br (conexão TLS encerrada pelo servidor a partir da VPS — não contornado), QEdu (robots.txt 403 — descartado).
+- Vacinação PNI: responde, mas devolve microdados individuais e sem filtro por município → mantém desligado; a amostra de 1 registro foi apagada na hora.
+- e-SIC/Ouvidoria do portal: tabela `esic` (tipo pedido/manifestação) com 0 registros em pm-bora e cm-bora.
+- Arquivos temporários da descoberta apagados. **Parado aguardando aprovação da lista de fontes.**
