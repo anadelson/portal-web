@@ -266,3 +266,40 @@ def ver_log(request: Request):
     fontes = db.todos(db.PLATAFORMA, 'SELECT o.slug, f.fonte, f.ativo FROM fontes f JOIN orgaos o ON o.id=f.orgao_id ORDER BY o.slug, f.fonte')
     return T('log', request, itens=db.todos(db.PLATAFORMA, 'SELECT * FROM log_console ORDER BY id DESC LIMIT 300'), situacao=situacao, fontes=fontes,
              coletas=db.todos(db.PLATAFORMA, 'SELECT * FROM coletas ORDER BY id DESC LIMIT 80'))
+
+# ---------- Integrações: credenciais de fontes (só gravação) ----------
+@r.get('/credenciais')
+def credenciais(request: Request):
+    gestor(request)
+    from . import credenciais as CR
+    itens = [dict(chave=k, **v, sit=CR.situacao(k)) for k, v in CR.FONTES.items()]
+    return T('credenciais', request, itens=itens, chave_ok=CR.chave_ok())
+
+@r.post('/credenciais')
+async def credenciais_post(request: Request):
+    g = gestor(request)
+    from fastapi.concurrency import run_in_threadpool
+    from . import credenciais as CR
+    f = await ler_form(request)
+    fonte, acao = f.get('fonte', ''), f.get('acao', '')
+    if fonte not in CR.FONTES:
+        return ir('/credenciais', 'Fonte desconhecida.', request)
+    if acao == 'salvar':
+        try:
+            r_ = CR.salvar(fonte, f.get('usuario', ''), f.get('senha', ''), g['nome'])
+        except CR.SemChave as e:
+            return ir('/credenciais', f'Cadastro desligado: {e}.', request)
+        except ValueError as e:
+            return ir('/credenciais', f'Não gravado: {e}.', request)
+        log(g, f'Credencial da fonte {fonte} {r_}')
+        return ir('/credenciais', f'Credencial {r_}. O valor não é exibido nem registrado.', request)
+    if acao == 'apagar':
+        if CR.apagar(fonte):
+            log(g, f'Credencial da fonte {fonte} apagada')
+            return ir('/credenciais', 'Credencial apagada. A coleta usa a reserva do .env, se houver; senão, fica desligada.', request)
+        return ir('/credenciais', 'Não havia credencial cadastrada.', request)
+    if acao == 'testar':
+        res = await run_in_threadpool(CR.testar, fonte, g['nome'])
+        log(g, f'Credencial da fonte {fonte} testada: {res}')
+        return ir('/credenciais', f'Teste de conexão: {res}.', request)
+    return ir('/credenciais', '', request)

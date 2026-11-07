@@ -11,5 +11,8 @@ for b in $BANCOS; do
   echo "$(date -Is) ok $b"
 done
 tar -czf "$DEST/dados-$DATA.tgz" -C /var/lib/docker/volumes/portal_web_dados _data
+# .env (inclui CHAVE_CREDENCIAIS: sem ela as credenciais cifradas no banco não podem ser lidas). Só root lê (600).
+install -m 600 .env "$DEST/env-$DATA"
+find "$DEST" -name 'env-*' -mtime +14 -delete
 find "$DEST" -name '*.dump' -mtime +14 -delete
 find "$DEST" -name 'dados-*.tgz' -mtime +14 -delete

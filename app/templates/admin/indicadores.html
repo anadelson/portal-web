@@ -2,10 +2,11 @@
 {% block conteudo %}{% set C = csrf_token(request) %}
 <p>Catálogo dos indicadores publicados em <a href="/painel">/painel</a>. Cada número vem de uma fonte oficial (coleta automática) ou de lançamento manual com motivo. Indicador sem nenhum valor não aparece no portal; aqui ele aparece como “aguardando primeira coleta”.</p>
 <p class="legal">Base legal: LRF, art. 48; LAI, arts. 7º e 8º; Lei 14.129/2021. Classe eleitoral: transparência obrigatória (continua no ar no período eleitoral, com textos neutros). Até {{ max_dest }} indicadores em destaque aparecem no bloco “Indicadores em números” da página inicial.</p>
+{% if aviso_cert %}<p class="chip erro" role="alert">{{ aviso_cert }}</p>{% endif %}
 <section class="cx"><h2>Coleta</h2>
 <p>Fontes deste órgão: {% for f in fontes %}<span class="chip {{ 'ok' if f.ativo else 'alerta' }}">{{ f.fonte }} · {{ 'ligada' if f.ativo else 'desligada' }}</span> {% endfor %}</p>
 <form class="inline" method="post" action="/admin/indicadores"><input type="hidden" name="csrf" value="{{ C }}"><button class="btn" name="acao" value="coletar">Coletar agora</button></form>
-<p class="legal">Consulta as fontes ligadas (IBGE, CNES e os números do próprio portal) respeitando o limite de 1 consulta por segundo por fonte. Pode levar alguns minutos.</p>
+<p class="legal">Consulta as fontes ligadas (IBGE, CNES, planilhas do INEP, IEG-M do TCESP se estiver em modo automático e os números do próprio portal) respeitando o limite de 1 consulta por segundo por fonte. Pode levar alguns minutos.</p>
 {% if coletas %}<div class="tabela"><table><caption>Últimas coletas do painel</caption><thead><tr><th scope="col">Quando</th><th scope="col">Fonte</th><th scope="col">Situação</th><th scope="col">Mensagem</th></tr></thead><tbody>
 {% for c in coletas %}<tr><td>{{ c.inicio|br }}</td><td>{{ c.fonte }}</td><td><span class="chip {{ 'ok' if c.ok else 'erro' }}">{{ 'ok' if c.ok else 'falhou' }}</span></td><td>{{ c.mensagem }}</td></tr>{% endfor %}
 </tbody></table></div>{% endif %}
@@ -17,7 +18,7 @@
 <td>{{ i.tema_nome }}</td>
 <td><strong>{{ i.nome }}</strong><br><small>{{ i.fonte }} · {{ i.periodicidade }} · {{ 'automático' if i.modo == 'automatico' else 'manual' }}</small>{% if i.pendente %}<br><small class="chip alerta">{{ i.pendente }}</small>{% endif %}</td>
 <td>{% if i.ult %}{{ i.valor }}<br><small>{{ i.ult.periodo }}</small>{% else %}<span class="chip alerta">aguardando primeira coleta</span>{% endif %}</td>
-<td>{% if i.ultima_tentativa %}<span class="chip {{ 'erro' if i.aviso else 'ok' }}">{{ 'falhou' if i.aviso else 'ok' }}</span><br><small>{{ i.ultima_tentativa|br }}{% if i.ultima_msg %} · {{ i.ultima_msg }}{% endif %}</small>{% else %}—{% endif %}</td>
+<td>{% if i.coletor == 'iegm' and i.modo == 'automatico' and not origem_iegm %}<span class="chip alerta">aguardando configuração da plataforma</span>{% elif i.ultima_tentativa %}<span class="chip {{ 'erro' if i.aviso else 'ok' }}">{{ 'falhou' if i.aviso else 'ok' }}</span><br><small>{{ i.ultima_tentativa|br }}{% if i.ultima_msg %} · {{ i.ultima_msg }}{% endif %}</small>{% else %}—{% endif %}</td>
 <td>{{ 'visível' if i.visivel else 'oculto' }}{% if i.destaque %}<br><small class="chip ok">destaque na página inicial</small>{% endif %}{% if i.meta is not none %}<br><small>meta: {{ i.meta|float }}</small>{% endif %}</td>
 <td class="num">{{ i.ordem }}</td>
 <td><a class="btn sec" href="/admin/indicadores/{{ i.id }}">Editar<span class="sr"> {{ i.nome }}</span></a></td>

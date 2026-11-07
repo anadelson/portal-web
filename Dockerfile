@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends tzdata postgres
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
+COPY deploy/certs ./deploy/certs
 RUN python -m app.imagens otimizar
 RUN useradd -r -u 1001 portal && mkdir -p /srv/dados && chown -R portal /srv/dados
 USER portal

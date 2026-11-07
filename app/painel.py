@@ -28,14 +28,18 @@ MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', '
 _IBGE = 'https://servicodados.ibge.gov.br/api/'
 _SICONFI = 'https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rreo?an_exercicio={ano}&nr_periodo=6&co_tipo_demonstrativo=RREO&no_anexo=RREO-Anexo%2014&id_ente={ibge}'
 _FIO = 'Sistema contábil da Prefeitura (dados abertos)'
+_INEP_PL = 'https://download.inep.gov.br/ideb/resultados/divulgacao_{etapa}_municipios_{ano}.zip'
 _PEND_MDS = 'Fonte do MDS (MI Social) fora do ar desde 21/10/2026 (manutenção de segurança). O conector está pronto e desligado; ligue a fonte "mds" no console quando o serviço voltar e os nomes dos campos forem confirmados.'
 
 def _i(chave, tema, nome, descricao, unidade, formato, fonte, fonte_link, periodicidade, coletor, ordem, casas=0, meta=None, meta_base_legal='',
-       sentido='neutro', suprimir=False, base_legal='', pendente='', modo='automatico', destaque=False):
+       sentido='neutro', suprimir=False, base_legal='', pendente='', modo='automatico', destaque=False, reserva=False, alternavel=False):
+    # reserva: aceita lançamento manual mesmo com fonte automática; alternavel: o administrador escolhe automático ou manual
     return dict(chave=chave, tema=tema, nome=nome, descricao=descricao, unidade=unidade, formato=formato, casas=casas, fonte=fonte, fonte_link=fonte_link,
                 periodicidade=periodicidade, modo=modo, coletor=coletor, pendente=pendente, meta=meta, meta_base_legal=meta_base_legal, sentido=sentido,
-                suprimir=suprimir, base_legal=base_legal, ordem=ordem, destaque=destaque)
+                suprimir=suprimir, base_legal=base_legal, ordem=ordem, destaque=destaque, reserva=reserva or alternavel, alternavel=alternavel)
 
+PEND_IEGM = ('Consulta sem documentação oficial do painel do TCESP (pode mudar sem aviso), com o acesso anônimo publicado pelo próprio Tribunal '
+             '(variáveis IEGM_USUARIO e IEGM_SENHA no .env). Em modo manual, lance a faixa a partir do resultado publicado pelo Tribunal.')
 _IEGM = [('gestao_iegm', 'IEG-M — resultado geral'), ('gestao_iegm_educ', 'IEG-M — educação (i-Educ)'), ('gestao_iegm_saude', 'IEG-M — saúde (i-Saúde)'),
          ('gestao_iegm_planej', 'IEG-M — planejamento (i-Planejamento)'), ('gestao_iegm_fiscal', 'IEG-M — gestão fiscal (i-Fiscal)'),
          ('gestao_iegm_amb', 'IEG-M — meio ambiente (i-Amb)'), ('gestao_iegm_cidade', 'IEG-M — cidades protegidas (i-Cidade)'), ('gestao_iegm_ti', 'IEG-M — governança de TI (i-Gov TI)')]
@@ -81,25 +85,34 @@ CATALOGO = [
     _i('edu_fundeb_minimo', 'edu', 'FUNDEB aplicado na remuneração dos profissionais da educação', 'Parte dos recursos do FUNDEB usada para pagar os profissionais da educação básica em efetivo exercício. A lei exige no mínimo 70%.',
        '%', 'pct', 'Siconfi — RREO, Anexo 14 (declarado pela Prefeitura)', _SICONFI, 'Bimestral', 'painel', 20, casas=2, meta=70,
        meta_base_legal='Constituição, art. 212-A, XI; Lei 14.113/2020, art. 26 (mínimo de 70%).', sentido='maior', base_legal='Lei 14.113/2020, arts. 26 e 33.'),
-    _i('edu_ideb_ai_mun', 'edu', 'IDEB — anos iniciais do ensino fundamental (rede municipal)', 'Índice de Desenvolvimento da Educação Básica calculado pelo INEP a cada dois anos, de 0 a 10, combinando aprovação e desempenho no Saeb.',
-       'nota (0 a 10)', 'nota', 'INEP (IDEB), publicado pelo IBGE', _IBGE + 'v1/pesquisas/40/periodos/all/indicadores/78188/resultados/{ibge}', 'A cada dois anos', 'ibge', 30, casas=1, sentido='maior',
-       base_legal='Decreto 6.094/2007, art. 3º; Lei 13.005/2014 (PNE), meta 7.'),
-    _i('edu_ideb_ai_est', 'edu', 'IDEB — anos iniciais do ensino fundamental (rede estadual)', 'IDEB das escolas estaduais do município nos anos iniciais (1º ao 5º ano).',
-       'nota (0 a 10)', 'nota', 'INEP (IDEB), publicado pelo IBGE', _IBGE + 'v1/pesquisas/40/periodos/all/indicadores/78189/resultados/{ibge}', 'A cada dois anos', 'ibge', 31, casas=1, sentido='maior',
-       base_legal='Decreto 6.094/2007, art. 3º.'),
-    _i('edu_ideb_af_mun', 'edu', 'IDEB — anos finais do ensino fundamental (rede municipal)', 'IDEB das escolas municipais nos anos finais (6º ao 9º ano).',
-       'nota (0 a 10)', 'nota', 'INEP (IDEB), publicado pelo IBGE', _IBGE + 'v1/pesquisas/40/periodos/all/indicadores/78193/resultados/{ibge}', 'A cada dois anos', 'ibge', 32, casas=1, sentido='maior',
-       base_legal='Decreto 6.094/2007, art. 3º.'),
-    _i('edu_ideb_af_est', 'edu', 'IDEB — anos finais do ensino fundamental (rede estadual)', 'IDEB das escolas estaduais do município nos anos finais (6º ao 9º ano).',
-       'nota (0 a 10)', 'nota', 'INEP (IDEB), publicado pelo IBGE', _IBGE + 'v1/pesquisas/40/periodos/all/indicadores/78194/resultados/{ibge}', 'A cada dois anos', 'ibge', 33, casas=1, sentido='maior',
-       base_legal='Decreto 6.094/2007, art. 3º.'),
-    _i('edu_ideb_em_est', 'edu', 'IDEB — ensino médio (rede estadual)', 'IDEB das escolas estaduais do município no ensino médio.',
-       'nota (0 a 10)', 'nota', 'INEP (IDEB), publicado pelo IBGE', _IBGE + 'v1/pesquisas/40/periodos/all/indicadores/78199/resultados/{ibge}', 'A cada dois anos', 'ibge', 34, casas=1, sentido='maior',
-       base_legal='Decreto 6.094/2007, art. 3º.'),
-    _i('edu_saeb', 'edu', 'Saeb — proficiência média', 'Resultado médio dos estudantes nas provas do Saeb, por rede e etapa, lançado a partir das planilhas oficiais do INEP.',
-       'pontos', 'numero', 'INEP — resultados do Saeb (planilhas oficiais)', 'https://www.gov.br/inep/pt-br/areas-de-atuacao/avaliacao-e-exames-educacionais/saeb/resultados', 'A cada dois anos', '', 40, casas=1,
-       modo='manual', pendente='Sem fonte automática acessível: o servidor de downloads do INEP recusa a conexão a partir da VPS. Lance o valor manualmente com o link da planilha oficial.',
-       base_legal='Lei 9.394/1996, art. 9º, VI.'),
+    # IDEB e Saeb: planilhas oficiais do INEP por município (rede Pública, com a rede responsável escrita em cada valor)
+    _i('edu_ideb_ai', 'edu', 'IDEB — anos iniciais do ensino fundamental (rede pública)', 'Índice de Desenvolvimento da Educação Básica calculado pelo INEP a cada dois anos, de 0 a 10: combina a aprovação dos alunos (indicador de rendimento) com o desempenho no Saeb. Valor da rede pública do município; a rede responsável aparece junto de cada resultado.',
+       'nota (0 a 10)', 'nota', 'INEP — planilhas oficiais de resultados do IDEB por município', _INEP_PL.replace('{etapa}', 'anos_iniciais'), 'A cada dois anos', 'inep', 30, casas=1, sentido='maior',
+       base_legal='Decreto 6.094/2007, art. 3º; Lei 13.005/2014 (PNE), meta 7.', reserva=True),
+    _i('edu_saeb_mat_ai', 'edu', 'Saeb — Matemática, anos iniciais do ensino fundamental (rede pública)', 'Nota média dos estudantes na prova de Matemática do Saeb (escala de proficiência do INEP), rede pública do município.',
+       'pontos (escala Saeb)', 'numero', 'INEP — planilhas oficiais de resultados do IDEB por município', _INEP_PL.replace('{etapa}', 'anos_iniciais'), 'A cada dois anos', 'inep', 31, casas=2, sentido='maior',
+       base_legal='Lei 9.394/1996, art. 9º, VI; Decreto 6.094/2007, art. 3º.', reserva=True),
+    _i('edu_saeb_lp_ai', 'edu', 'Saeb — Língua Portuguesa, anos iniciais do ensino fundamental (rede pública)', 'Nota média dos estudantes na prova de Língua Portuguesa do Saeb (escala de proficiência do INEP), rede pública do município.',
+       'pontos (escala Saeb)', 'numero', 'INEP — planilhas oficiais de resultados do IDEB por município', _INEP_PL.replace('{etapa}', 'anos_iniciais'), 'A cada dois anos', 'inep', 32, casas=2, sentido='maior',
+       base_legal='Lei 9.394/1996, art. 9º, VI; Decreto 6.094/2007, art. 3º.', reserva=True),
+    _i('edu_ideb_af', 'edu', 'IDEB — anos finais do ensino fundamental (rede pública)', 'Índice de Desenvolvimento da Educação Básica calculado pelo INEP a cada dois anos, de 0 a 10: combina a aprovação dos alunos (indicador de rendimento) com o desempenho no Saeb. Valor da rede pública do município; a rede responsável aparece junto de cada resultado.',
+       'nota (0 a 10)', 'nota', 'INEP — planilhas oficiais de resultados do IDEB por município', _INEP_PL.replace('{etapa}', 'anos_finais'), 'A cada dois anos', 'inep', 33, casas=1, sentido='maior',
+       base_legal='Decreto 6.094/2007, art. 3º; Lei 13.005/2014 (PNE), meta 7.', reserva=True),
+    _i('edu_saeb_mat_af', 'edu', 'Saeb — Matemática, anos finais do ensino fundamental (rede pública)', 'Nota média dos estudantes na prova de Matemática do Saeb (escala de proficiência do INEP), rede pública do município.',
+       'pontos (escala Saeb)', 'numero', 'INEP — planilhas oficiais de resultados do IDEB por município', _INEP_PL.replace('{etapa}', 'anos_finais'), 'A cada dois anos', 'inep', 34, casas=2, sentido='maior',
+       base_legal='Lei 9.394/1996, art. 9º, VI; Decreto 6.094/2007, art. 3º.', reserva=True),
+    _i('edu_saeb_lp_af', 'edu', 'Saeb — Língua Portuguesa, anos finais do ensino fundamental (rede pública)', 'Nota média dos estudantes na prova de Língua Portuguesa do Saeb (escala de proficiência do INEP), rede pública do município.',
+       'pontos (escala Saeb)', 'numero', 'INEP — planilhas oficiais de resultados do IDEB por município', _INEP_PL.replace('{etapa}', 'anos_finais'), 'A cada dois anos', 'inep', 35, casas=2, sentido='maior',
+       base_legal='Lei 9.394/1996, art. 9º, VI; Decreto 6.094/2007, art. 3º.', reserva=True),
+    _i('edu_ideb_em', 'edu', 'IDEB — ensino médio (rede pública)', 'Índice de Desenvolvimento da Educação Básica calculado pelo INEP a cada dois anos, de 0 a 10: combina a aprovação dos alunos (indicador de rendimento) com o desempenho no Saeb. Valor da rede pública do município; a rede responsável aparece junto de cada resultado.',
+       'nota (0 a 10)', 'nota', 'INEP — planilhas oficiais de resultados do IDEB por município', _INEP_PL.replace('{etapa}', 'ensino_medio'), 'A cada dois anos', 'inep', 36, casas=1, sentido='maior',
+       base_legal='Decreto 6.094/2007, art. 3º; Lei 13.005/2014 (PNE), meta 7.', reserva=True),
+    _i('edu_saeb_mat_em', 'edu', 'Saeb — Matemática, ensino médio (rede pública)', 'Nota média dos estudantes na prova de Matemática do Saeb (escala de proficiência do INEP), rede pública do município.',
+       'pontos (escala Saeb)', 'numero', 'INEP — planilhas oficiais de resultados do IDEB por município', _INEP_PL.replace('{etapa}', 'ensino_medio'), 'A cada dois anos', 'inep', 37, casas=2, sentido='maior',
+       base_legal='Lei 9.394/1996, art. 9º, VI; Decreto 6.094/2007, art. 3º.', reserva=True),
+    _i('edu_saeb_lp_em', 'edu', 'Saeb — Língua Portuguesa, ensino médio (rede pública)', 'Nota média dos estudantes na prova de Língua Portuguesa do Saeb (escala de proficiência do INEP), rede pública do município.',
+       'pontos (escala Saeb)', 'numero', 'INEP — planilhas oficiais de resultados do IDEB por município', _INEP_PL.replace('{etapa}', 'ensino_medio'), 'A cada dois anos', 'inep', 38, casas=2, sentido='maior',
+       base_legal='Lei 9.394/1996, art. 9º, VI; Decreto 6.094/2007, art. 3º.', reserva=True),
     _i('edu_alfabetizacao', 'edu', 'Taxa de alfabetização (15 anos ou mais)', 'Parte das pessoas com 15 anos ou mais que sabem ler e escrever, segundo o Censo Demográfico.',
        '%', 'pct', 'IBGE — Censo Demográfico 2022', _IBGE + 'v1/pesquisas/10101/periodos/2022/indicadores/111628/resultados/{ibge}', 'Decenal (Censo)', 'ibge', 50, casas=2, sentido='maior',
        base_legal='Lei 13.005/2014 (PNE), meta 9.'),
@@ -141,10 +154,13 @@ CATALOGO = [
     _i('gestao_ouv_manifestacoes', 'mun', 'Manifestações recebidas pela Ouvidoria', 'Reclamações, sugestões, elogios, denúncias e solicitações recebidas pela Ouvidoria deste portal no ano. Só a quantidade.',
        'manifestações', 'numero', 'Ouvidoria deste portal', '/acesso', 'Tempo real (atualizado a cada hora)', 'painel', 90, suprimir=True, base_legal='Lei 13.460/2017, arts. 13 e 15.'),
 ] + [_i(k, 'mun', n, 'Faixa do Índice de Efetividade da Gestão Municipal (IEG-M) do Tribunal de Contas do Estado: A (altamente efetiva), B+ (muito efetiva), B (efetiva), C+ (em fase de adequação) e C (baixo nível de adequação). Ano de referência = ano-base avaliado.',
-         'faixa', 'faixa', 'TCESP — IEG-M (painel público do Tribunal)', 'https://painel.tce.sp.gov.br/', 'Anual', '', 100 + i, modo='manual',
-         pendente='A consulta automática do painel do TCESP passou a exigir autenticação. Lance a faixa manualmente a partir do resultado publicado pelo Tribunal (e peça ao TCESP um arquivo aberto oficial).',
+         'faixa', 'faixa', 'TCESP — IEG-M (painel público do Tribunal)', 'https://painel.tce.sp.gov.br/', 'Anual', 'iegm', 100 + i, modo='manual', alternavel=True,
+         pendente=PEND_IEGM,
          base_legal='Constituição, art. 71 c/c art. 75; Lei Complementar estadual 709/1993.') for i, (k, n) in enumerate(_IEGM)]
 CAT = {c['chave']: c for c in CATALOGO}
+# indicadores retirados do catálogo (substituídos): ficam ocultos e sem coletor, com a série guardada
+RETIRADOS = {'edu_ideb_ai_mun': 'edu_ideb_ai', 'edu_ideb_ai_est': 'edu_ideb_ai', 'edu_ideb_af_mun': 'edu_ideb_af', 'edu_ideb_af_est': 'edu_ideb_af',
+             'edu_ideb_em_est': 'edu_ideb_em', 'edu_saeb': 'edu_saeb_mat_ai'}
 FAIXAS_IEGM = ['A', 'B+', 'B', 'C+', 'C']
 
 # campos que o código mantém atualizados; os demais (texto explicativo, meta, visibilidade, ordem, destaque) são do administrador
@@ -157,9 +173,16 @@ def semear(banco):
     for c in CATALOGO:
         cols = ['chave'] + _DO_CODIGO + _DO_ADMIN
         vals = [c['chave']] + [c[k] for k in _DO_CODIGO] + [c['descricao'], c['meta'], c['meta_base_legal'], True, c['destaque'], c['ordem']]
+        atualiza = [k for k in _DO_CODIGO if not (c['alternavel'] and k == 'modo')]  # modo alternável é escolha do administrador
         r = db.exe(banco, f"INSERT INTO indicadores ({', '.join(cols)}) VALUES ({', '.join(['%s'] * len(cols))}) ON CONFLICT (chave) DO UPDATE SET "
-                   + ', '.join(f'{k}=EXCLUDED.{k}' for k in _DO_CODIGO) + ' RETURNING (xmax = 0) novo', vals)
+                   + ', '.join(f'{k}=EXCLUDED.{k}' for k in atualiza) + ' RETURNING (xmax = 0) novo', vals)
         n += 1 if r and r['novo'] else 0
+    for velho, novo in RETIRADOS.items():
+        r = db.um(banco, 'SELECT destaque FROM indicadores WHERE chave=%s AND (visivel OR coletor<>%s)', (velho, ''))
+        if r:
+            db.exe(banco, "UPDATE indicadores SET visivel=FALSE, destaque=FALSE, coletor='', pendente=%s WHERE chave=%s", (f'Substituído por {novo} (planilhas oficiais do INEP).', velho))
+            if r['destaque']:
+                db.exe(banco, 'UPDATE indicadores SET destaque=TRUE WHERE chave=%s', (novo,))
     return n
 
 # ---------- períodos ----------
@@ -349,6 +372,7 @@ def link_fonte(ind, o, linha=None):
 # ---------- gráficos SVG (no servidor, sem biblioteca externa) ----------
 # Paleta Okabe-Ito (segura para daltonismo); rótulos de texto em todas as barras.
 COR_BARRA, COR_PARCIAL, COR_META, COR_TXT, COR_EIXO = '#0072B2', '#56B4E9', '#B34700', '#17212B', '#6B7684'
+COR_PROJ = '#00795A'  # verde-azulado (família Okabe-Ito, escurecido para contraste 5:1 no branco)
 
 def _esc(s):
     return escape(str(s), {'"': '&quot;'})
@@ -361,6 +385,10 @@ def grafico(ind, s, uid='g'):
     s = s[-12:]
     W, H, ml, mr, mt, mb = 640, 300, 12, 12, 34, 54
     vals = [float(x['valor']) for x in s if x['valor'] is not None and not suprimido(ind, x)]
+    proj = [(i, float(x['detalhe']['projecao'])) for i, x in enumerate(s) if isinstance(x['detalhe'], dict) and x['detalhe'].get('projecao') is not None]
+    if proj:
+        mt = 52  # espaço para a legenda da referência histórica
+    vals += [v for _, v in proj]
     if ind['meta'] is not None:
         vals.append(float(ind['meta']))
     topo = max(vals + [0]) * 1.15 or 1
@@ -375,6 +403,8 @@ def grafico(ind, s, uid='g'):
     desc = '; '.join(f"{x['periodo']}: {exibir(ind, x)}{' (parcial)' if x['parcial'] else ''}" for x in s)
     if ind['meta'] is not None:
         desc += f". {texto_meta(ind, s[-1])}"
+    if proj:
+        desc += '. Metas projetadas pelo INEP (referência histórica, não são meta atual): ' + '; '.join(f"{s[i]['periodo']}: {_br(v, ind['casas'])}" for i, v in proj)
     p = [f'<svg class="grafico" viewBox="0 0 {W} {H}" role="img" aria-labelledby="{uid}-t {uid}-d" xmlns="http://www.w3.org/2000/svg">',
          f'<title id="{uid}-t">{_esc(titulo)}</title><desc id="{uid}-d">{_esc(desc)}</desc>',
          f'<line x1="{ml}" y1="{base}" x2="{W - mr}" y2="{base}" stroke="{COR_EIXO}" stroke-width="1"/>']
@@ -386,15 +416,27 @@ def grafico(ind, s, uid='g'):
             ty = base - 28
         elif x['valor'] is None:
             ty = base - 8
+            if x['texto']:  # ex.: "não divulgado pelo INEP" — nunca desenhado como zero
+                p.append(f'<text x="{cx:.1f}" y="{base - 22}" text-anchor="middle" font-size="11" fill="{COR_EIXO}">não</text>')
+                p.append(f'<text x="{cx:.1f}" y="{base - 8}" text-anchor="middle" font-size="11" fill="{COR_EIXO}">divulgado</text>')
+                rot = ''
         else:
             yy = y(float(x['valor']))
             cor = COR_PARCIAL if x['parcial'] else COR_BARRA
             p.append(f'<rect x="{cx - lb / 2:.1f}" y="{yy:.1f}" width="{lb:.1f}" height="{max(base - yy, 1):.1f}" fill="{cor}" rx="2"/>')
             ty = yy - 7
-        p.append(f'<text x="{cx:.1f}" y="{ty:.1f}" text-anchor="middle" font-size="13" font-weight="700" fill="{COR_TXT}">{_esc(rot)}</text>')
+        if rot:
+            p.append(f'<text x="{cx:.1f}" y="{ty:.1f}" text-anchor="middle" font-size="13" font-weight="700" fill="{COR_TXT}">{_esc(rot)}</text>')
         p.append(f'<text x="{cx:.1f}" y="{base + 18}" text-anchor="middle" font-size="13" fill="{COR_TXT}">{_esc(x["periodo"])}</text>')
         if x['parcial']:
             p.append(f'<text x="{cx:.1f}" y="{base + 34}" text-anchor="middle" font-size="11" fill="{COR_EIXO}">parcial</text>')
+    if proj:
+        pts = [(ml + passo * i + passo / 2, y(v)) for i, v in proj]
+        p.append(f'<polyline points="{" ".join(f"{a:.1f},{b:.1f}" for a, b in pts)}" fill="none" stroke="{COR_PROJ}" stroke-width="2" stroke-dasharray="3 4"/>')
+        for a, b in pts:
+            p.append(f'<path d="M{a:.1f} {b - 6:.1f} L{a + 6:.1f} {b:.1f} L{a:.1f} {b + 6:.1f} L{a - 6:.1f} {b:.1f} Z" fill="#fff" stroke="{COR_PROJ}" stroke-width="2"/>')
+        p.append(f'<path d="M{ml + 6} 10 L{ml + 12} 16 L{ml + 6} 22 L{ml} 16 Z" fill="#fff" stroke="{COR_PROJ}" stroke-width="2"/>')
+        p.append(f'<text x="{ml + 18}" y="20" font-size="12" fill="{COR_TXT}">Meta projetada pelo INEP (referência histórica até 2021; não é meta atual)</text>')
     if ind['meta'] is not None:
         ym = y(float(ind['meta']))
         p.append(f'<line x1="{ml}" y1="{ym:.1f}" x2="{W - mr}" y2="{ym:.1f}" stroke="{COR_META}" stroke-width="2" stroke-dasharray="7 5"/>')
@@ -420,7 +462,7 @@ def spark(ind, s):
     return Markup(''.join(out))
 
 # ---------- exportação (CSV, JSON, ODS) ----------
-CAMPOS = ['tema', 'indicador', 'chave', 'periodo', 'data_referencia', 'valor', 'valor_exibido', 'unidade', 'parcial', 'nota', 'origem', 'fonte', 'link_fonte', 'coletado_em', 'base_legal']
+CAMPOS = ['tema', 'indicador', 'chave', 'periodo', 'data_referencia', 'valor', 'valor_exibido', 'unidade', 'parcial', 'nota', 'complemento', 'origem', 'fonte', 'link_fonte', 'coletado_em', 'base_legal']
 
 def linhas_export(o, inds):
     """Linhas planas para download. Contagens suprimidas saem sem o número (valor vazio, valor_exibido = 'menos de 5')."""
@@ -430,10 +472,20 @@ def linhas_export(o, inds):
             sup = suprimido(ind, x)
             out.append({'tema': TEMA_NOME[ind['tema']], 'indicador': ind['nome'], 'chave': ind['chave'], 'periodo': x['periodo'],
                         'data_referencia': x['data_ref'].isoformat(), 'valor': None if sup or x['valor'] is None else float(x['valor']),
-                        'valor_exibido': exibir(ind, x), 'unidade': ind['unidade'], 'parcial': x['parcial'], 'nota': x['nota'],
+                        'valor_exibido': exibir(ind, x), 'unidade': ind['unidade'], 'parcial': x['parcial'], 'nota': x['nota'], 'complemento': complemento(x),
                         'origem': 'lançamento manual' if x['origem'] == 'manual' else 'coleta automática', 'fonte': ind['fonte'],
                         'link_fonte': link_fonte(ind, o, x), 'coletado_em': x['coletado_em'].astimezone().isoformat(timespec='minutes'), 'base_legal': ind['base_legal']})
     return out
+
+def complemento(x):
+    """Dados extras da linha em texto (ex.: rendimento e meta projetada do INEP no IDEB)."""
+    d = x['detalhe'] if isinstance(x['detalhe'], dict) else {}
+    partes = []
+    if d.get('rendimento') is not None:
+        partes.append(f"indicador de rendimento (P) {_br(d['rendimento'], 3)}")
+    if d.get('projecao') is not None:
+        partes.append(f"meta projetada pelo INEP (referência histórica) {_br(d['projecao'], 1)}")
+    return '; '.join(partes)
 
 def csv_bytes(linhas):
     buf = io.StringIO()

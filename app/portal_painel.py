@@ -89,7 +89,8 @@ def indicador(request: Request, chave: str):
     m = P.montar(o['banco'], ind)
     serie = m['serie']
     return templates.TemplateResponse(request, 'portal/painel_indicador.html', dict(ctx, i=m, serie=list(reversed(serie)), grafico=P.grafico(ind, serie, 'g-' + chave),
-        link=P.link_fonte(ind, o, m['ult']), exibir=P.exibir, suprimido=P.suprimido, legal_txt=P.BASE_LEGAL, detalhe=m['ult']['detalhe']))
+        link=P.link_fonte(ind, o, m['ult']), exibir=P.exibir, suprimido=P.suprimido, legal_txt=P.BASE_LEGAL, detalhe=m['ult']['detalhe'],
+        extras=any(isinstance(x['detalhe'], dict) and ('rendimento' in x['detalhe'] or 'projecao' in x['detalhe']) for x in serie), num_br=P._br))
 
 def blocos_dados_abertos(o):
     """Linhas do painel para a página /dados-abertos."""

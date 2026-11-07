@@ -27,15 +27,15 @@
 {% if grafico %}
 <figure class="ind-grafico">
 {{ grafico }}
-<figcaption>Série histórica (até 12 períodos). Barras em azul-claro marcam o período em andamento{% if i.meta is not none %}; a linha tracejada é {{ 'o mínimo legal' if i.meta_base_legal else 'a meta' }}{% endif %}{% if i.suprimir %}; barras tracejadas sem número indicam “menos de 5”{% endif %}. A mesma informação está na tabela abaixo.</figcaption>
+<figcaption>Série histórica (até 12 períodos).{% if extras %} Os losangos verdes são as metas projetadas pelo INEP para cada edição até 2021: referência histórica, não são meta atual. “Não divulgado” significa que o INEP não publicou resultado para aquela edição (nunca zero).{% endif %} Barras em azul-claro marcam o período em andamento{% if i.meta is not none %}; a linha tracejada é {{ 'o mínimo legal' if i.meta_base_legal else 'a meta' }}{% endif %}{% if i.suprimir %}; barras tracejadas sem número indicam “menos de 5”{% endif %}. A mesma informação está na tabela abaixo.</figcaption>
 </figure>
 {% endif %}
 
 <div class="tabela"><table><caption>{{ i.nome }}: todos os valores ({{ i.unidade }})</caption>
-<thead><tr><th scope="col">Período</th><th scope="col" class="num">Valor</th><th scope="col">Observação</th><th scope="col">Origem</th><th scope="col">Atualizado em</th></tr></thead>
-<tbody>{% for x in serie %}<tr><th scope="row">{{ x.periodo }}</th><td class="num">{{ exibir(i, x) }}</td><td>{{ x.nota }}{% if x.parcial %}{{ ' · ' if x.nota }}período em andamento{% endif %}{% if x.origem == 'manual' and x.motivo %}{{ ' · ' if x.nota or x.parcial }}motivo do lançamento: {{ x.motivo }}{% endif %}</td><td>{{ 'Lançamento manual' if x.origem == 'manual' else 'Coleta automática' }}</td><td>{{ x.coletado_em|br }}</td></tr>{% endfor %}</tbody></table></div>
+<thead><tr><th scope="col">Período</th><th scope="col" class="num">Valor</th>{% if extras %}<th scope="col" class="num">Indicador de rendimento (P)</th><th scope="col" class="num">Meta projetada pelo INEP (referência histórica)</th>{% endif %}<th scope="col">Observação</th><th scope="col">Origem</th><th scope="col">Atualizado em</th></tr></thead>
+<tbody>{% for x in serie %}{% set dx = x.detalhe if x.detalhe is mapping else {} %}<tr><th scope="row">{{ x.periodo }}</th><td class="num">{{ exibir(i, x) }}</td>{% if extras %}<td class="num">{{ num_br(dx.rendimento, 3) if dx.rendimento is not none else '—' }}</td><td class="num">{{ num_br(dx.projecao, 1) if dx.projecao is not none else '—' }}</td>{% endif %}<td>{{ x.nota }}{% if x.parcial %}{{ ' · ' if x.nota }}período em andamento{% endif %}{% if x.origem == 'manual' and x.motivo %}{{ ' · ' if x.nota or x.parcial }}motivo do lançamento: {{ x.motivo }}{% endif %}</td><td>{{ 'Lançamento manual' if x.origem == 'manual' else 'Coleta automática' }}</td><td>{{ x.coletado_em|br }}</td></tr>{% endfor %}</tbody></table></div>
 
-{% if detalhe %}
+{% if detalhe and detalhe is not mapping %}
 <section class="caixa" style="margin-top:20px" aria-labelledby="h-det"><h2 id="h-det">Composição em {{ i.ult.periodo }}</h2>
 <div class="tabela"><table><caption class="sr">Composição de {{ i.nome }} em {{ i.ult.periodo }}</caption><thead><tr><th scope="col">Item</th><th scope="col" class="num">{{ 'Valor' if i.formato == 'moeda' else 'Quantidade' }}</th></tr></thead>
 <tbody>{% for d in detalhe %}<tr><th scope="row">{{ d[0] }}</th><td class="num">{% if i.formato == 'moeda' %}{{ d[1]|moeda }}{% else %}{{ '{:,.0f}'.format(d[1]).replace(',', '.') }}{% endif %}</td></tr>{% endfor %}</tbody></table></div></section>

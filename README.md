@@ -128,10 +128,20 @@ Senha + **segundo fator (aplicativo autenticador)** obrigatório nos painéis e 
   - Dados nacionais ficam em `indicadores_publicos` (banco de controle) pelo código IBGE.
 - Sem o módulo, `/painel`, os downloads, a API, a tela administrativa e o bloco da página inicial saem do ar (o bloco volta ao conteúdo da Fase 4).
 - Regras: nenhum número estimado pelo portal. Contagens de pessoas abaixo de 5 aparecem como "menos de 5", inclusive nos downloads. Se a fonte falhar, fica no ar o último valor válido com o aviso "dado de <data>".
+- IDEB e Saeb vêm das planilhas oficiais do INEP (fonte `inep`): `deploy/certs/` guarda o certificado intermediário público que o servidor do INEP não envia (vence em 19/11/2030; aviso no admin 60 dias antes; ver `deploy/certs/LEIAME.md`).
+- IEG-M do TCESP (fonte `iegm`):
+  - O gestor cadastra a credencial em **console → Integrações → Credenciais de fontes**. É o acesso anônimo publicado pelo Tribunal, com uso autorizado pelo órgão.
+  - A tela é só de gravação e nunca devolve o valor. Tem "Testar conexão", que mostra só o código HTTP e se veio JSON válido. Cadastrar, trocar, apagar e testar ficam no registro do console, sem o valor.
+  - Cada órgão escolhe automático ou manual em `/admin/indicadores` → IEG-M. Sem credencial na plataforma, aparece "aguardando configuração da plataforma".
+  - Ordem de leitura no coletor: credencial do console; senão `IEGM_USUARIO` e `IEGM_SENHA` do `.env` (reserva); senão a coleta fica desligada, sem erro.
+  - É uma consulta sem documentação oficial: se mudar, a coleta falha com aviso e o último valor fica no ar; o lançamento manual é a reserva.
+- **Chave `CHAVE_CREDENCIAIS`** (Fernet, no `.env`): cifra as credenciais de fontes no banco da plataforma.
+  - **Perder essa chave obriga a recadastrar as credenciais pela tela** (as cifradas ficam ilegíveis).
+  - O `deploy/backup.sh` guarda uma cópia do `.env`, com a chave, em `backups/env-AAAA-MM-DD` (permissão 600, 14 dias). Copie também o `.env` para fora da VPS, em local protegido, junto com os backups dos bancos.
 - Ligar o MDS quando a fonte voltar: confirme os nomes dos campos (parâmetro `campos` da fonte `mds`) e ative a fonte no console.
 
 ## Testes (só em banco de teste)
-`tests/teste_fluxos.py` (fluxos e identidade visual), `tests/teste_diario_seguranca.py` (Diário assinado em modo teste, remessa, 2º fator, bloqueio, gov.br simulado; `DATA_SIMULADA=2026-11-06T10:00`, `SEGREDOS_DIR` temporário), `tests/teste_legislativo.py` (processo legislativo com legislatura e pessoas fictícias, `DATA_SIMULADA=2029-03-10`) , `tests/teste_transparencia.py` (coletores com as amostras, sem internet; LGPD; filtros; CSV/JSON; falha de fonte) e `tests/teste_painel.py` (painel de indicadores com respostas gravadas das fontes; `DATA_SIMULADA=2026-11-06T10:00`) recusam rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
+`tests/teste_fluxos.py` (fluxos e identidade visual), `tests/teste_diario_seguranca.py` (Diário assinado em modo teste, remessa, 2º fator, bloqueio, gov.br simulado; `DATA_SIMULADA=2026-11-06T10:00`, `SEGREDOS_DIR` temporário), `tests/teste_legislativo.py` (processo legislativo com legislatura e pessoas fictícias, `DATA_SIMULADA=2029-03-10`) , `tests/teste_transparencia.py` (coletores com as amostras, sem internet; LGPD; filtros; CSV/JSON; falha de fonte) `tests/teste_painel.py` (painel de indicadores com respostas gravadas das fontes; `DATA_SIMULADA=2026-11-06T10:00`) e `tests/teste_painel_fontes.py` (INEP, IEG-M e credenciais de fontes com respostas gravadas) recusam rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
 
 ## O que é real e o que é exemplo
 - **Real**: vereadores, partidos, votos e Mesas da 13ª à 15ª legislatura; 29 emendas impositivas com a execução de 3 delas; indicações de 2026 e parte de 2025; sessões com data; RGF/despesa com pessoal da Câmara; endereços e contatos.

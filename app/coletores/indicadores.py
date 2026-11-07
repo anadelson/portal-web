@@ -45,11 +45,6 @@ IBGE_SPECS = {
     'mun_salario_medio': ('pesquisa', {'pesquisa': 19, 'indicador': 143558, 'ultima_versao': True}),
     'mun_esgoto': ('pesquisa', {'pesquisa': 10101, 'indicador': 105286, 'periodos': '2022'}),
     'edu_alfabetizacao': ('pesquisa', {'pesquisa': 10101, 'indicador': 111628, 'periodos': '2022'}),
-    'edu_ideb_ai_mun': ('pesquisa', {'pesquisa': 40, 'indicador': 78188}),
-    'edu_ideb_ai_est': ('pesquisa', {'pesquisa': 40, 'indicador': 78189}),
-    'edu_ideb_af_mun': ('pesquisa', {'pesquisa': 40, 'indicador': 78193}),
-    'edu_ideb_af_est': ('pesquisa', {'pesquisa': 40, 'indicador': 78194}),
-    'edu_ideb_em_est': ('pesquisa', {'pesquisa': 40, 'indicador': 78199}),
     'saude_nascidos': ('sidra', {'tabela': 2612, 'variavel': 'Nascidos vivos ocorridos no ano', 'ultimos': 10}),
     'saude_obitos': ('sidra', {'tabela': 2654, 'variavel': 'Número de óbitos ocorridos no ano', 'ultimos': 10}),
 }
@@ -321,7 +316,8 @@ def coletar_painel(o, p, hoje=None):
     P.copiar_publicos(o['banco'], ibge, list(MINIMOS))
     return res
 
-COLETORES = {'ibge': coletar_ibge, 'cnes': coletar_cnes, 'mds': coletar_mds, 'pni': coletar_pni, 'painel': coletar_painel}
+from .inep_iegm import coletar_inep, coletar_iegm
+COLETORES = {'ibge': coletar_ibge, 'cnes': coletar_cnes, 'mds': coletar_mds, 'pni': coletar_pni, 'painel': coletar_painel, 'inep': coletar_inep, 'iegm': coletar_iegm}
 
 class _Modulo:
     """Adaptador para o worker (MODULOS[fonte].coletar(o, p))."""

@@ -8,7 +8,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from app.main import app
 from app import db, worker, painel as P
-from app.coletores import indicadores as I, comum
+from app.coletores import indicadores as I, comum, inep_iegm as X
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from apoio import entrar, tok
@@ -43,6 +43,12 @@ def fake(fonte, url, params=None, **kw):
     if 'misocial' in url: raise ValueError('fonte fora do ar (teste)')
     raise AssertionError(f'chamada inesperada: {url} {p}')
 I.buscar = fake
+# INEP e IEG-M têm suíte própria (teste_painel_fontes.py); aqui ficam sem rede: nenhuma edição encontrada e sem credencial
+def _sem_rede(*a, **k): raise AssertionError('chamada à internet no teste')
+X.cabecalho = lambda url: (404, '', 0)
+X.baixar = X.buscar = _sem_rede
+from app import config as _cfg
+_cfg.IEGM_USUARIO = _cfg.IEGM_SENHA = ''
 
 oid = db.um(db.PLATAFORMA, "SELECT id FROM orgaos WHERE slug='pm-bora'")['id']
 def bi(lig):
@@ -89,7 +95,8 @@ for i in range(3):
 # ---------- coleta ----------
 bi(True)
 fontes = [f for f in worker.fontes_ativas() if f['slug'] == 'pm-bora' and f['fonte'] in worker.PAINEL]
-if {f['fonte'] for f in fontes} != {'ibge', 'cnes', 'painel'}: falha(f"fontes ativas do painel: {[f['fonte'] for f in fontes]}")
+if {f['fonte'] for f in fontes} != {'ibge', 'cnes', 'painel', 'inep', 'iegm'}: falha(f"fontes ativas do painel: {[f['fonte'] for f in fontes]}")
+fontes = [f for f in fontes if f['fonte'] in ('ibge', 'cnes', 'painel')]
 for f in fontes:
     for base, ok_, n_, msg in worker.rodar(f, f['fonte'], f['params']):
         if not ok_: falha(f"coleta {f['fonte']}:{base} falhou: {msg}")
@@ -103,8 +110,8 @@ def val(chave, per):
     r = db.um(PM, 'SELECT v.* FROM indicador_valores v JOIN indicadores i ON i.id=v.indicador_id WHERE i.chave=%s AND v.periodo=%s', (chave, per))
     return r
 esperado = {('mun_populacao', '2026'): 935, ('mun_populacao', '2022'): 907, ('mun_pib_per_capita', '2023'): 133365.32, ('mun_pessoal_ocupado', '2024'): 1306,
-            ('mun_salario_medio', '2023'): 2.5, ('mun_esgoto', '2022'): 84.78, ('edu_alfabetizacao', '2022'): 94.36, ('edu_ideb_ai_mun', '2025'): 6.6,
-            ('edu_ideb_af_est', '2025'): 5.3, ('saude_nascidos', '2023'): 1, ('saude_obitos', '2024'): 7, ('saude_estabelecimentos', 'nov/2026'): 2,
+            ('mun_salario_medio', '2023'): 2.5, ('mun_esgoto', '2022'): 84.78, ('edu_alfabetizacao', '2022'): 94.36,
+            ('saude_nascidos', '2023'): 1, ('saude_obitos', '2024'): 7, ('saude_estabelecimentos', 'nov/2026'): 2,
             ('saude_minimo', '2025'): 20.36, ('edu_mde_minimo', '2024'): 28.58, ('edu_fundeb_minimo', '2025'): 97.73, ('saude_minimo', '2026'): 16.95,
             ('fin_receita', '2026'): 1500000, ('fin_receita', '2025'): 1200000, ('fin_receita_prevista', '2026'): 75, ('fin_despesa_paga', '2026'): 500000,
             ('fin_empenhada_dotacao', '2026'): 50, ('cont_publicadas', '2025'): 4, ('cont_publicadas', '2026'): 3, ('cont_dispensa', '2025'): 50, ('cont_valor', '2025'): 7000,
@@ -114,7 +121,7 @@ for (k, per), v in esperado.items():
     if not r or r['valor'] is None or abs(float(r['valor']) - v) > 0.01: falha(f'{k} {per}: esperado {v}, gravado {r and r["valor"]}')
 r = val('gestao_sic_no_prazo', '2026')
 if not r or abs(float(r['valor']) - 500 / 6) > 0.01: falha(f'e-SIC no prazo: {r and r["valor"]}')
-if val('edu_ideb_ai_mun', '2019'): falha('IDEB "-" virou número')
+if [c for c in chamadas if '/40/' in c[1]]: falha('IDEB ainda consultado no IBGE (agora vem do INEP)')
 if val('edu_fundeb_minimo', '2026'): falha('FUNDEB 2026 inventado (o RREO não traz)')
 if not val('saude_minimo', '2026')['parcial'] or val('saude_minimo', '2025')['parcial']: falha('marca de período parcial do RREO')
 if '1 publicação' not in val('cont_valor', '2025')['nota']: falha('nota de publicações sem valor')
@@ -128,7 +135,7 @@ if val('cont_publicadas', '2025') or val('cont_valor', '2025') or not val('cont_
 db.exe(PM, "UPDATE licitacoes SET ano=2024 WHERE chave='lic-0'")
 worker.rodar(fp, 'painel', fp['params'])
 if not val('cont_publicadas', '2025') or float(val('cont_publicadas', '2025')['valor']) != 4: falha('PNCP: ano completo não voltou')
-for k in ('social_bf_familias', 'saude_vacinacao', 'edu_saeb', 'gestao_iegm'):
+for k in ('social_bf_familias', 'saude_vacinacao', 'edu_saeb_mat_ai', 'gestao_iegm'):
     if db.um(PM, 'SELECT 1 FROM indicador_valores v JOIN indicadores i ON i.id=v.indicador_id WHERE i.chave=%s', (k,)): falha(f'{k} tem valor sem fonte')
 # fontes desligadas falham sem derrubar nada
 for fonte in ('mds', 'pni'):
@@ -213,6 +220,12 @@ r = ok(pm.get('/painel/mun_populacao'), txt='a última consulta à fonte falhou'
 if 'Dado de ' not in r.text or '935' not in r.text: falha('aviso "dado de <data>" com o último valor válido')
 if 'a última consulta à fonte falhou' in pm.get('/painel/fin_receita').text: falha('aviso de falha em indicador de outra fonte')
 I.buscar = fake
+# INEP e IEG-M têm suíte própria (teste_painel_fontes.py); aqui ficam sem rede: nenhuma edição encontrada e sem credencial
+def _sem_rede(*a, **k): raise AssertionError('chamada à internet no teste')
+X.cabecalho = lambda url: (404, '', 0)
+X.baixar = X.buscar = _sem_rede
+from app import config as _cfg
+_cfg.IEGM_USUARIO = _cfg.IEGM_SENHA = ''
 worker.rodar(f_ibge, 'ibge', f_ibge['params'])
 if 'a última consulta à fonte falhou' in pm.get('/painel/mun_populacao').text: falha('aviso continuou depois de coleta boa')
 

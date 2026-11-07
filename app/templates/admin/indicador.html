@@ -16,9 +16,25 @@
 <p class="legal">O texto continua no ar no período eleitoral (classe transparência): sem nomes de agentes políticos, adjetivos de promoção ou exclamações (Constituição, art. 37, § 1º).</p>
 <button class="btn">Salvar</button></form></section>
 
-{% if i.modo == 'manual' %}
-<section class="cx"><h2>Lançamento manual</h2>
-<p>Use só o número publicado pela fonte oficial e cite o documento no motivo. Todo lançamento fica no histórico e no registro de ações.</p>
+{% if alternavel %}
+<section class="cx"><h2>Modo de atualização</h2>
+<p>Consulta automática ao painel público do TCESP com o acesso anônimo publicado pelo próprio Tribunal, configurado pela equipe da plataforma. <strong>É uma consulta sem documentação oficial e pode mudar sem aviso</strong>: se falhar, o portal mantém o último valor válido e mostra o aviso “dado de &lt;data&gt;”. A troca vale para os 8 indicadores do IEG-M e fica registrada na auditoria.</p>
+<p>Acesso ao TCESP: {% if credencial == 'plataforma' %}<span class="chip ok">configurado pela plataforma</span>{% elif credencial == 'env' %}<span class="chip ok">configurado (reserva do servidor)</span>{% elif i.modo == 'automatico' %}<span class="chip alerta">aguardando configuração da plataforma</span>{% else %}<span class="chip alerta">ainda não configurado pela plataforma</span>{% endif %}</p>
+<form class="campos" method="post" action="/admin/indicadores/{{ i.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="modo">
+<fieldset><legend>Modo de atualização</legend>
+<label style="flex-direction:row;gap:6px;font-weight:400"><input type="radio" name="modo" value="automatico" {{ 'checked' if i.modo == 'automatico' }}> Automático (acesso anônimo do TCESP)</label>
+<label style="flex-direction:row;gap:6px;font-weight:400"><input type="radio" name="modo" value="manual" {{ 'checked' if i.modo != 'automatico' }}> Manual</label></fieldset>
+<button class="btn">Salvar modo</button></form></section>
+{% endif %}
+{% if i.coletor and i.modo == 'automatico' %}
+<section class="cx"><h2>Coleta automática</h2>
+<p>Última coleta: {% if ult_coleta %}<span class="chip {{ 'ok' if ult_coleta.ok else 'erro' }}">{{ 'ok' if ult_coleta.ok else 'falhou' }}</span> {{ ult_coleta.inicio|br }} — {{ ult_coleta.mensagem }}{% else %}ainda não houve.{% endif %}</p>
+<form class="inline" method="post" action="/admin/indicadores/{{ i.id }}"><input type="hidden" name="csrf" value="{{ C }}"><button class="btn sec" name="acao" value="coletar">Coletar agora</button></form></section>
+{% endif %}
+
+{% if i.modo == 'manual' or reserva %}
+<section class="cx"><h2>Lançamento manual{% if i.modo != 'manual' %} (reserva){% endif %}</h2>
+<p>Use só o número publicado pela fonte oficial e cite o documento no motivo. Todo lançamento fica no histórico e no registro de ações.{% if i.modo != 'manual' %} A coleta automática não sobrescreve um período lançado à mão.{% endif %}</p>
 <form class="campos" method="post" action="/admin/indicadores/{{ i.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="lancar">
 <div class="grade2"><label>Período (ex.: 2024)<input name="periodo" required maxlength="40"></label><label>Fim do período de referência<input name="data_ref" type="date" required></label></div>
 {% if i.formato == 'faixa' %}<label>Faixa<select name="texto" required><option value="">Escolha</option>{% for f in faixas %}<option>{{ f }}</option>{% endfor %}</select></label>
