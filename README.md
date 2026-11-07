@@ -75,8 +75,18 @@ Na VPS o HTTPS fica no nginx existente (não no Caddy): ver `Docs/PROGRESSO.md`.
 - `/admin/identidade`: textos, cores, redes e imagens (brasão, destaque, sede, mosaico) — PNG/JPG/WEBP até 3 MB, texto alternativo obrigatório, guardadas em `/srv/dados/<órgão>/midia` e servidas em `/midia/<arquivo>`.
 - `/admin/vereadores` (Câmara): perfil e foto oficial. Sem foto oficial, o portal mostra as iniciais.
 
+## Transparência com dados reais (Fase 4)
+- **Fontes por órgão** na tabela `fontes` (banco `plataforma`): Fiorilli (endereço da API, entidade, bases), PNCP (IBGE, CNPJ), Siconfi (IBGE, RREO, poder do RGF), TCESP (município, anos). `provision atualizar` cadastra os valores padrão; nada fixo no código.
+- **Coletores** em `app/coletores/` (`fiorilli`, `pncp`, `siconfi`, `tcesp`, `numeros`, `comum`): 1 requisição/s por fonte, timeout, novas tentativas, upsert por chave natural, registro em `coletas`. Falha de uma fonte não apaga dados: o portal mostra a última coleta válida e avisa.
+- **Agenda do worker**: Fiorilli de hora em hora (7h–19h), PNCP a cada 6 h, Siconfi diária, TCESP no dia 20. Manual: `docker compose exec app python -m app.worker uma-vez [fiorilli pncp siconfi tcesp]`.
+- **Telas**: `/transparencia` (central), `/transparencia/<base>` com filtros (ano, mês, unidade, credor, texto), paginação, totais, fonte, data e base legal; `/transparencia/<base>.csv|.json`; API `/dados/<base>.json`; documentação em `/dados-abertos`.
+  Bases: receitas, despesas, empenhos, licitacoes, contratos, servidores, diarias, transferencias, ordem-cronologica, restos-a-pagar, relatorios-fiscais.
+- **Emendas (Câmara)**: cadastro `CadEmendasImpositivas` (pago no cadastro) + execução pelos empenhos com vínculo "Emenda Ver." (empenhado, liquidado, pago e datas), lidos da API pública da Prefeitura, com conferência automática.
+- **LGPD**: nenhuma coluna de CPF; dígitos de CPF retirados de nomes; pessoa física sem documento e fora da ordem cronológica e dos restos a pagar; servidores só com nome (ou nome social), cargo, vínculo, lotação, admissão e remuneração bruta.
+- **Descoberta das fontes** (só leitura): `docker compose exec -T app python - < app/coletores/descoberta.py` grava amostras sem CPF em `/srv/dados/amostras` (usadas pelos testes offline).
+
 ## Testes (só em banco de teste)
-`tests/teste_fluxos.py` recusa rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
+`tests/teste_fluxos.py` (fluxos e identidade visual) e `tests/teste_transparencia.py` (coletores com as amostras, sem internet; LGPD; filtros; CSV/JSON; falha de fonte) recusam rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
 
 ## O que é real e o que é exemplo
 - **Real**: vereadores, partidos, votos e Mesas da 13ª à 15ª legislatura; 29 emendas impositivas com a execução de 3 delas; indicações de 2026 e parte de 2025; sessões com data; RGF/despesa com pessoal da Câmara; endereços e contatos.
@@ -86,6 +96,5 @@ Na VPS o HTTPS fica no nginx existente (não no Caddy): ver `Docs/PROGRESSO.md`.
 - Login gov.br + segundo fator (hoje: e-mail e senha forte).
 - Assinatura ICP-Brasil e carimbo do tempo no Diário.
 - Remessa de atos da Câmara para o caderno Legislativo do Diário via API entre órgãos.
-- Validar a listagem do Fiorilli para emendas e mapear para a tabela `emendas`; demais coletores (PNCP, IBGE, TCESP, despesas, pessoal).
-- Telas próprias de transparência (hoje o portal aponta para as fontes oficiais), dados abertos em CSV/JSON.
+- Coletores ainda não feitos: CNES, IBGE SIDRA/Cidades, IEG-M, MDS, vacinação, YouTube (ao vivo).
 - Tema próprio (nível 3) sob demanda; editor de layout com arrastar e soltar.

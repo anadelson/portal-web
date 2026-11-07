@@ -353,5 +353,24 @@ Registros sorteados do portal público (`/dados/<base>.json`) comparados com nov
 | Câmara: emendas | 22, 12, 13: pago no cadastro = pago nos empenhos (R$ 1.160, R$ 1.225, R$ 3.600) | 3/3 OK — a divergência de 05/11 nas 12 e 13 não existe mais na fonte |
 | Licitações (PNCP) | — | não conferido: coleta falhou (fonte instável) |
 
+## Correção e reimplantação (aprovada em 2026-11-07)
+- Rebuild; testes: `teste_fluxos` **ERROS: 0**, `teste_transparencia` **ERROS: 0** (agora reproduz o nome social em branco).
+- `up -d` + `worker uma-vez fiorilli pncp siconfi`: Fiorilli 10/10 OK; **PNCP parcial: 600 publicações (12 páginas), parou na 13ª por queda da API** — as próximas coletas (a cada 6 h) completam, sem apagar o que já entrou; Siconfi OK, com os mínimos de saúde/educação do 3º bimestre de 2026.
+- Reconferência: **servidores 0 de 159 sem nome**; 3 sorteados (Neide Albertini, Mayra G. M. Nunes, Ricardo de B. Pereira): cargo e remuneração = fonte ✅. **PNCP** 3 sorteados (000273/2026, 000279/2026, 000483/2025) contra a consulta individual da API do PNCP: modalidade e situação ✅; o **valor não vem na busca** do PNCP (só na consulta individual) → coluna vazia (pendência).
+- "Borá em números" no ar: receita R$ 22.565.789,79 · empenhado R$ 22.424.024,18 · pago R$ 19.999.531,48 · saúde 16,95% · educação 32,81% (RREO 3º bim. 2026).
+- Produção: 16 páginas/exportações conferidas (200, < 0,2 s), nenhum CPF na tela, app sem erros, memória app 56 MiB / worker 42 MiB / db 100 MiB; demais sites da VPS 200.
+
+## Pendências da Fase 4
+1. PNCP: completar as 1.460 publicações (automático a cada 6 h) e trazer o valor estimado pela consulta individual de cada compra (~1 req/s).
+2. Licitações em duas fontes (Fiorilli e PNCP) aparecem na mesma lista, marcadas pela fonte; ainda não há ligação entre o processo da Fiorilli e o número de controle do PNCP.
+3. Emendas: se um vereador tiver mais de uma emenda em execução, o empenho fica "não atribuível" até a Prefeitura indicar a emenda (hoje nenhum caso).
+4. Câmara: o portal atual dela não tem dados abertos (reCAPTCHA); despesas próprias da Câmara dependem de exportação do fornecedor (Pronim/Cidade360).
+5. Coletores não incluídos nesta fase: CNES, IBGE SIDRA/Cidades, IEG-M, MDS (fora do ar), vacinação, YouTube.
+6. Pendências da Fase 3 continuam (conferência em 375 px no celular, fotos oficiais, serviços reais).
+
+## Como desfazer
+- Fase 4: `git checkout fase-3 -- . && docker compose build app worker && docker compose up -d app worker` (as tabelas novas ficam sem uso; a tabela `fontes` pode ser desativada com `UPDATE fontes SET ativo=false`).
+- Fase 3: tag `fase-2` (ver seção da Fase 3). Dumps dos bancos antes de cada implantação: `backups/*-2026-11-07.dump`.
+
 ## Onde parou
-Correções commitadas (servidores sem nome, PNCP, RREO, worker não repete fontes ao reiniciar). Aguardando aprovação de rebuild → testes → reimplantação + coleta de Fiorilli, PNCP e Siconfi.
+**Fases 3 e 4 concluídas e implantadas em 2026-11-07.** `main` com merge de `fase-4` e tag **`fase-4`**. Nenhuma ação em andamento.
