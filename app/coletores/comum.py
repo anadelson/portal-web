@@ -9,7 +9,7 @@ from .. import db
 _ultimo: dict[str, float] = {}
 INTERVALO = 1.0
 
-def buscar(fonte: str, url: str, params=None, headers=None, tentativas=3, timeout=120):
+def buscar(fonte: str, url: str, params=None, headers=None, tentativas=3, timeout=120, auth=None, verify=True):
     """GET com intervalo mínimo por fonte. Devolve o JSON (ou levanta a última exceção)."""
     erro = None
     for i in range(tentativas):
@@ -18,7 +18,7 @@ def buscar(fonte: str, url: str, params=None, headers=None, tentativas=3, timeou
             time.sleep(espera)
         _ultimo[fonte] = time.monotonic()
         try:
-            with httpx.Client(timeout=timeout, follow_redirects=True, headers={'User-Agent': 'PortaisBora-coletor/1.0', 'Accept': 'application/json', **(headers or {})}) as c:
+            with httpx.Client(timeout=timeout, follow_redirects=True, auth=auth, verify=verify, headers={'User-Agent': 'PortaisBora-coletor/1.0', 'Accept': 'application/json', **(headers or {})}) as c:
                 r = c.get(url, params=params)
             r.raise_for_status()
             return r.json()

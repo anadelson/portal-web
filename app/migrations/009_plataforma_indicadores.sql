@@ -1,7 +1,8 @@
 -- Fase 7. Banco de CONTROLE. Idempotente.
 -- Novas fontes de coleta do painel de indicadores (módulo "bi").
 ALTER TABLE fontes DROP CONSTRAINT IF EXISTS fontes_fonte_check;
-ALTER TABLE fontes ADD CONSTRAINT fontes_fonte_check CHECK (fonte IN ('fiorilli','pncp','siconfi','tcesp','ibge','cnes','mds','pni','painel'));
+-- (lista completa, igual à da 011: as migrações são reaplicadas em ordem a cada atualização e não podem estreitar a regra)
+ALTER TABLE fontes ADD CONSTRAINT fontes_fonte_check CHECK (fonte IN ('fiorilli','pncp','siconfi','tcesp','ibge','cnes','mds','pni','painel','inep','iegm'));
 
 -- Indicadores de fontes públicas nacionais (IBGE, INEP via IBGE, CNES, MDS, Siconfi) gravados por código IBGE,
 -- para servir a qualquer município da plataforma. Só números agregados; nunca dados de pessoas.

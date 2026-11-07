@@ -62,6 +62,13 @@ LOGIN_MAX_FALHAS = int(env('LOGIN_MAX_FALHAS', '5'))
 LOGIN_BLOQUEIO_MIN = int(env('LOGIN_BLOQUEIO_MIN', '15'))
 INTERNO_BASE = env('INTERNO_BASE', 'http://127.0.0.1:8000')   # endereço interno da API entre órgãos
 
+# ---------- Fase 7 (fontes): IEG-M do TCESP e planilhas do INEP ----------
+# Acesso anônimo publicado pelo próprio TCESP (uso autorizado pelo órgão em 07/11/2026; ver Docs/PROGRESSO.md).
+# Preenchido só no .env da VPS; vazio = coleta automática do IEG-M desligada, sem erro.
+IEGM_USUARIO = env('IEGM_USUARIO')
+IEGM_SENHA = env('IEGM_SENHA')
+CERTS_DIR = env('CERTS_DIR', '/srv/deploy/certs')                # certificados intermediários públicos (só completam a cadeia TLS)
+
 def govbr_urls():
     sso = 'https://sso.acesso.gov.br' if GOVBR_AMBIENTE == 'producao' else 'https://sso.staging.acesso.gov.br'
     api = 'https://api.acesso.gov.br' if GOVBR_AMBIENTE == 'producao' else 'https://api.staging.acesso.gov.br'

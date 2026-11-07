@@ -93,7 +93,8 @@ def configurar_fontes(oid, slug):
 
 # Fontes do painel de indicadores (Fase 7): genéricas para todo órgão do Executivo, pelo código IBGE do município.
 # MDS e vacinação (PNI) nascem desligados: fonte fora do ar / pendente de fonte estável.
-FONTES_PAINEL = {'painel': True, 'ibge': True, 'cnes': True, 'mds': False, 'pni': False}
+FONTES_PAINEL = {'painel': True, 'ibge': True, 'cnes': True, 'inep': True, 'iegm': True, 'mds': False, 'pni': False}
+# iegm: só coleta com IEGM_USUARIO/IEGM_SENHA no .env e o IEG-M em modo automático no painel administrativo
 
 def configurar_painel(o):
     """Semeia o catálogo de indicadores e cadastra as fontes do painel (nunca sobrescreve o que já existe)."""
