@@ -35,9 +35,11 @@ def baixar(url, destino):
     shutil.copy(FX / 'inep' / url.rsplit('/', 1)[-1], destino)
     return 1
 cda_chamadas = []
+esperado_auth = [('usuario-console-teste', 'senha-console-teste')]
 def buscar_cda(fonte, url, params=None, auth=None, **kw):
     if fonte != 'iegm' or 'painel.tce.sp.gov.br' not in url: raise AssertionError(f'chamada inesperada {url}')
     if not auth or not all(auth): raise AssertionError('IEG-M chamado sem credencial')
+    if auth != esperado_auth[0]: raise AssertionError('IEG-M chamado com a credencial errada (ordem de leitura)')
     cda_chamadas.append(params['parampExercicio_mapa'])
     return CDA['larga'].get(str(params['parampExercicio_mapa']), {'metadata': CDA['larga']['2024']['metadata'], 'resultset': []})
 X.cabecalho, X.baixar, X.buscar = cabecalho, baixar, buscar_cda
@@ -116,22 +118,66 @@ if X.mapear_iegm(CDA['outra'], '3507209')[0]: falha('colunas desconhecidas dever
 v, _ = X.mapear_iegm(CDA['larga']['2024'], '3507209', {'codigo': 'codigo_municipio', 'gestao_iegm': {'faixa': 'faixa_i_amb', 'nota': 'nota_i_amb'}})
 if v.get('gestao_iegm') != (CDA['larga']['2024']['resultset'][0][13], CDA['larga']['2024']['resultset'][0][14]): falha(f'mapeamento fixo pelo parâmetro: {v}')
 
-# ---------- IEG-M: desligado sem credencial ou em modo manual (sem erro) ----------
+# ---------- credenciais de fontes (console do gestor): cifradas, só gravação ----------
+from cryptography.fernet import Fernet
+from app import credenciais as CR
+U_CONS, S_CONS = 'usuario-console-teste', 'senha-console-teste'   # valores fictícios só do teste
+U_ENV, S_ENV = 'usuario-env-teste', 'senha-env-teste'
+SEGREDOS = (U_CONS, S_CONS, U_ENV, S_ENV)
+config.CHAVE_CREDENCIAIS = Fernet.generate_key().decode()
 config.IEGM_USUARIO, config.IEGM_SENHA = '', ''
+tk = CR.cifrar(U_CONS, S_CONS)
+if U_CONS in tk or S_CONS in tk or CR.decifrar(tk) != (U_CONS, S_CONS): falha('cifra/decifra da credencial')
+if X.origem_credencial() is not None or X.credenciais() is not None: falha('sem credencial nenhuma deveria dar None')
 antes = db.um(db.PLATAFORMA, "SELECT count(*) n FROM coletas WHERE fonte LIKE 'iegm:%%'")['n']
 if worker.rodar(fonte('iegm'), 'iegm', fonte('iegm')['params']): falha('IEG-M sem credencial deveria não coletar')
-config.IEGM_USUARIO, config.IEGM_SENHA = 'usuario-de-teste', 'senha-de-teste'  # valores fictícios só do teste
+config.IEGM_USUARIO, config.IEGM_SENHA = U_ENV, S_ENV
+if X.origem_credencial() != 'env' or X.credenciais() != (U_ENV, S_ENV): falha('reserva do .env')
 if worker.rodar(fonte('iegm'), 'iegm', fonte('iegm')['params']): falha('IEG-M em modo manual deveria não coletar')
 if db.um(db.PLATAFORMA, "SELECT count(*) n FROM coletas WHERE fonte LIKE 'iegm:%%'")['n'] != antes or cda_chamadas: falha('IEG-M desligado registrou coleta ou chamou a fonte')
+# console: só o gestor da plataforma
+anon = TestClient(app, base_url='http://gestao.localhost')
+r = anon.get('/credenciais', follow_redirects=False)
+if r.status_code not in (303, 307) or '/login' not in r.headers.get('location', ''): falha(f'console sem login acessou credenciais: {r.status_code}')
+ok(pm.get('/credenciais'), 404, nome='credenciais pelo domínio do órgão')
+g = TestClient(app, base_url='http://gestao.localhost')
+entrar(g, 'gestor@gestao.localhost', os.environ.get('SENHA_INICIAL_GESTOR', 'gestor123'), 'gestorforte1234', prefixo='')
+ok(g.get('/credenciais'), txt='não configurada', nome='console credenciais')
+r = g.post('/credenciais', data={'csrf': tok(g, '/credenciais'), 'fonte': 'iegm', 'acao': 'salvar', 'usuario': U_CONS, 'senha': S_CONS}, follow_redirects=True)
+if 'Credencial cadastrada' not in r.text: falha(f'cadastrar credencial: {r.text[:200]}')
+t = g.get('/credenciais').text
+if any(x in t for x in SEGREDOS): falha('a tela devolveu o valor da credencial')
+if 'configurada' not in t or 'Trocar' not in t or 'Apagar' not in t or 'Testar conexão' not in t: falha('tela de credencial configurada')
+dados = db.um(db.PLATAFORMA, "SELECT dados FROM credenciais_fontes WHERE fonte='iegm'")['dados']
+if U_CONS in dados or S_CONS in dados: falha('credencial gravada em claro')
+if X.origem_credencial() != 'plataforma' or X.credenciais() != (U_CONS, S_CONS): falha('a credencial do console deveria ter prioridade sobre o .env')
+# testar conexão: só código HTTP e validade do JSON, mesmo quando o erro traz o valor
+CR._http_teste = lambda fonte, auth: (200, auth == (U_CONS, S_CONS))
+r = g.post('/credenciais', data={'csrf': tok(g, '/credenciais'), 'fonte': 'iegm', 'acao': 'testar'}, follow_redirects=True)
+if 'HTTP 200 · JSON válido' not in r.text: falha(f'testar conexão: {r.text[:200]}')
+def _vaza(fonte, auth): raise RuntimeError(f'erro com {auth[1]}')
+CR._http_teste = _vaza
+r = g.post('/credenciais', data={'csrf': tok(g, '/credenciais'), 'fonte': 'iegm', 'acao': 'testar'}, follow_redirects=True)
+if 'falha de conexão (RuntimeError)' not in r.text or S_CONS in r.text: falha('teste com erro deveria mostrar só o tipo do erro')
+r = g.post('/credenciais', data={'csrf': tok(g, '/credenciais'), 'fonte': 'iegm', 'acao': 'salvar', 'usuario': U_CONS, 'senha': S_CONS}, follow_redirects=True)
+if 'Credencial trocada' not in r.text: falha('trocar credencial')
+for acao in ('cadastrada', 'testada: HTTP 200', 'testada: falha de conexão', 'trocada'):
+    if not db.um(db.PLATAFORMA, 'SELECT 1 FROM log_console WHERE acao LIKE %s', (f'Credencial da fonte iegm {acao}%',)): falha(f'auditoria sem "{acao}"')
+# sem a chave: cadastro desligado
+config.CHAVE_CREDENCIAIS, chave = '', config.CHAVE_CREDENCIAIS
+r = g.post('/credenciais', data={'csrf': tok(g, '/credenciais'), 'fonte': 'iegm', 'acao': 'salvar', 'usuario': 'x', 'senha': 'y'}, follow_redirects=True)
+if 'Cadastro desligado' not in r.text: falha('salvar sem CHAVE_CREDENCIAIS')
+if CR.obter('iegm') is not None: falha('sem a chave a credencial não deveria ser lida')
+config.CHAVE_CREDENCIAIS = chave
 
 # ---------- admin: modo automático com auditoria ----------
 entrar(pm, 'admin@pmbora.localhost', os.environ.get('SENHA_INICIAL_ADMIN', 'admin123'), 'adminforte12345')
 gid = db.um(PM, "SELECT id FROM indicadores WHERE chave='gestao_iegm'")['id']
 url = f'/admin/indicadores/{gid}'
 t = ok(pm.get(url), txt='Modo de atualização', nome='admin IEG-M').text
-for x in ('sem documentação oficial e pode mudar sem aviso', 'Automático (acesso anônimo do TCESP)', 'preenchida', 'Lançamento manual'):
+for x in ('sem documentação oficial e pode mudar sem aviso', 'Automático (acesso anônimo do TCESP)', 'configurado pela plataforma', 'Lançamento manual'):
     if x not in t: falha(f'admin IEG-M: falta "{x}"')
-if 'usuario-de-teste' in t or 'senha-de-teste' in t: falha('credencial exibida na tela')
+if any(x in t for x in SEGREDOS): falha('credencial exibida na tela do órgão')
 pm.post(url, data={'csrf': tok(pm, url), 'acao': 'modo', 'modo': 'automatico'})
 if db.um(PM, "SELECT count(*) n FROM indicadores WHERE chave LIKE 'gestao_iegm%%' AND modo='automatico'")['n'] != 8: falha('modo automático não aplicado aos 8 indicadores')
 if not db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE '%%IEG-M — modo de atualização alterado para automático%%'"): falha('troca de modo sem auditoria')
@@ -148,7 +194,6 @@ for k in X.IEGM_CHAVES:
     if not val(k, '2023') or not val(k, '2024'): falha(f'{k}: sem as duas edições')
 if val('gestao_iegm', '2014')['origem'] != 'manual': falha('coleta sobrescreveu o lançamento manual')
 if not db.um(db.PLATAFORMA, "SELECT 1 FROM indicadores_publicos WHERE ibge='3507209' AND fonte='iegm' AND indicador='gestao_iegm_ti' AND periodo='2024'"): falha('IEG-M não gravou por código IBGE')
-if any(x in json.dumps(db.todos(db.PLATAFORMA, "SELECT mensagem FROM coletas WHERE fonte LIKE 'iegm:%%'")) for x in ('usuario-de-teste', 'senha-de-teste')): falha('credencial em coletas')
 ok(pm.get('/painel?aba=mun'), txt='IEG-M — governança de TI', nome='IEG-M no painel')
 # falha da consulta: mantém o último valor, aviso no painel e coleta com falha registrada
 def quebra(*a, **k): raise comum.httpx.ConnectError('fonte fora do ar (teste)')
@@ -167,6 +212,24 @@ X.buscar = buscar_cda
 # volta ao manual: a coleta para
 pm.post(url, data={'csrf': tok(pm, url), 'acao': 'modo', 'modo': 'manual'})
 if worker.rodar(fonte('iegm'), 'iegm', fonte('iegm')['params']): falha('modo manual continuou coletando')
+# apagar: volta à reserva do .env; sem nenhuma, o órgão em automático vê "aguardando configuração da plataforma"
+pm.post(url, data={'csrf': tok(pm, url), 'acao': 'modo', 'modo': 'automatico'})
+r = g.post('/credenciais', data={'csrf': tok(g, '/credenciais'), 'fonte': 'iegm', 'acao': 'apagar'}, follow_redirects=True)
+if 'Credencial apagada' not in r.text or not db.um(db.PLATAFORMA, "SELECT 1 FROM log_console WHERE acao='Credencial da fonte iegm apagada'"): falha('apagar credencial')
+if X.origem_credencial() != 'env': falha('sem credencial no console deveria usar a reserva do .env')
+esperado_auth[0] = (U_ENV, S_ENV)
+res = worker.rodar(fonte('iegm'), 'iegm', fonte('iegm')['params'])
+if not res or not res[0][1]: falha(f'coleta com a reserva do .env: {res}')
+config.IEGM_USUARIO, config.IEGM_SENHA = '', ''
+ok(pm.get(url), txt='aguardando configuração da plataforma', nome='órgão em automático sem credencial')
+ok(pm.get('/admin/indicadores'), txt='aguardando configuração da plataforma', nome='lista com IEG-M aguardando')
+if worker.rodar(fonte('iegm'), 'iegm', fonte('iegm')['params']): falha('sem credencial nenhuma deveria não coletar')
+# nada da credencial em registro algum
+textos = json.dumps([db.todos(db.PLATAFORMA, 'SELECT acao FROM log_console'), db.todos(db.PLATAFORMA, 'SELECT mensagem FROM coletas'),
+                     db.todos(PM, 'SELECT acao FROM auditoria'), db.todos(PM, 'SELECT acao, antes::text, depois::text FROM indicador_historico'),
+                     db.todos(db.PLATAFORMA, 'SELECT teste_resultado, configurada_por FROM credenciais_fontes')], default=str)
+for x in SEGREDOS:
+    if x in textos: falha(f'valor da credencial apareceu em log/registro')
 # aviso do certificado no painel administrativo
 X.aviso_certificado = lambda hoje=None: 'O certificado intermediário teste.pem (cadeia TLS do INEP) vence em 01/01/2031 (30 dias).'
 ok(pm.get('/admin/indicadores'), txt='vence em 01/01/2031', nome='aviso do certificado no admin')
