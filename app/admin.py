@@ -568,6 +568,7 @@ async def emendas_post(request: Request):
 
 # ---------- Diário Oficial (Fase 6: assinatura por caderno, regras da Lei 910/2026) ----------
 from . import diario_servico as DS, assinatura as AS
+from starlette.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse as _FR
 
 @r.get('/diario')
@@ -633,13 +634,13 @@ async def diario_edicao(request: Request):
                 n, cod, pdfa = DS.fechar(o, e, u['nome'])
                 msg = f"Edição fechada com {n} ato(s). Código {cod}. {'PDF/A-2b gerado.' if pdfa else 'Atenção: conversão para PDF/A indisponível.'} Agora assine as etapas."
             elif acao == 'assinar':
-                rot, completa = DS.assinar_etapa(o, e, u['nome'])
+                rot, completa = await run_in_threadpool(DS.assinar_etapa, o, e, u['nome'])  # pyHanko usa asyncio.run: fora do laço
                 msg = f'{rot}: assinada.' + (' Edição totalmente assinada.' if completa else '')
             elif acao == 'a3':
                 arq = f.get('arquivo')
                 if arq is None or not getattr(arq, 'filename', ''):
                     raise ValueError('Escolha o PDF assinado.')
-                rot, completa = DS.receber_a3(o, e, await arq.read(30 * 1024 * 1024), u['nome'])
+                rot, completa = await run_in_threadpool(DS.receber_a3, o, e, await arq.read(30 * 1024 * 1024), u['nome'])
                 msg = f'{rot}: assinatura recebida e validada.' + (' Edição totalmente assinada.' if completa else '')
             elif acao == 'publicar':
                 teste = DS.publicar(o, e, u['nome'])
