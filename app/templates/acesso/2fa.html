@@ -1,0 +1,21 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Segundo fator — {{ titulo }}</title><link rel="stylesheet" href="/static/admin.css?v=3"><style>:root{--cor:{{ cor or '#1B1E30' }}}.qr svg{width:220px;height:220px;display:block;background:#fff}</style></head>
+<body><main class="login" style="max-width:520px"><h1 style="margin-top:0;font-size:22px">{{ titulo }}</h1>
+{% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status" style="background:#FCEFD9">{{ m }}</p>{% endif %}
+{% if codigos %}
+<h2 style="font-size:18px">Guarde seus códigos de recuperação</h2>
+<p>Cada código vale <strong>uma vez</strong>, para entrar se você perder o celular. Eles <strong>não aparecem de novo</strong>: anote ou imprima e guarde em lugar seguro.</p>
+<ul style="font-family:monospace;font-size:17px;columns:2">{% for c in codigos %}<li>{{ c }}</li>{% endfor %}</ul>
+<p><a class="btn" href="{{ continuar }}">Já guardei, continuar</a></p>
+{% elif cadastro %}
+<h2 style="font-size:18px">Ative o segundo fator (obrigatório)</h2>
+<ol><li>Instale um aplicativo autenticador no celular (ex.: Google Authenticator, Microsoft Authenticator, FreeOTP, Authy).</li>
+<li>Leia o QR code abaixo com o aplicativo (ou digite a chave manualmente).</li><li>Digite o código de 6 dígitos que aparece no aplicativo.</li></ol>
+<div class="qr" role="img" aria-label="QR code para cadastrar o autenticador. Se não puder ler, use a chave escrita abaixo.">{{ cadastro.qr|safe }}</div>
+<p>Chave para digitar: <code style="font-size:16px">{{ cadastro.segredo }}</code></p>
+<form class="campos" method="post" action="{{ acao }}"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><label>Código do aplicativo (6 dígitos)<input name="codigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" required></label><button class="btn">Ativar e entrar</button></form>
+{% else %}
+<p>Digite o código de 6 dígitos do seu aplicativo autenticador.</p>
+<form class="campos" method="post" action="{{ acao }}"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><label>Código do aplicativo<input name="codigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" autofocus></label><button class="btn">Entrar</button>
+<details><summary>Perdi o celular: usar um código de recuperação</summary><label>Código de recuperação<input name="recuperacao" autocomplete="off" placeholder="XXXX-XXXX-XXXX"></label><button class="btn sec">Entrar com código de recuperação</button></details></form>
+{% endif %}
+<p class="legal" style="margin-top:14px">{% if sair %}<a href="{{ sair }}">Voltar ao login</a> · {% endif %}O segundo fator protege o painel mesmo se a senha vazar.</p></main></body></html>

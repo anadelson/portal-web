@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, Request, HTTPException
 from . import config, db, eleicao, diario as diario_pdf
 from .catalogo import MOD, serve, BLOCOS, CLASSES, VEDADAS, PERFIS, PODE, TEMAS
-from .security import hash_senha, confere_senha
+from .security import hash_senha, confere_senha, cpf_hash
 from .web import templates, ctx_orgao, ler_form, ir, usuario, exige, auditar, modulos_do_orgao
 
 r = APIRouter(prefix='/_a')
@@ -21,27 +21,78 @@ def ctx(request, u, **kw):
 def T(nome, request, u, **kw):
     return templates.TemplateResponse(request, f'admin/{nome}.html', ctx(request, u, **kw))
 
-# ---------- login ----------
+# ---------- login: senha + segundo fator (TOTP) ou gov.br ----------
+from . import acesso as AC
+
 @r.get('/login')
 def login(request: Request):
-    return templates.TemplateResponse(request, 'admin/login.html', ctx_orgao(request))
+    return templates.TemplateResponse(request, 'admin/login.html', ctx_orgao(request, govbr=AC.govbr_ativo()))
 
 @r.post('/login')
 async def login_post(request: Request):
     f = await ler_form(request)
-    o = request.state.orgao
-    u = db.um(o['banco'], 'SELECT * FROM usuarios WHERE lower(email)=lower(%s)', (f.get('email', ''),))
-    if not u or u['situacao'] != 'ativo' or not confere_senha(f.get('senha', ''), u['senha_hash']) or (u['validade'] and u['validade'] < config.hoje()):
+    c = AC.Conta(request, 'usuario')
+    conta, erro = AC.verificar_senha(request, c, f.get('email', ''), f.get('senha', ''))
+    if erro:
         auditar(request, f"Tentativa de acesso recusada: {f.get('email','')[:60]}", 'anônimo')
-        return ir('/admin/login', 'E-mail ou senha incorretos, ou acesso suspenso.', request)
-    request.session['u'] = {'id': u['id'], 'nome': u['nome'], 'perfil': u['perfil'], 'orgao': o['slug'], 'trocar': u['trocar_senha']}
-    db.exe(o['banco'], 'UPDATE usuarios SET ultimo_acesso=now() WHERE id=%s', (u['id'],))
-    auditar(request, 'Entrou no painel', u['nome'])
-    return ir('/admin/senha' if u['trocar_senha'] else '/admin/', '', request)
+        return ir('/admin/login', erro, request)
+    AC.iniciar_segundo_fator(request, c, conta)
+    return ir('/admin/2fa', '', request)
+
+@r.get('/2fa')
+def segundo_fator(request: Request):
+    c = AC.Conta(request, 'usuario'); conta = AC.pre_conta(request, c)
+    if not conta:
+        return ir('/admin/login', 'Entre com e-mail e senha.', request)
+    cad = None if conta['totp_ativo'] else AC.preparar_cadastro(request, c, conta)
+    return templates.TemplateResponse(request, 'acesso/2fa.html', ctx_orgao(request, acao='/admin/2fa', cadastro=cad, titulo='Painel administrativo', codigos=None, sair='/admin/login'))
+
+@r.post('/2fa')
+async def segundo_fator_post(request: Request):
+    f = await ler_form(request)
+    c = AC.Conta(request, 'usuario'); conta = AC.pre_conta(request, c)
+    if not conta:
+        return ir('/admin/login', 'Tempo esgotado. Entre de novo.', request)
+    if not conta['totp_ativo']:
+        cods = AC.confirmar_cadastro(request, c, conta, f.get('codigo', ''))
+        if not cods:
+            return ir('/admin/2fa', 'Código não confere. Confira o horário do celular e digite o código atual do aplicativo.', request)
+        AC.concluir_login(request, c, c.por_id(conta['id']), 'senha+totp')
+        auditar(request, 'Cadastrou o segundo fator (autenticador) e entrou no painel')
+        return templates.TemplateResponse(request, 'acesso/2fa.html', ctx_orgao(request, acao='', cadastro=None, titulo='Painel administrativo', codigos=cods, continuar='/admin/senha' if conta['trocar_senha'] else '/admin/'))
+    ok, msg = AC.conferir_segundo_fator(request, c, conta, f.get('codigo', ''), f.get('recuperacao', ''))
+    if not ok:
+        ate = AC.registrar_tentativa(request, c, conta, False)
+        auditar(request, f"Segundo fator incorreto: {conta['email']}", 'anônimo')
+        if ate:
+            request.session.pop('pre', None)
+            return ir('/admin/login', AC.msg_bloqueio(ate), request)
+        return ir('/admin/2fa', msg, request)
+    AC.concluir_login(request, c, conta, 'senha+totp')
+    auditar(request, 'Entrou no painel (senha + segundo fator)', conta['nome'])
+    return ir('/admin/senha' if conta['trocar_senha'] else '/admin/', msg, request)
+
+@r.get('/govbr')
+def govbr(request: Request):
+    if not AC.govbr_ativo():
+        raise HTTPException(404, 'Login gov.br ainda não configurado para este órgão.')
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(AC.govbr_redirecionar(request, AC.Conta(request, 'usuario')), status_code=303)
+
+@r.get('/govbr/retorno')
+def govbr_retorno(request: Request, code: str = '', state: str = ''):
+    c = AC.Conta(request, 'usuario')
+    conta, erro = AC.govbr_concluir(request, c, code, state)
+    if erro:
+        auditar(request, f'Login gov.br recusado: {erro[:80]}', 'anônimo')
+        return ir('/admin/login', erro, request)
+    AC.concluir_login(request, c, conta, 'gov.br')
+    auditar(request, 'Entrou no painel (gov.br)', conta['nome'])
+    return ir('/admin/', '', request)
 
 @r.get('/sair')
 def sair(request: Request):
-    request.session.pop('u', None)
+    request.session.pop('u', None); request.session.pop('ultimo', None)
     return ir('/admin/login', 'Sessão encerrada.', request)
 
 @r.get('/senha')
@@ -296,10 +347,14 @@ async def usuarios_post(request: Request):
     if acao == 'novo':
         if not (f.get('nome') and '@' in f.get('email', '') and f.get('perfil') in PERFIS and len(f.get('senha', '')) >= 10):
             return ir('/admin/usuarios', 'Preencha nome, e-mail, perfil e uma senha provisória de 10+ caracteres.', request)
-        cpf = ''.join(ch for ch in f.get('cpf', '') if ch.isdigit())[-2:]
+        cpf_d = ''.join(ch for ch in f.get('cpf', '') if ch.isdigit())
         try:
-            db.exe(b, 'INSERT INTO usuarios (nome, email, cpf_final, setor, perfil, escopo, senha_hash, validade) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
-                   (f['nome'], f['email'].lower(), cpf, f.get('setor', ''), f['perfil'], f.get('escopo', ''), hash_senha(f['senha']), f.get('validade') or None))
+            h = cpf_hash(cpf_d) if len(cpf_d) == 11 and config.CPF_HMAC_CHAVE else None
+        except ValueError:
+            h = None
+        try:
+            db.exe(b, 'INSERT INTO usuarios (nome, email, cpf_final, cpf_hash, setor, perfil, escopo, senha_hash, validade) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                   (f['nome'], f['email'].lower(), cpf_d[-2:], h, f.get('setor', ''), f['perfil'], f.get('escopo', ''), hash_senha(f['senha']), f.get('validade') or None))
         except Exception:
             return ir('/admin/usuarios', 'Já existe usuário com esse e-mail.', request)
         auditar(request, f"Cadastrou usuário {f['nome']} ({PERFIS[f['perfil']]})")
@@ -313,6 +368,18 @@ async def usuarios_post(request: Request):
         db.exe(b, "UPDATE usuarios SET situacao='ativo' WHERE id=%s", (uid,))
     elif acao == 'perfil' and f.get('perfil') in PERFIS:
         db.exe(b, 'UPDATE usuarios SET perfil=%s WHERE id=%s', (f['perfil'], uid))
+    elif acao == 'reset_2fa':
+        db.exe(b, "UPDATE usuarios SET totp_ativo=FALSE, totp_segredo='', recuperacao='[]' WHERE id=%s", (uid,))
+    elif acao == 'desbloquear':
+        db.exe(b, 'UPDATE usuarios SET falhas=0, bloqueado_ate=NULL WHERE id=%s', (uid,))
+    elif acao == 'cpf':
+        try:
+            d = ''.join(ch for ch in f.get('cpf', '') if ch.isdigit())
+            db.exe(b, 'UPDATE usuarios SET cpf_hash=%s, cpf_final=%s WHERE id=%s', (cpf_hash(d), d[-2:], uid))
+        except ValueError as e:
+            return ir('/admin/usuarios', str(e), request)
+        except Exception:
+            return ir('/admin/usuarios', 'Esse CPF já está vinculado a outro usuário.', request)
     auditar(request, f'Usuário {uid}: {acao}')
     return ir('/admin/usuarios', 'Usuário atualizado.', request)
 

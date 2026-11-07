@@ -225,6 +225,10 @@ def usuario(request: Request):
     return u
 
 def exige(request: Request, permissao: str | None = None):
+    from .acesso import sessao_expirada
+    if request.session.get('u') and sessao_expirada(request):
+        request.session['msg'] = 'Sessão encerrada por inatividade. Entre de novo.'
+        raise HTTPException(status_code=307, headers={'Location': '/admin/login'})
     u = usuario(request)
     if not u:
         raise HTTPException(status_code=307, headers={'Location': '/admin/login'})
