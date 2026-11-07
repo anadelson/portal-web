@@ -85,8 +85,15 @@ Na VPS o HTTPS fica no nginx existente (não no Caddy): ver `Docs/PROGRESSO.md`.
 - **LGPD**: nenhuma coluna de CPF; dígitos de CPF retirados de nomes; pessoa física sem documento e fora da ordem cronológica e dos restos a pagar; servidores só com nome (ou nome social), cargo, vínculo, lotação, admissão e remuneração bruta.
 - **Descoberta das fontes** (só leitura): `docker compose exec -T app python - < app/coletores/descoberta.py` grava amostras sem CPF em `/srv/dados/amostras` (usadas pelos testes offline).
 
+## Câmara completa (Fase 5)
+- **Painel da Câmara** (`app/admin_leg.py`): Sessões e votações (pauta → presença → votação nominal → ata → publicação separada), Proposições (tipos, numeração automática, autores, relator, tramitação, PDFs), Comissões (membros, pautas, pareceres), Legislaturas e Mesas, Contas do Prefeito (parecer TCESP, 2/3, decreto), Diárias e verbas, Transmissões (iniciar/encerrar a faixa ao vivo), Participação (Tribuna Livre, opiniões moderadas, avaliação por página), Importar dados antigos (CSV), Autoavaliação PNTP 20.1–20.11.
+- **Regras** (`app/legislativo.py`): quórum simples, absoluto ou 2/3; Presidente só desempata na maioria simples; resultado atualiza a tramitação; perfil do vereador soma só sessões publicadas; votos, presenças e atas nunca são pré-preenchidos.
+- **Portal** (`app/portal_leg.py`): `/proposicoes`, `/proposicoes/<id>`, `/sessoes/<id>`, `/comissoes`, `/contas`, `/transmissoes`, `/transparencia/diarias-camara`, `/documento/<arquivo>.pdf`, `POST /avaliar`.
+- **Importação** (`app/importar.py`, modelos em `Docs/modelos/`): `docker compose exec app python -m app.importar MODELO arquivo.csv --orgao cm-bora` (simula) e `--gravar`. Nada de raspagem do portal antigo.
+- **Transmissões** para a Prefeitura: módulo opcional `audiencias` (ligar no console).
+
 ## Testes (só em banco de teste)
-`tests/teste_fluxos.py` (fluxos e identidade visual) e `tests/teste_transparencia.py` (coletores com as amostras, sem internet; LGPD; filtros; CSV/JSON; falha de fonte) recusam rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
+`tests/teste_fluxos.py` (fluxos e identidade visual), `tests/teste_legislativo.py` (processo legislativo com legislatura e pessoas fictícias, `DATA_SIMULADA=2029-03-10`) e `tests/teste_transparencia.py` (coletores com as amostras, sem internet; LGPD; filtros; CSV/JSON; falha de fonte) recusam rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
 
 ## O que é real e o que é exemplo
 - **Real**: vereadores, partidos, votos e Mesas da 13ª à 15ª legislatura; 29 emendas impositivas com a execução de 3 delas; indicações de 2026 e parte de 2025; sessões com data; RGF/despesa com pessoal da Câmara; endereços e contatos.

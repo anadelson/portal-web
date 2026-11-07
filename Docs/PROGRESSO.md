@@ -402,5 +402,18 @@ Registros sorteados do portal público (`/dados/<base>.json`) comparados com nov
 20.1 parcial (9 vereadores, 0 com foto e biografia) · 20.2 a 20.11 pendentes, exceto 20.4.
 ⚠️ O 20.4 aparecia **atendido** sem merecer: as 8 sessões importadas do portal antigo vieram marcadas "pauta publicada", mas sem o conteúdo aqui. **Corrigido** (só conta pauta com texto ou itens) e as proposições antigas passam a ter a autoria vinculada aos vereadores pelo nome exato. Commit no branch `fase-5`, **aguardando aprovação para rebuild → testes → reimplantação**.
 
+## Reimplantação da correção (aprovada em 2026-11-07)
+- Rebuild; 3 suítes **ERROS: 0**; backup → `up -d` → `provision atualizar`: **40 proposições antigas com autoria vinculada** (41 vínculos, todos a vereadores cadastrados, pelo nome exato).
+- PNTP real da Câmara agora: **20.1 parcial; 20.2 a 20.11 pendentes** (20.4: 0 de 8 sessões com pauta no portal). Logs sem erro; domínios 200.
+
+## Pendências da Fase 5
+1. Câmara: fotos oficiais e biografias (20.1), cadastro das comissões e membros (20.5), e passar a registrar pauta, presença, votação nominal e ata de cada sessão (20.4, 20.6, 20.7) — o painel está pronto.
+2. Importar o histórico (proposições, tramitação, sessões, presenças, votos) a partir da exportação do fornecedor (Pronim/Cidade360) com os modelos de `Docs/modelos/`.
+3. Cadastrar o canal oficial do YouTube e vincular as gravações às sessões (20.9); lançar ou declarar diárias (20.10); cadastrar o julgamento das contas (20.8).
+4. Prefeitura: contratar/ligar o módulo `audiencias` no console se quiser transmitir audiências.
+
+## Como desfazer a Fase 5
+`git checkout fase-4 -- . && docker compose build app worker && docker compose up -d app worker` (as tabelas da migração 006 ficam sem uso). Dumps antes da implantação: `backups/*-2026-11-07.dump`.
+
 ## Onde parou
-Correção do PNTP 20.4 commitada; aguardando aprovação da reimplantação; depois merge + tag `fase-5`.
+**Fase 5 concluída e implantada em 2026-11-07**; `main` com merge de `fase-5` e tag **`fase-5`**. Aguardando o "ok" do usuário para a Fase 6 (modo teste).
