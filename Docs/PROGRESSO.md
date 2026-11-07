@@ -598,3 +598,26 @@ Código pronto e testado na branch `fase-7-fontes`, ainda não implantado. Aguar
 5. coleta do INEP.
 
 Depois disso, o usuário preenche `IEGM_USUARIO` e `IEGM_SENHA` no `.env` da VPS. Em seguida vêm: `up -d` para carregar o `.env`, IEG-M em modo automático, primeira coleta e conferência das colunas.
+
+### Implantação (07/11/2026, aprovada: "Aprovo os 5 passos")
+- Build; 6 suítes com a imagem nova: ERROS: 0. Backup; `up -d` de app e worker (saudáveis); `provision atualizar`: migração 011, 9 indicadores novos e as fontes `inep` e `iegm`; os 6 indicadores antigos foram retirados (ocultos, sem coletor; `/painel/edu_ideb_ai_mun` responde 404).
+- Coleta do INEP (edição 2025, 3 etapas, worker com 47 MB): anos iniciais com 30 valores (redes Municipal e Pública), anos finais com 21 (Estadual e Pública), ensino médio com 15 (Estadual e Pública).
+- Conferência no domínio (`/painel/api/...`) com as linhas da planilha do INEP mostradas antes:
+
+| Indicador | No portal | Na planilha |
+|---|---|---|
+| IDEB anos iniciais 2025 | 6,6 | 6.6 |
+| Saeb Matemática, anos iniciais 2025 | 240,82 | 240.82 |
+| IDEB anos finais 2025 | 5,3 | 5.3 |
+| Saeb Língua Portuguesa, anos finais 2025 | 267,26 | 267.26 |
+| IDEB ensino médio 2025 | "não divulgado pelo INEP" | "-" |
+
+  Rendimento e meta projetada aparecem na tabela e nos downloads; a rede responsável é mostrada nos cartões; "não divulgado" no gráfico, sem barra.
+
+### Onde parou
+INEP no ar e conferido. **Aguardando o usuário preencher `IEGM_USUARIO` e `IEGM_SENHA` no `.env` da VPS.** Depois, com aprovação:
+1. `up -d` para carregar o `.env`;
+2. IEG-M em modo automático;
+3. primeira coleta e conferência das colunas;
+4. merge de `fase-7-fontes` e tag;
+5. ETAPA 1 do `Docs/PEDIDO-FASE7-LAYOUT.md`.
