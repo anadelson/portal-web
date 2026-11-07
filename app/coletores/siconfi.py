@@ -35,7 +35,17 @@ def coletar(orgao, p, hoje=None):
     if p.get('rreo'):
         a, per, itens = ultimo(lambda a, per: _itens('rreo', {'an_exercicio': a, 'nr_periodo': per, 'co_tipo_demonstrativo': 'RREO', 'no_anexo': 'RREO-Anexo 14', 'id_ente': p['ibge']}), hoje.year)
         n = gravar(b, 'relatorios_fiscais', _linhas(itens, 'RREO', 'Anexo 14', a, per)) if itens else 0
-        res.append(('rreo_anexo14', bool(itens), n, f'RREO Anexo 14 de {a}, {per}º bimestre: {n} linhas' if itens else 'RREO Anexo 14 não encontrado'))
+        msg = f'RREO Anexo 14 de {a}, {per}º bimestre: {n} linhas' if itens else 'RREO Anexo 14 não encontrado'
+        # o período mais recente pode vir sem as linhas de saúde e educação: guarda também o último que as tem
+        tem_minimos = lambda its: any('Aplicado' in (i.get('coluna') or '') and ('Saúde' in (i.get('conta') or '') or 'Manutenção' in (i.get('conta') or '')) for i in its)
+        if itens and not tem_minimos(itens):
+            for a2, per2 in [(a, x) for x in range(per - 1, 0, -1)] + [(a - 1, x) for x in range(6, 0, -1)]:
+                its = _itens('rreo', {'an_exercicio': a2, 'nr_periodo': per2, 'co_tipo_demonstrativo': 'RREO', 'no_anexo': 'RREO-Anexo 14', 'id_ente': p['ibge']})
+                if its and tem_minimos(its):
+                    n2 = gravar(b, 'relatorios_fiscais', _linhas(its, 'RREO', 'Anexo 14', a2, per2))
+                    msg += f'; mínimos de saúde e educação do {per2}º bimestre de {a2} ({n2} linhas)'
+                    break
+        res.append(('rreo_anexo14', bool(itens), n, msg))
     if p.get('rgf_poder'):
         pod = p['rgf_poder']
         q = lambda a, per: _itens('rgf', {'an_exercicio': a, 'in_periodicidade': 'Q', 'nr_periodo': per, 'co_tipo_demonstrativo': 'RGF', 'no_anexo': 'RGF-Anexo 01', 'co_esfera': 'M', 'co_poder': pod, 'id_ente': p['ibge']}) if per <= 3 else []
