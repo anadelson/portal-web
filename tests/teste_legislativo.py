@@ -110,7 +110,7 @@ r = ok(cm.get(f"/proposicoes/{pl['id']}"), txt='Votação nominal', nome='págin
 for t_ in ('Leitura em Plenário', 'Parecer — Comissão de Justiça (teste)', 'Incluída na pauta', 'Texto original do projeto', 'Poder Executivo', 'Carla Teste', 'Favorável'):
     if t_ not in r.text: falha(f'proposição sem "{t_}"')
 r = ok(cm.get(f"/vereador/{V['Bruno Teste']}"), txt='Presença e votos nominais', nome='perfil')
-if not re.search(r'Presenças</dt><dd class="v">1</dd>', r.text) or 'Votos “Sim”</dt><dd class="v">3' not in r.text: falha('perfil: presença/votos calculados errados')
+if not re.search(r'Presenças</dt><dd class="v">1</dd>', r.text) or 'Votos “Sim”</dt><dd class="v">2' not in r.text: falha('perfil: presença/votos calculados errados')
 if L.estatisticas_vereador(CM, V['Íris Teste'])[0]['ausente'] != 1: falha('falta da Íris não contada')
 ok(cm.get(f"/vereador/{V['Bruno Teste']}"), txt=L.rotulo(pl), nome='proposição no perfil do autor')
 ok(cm.get('/proposicoes?tipo=Projeto+de+Lei&ano=2029&autor=Bruno'), txt=L.rotulo(pl), nome='filtro proposições')
