@@ -1,0 +1,350 @@
+{
+ "_origem": "Formato da resposta do Pentaho CDA ({metadata, resultset}). VALORES FICTÍCIOS, só para teste: não são resultados reais do IEG-M.",
+ "larga": {
+  "2023": {
+   "metadata": [
+    {
+     "colIndex": 0,
+     "colName": "exercicio",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 1,
+     "colName": "codigo_municipio",
+     "colType": "String"
+    },
+    {
+     "colIndex": 2,
+     "colName": "municipio",
+     "colType": "String"
+    },
+    {
+     "colIndex": 3,
+     "colName": "faixa_iegm",
+     "colType": "String"
+    },
+    {
+     "colIndex": 4,
+     "colName": "nota_iegm",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 5,
+     "colName": "faixa_i_educ",
+     "colType": "String"
+    },
+    {
+     "colIndex": 6,
+     "colName": "nota_i_educ",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 7,
+     "colName": "faixa_i_saude",
+     "colType": "String"
+    },
+    {
+     "colIndex": 8,
+     "colName": "nota_i_saude",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 9,
+     "colName": "faixa_i_planejamento",
+     "colType": "String"
+    },
+    {
+     "colIndex": 10,
+     "colName": "nota_i_planejamento",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 11,
+     "colName": "faixa_i_fiscal",
+     "colType": "String"
+    },
+    {
+     "colIndex": 12,
+     "colName": "nota_i_fiscal",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 13,
+     "colName": "faixa_i_amb",
+     "colType": "String"
+    },
+    {
+     "colIndex": 14,
+     "colName": "nota_i_amb",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 15,
+     "colName": "faixa_i_cidade",
+     "colType": "String"
+    },
+    {
+     "colIndex": 16,
+     "colName": "nota_i_cidade",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 17,
+     "colName": "faixa_i_gov_ti",
+     "colType": "String"
+    },
+    {
+     "colIndex": 18,
+     "colName": "nota_i_gov_ti",
+     "colType": "Numeric"
+    }
+   ],
+   "resultset": [
+    [
+     2023,
+     "3507209",
+     "Borá",
+     "B+",
+     0.51,
+     "C+",
+     0.54,
+     "B",
+     0.57,
+     "A",
+     0.6,
+     "C",
+     0.63,
+     "B",
+     0.66,
+     "C+",
+     0.69,
+     "B",
+     0.72
+    ],
+    [
+     2023,
+     "9999999",
+     "Município Fictício",
+     "B",
+     0.5,
+     "B+",
+     0.53,
+     "C+",
+     0.56,
+     "B",
+     0.59,
+     "A",
+     0.62,
+     "C",
+     0.65,
+     "B",
+     0.68,
+     "C+",
+     0.71
+    ]
+   ]
+  },
+  "2024": {
+   "metadata": [
+    {
+     "colIndex": 0,
+     "colName": "exercicio",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 1,
+     "colName": "codigo_municipio",
+     "colType": "String"
+    },
+    {
+     "colIndex": 2,
+     "colName": "municipio",
+     "colType": "String"
+    },
+    {
+     "colIndex": 3,
+     "colName": "faixa_iegm",
+     "colType": "String"
+    },
+    {
+     "colIndex": 4,
+     "colName": "nota_iegm",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 5,
+     "colName": "faixa_i_educ",
+     "colType": "String"
+    },
+    {
+     "colIndex": 6,
+     "colName": "nota_i_educ",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 7,
+     "colName": "faixa_i_saude",
+     "colType": "String"
+    },
+    {
+     "colIndex": 8,
+     "colName": "nota_i_saude",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 9,
+     "colName": "faixa_i_planejamento",
+     "colType": "String"
+    },
+    {
+     "colIndex": 10,
+     "colName": "nota_i_planejamento",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 11,
+     "colName": "faixa_i_fiscal",
+     "colType": "String"
+    },
+    {
+     "colIndex": 12,
+     "colName": "nota_i_fiscal",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 13,
+     "colName": "faixa_i_amb",
+     "colType": "String"
+    },
+    {
+     "colIndex": 14,
+     "colName": "nota_i_amb",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 15,
+     "colName": "faixa_i_cidade",
+     "colType": "String"
+    },
+    {
+     "colIndex": 16,
+     "colName": "nota_i_cidade",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 17,
+     "colName": "faixa_i_gov_ti",
+     "colType": "String"
+    },
+    {
+     "colIndex": 18,
+     "colName": "nota_i_gov_ti",
+     "colType": "Numeric"
+    }
+   ],
+   "resultset": [
+    [
+     2024,
+     "3507209",
+     "Borá",
+     "C+",
+     0.52,
+     "B",
+     0.55,
+     "A",
+     0.58,
+     "C",
+     0.61,
+     "B",
+     0.64,
+     "C+",
+     0.67,
+     "B",
+     0.7,
+     "B+",
+     0.73
+    ],
+    [
+     2024,
+     "9999999",
+     "Município Fictício",
+     "B",
+     0.5,
+     "B+",
+     0.53,
+     "C+",
+     0.56,
+     "B",
+     0.59,
+     "A",
+     0.62,
+     "C",
+     0.65,
+     "B",
+     0.68,
+     "C+",
+     0.71
+    ]
+   ]
+  }
+ },
+ "longa": {
+  "metadata": [
+   {
+    "colIndex": 0,
+    "colName": "cod_ibge"
+   },
+   {
+    "colIndex": 1,
+    "colName": "indice"
+   },
+   {
+    "colIndex": 2,
+    "colName": "faixa"
+   },
+   {
+    "colIndex": 3,
+    "colName": "nota"
+   }
+  ],
+  "resultset": [
+   [
+    "3507209",
+    "IEG-M",
+    "B",
+    0.61
+   ],
+   [
+    "3507209",
+    "i-Educ",
+    "B+",
+    0.7
+   ],
+   [
+    "3507209",
+    "i-Gov TI",
+    "C",
+    0.4
+   ],
+   [
+    "1111111",
+    "IEG-M",
+    "A",
+    0.9
+   ]
+  ]
+ },
+ "outra": {
+  "metadata": [
+   {
+    "colIndex": 0,
+    "colName": "x"
+   }
+  ],
+  "resultset": [
+   [
+    "nada"
+   ]
+  ]
+ }
+}
