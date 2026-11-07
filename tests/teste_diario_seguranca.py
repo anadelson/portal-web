@@ -23,6 +23,8 @@ def msg(r):
     m = re.search(r'class="msg" role="(?:status|alert)"[^>]*>(.*?)</p>', r.text, re.S); return re.sub(r'<[^>]+>', ' ', m.group(1)) if m else ''
 PM, CM = 'bd_pm_bora', 'bd_cm_bora'
 if not A.modo_teste(): sys.exit('Este teste roda em DIARIO_MODO=teste.')
+if DS.tick(None, datetime(2026, 11, 9, 16, 5)) != []: falha('rotina automática deveria estar desligada em modo teste por padrão')
+config.DIARIO_AUTOMATICO_TESTE = True
 if not Path(config.SEGREDOS_DIR, 'teste', 'raiz.crt').is_file(): A.gerar_cadeia_teste()
 if any(oct(p.stat().st_mode)[-3:] != '600' for p in Path(config.SEGREDOS_DIR, 'teste').iterdir()): falha('arquivos da cadeia de teste devem ter permissão 600')
 O = {o['slug']: o for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos')}
@@ -244,5 +246,8 @@ if u['cpf_final'] != '25' or len(u['cpf_hash'] or '') != 64: falha('CPF deveria 
 g = TestClient(app, base_url='http://gestao.localhost')
 r = g.post('/login', data={'csrf': tok(g, '/login'), 'email': 'gestor@gestao.localhost', 'senha': 'gestor123'}, follow_redirects=True)
 ok(r, txt='Ative o segundo fator', nome='console exige 2º fator')
+os.environ['DATA_SIMULADA'] = '2026-11-06T10:00'
+n_antes = db.um(PM, 'SELECT count(*) n FROM diario_edicoes WHERE modo_teste')['n']
+if DS.limpar_teste(O['pm-bora']) != n_antes or db.um(PM, 'SELECT count(*) n FROM diario_edicoes WHERE modo_teste')['n']: falha('limpar-teste')
 print('ERROS:', len(erros)); print('\n'.join(erros))
 sys.exit(1 if erros else 0)

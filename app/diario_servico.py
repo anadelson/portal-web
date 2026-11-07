@@ -140,6 +140,8 @@ def tick(o, agora: datetime):
     16h30 edição do dia sem assinatura completa → alerta ao responsável (painel);
     17h  edição do dia fechada e totalmente assinada → publica (teste: só como teste, nunca oficial)."""
     b = o['banco']; hoje = agora.date(); res = []
+    if A.modo_teste() and not config.DIARIO_AUTOMATICO_TESTE:
+        return res  # modo teste em produção: não gasta a numeração oficial com edições automáticas de teste
     if not D.dia_util(b, hoje) or agora.hour < config.DIARIO_CORTE_HORA:
         return res
     ed = db.um(b, "SELECT * FROM diario_edicoes WHERE data=%s AND letra='' AND situacao<>'invalidada' ORDER BY id DESC LIMIT 1", (hoje,))
@@ -167,3 +169,26 @@ def tick(o, agora: datetime):
             publicar(o, ed, 'worker')
             res.append(f"edição nº {ed['numero']} publicada" + (' (TESTE, não oficial)' if ed['modo_teste'] else ''))
     return res
+
+def limpar_teste(o):
+    """Ao passar para DIARIO_MODO=oficial: apaga as edições de TESTE (e os atos nelas) para a numeração oficial começar do nº 1."""
+    b = o['banco']
+    eds = db.todos(b, 'SELECT id, pdf_arquivo FROM diario_edicoes WHERE modo_teste')
+    ids = [e['id'] for e in eds]
+    if ids:
+        db.exe(b, 'UPDATE diario_atos SET retifica_ato_id=NULL WHERE retifica_ato_id IN (SELECT id FROM diario_atos WHERE edicao_id = ANY(%s))', (ids,))
+        db.exe(b, 'DELETE FROM diario_atos WHERE edicao_id = ANY(%s)', (ids,))
+        db.exe(b, 'DELETE FROM diario_edicoes WHERE id = ANY(%s)', (ids,))
+        for e in eds:
+            if e['pdf_arquivo']:
+                Path(e['pdf_arquivo']).unlink(missing_ok=True)
+    return len(ids)
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == 'limpar-teste':
+        if not A.modo_teste() or '--forcar' in sys.argv:
+            for o in db.todos(db.PLATAFORMA, "SELECT * FROM orgaos WHERE tipo='executivo'"):
+                print(o['slug'], ':', limpar_teste(o), 'edição(ões) de teste apagada(s)')
+        else:
+            print('Ainda em DIARIO_MODO=teste: troque para oficial no .env (ou use --forcar) antes de limpar.')

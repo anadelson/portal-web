@@ -44,6 +44,7 @@ DIARIO_MODO = env('DIARIO_MODO', 'teste').lower()             # 'teste' (padrão
 DIARIO_CORTE_HORA = int(env('DIARIO_CORTE_HORA', '16'))       # envio até 16h (decreto)
 DIARIO_PUBLICACAO_HORA = int(env('DIARIO_PUBLICACAO_HORA', '17'))
 DIARIO_ALERTA = env('DIARIO_ALERTA', '16:30')
+DIARIO_AUTOMATICO_TESTE = env('DIARIO_AUTOMATICO_TESTE', '0') == '1'   # em modo teste, a rotina automática (sem atos/publicação) só roda se ligada
 ACT_URL = env('ACT_URL')                                      # URL RFC 3161 da Autoridade de Carimbo do Tempo
 ACT_USUARIO = env('ACT_USUARIO')
 ACT_SENHA = env('ACT_SENHA')
