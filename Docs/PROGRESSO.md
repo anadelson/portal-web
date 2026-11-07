@@ -643,3 +643,12 @@ Aguardando aprovação para:
 6. `provision atualizar` (migração 012).
 
 Depois, o usuário cadastra a credencial pela tela. Em seguida vêm: modo automático do IEG-M, primeira coleta, merge e tag, e a ETAPA 1 do layout.
+
+### Implantação das credenciais (07/11/2026, aprovada: "Aprovo os 6 passos")
+- Build feito; as 6 suítes com a imagem nova deram ERROS: 0; backup feito (agora inclui `backups/env-2026-11-07`, permissão 600).
+- `CHAVE_CREDENCIAIS` gerada direto no `.env`, sem exibir: 1 linha, `.env` com permissão 600 e dono root. A cópia do `.env` no backup de hoje foi atualizada para conter a chave.
+- `up -d` de app e worker (saudáveis; a chave carregou e é válida); `provision atualizar` aplicou a migração 012 (`credenciais_fontes` vazia).
+- Verificação: `gestao.../credenciais` sem login redireciona para `/login`; `pmbora.../credenciais` responde 404; `/painel` responde 200.
+
+### Onde parou
+**Aguardando o usuário cadastrar a credencial do IEG-M** em gestao.conectatech.tech → Integrações → Credenciais de fontes. Depois, com aprovação: modo automático do IEG-M, primeira coleta e conferência das colunas, merge de `fase-7-fontes` e tag, e ETAPA 1 do layout.
