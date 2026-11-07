@@ -91,6 +91,22 @@ def configurar_fontes(oid, slug):
         n += 1 if r else 0
     return n
 
+# Fontes do painel de indicadores (Fase 7): genéricas para todo órgão do Executivo, pelo código IBGE do município.
+# MDS e vacinação (PNI) nascem desligados: fonte fora do ar / pendente de fonte estável.
+FONTES_PAINEL = {'painel': True, 'ibge': True, 'cnes': True, 'mds': False, 'pni': False}
+
+def configurar_painel(o):
+    """Semeia o catálogo de indicadores e cadastra as fontes do painel (nunca sobrescreve o que já existe)."""
+    if o['tipo'] != 'executivo':
+        return 0, 0
+    from . import painel
+    novos = painel.semear(o['banco'])
+    nf = 0
+    for fonte, ativo in FONTES_PAINEL.items():
+        r = db.exe(db.PLATAFORMA, 'INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING RETURNING 1', (o['id'], fonte, Jsonb({'ibge': o['ibge']}), ativo))
+        nf += 1 if r else 0
+    return novos, nf
+
 def completar_identidade(banco, slug, tipo):
     """Acrescenta à identidade do órgão as chaves visuais que ainda não existem (nunca sobrescreve o que o órgão definiu)."""
     ident = db.cfg(banco, 'identidade', {}) or {}
@@ -148,6 +164,7 @@ def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, mun
         db.set_cfg(banco, 'identidade', IDENT.get(slug, {'nome': nome, 'cor': cor}))
     completar_identidade(banco, slug, tipo)
     configurar_fontes(oid, slug)
+    configurar_painel(db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,)))
     if not db.um(banco, 'SELECT 1 FROM blocos LIMIT 1'):
         for i, (k, reg) in enumerate(LAYOUT_PADRAO[tipo]):
             db.exe(banco, 'INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING', ('home', k, reg, i))
@@ -244,6 +261,10 @@ def atualizar():
         aplicar(o['banco'], MIG_ORGAO)
         ident = 'identidade completada' if completar_identidade(o['banco'], o['slug'], o['tipo']) else 'identidade sem mudança'
         nf = configurar_fontes(o['id'], o['slug'])
+        ni, nfp = configurar_painel(o)
+        nf += nfp
+        if ni:
+            print(f"  painel de indicadores: {ni} indicador(es) novo(s) no catálogo")
         if o['tipo'] == 'legislativo':
             from . import legislativo
             na = legislativo.vincular_autores_antigos(o['banco'])
