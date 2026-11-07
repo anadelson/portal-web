@@ -95,7 +95,7 @@ for i in range(3):
 # ---------- coleta ----------
 bi(True)
 fontes = [f for f in worker.fontes_ativas() if f['slug'] == 'pm-bora' and f['fonte'] in worker.PAINEL]
-if {f['fonte'] for f in fontes} != {'ibge', 'cnes', 'painel', 'inep', 'iegm'}: falha(f"fontes ativas do painel: {[f['fonte'] for f in fontes]}")
+if {f['fonte'] for f in fontes} != {'ibge', 'cnes', 'painel', 'inep', 'iegm', 'financas'}: falha(f"fontes ativas do painel: {[f['fonte'] for f in fontes]}")
 fontes = [f for f in fontes if f['fonte'] in ('ibge', 'cnes', 'painel')]
 for f in fontes:
     for base, ok_, n_, msg in worker.rodar(f, f['fonte'], f['params']):
@@ -145,15 +145,17 @@ for fonte in ('mds', 'pni'):
 
 # ---------- páginas públicas ----------
 r = ok(pm.get('/painel'), txt='Base legal:', nome='painel')
-for t in ('Dinheiro público', 'Contratações', 'Saúde', 'Educação', 'Assistência social', 'Município e gestão', 'Tudo', 'População estimada', 'Fonte:', 'atualizado em', 'Referência:'):
+for t in ('Dinheiro público', 'Contratações', 'Saúde', 'Educação', 'Assistência social', 'Município e gestão', 'Tudo', 'População estimada', 'Fonte:', 'Consulta em', 'Ainda não disponíveis'):
     if t not in r.text: falha(f'painel: falta "{t}"')
 if 'aria-current="page">Tudo' not in r.text: falha('aba atual sem aria-current')
-if 'Mínimo legal: 15% · atingido' not in r.text: falha('texto da meta de saúde')
-if 'ainda em andamento: sem comparação' not in r.text: falha('variação do ano parcial deveria ser só texto, sem comparação')
-if '+0,3% em relação a 2025' not in r.text: falha('variação da população 2026 × 2025 em texto')  # 935/932 = +0,32%
+# variação e meta em texto ficam na página de cada indicador (o painel segue o protótipo)
+if 'Mínimo legal: 15% · atingido' not in pm.get('/painel/saude_minimo').text: falha('texto da meta de saúde')
+if 'ainda em andamento: sem comparação' not in pm.get('/painel/fin_receita').text: falha('variação do ano parcial deveria ser só texto, sem comparação')
+if '+0,3% em relação a 2025' not in pm.get('/painel/mun_populacao').text: falha('variação da população 2026 × 2025 em texto')  # 935/932 = +0,32%
 if 'Pessoa de Teste' in r.text or 'teste@exemplo' in r.text: falha('dado pessoal no painel')
-if 'aparecem quando a fonte oficial do Ministério' not in r.text: falha('aviso neutro da assistência social')
-if 'Doses de vacina' in r.text or 'IEG-M' in r.text: falha('indicador sem dado apareceu')
+if 'os números aparecem quando ela voltar' not in r.text: falha('aviso neutro da assistência social')
+if 'href="/painel/saude_vacinacao"' in r.text or 'href="/painel/gestao_iegm"' in r.text: falha('indicador sem dado apareceu com link')
+if 'Doses de vacina aplicadas' not in r.text.split('Ainda não disponíveis')[-1]: falha('vacinação deveria estar em "Ainda não disponíveis"')
 r = ok(pm.get('/painel?aba=saude'), nome='aba saúde')
 if 'IDEB' in r.text or 'Nascidos vivos' not in r.text: falha('filtro da aba saúde')
 if 'menos de 5' not in r.text: falha('nascidos vivos 2024 (4) deveria aparecer como "menos de 5"')
@@ -248,7 +250,7 @@ v = val('gestao_iegm', '2024')
 if not v or v['texto'] != 'B' or v['origem'] != 'manual' or not v['usuario'] or 'TESTE' not in v['motivo']: falha(f'lançamento manual: {v}')
 if not db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE 'Painel de indicadores: lançamento manual%%'"): falha('lançamento manual sem auditoria')
 if not db.um(PM, "SELECT 1 FROM indicador_historico WHERE indicador_id=%s AND acao LIKE 'Lançamento manual%%'", (iegm,)): falha('lançamento manual sem histórico')
-ok(pm.get('/painel?aba=mun'), txt='IEG-M — resultado geral', nome='IEG-M lançado aparece')
+ok(pm.get('/painel?tema=mun'), txt='Nota da gestão municipal pelo Tribunal de Contas', nome='IEG-M lançado aparece')
 ok(pm.get('/painel/gestao_iegm'), txt='Lançamento manual', nome='origem manual na tabela')
 auto = db.um(PM, "SELECT id FROM indicadores WHERE chave='mun_populacao'")['id']
 pm.post(f'/admin/indicadores/{auto}', data={'csrf': tok(pm, f'/admin/indicadores/{auto}'), 'acao': 'lancar', 'periodo': '2027', 'data_ref': '2027-12-31', 'valor': '999', 'motivo': 'tentativa indevida de teste'})
