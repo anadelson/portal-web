@@ -139,9 +139,9 @@ def tick(o, agora: datetime):
     16h  dia útil sem edição e sem atos para hoje → gera, assina (A1 ou teste) a edição "sem atos";
     16h30 edição do dia sem assinatura completa → alerta ao responsável (painel);
     17h  edição do dia fechada e totalmente assinada → publica (teste: só como teste, nunca oficial)."""
-    b = o['banco']; hoje = agora.date(); res = []
     if A.modo_teste() and not config.DIARIO_AUTOMATICO_TESTE:
-        return res  # modo teste em produção: não gasta a numeração oficial com edições automáticas de teste
+        return []  # modo teste em produção: não gasta a numeração oficial com edições automáticas de teste
+    b = o['banco']; hoje = agora.date(); res = []
     if not D.dia_util(b, hoje) or agora.hour < config.DIARIO_CORTE_HORA:
         return res
     ed = db.um(b, "SELECT * FROM diario_edicoes WHERE data=%s AND letra='' AND situacao<>'invalidada' ORDER BY id DESC LIMIT 1", (hoje,))
