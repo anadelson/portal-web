@@ -182,6 +182,14 @@ def ler_minimos(ibge, anos, hoje=None):
     return out
 
 # ---------- dados do próprio órgão ----------
+CONT = ('cont_publicadas', 'cont_valor', 'cont_dispensa')
+
+def anos_pncp_completos(b, ano):
+    """Anos do PNCP lidos por inteiro. A busca vem da publicação mais recente para a mais antiga e o PNCP às vezes
+    derruba a conexão no meio: um ano só está completo se o banco já tem publicações do ano anterior a ele."""
+    r = db.um(b, "SELECT min(ano) a FROM licitacoes WHERE fonte='pncp' AND ano BETWEEN 2000 AND %s", (ano,))
+    return list(range(r['a'] + 1, ano + 1)) if r and r['a'] else []
+
 def ler_proprios(o, hoje=None):
     hoje = hoje or config.hoje()
     b, ano, out = o['banco'], hoje.year, []
@@ -201,7 +209,7 @@ def ler_proprios(o, hoje=None):
         if d['d']:
             out.append(('fin_empenhada_dotacao', str(ano), dt, float(d['e'] or 0) / float(d['d']) * 100, f'empenhado até {dt.strftime("%d/%m/%Y")} sobre a dotação atualizada', True, None))
     for x in db.todos(b, """SELECT ano, count(*) n, sum(valor) v, count(valor) nv, count(*) FILTER (WHERE modalidade ILIKE 'Dispensa%%') nd
-                            FROM licitacoes WHERE fonte='pncp' AND ano BETWEEN 2000 AND %s GROUP BY ano ORDER BY ano""", (ano,)):
+                            FROM licitacoes WHERE fonte='pncp' AND ano = ANY(%s) GROUP BY ano ORDER BY ano""", (anos_pncp_completos(b, ano),)):
         mods = db.todos(b, "SELECT coalesce(nullif(modalidade,''),'Não informada') m, count(*) n, sum(valor) v FROM licitacoes WHERE fonte='pncp' AND ano=%s GROUP BY 1 ORDER BY 2 DESC, 1", (x['ano'],))
         parcial = x['ano'] == ano
         dt = hoje if parcial else P.fim_do_ano(x['ano'])
@@ -285,6 +293,9 @@ def coletar_painel(o, p, hoje=None):
     vals = ler_proprios(o, hoje)
     for chave, per, dref, v, nota, parcial, det in vals:
         P.gravar(o['banco'], chave, per, dref, v, detalhe=det, nota=nota, parcial=parcial)
+    # anos do PNCP que deixaram de estar cobertos por inteiro (ou nunca estiveram) não ficam publicados
+    db.exe(o['banco'], """DELETE FROM indicador_valores v USING indicadores i WHERE i.id=v.indicador_id AND i.chave = ANY(%s)
+                          AND v.origem='coletor' AND NOT (v.periodo = ANY(%s))""", (list(CONT), [str(a) for a in anos_pncp_completos(o['banco'], hoje.year)]))
     proprios = sorted({c for c in _chaves('painel') if c not in MINIMOS})
     P.marcar_coleta(o['banco'], 'painel', True, f'{len(vals)} valores', proprios)
     res.append(('proprios', True, len(vals), f'{len(vals)} valores de receita, despesa, PNCP e e-SIC'))

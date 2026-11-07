@@ -76,7 +76,7 @@ for i, (fonte, ano, mes, arr, prev, soma) in enumerate([('fiorilli', 2026, 0, 10
     db.exe(PM, 'INSERT INTO receitas (chave, fonte, ano, mes, nome, previsto, arrecadado, soma) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)', (f'teste-{i}', fonte, ano, mes, 'Receita de teste', prev, arr, soma))
 for i, (d, e, pg) in enumerate([(1000000, 600000, 300000), (1000000, 400000, 200000)]):
     db.exe(PM, "INSERT INTO despesas_unidade (chave, fonte, ano, codigo, unidade, dotacao_atualizada, empenhado, pago) VALUES (%s,'fiorilli',2026,%s,'UNIDADE TESTE',%s,%s,%s)", (f'du-{i}', str(i), d, e, pg))
-for i, (ano, mod, v) in enumerate([(2025, 'Dispensa', 1000), (2025, 'Dispensa', 1000), (2025, 'Pregão - Eletrônico', 5000), (2025, 'Inexigibilidade', None),
+for i, (ano, mod, v) in enumerate([(2024, 'Dispensa', 50), (2025, 'Dispensa', 1000), (2025, 'Dispensa', 1000), (2025, 'Pregão - Eletrônico', 5000), (2025, 'Inexigibilidade', None),
                                    (2026, 'Dispensa', 200), (2026, 'Dispensa', 300), (2026, 'Concorrência - Presencial', 10000)]):
     db.exe(PM, "INSERT INTO licitacoes (chave, fonte, ano, modalidade, objeto, valor) VALUES (%s,'pncp',%s,%s,'Objeto de teste',%s)", (f'lic-{i}', ano, mod, v))
 for i in range(7):  # 6 pedidos respondidos (5 no prazo, 1 com 25 dias sem justificativa) e 1 em aberto; 3 manifestações
@@ -119,6 +119,15 @@ if val('edu_fundeb_minimo', '2026'): falha('FUNDEB 2026 inventado (o RREO não t
 if not val('saude_minimo', '2026')['parcial'] or val('saude_minimo', '2025')['parcial']: falha('marca de período parcial do RREO')
 if '1 publicação' not in val('cont_valor', '2025')['nota']: falha('nota de publicações sem valor')
 if val('mun_populacao', '2023'): falha('população 2023 inventada (não há estimativa nem Censo)')
+if val('cont_publicadas', '2024'): falha('PNCP: ano mais antigo da coleta (possivelmente incompleto) foi publicado')
+# coleta parcial do PNCP: se o banco perde a cobertura do ano anterior, o ano deixa de ser publicado
+db.exe(PM, "UPDATE licitacoes SET ano=2025 WHERE fonte='pncp' AND ano=2024")
+fp = [f for f in fontes if f['fonte'] == 'painel'][0]
+worker.rodar(fp, 'painel', fp['params'])
+if val('cont_publicadas', '2025') or val('cont_valor', '2025') or not val('cont_publicadas', '2026'): falha('PNCP: ano incompleto continuou publicado')
+db.exe(PM, "UPDATE licitacoes SET ano=2024 WHERE chave='lic-0'")
+worker.rodar(fp, 'painel', fp['params'])
+if not val('cont_publicadas', '2025') or float(val('cont_publicadas', '2025')['valor']) != 4: falha('PNCP: ano completo não voltou')
 for k in ('social_bf_familias', 'saude_vacinacao', 'edu_saeb', 'gestao_iegm'):
     if db.um(PM, 'SELECT 1 FROM indicador_valores v JOIN indicadores i ON i.id=v.indicador_id WHERE i.chave=%s', (k,)): falha(f'{k} tem valor sem fonte')
 # fontes desligadas falham sem derrubar nada
