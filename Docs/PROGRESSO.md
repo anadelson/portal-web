@@ -557,3 +557,44 @@ Fase 7 concluída (07/11/2026): implantada, conferida, `fase-7` mesclada em `mai
 - **IEG-M: o usuário (DTIC da Prefeitura de Borá) AUTORIZOU, por decisão própria em 07/11/2026, o uso do usuário/senha anônimos publicados pelo TCESP no redirecionamento de iegm.tce.sp.gov.br.** O Claude não lê, não copia e não mostra essa credencial: variáveis `IEGM_USUARIO` e `IEGM_SENHA` no `.env.example` (vazias); o próprio usuário preenche no `.env` da VPS. Sem elas, a coleta fica desligada sem erro.
 - IEG-M com modo de atualização automático (acesso anônimo do TCESP) ou manual em /admin/indicadores, com auditoria; lançamento manual como reserva.
 - Saeb/IDEB pelas planilhas do INEP: 3 etapas; cartão pela rede Pública com o nome da rede responsável; Matemática e Língua Portuguesa como indicadores; rendimento na página do indicador; metas projetadas (até 2021) só como referência histórica no gráfico; ND = "não divulgado pelo INEP", nunca zero; certificado intermediário em `deploy/certs/` com aviso 60 dias antes do vencimento.
+
+### Implementação (branch `fase-7-fontes`, 07/11/2026)
+- **INEP (fonte `inep`, verificada a cada 30 dias):**
+  - Baixa a edição mais recente de cada etapa (anos iniciais, anos finais, ensino médio); a planilha traz a série inteira.
+  - Filtra o código IBGE do órgão (nada fixo de Borá) e grava em `indicadores_publicos`.
+  - Arquivo com a mesma data de modificação não é baixado de novo.
+  - Leitura do `.xlsx` em fluxo (`app/coletores/planilha.py`), sem biblioteca nova: pico de 91 MB no container com limite de 256 MB.
+  - O servidor do INEP derruba conexões às vezes: 4 tentativas com espera.
+- **Indicadores do INEP:**
+  - IDEB, Saeb de Matemática e Saeb de Língua Portuguesa por etapa, da rede **Pública**.
+  - Cada valor diz a rede responsável: anos iniciais = "rede municipal (responsabilidade da Prefeitura)"; anos finais e ensino médio = "rede estadual (responsabilidade do Governo do Estado)".
+  - O rendimento (P) fica na página do IDEB (coluna da tabela e downloads), sem cartão próprio.
+  - As metas projetadas do INEP (até 2021) aparecem só como referência histórica no gráfico (losangos verdes com legenda), nunca como meta atual.
+  - "ND" e "-" viram "não divulgado pelo INEP": nunca zero; no gráfico, sem barra.
+  - Os indicadores de IDEB que vinham do IBGE (`edu_ideb_*_mun/est`) e o `edu_saeb` manual foram **retirados**: ficam ocultos, sem coletor e com a série guardada.
+- **Certificado:** `deploy/certs/rnp-icpedu-gr46-ov-tls-ca-2025.pem`, válido até **19/11/2030**, com origem e SHA-256 em `deploy/certs/LEIAME.md`.
+  - Ele é usado junto com as raízes do certifi: a verificação TLS e a do nome continuam ligadas.
+  - Aviso no painel administrativo e na mensagem da coleta 60 dias antes do vencimento.
+- **IEG-M (fonte `iegm`, verificada a cada 30 dias):**
+  - Consulta `faixaTodosMunicipiosPeriodo` por ano-base (2014 até o ano anterior), com Basic auth usando `IEGM_USUARIO` e `IEGM_SENHA` do `.env`.
+  - Sem credencial ou com o IEG-M em modo manual, não consulta e não registra erro.
+  - As colunas são mapeadas por `metadata[].colName` (tabela larga ou longa), com filtro pelo código IBGE. O mapeamento pode ser fixado no parâmetro `colunas` da fonte.
+  - Se as colunas não forem reconhecidas, a coleta falha com a lista dos **nomes** das colunas recebidas, sem valores e sem credencial.
+  - Grava a faixa (texto) e a nota (valor) do resultado geral e das 7 dimensões, por edição: período = ano-base, nota "edição N+1".
+  - Falha: mantém o último valor válido, mostra o aviso "dado de <data>" no portal e registra a coleta com falha no console.
+- **Admin:**
+  - No IEG-M: "Modo de atualização: automático (acesso anônimo do TCESP) / manual", com a explicação de que a consulta não tem documentação oficial e pode mudar sem aviso. A troca vale para os 8 indicadores e fica na auditoria e no histórico.
+  - Mostra se a credencial está preenchida (sem mostrar o valor), a situação da última coleta e o botão "Coletar agora" da fonte.
+  - Lançamento manual de reserva no IEG-M e nos indicadores do INEP; a coleta nunca sobrescreve um período lançado à mão.
+- **Testes:** `tests/teste_painel_fontes.py`, com planilhas reduzidas no formato real do INEP e respostas do CDA com **valores fictícios**, sem internet. ERROS: 0, e as outras 6 suítes também deram ERROS: 0.
+- **Ressalva:** os nomes reais das colunas do CDA do IEG-M só serão confirmados na primeira coleta com a credencial preenchida.
+
+### Onde parou
+Código pronto e testado na branch `fase-7-fontes`, ainda não implantado. Aguardando aprovação para:
+1. build;
+2. testes com a imagem nova;
+3. backup e `up -d`;
+4. `provision atualizar`;
+5. coleta do INEP.
+
+Depois disso, o usuário preenche `IEGM_USUARIO` e `IEGM_SENHA` no `.env` da VPS. Em seguida vêm: `up -d` para carregar o `.env`, IEG-M em modo automático, primeira coleta e conferência das colunas.
