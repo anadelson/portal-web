@@ -44,6 +44,7 @@ class Cabecalhos:
     async def __call__(self, scope, receive, send):
         if scope['type'] != 'http':
             return await self.app(scope, receive, send)
+        caminho = scope['path']  # o roteador por domínio reescreve scope['path'] (/admin → /_a): guarda o original
         async def enviar(msg):
             if msg['type'] == 'http.response.start':
                 h = [(k, v) for k, v in msg.get('headers', []) if k.lower() not in (b'server',)]
@@ -53,7 +54,7 @@ class Cabecalhos:
                     if k not in nomes:
                         h.append((k, v))
                 host = dict(scope.get('headers') or []).get(b'host', b'').decode().split(':')[0].lower()
-                if scope['path'].startswith('/admin') or host == config.DOMINIO_GESTAO.lower():
+                if caminho.startswith('/admin') or host == config.DOMINIO_GESTAO.lower():
                     h.append((b'cache-control', b'no-store'))
                 msg = dict(msg, headers=h)
             await send(msg)
