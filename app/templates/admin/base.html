@@ -16,6 +16,7 @@
 {% if mods.diario %}{% call grupo('Publicações oficiais', 'p', []) %}{{ item('/diario', 'diario', 'Diário Oficial') }}{{ item('/diario/config', 'mods', 'Signatários e calendário') }}{% endcall %}{% endif %}
 {% if orgao.tipo == 'legislativo' %}{% call grupo('Diário Oficial', 'dl', []) %}{{ item('/remessas', 'diario', 'Enviar ao Diário') }}{% endcall %}{% endif %}
 {% if orgao.tipo != 'legislativo' and not (mods.transm or mods.audiencias) %}{% call grupo('Participação', 'pa', []) %}{{ item('/participacao', 'participacao', 'Avaliação do portal') }}{% endcall %}{% endif %}
+{% if mods.bi %}{% call grupo('Transparência', 't', []) %}{{ item('/indicadores', 'indicadores', 'Painel de indicadores') }}{% endcall %}{% endif %}
 {% call grupo('Atendimento', 'a', []) %}{{ item('/atendimento', 'esic', 'e-SIC e Ouvidoria', pend.esic) }}{% endcall %}
 {% call grupo('Configuração', 'g', []) %}{{ item('/identidade', 'ident', 'Identidade e imagens') }}{{ item('/funcionalidades', 'mods', 'Funcionalidades') }}{% if mods.eleicao %}{{ item('/eleicao', 'eleicao', 'Período eleitoral') }}{% endif %}{{ item('/usuarios', 'users', 'Usuários e perfis') }}{{ item('/auditoria', 'aud', 'Registro de ações') }}{% endcall %}
 <div class="usuario"><span class="ini" aria-hidden="true">{{ u.nome|iniciais }}</span><span><strong>{{ u.nome }}</strong><small>{{ PERFIS[u.perfil] }}</small></span></div>
