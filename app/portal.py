@@ -74,6 +74,9 @@ def home(request: Request):
         dados['projetos'] = db.todos(b, "SELECT * FROM proposicoes ORDER BY (tipo = 'Indicação'), ano DESC, numero DESC LIMIT 4")
         dados['emendas'] = db.um(b, "SELECT count(*) n, coalesce(sum(valor),0) total, coalesce(sum(pago_cadastro),0) pago, coalesce(sum(pago_empenho),0) pago_emp, count(*) FILTER (WHERE conferencia='divergente') divergentes FROM emendas")
         dados['financas'] = db.cfg(b, 'financas', {})
+    if ctx['mods'].get('bi'):  # bloco "Indicadores em números": até 4 indicadores marcados em destaque no catálogo
+        from . import painel as P
+        dados['indicadores'] = P.destaques(b)
     if ctx['mods'].get('diario'):
         dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND NOT modo_teste ORDER BY data DESC, numero DESC, letra DESC LIMIT 4")
     destaque = [x for x in blocos if x['regiao'] == 'destaque']

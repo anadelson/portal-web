@@ -1,0 +1,41 @@
+{% extends 'admin/base.html' %}{% block h1 %}{{ i.nome }}{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<p><a href="/admin/indicadores">← Painel de indicadores</a> · {{ tema_nome }} · <a href="/painel/{{ i.chave }}">ver no portal</a></p>
+<p>Fonte: {% if link %}<a href="{{ link }}">{{ i.fonte }}</a>{% else %}{{ i.fonte }}{% endif %} · {{ i.periodicidade }} · atualização {{ 'automática' if i.modo == 'automatico' else 'manual' }}{% if i.suprimir %} · contagem de pessoas: abaixo de 5 aparece como “menos de 5”{% endif %}</p>
+{% if i.pendente %}<p class="chip alerta">{{ i.pendente }}</p>{% endif %}
+{% if aviso %}<p class="chip erro">{{ aviso }}</p>{% endif %}
+
+<section class="cx"><h2>Configuração</h2>
+<form class="campos" method="post" action="/admin/indicadores/{{ i.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="config">
+<label>Texto explicativo (linguagem simples e neutra)<textarea name="descricao" rows="3" maxlength="1200">{{ i.descricao }}</textarea></label>
+<div class="grade2"><label>Meta (opcional)<input name="meta" inputmode="decimal" value="{{ '' if i.meta is none else (i.meta|string).replace('.', ',') }}"></label>
+<label>Base legal ou documento da meta<input name="meta_base_legal" value="{{ i.meta_base_legal }}" maxlength="400"></label></div>
+<div class="grade2"><label>Ordem na área<input name="ordem" type="number" value="{{ i.ordem }}"></label>
+<fieldset><legend>Exibição</legend><label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="visivel" value="1" {{ 'checked' if i.visivel }}> Visível no portal</label>
+<label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="destaque" value="1" {{ 'checked' if i.destaque }}> Destaque na página inicial (até 4)</label></fieldset></div>
+<p class="legal">O texto continua no ar no período eleitoral (classe transparência): sem nomes de agentes políticos, adjetivos de promoção ou exclamações (Constituição, art. 37, § 1º).</p>
+<button class="btn">Salvar</button></form></section>
+
+{% if i.modo == 'manual' %}
+<section class="cx"><h2>Lançamento manual</h2>
+<p>Use só o número publicado pela fonte oficial e cite o documento no motivo. Todo lançamento fica no histórico e no registro de ações.</p>
+<form class="campos" method="post" action="/admin/indicadores/{{ i.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="lancar">
+<div class="grade2"><label>Período (ex.: 2024)<input name="periodo" required maxlength="40"></label><label>Fim do período de referência<input name="data_ref" type="date" required></label></div>
+{% if i.formato == 'faixa' %}<label>Faixa<select name="texto" required><option value="">Escolha</option>{% for f in faixas %}<option>{{ f }}</option>{% endfor %}</select></label>
+{% else %}<label>Valor ({{ i.unidade }})<input name="valor" inputmode="decimal" required></label>{% endif %}
+<label>Observação pública (opcional; ex.: link do documento)<input name="nota" maxlength="300"></label>
+<label>Motivo e documento de origem (obrigatório)<textarea name="motivo" rows="2" required minlength="10"></textarea></label>
+<button class="btn">Lançar valor</button></form></section>
+{% endif %}
+
+<div class="tabela"><table><caption>Série publicada</caption><thead><tr><th scope="col">Período</th><th scope="col" class="num">Valor exibido</th><th scope="col">Observação</th><th scope="col">Origem</th><th scope="col">Atualizado em</th><th scope="col"><span class="sr">Ação</span></th></tr></thead><tbody>
+{% for x in serie %}<tr><td>{{ x.periodo }}{% if x.parcial %} <small>(parcial)</small>{% endif %}</td><td class="num">{{ exibir(i, x) }}</td><td>{{ x.nota }}{% if x.motivo %}<br><small>motivo: {{ x.motivo }}</small>{% endif %}</td><td>{{ 'manual · ' ~ x.usuario if x.origem == 'manual' else 'coletor' }}</td><td>{{ x.coletado_em|br }}</td>
+<td>{% if x.origem == 'manual' %}<form class="inline" method="post" action="/admin/indicadores/{{ i.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="excluir"><input type="hidden" name="valor_id" value="{{ x.id }}"><label class="sr" for="m{{ x.id }}">Motivo da exclusão</label><input id="m{{ x.id }}" name="motivo" placeholder="Motivo da exclusão" required minlength="10"><button class="btn sec">Excluir</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="6">Aguardando primeira coleta (o indicador não aparece no portal enquanto não houver valor).</td></tr>{% endfor %}
+</tbody></table></div>
+
+<section class="cx"><h2>Histórico deste indicador</h2>
+<div class="tabela"><table><caption class="sr">Histórico</caption><thead><tr><th scope="col">Quando</th><th scope="col">Quem</th><th scope="col">O que mudou</th></tr></thead><tbody>
+{% for h in hist %}<tr><td>{{ h.quando|br }}</td><td>{{ h.usuario }}</td><td>{{ h.acao }}</td></tr>{% else %}<tr><td colspan="3">Nenhuma alteração registrada.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

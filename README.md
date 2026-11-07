@@ -114,8 +114,24 @@ segredos/teste/   cadeia de TESTE (python -m app.assinatura gerar-teste)
 ### Acesso
 Senha + **segundo fator (aplicativo autenticador)** obrigatório nos painéis e no console, com 10 códigos de recuperação de uso único; 5 erros bloqueiam a conta por 15 min (e a origem, se insistir); sessão expira após 30 min sem uso; o administrador do órgão pode “Refazer 2º fator” e “Desbloquear” em Usuários e perfis. **Não troque `TOTP_CHAVE` depois que as pessoas cadastrarem o autenticador** (os segredos ficam ilegíveis e todos teriam de refazer o cadastro).
 
+## Painel de indicadores (Fase 7, módulo opcional "bi")
+- Público:
+  - `/painel` (abas Tudo, Dinheiro público, Contratações, Saúde, Educação, Assistência social, Município e gestão);
+  - `/painel/<indicador>` (gráfico SVG gerado no servidor com tabela equivalente);
+  - downloads `/painel/baixar/<indicador|painel>.csv|json|ods`;
+  - API `/painel/api/indicadores.json` e `/painel/api/<indicador>.json`.
+- Administração: `/admin/indicadores` (catálogo, meta com base legal, destaque na página inicial, lançamento manual com motivo e auditoria, "Coletar agora").
+- Fontes por órgão do Executivo, criadas pelo `provision atualizar`:
+  - `painel`, `ibge` e `cnes`, ligadas;
+  - `mds` e `pni`, desligadas.
+  - O worker só coleta se o módulo "bi" estiver contratado e ligado.
+  - Dados nacionais ficam em `indicadores_publicos` (banco de controle) pelo código IBGE.
+- Sem o módulo, `/painel`, os downloads, a API, a tela administrativa e o bloco da página inicial saem do ar (o bloco volta ao conteúdo da Fase 4).
+- Regras: nenhum número estimado pelo portal. Contagens de pessoas abaixo de 5 aparecem como "menos de 5", inclusive nos downloads. Se a fonte falhar, fica no ar o último valor válido com o aviso "dado de <data>".
+- Ligar o MDS quando a fonte voltar: confirme os nomes dos campos (parâmetro `campos` da fonte `mds`) e ative a fonte no console.
+
 ## Testes (só em banco de teste)
-`tests/teste_fluxos.py` (fluxos e identidade visual), `tests/teste_diario_seguranca.py` (Diário assinado em modo teste, remessa, 2º fator, bloqueio, gov.br simulado; `DATA_SIMULADA=2026-11-06T10:00`, `SEGREDOS_DIR` temporário), `tests/teste_legislativo.py` (processo legislativo com legislatura e pessoas fictícias, `DATA_SIMULADA=2029-03-10`) e `tests/teste_transparencia.py` (coletores com as amostras, sem internet; LGPD; filtros; CSV/JSON; falha de fonte) recusam rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
+`tests/teste_fluxos.py` (fluxos e identidade visual), `tests/teste_diario_seguranca.py` (Diário assinado em modo teste, remessa, 2º fator, bloqueio, gov.br simulado; `DATA_SIMULADA=2026-11-06T10:00`, `SEGREDOS_DIR` temporário), `tests/teste_legislativo.py` (processo legislativo com legislatura e pessoas fictícias, `DATA_SIMULADA=2029-03-10`) , `tests/teste_transparencia.py` (coletores com as amostras, sem internet; LGPD; filtros; CSV/JSON; falha de fonte) e `tests/teste_painel.py` (painel de indicadores com respostas gravadas das fontes; `DATA_SIMULADA=2026-11-06T10:00`) recusam rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
 
 ## O que é real e o que é exemplo
 - **Real**: vereadores, partidos, votos e Mesas da 13ª à 15ª legislatura; 29 emendas impositivas com a execução de 3 delas; indicações de 2026 e parte de 2025; sessões com data; RGF/despesa com pessoal da Câmara; endereços e contatos.

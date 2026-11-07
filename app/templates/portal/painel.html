@@ -1,0 +1,38 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Painel de indicadores — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/transparencia">Transparência</a><span aria-hidden="true">›</span><span aria-current="page">Painel de indicadores</span></nav>
+<h1>Painel de indicadores</h1>
+<p class="intro" style="margin-bottom:6px">Os principais números do município, cada um com a fonte oficial, o período a que se refere e a data em que foi atualizado. Clique em um indicador para ver a série histórica, a tabela completa e baixar os dados.</p>
+<p class="legal"><strong>Base legal:</strong> {{ legal_txt }}</p>
+
+<nav class="abas" aria-label="Áreas do painel">{% for k, nome in abas %}<a href="/painel{{ '' if k == 'tudo' else '?aba=' ~ k }}"{% if aba == k %} aria-current="page"{% endif %}>{{ nome }}</a>{% endfor %}</nav>
+
+<div class="cab" style="margin:18px 0 6px"><p style="margin:0" role="status"><strong>{{ total }}</strong> indicador(es) com dados{% if aba != 'tudo' %} nesta área{% endif %}.</p>
+<span class="botoes" role="group" aria-label="Baixar o painel inteiro"><a class="btn sec" href="/painel/baixar/painel.csv" download>Baixar tudo (CSV)</a><a class="btn sec" href="/painel/baixar/painel.ods" download>ODS</a><a class="btn sec" href="/painel/baixar/painel.json">JSON</a></span></div>
+<p class="legal" style="margin-bottom:18px">LGPD: só números agregados. Contagens de pessoas menores que 5 aparecem como “menos de 5”, para não permitir identificar ninguém (LGPD, art. 6º, III).</p>
+
+{% for t, nome, itens in grupos %}
+<section class="ind-tema" aria-labelledby="h-{{ t }}">
+<h2 id="h-{{ t }}">{{ nome }}</h2>
+{% if itens %}
+<ul class="ind-cartoes">
+{% for i in itens %}
+<li class="ind-cartao">
+<h3><a href="/painel/{{ i.chave }}">{{ i.nome }}</a></h3>
+<p class="ind-valor"><span class="v">{{ i.valor_curto }}</span>{% if i.unidade and i.formato not in ('moeda', 'pct') %} <span class="u">{{ i.unidade }}</span>{% endif %}</p>
+<p class="ind-per">Referência: <strong>{{ i.ult.periodo }}</strong>{% if i.ult.nota %} · {{ i.ult.nota }}{% endif %}</p>
+{% if i.variacao %}<p class="ind-var">{{ i.variacao }}</p>{% endif %}
+{% if i.meta_txt %}<p class="ind-meta">{{ i.meta_txt }}</p>{% endif %}
+{{ i.spark }}
+{% if i.aviso %}<p class="nota" role="note">{{ i.aviso }}</p>{% endif %}
+<p class="ind-fonte">Fonte: {% if i.link %}<a href="{{ i.link }}">{{ i.fonte }}</a>{% else %}{{ i.fonte }}{% endif %} · atualizado em {{ i.ult.coletado_em|br }}</p>
+</li>
+{% endfor %}
+</ul>
+{% else %}
+<p class="vazio">{% if t == 'social' %}Os indicadores de assistência social (Bolsa Família, Cadastro Único e BPC) aparecem quando a fonte oficial do Ministério do Desenvolvimento e Assistência Social voltar a responder.{% else %}Ainda não há indicadores com dados nesta área.{% endif %}</p>
+{% endif %}
+</section>
+{% endfor %}
+{% endblock %}

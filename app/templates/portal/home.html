@@ -33,6 +33,13 @@
 <div class="protocolo"><form action="/acesso" role="search" aria-label="Acompanhar pedido"><label for="f-prot">Acompanhe seu pedido<input id="f-prot" name="protocolo" placeholder="Número do protocolo, ex.: OUV-2026-ABC123"></label><button class="btn" type="submit">Consultar</button></form><p>Ouvidoria e pedidos de informação usam o mesmo número de protocolo.</p></div>
 </section>
 
+{% elif b.chave == 'numeros' and mods.bi and d.indicadores %}
+<section class="painel" aria-labelledby="h-num">
+<div class="cab" style="align-items:flex-end"><div><p class="rotulo">Painel de indicadores</p><h2 id="h-num">{{ (ident.nome_curto or 'O município') ~ ' em números' }}</h2><p style="margin:4px 0 0;color:var(--sub)">Números oficiais, cada um com a fonte e o período de referência.</p></div></div>
+<ul class="ind-home">{% for i in d.indicadores %}<li><span class="l"><a href="/painel/{{ i.chave }}">{{ i.nome }}</a></span><span class="v">{{ i.valor_curto }}{% if i.unidade and i.formato not in ('moeda', 'pct') %} <small style="font-size:14px;font-weight:600;color:var(--sub)">{{ i.unidade }}</small>{% endif %}</span><span class="d">{{ i.ult.periodo }}{% if i.ult.nota %} · {{ i.ult.nota }}{% endif %}</span>{% if i.meta_txt %}<span class="d">{{ i.meta_txt }}</span>{% endif %}<span class="d">Fonte: {{ i.fonte }}</span></li>{% endfor %}</ul>
+<nav class="pilulas" aria-label="Atalhos do painel"><a class="pilula cheia" href="/painel">Painel de indicadores</a><a class="pilula" href="/transparencia">Portal da Transparência</a><a class="pilula" href="/dados-abertos">Dados abertos</a></nav>
+</section>
+
 {% elif b.chave == 'numeros' and d.numeros %}
 <section class="painel" aria-labelledby="h-num">
 <div class="cab" style="align-items:flex-end"><div><p class="rotulo">Prestação de contas</p><h2 id="h-num">{{ (ident.nome_curto or 'O município') ~ ' em números' }}</h2><p style="margin:4px 0 0;color:var(--sub)">Quanto a Prefeitura arrecada e gasta em {{ d.numeros.ano }}.</p></div>
@@ -55,7 +62,7 @@
 <h2 id="h-conheca">{{ cx.titulo }}</h2><p>{{ cx.texto }}</p>
 {% if cx.numeros %}<dl>{% for n in cx.numeros %}<div><dt>{{ n[0] }}</dt><dd>{{ n[1] }}</dd></div>{% endfor %}</dl>{% endif %}
 {% if cx.fonte %}<p class="legal" style="margin:0">{{ cx.fonte }}</p>{% endif %}
-{% if mods.bi %}<a class="pilula" style="align-self:flex-start" href="/transparencia">{{ ident.nome_curto }} em números</a>{% endif %}
+{% if mods.bi %}<a class="pilula" style="align-self:flex-start" href="/painel">{{ ident.nome_curto }} em números</a>{% endif %}
 </div>
 {% if cx.fotos %}<div class="mosaico">{% for f in cx.fotos %}<figure class="{{ 'alta' if loop.first and cx.fotos|length > 2 }}"><img src="{{ f.url }}" alt="{{ f.alt }}" loading="lazy"><figcaption>{{ f.legenda }}</figcaption></figure>{% endfor %}</div>{% endif %}
 </section>

@@ -6,11 +6,16 @@ A falha de uma fonte (ou de uma base) só é registrada em `coletas`; o portal c
 import sys, time, traceback
 from datetime import datetime
 from . import config, db
-from .coletores import fiorilli, pncp, siconfi, tcesp, numeros, comum
+from .coletores import fiorilli, pncp, siconfi, tcesp, numeros, comum, indicadores
 
-MODULOS = {'fiorilli': fiorilli, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp}
+MODULOS = {'fiorilli': fiorilli, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp, **indicadores.MODULOS}
+# fontes do painel de indicadores: só rodam para órgão com o módulo "bi" contratado e ligado
+PAINEL = set(indicadores.MODULOS)
 # fonte -> (a cada N minutos, horas permitidas)
-FREQ = {'fiorilli': (60, range(7, 20)), 'pncp': (360, range(0, 24)), 'siconfi': (24 * 60, range(0, 24)), 'tcesp': (24 * 60, range(0, 24))}
+FREQ = {'fiorilli': (60, range(7, 20)), 'pncp': (360, range(0, 24)), 'siconfi': (24 * 60, range(0, 24)), 'tcesp': (24 * 60, range(0, 24)),
+        # painel: dados anuais (IBGE) e mensais (CNES, MDS) consultados uma vez por semana; números do próprio órgão a cada hora
+        'ibge': (7 * 24 * 60, range(2, 6)), 'cnes': (7 * 24 * 60, range(2, 6)), 'mds': (7 * 24 * 60, range(2, 6)), 'pni': (7 * 24 * 60, range(2, 6)),
+        'painel': (60, range(7, 20))}
 
 def fontes_ativas():
     return db.todos(db.PLATAFORMA, 'SELECT o.*, f.fonte, f.params FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE f.ativo AND o.ativo ORDER BY o.id, f.fonte')
@@ -20,6 +25,13 @@ def tcesp_pendente(o, p):
     if config.hoje().day == 20:
         return True
     return any(not db.um(o['banco'], "SELECT 1 FROM receitas WHERE fonte='tcesp' AND ano=%s LIMIT 1", (a,)) for a in p.get('anos', []))
+
+def bi_ligado(o):
+    from .web import modulos_do_orgao
+    try:
+        return bool(modulos_do_orgao(o).get('bi'))
+    except Exception:
+        return False
 
 def rodar(o, fonte, p):
     inicio = datetime.now()
@@ -71,6 +83,9 @@ def main():
                 k = (f['slug'], f['fonte'])
                 if agora.hour not in horas or (k in ultimo and (agora - ultimo[k]).total_seconds() < cada * 60):
                     continue
+                if f['fonte'] in PAINEL and not bi_ligado(f):
+                    ultimo[k] = agora
+                    continue
                 if f['fonte'] == 'tcesp' and not tcesp_pendente(f, f['params']):
                     ultimo[k] = agora
                     continue
@@ -85,7 +100,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'uma-vez':
         so = set(sys.argv[2:])  # opcional: só estas fontes (ex.: uma-vez fiorilli pncp)
         for f in fontes_ativas():
-            if not so or f['fonte'] in so:
+            if (not so or f['fonte'] in so) and (f['fonte'] not in PAINEL or bi_ligado(f)):
                 rodar(f, f['fonte'], f['params'])
         db.fechar()
     else:

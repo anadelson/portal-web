@@ -28,7 +28,7 @@ def coletar(orgao, p, hoje=None):
             L.append({'chave': chave('pncp', i.get('numero_controle_pncp') or i.get('id')), 'fonte': FONTE, 'ano': int(i.get('ano') or (dt.year if dt else 0)),
                       'numero': txt(i.get('numero_controle_pncp'), 60), 'modalidade': txt(i.get('modalidade_licitacao_nome'), 60),
                       'objeto': txt(i.get('description') or i.get('title'), 800), 'situacao': txt(i.get('situacao_nome'), 60), 'data': dt,
-                      'valor': num(i.get('valor_global')), 'unidade': txt(i.get('unidade_nome'), 200),
+                      'valor': next((num(i.get(k)) for k in ('valor_global', 'valor_total_homologado', 'valor_total_estimado') if i.get(k) is not None), None),  # valor_global vem vazio na busca; usa o homologado ou o estimado 'unidade': txt(i.get('unidade_nome'), 200),
                       'link': ('https://pncp.gov.br/app' + i['item_url']) if i.get('item_url') else ''})
         if not itens or len(itens) < 50:
             break

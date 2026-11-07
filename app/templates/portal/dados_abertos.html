@@ -14,4 +14,13 @@
 {% for x in bases %}<tr><td><a href="/transparencia/{{ x.chave }}"><strong>{{ x.titulo }}</strong></a><small style="display:block;color:var(--sub)"><code>{{ x.chave }}</code> · campos: {{ x.colunas|map(attribute=0)|join(', ') }}</small></td><td>{{ x.fontes.values()|join('; ') }}</td><td class="num">{{ x.n }}</td><td>{{ x.atualizado|br if x.atualizado else '—' }}</td>
 <td style="white-space:nowrap"><a href="/transparencia/{{ x.chave }}.csv" download aria-label="CSV de {{ x.titulo }}">CSV</a> · <a href="/dados/{{ x.chave }}.json" aria-label="JSON de {{ x.titulo }}">JSON</a></td></tr>{% endfor %}
 </tbody></table></div>
+{% if inds %}
+<section aria-labelledby="h-ind" style="margin-top:28px"><h2 id="h-ind">Painel de indicadores</h2>
+<p>Cada indicador do <a href="/painel">painel</a> em CSV, ODS e JSON, com período de referência, fonte, link da fonte e data da coleta. O painel inteiro: <a href="/painel/baixar/painel.csv" download>CSV</a> · <a href="/painel/baixar/painel.ods" download>ODS</a> · <a href="/painel/baixar/painel.json">JSON</a> · API: <code>GET https://{{ orgao.dominio }}/painel/api/indicadores.json</code> e <code>/painel/api/&lt;indicador&gt;.json</code>.</p>
+<p class="legal">LGPD: só agregados; contagens de pessoas abaixo de 5 saem sem o número (coluna <code>valor</code> vazia e <code>valor_exibido</code> = “menos de 5”).</p>
+<div class="tabela"><table><caption class="sr">Indicadores disponíveis</caption><thead><tr><th scope="col">Indicador</th><th scope="col">Fonte</th><th scope="col" class="num">Períodos</th><th scope="col">Atualizado em</th><th scope="col">Baixar</th></tr></thead><tbody>
+{% for x in inds %}<tr><td><a href="/painel/{{ x.chave }}"><strong>{{ x.nome }}</strong></a><small style="display:block;color:var(--sub)">{{ x.tema }} · <code>{{ x.chave }}</code></small></td><td>{{ x.fonte }}</td><td class="num">{{ x.n }}</td><td>{{ x.atualizado|br if x.atualizado else '—' }}</td>
+<td style="white-space:nowrap"><a href="/painel/baixar/{{ x.chave }}.csv" download aria-label="CSV de {{ x.nome }}">CSV</a> · <a href="/painel/baixar/{{ x.chave }}.ods" download aria-label="ODS de {{ x.nome }}">ODS</a> · <a href="/painel/baixar/{{ x.chave }}.json" aria-label="JSON de {{ x.nome }}">JSON</a></td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endif %}
 {% endblock %}

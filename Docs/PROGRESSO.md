@@ -467,3 +467,82 @@ Comando para editar na VPS: `nano /opt/portal_web/.env` (depois `docker compose 
 **Fase 6 concluída em MODO TESTE (07/11/2026).** Correção da rotina automática reimplantada (backup antes; 4 suítes com ERROS: 0 na imagem nova): em modo teste o worker não cria/publica edições sozinho (`DIARIO_AUTOMATICO_TESTE=0`); produção com 0 edições do Diário em pm-bora e cm-bora; branch `fase-6` mesclada em `main` com tag `fase-6`.
 
 Para passar a OFICIAL falta (com o órgão): certificados A1/A3 ICP-Brasil reais em `segredos/a1` e raízes em `segredos/icp`, contrato com ACT (preencher `ACT_*`), credenciais gov.br (`GOVBR_CLIENT_ID`/`GOVBR_CLIENT_SECRET`), lei municipal do Diário e designações; depois `DIARIO_MODO=oficial` e `python -m app.diario_servico limpar-teste` — cada passo com aprovação.
+
+## Fase 7 — Painel de indicadores (módulo "bi")
+
+### ETAPA 0 — Descoberta (07/11/2026, só leitura, a partir da VPS)
+- Fase 6 conferida: tag `fase-6` contida em `main`. **`Docs/fase7.tgz` não existe na VPS**; `Docs/PEDIDO-FASE7.md` e as referências (FONTES-DADOS.md de 05/11, protótipos) já estavam presentes e foram usados.
+- Respondem: Fiorilli (receitas/despesas 2026 até 06/11), PNCP (falhou na 1ª tentativa, respondeu na 2ª), TCESP receitas (último mês com dados: set/2026; out/2026 vazio), Siconfi RREO Anexo 14 (último com saúde/MDE/FUNDEB: 2026 3º bim; 1º, 2º e 4º bim. vêm sem essas linhas), CNES (2 estabelecimentos), SIDRA 2612/2654 (até 2024), SIDRA 6449 (até 2021), IBGE agregados v3 (população estimada 2026, Censo 2022, PIB até 2023), IBGE pesquisas v1 (PIB per capita, IDEB 40, CEMPRE 19 até 2024, Censo 2022 alfabetização e esgotamento).
+- Não respondem / bloqueados: TCESP IEG-M Pentaho (401 — exige autenticação, não contornado), MDS MI Social (302 para aviso de manutenção), INEP download.inep.gov.br (conexão TLS encerrada pelo servidor a partir da VPS — não contornado), QEdu (robots.txt 403 — descartado).
+- Vacinação PNI: responde, mas devolve microdados individuais e sem filtro por município → mantém desligado; a amostra de 1 registro foi apagada na hora.
+- e-SIC/Ouvidoria do portal: tabela `esic` (tipo pedido/manifestação) com 0 registros em pm-bora e cm-bora.
+- Arquivos temporários da descoberta apagados. Lista de fontes **aprovada pelo usuário em 07/11/2026** ("Aprovo a lista").
+
+### Implementação (branch `fase-7`, 07/11/2026)
+- **Migrações** `009_plataforma_indicadores` (fontes novas `ibge`, `cnes`, `mds`, `pni`, `painel`; tabela `indicadores_publicos` por código IBGE, para servir a outros municípios) e `010_orgao_indicadores` (`indicadores` = catálogo; `indicador_valores` = série com período, data de referência, valor, nota, parcial, origem coletor/manual, usuário e motivo; `indicador_historico`). Idempotentes, via `provision atualizar`.
+- **Catálogo** (`app/painel.py`): 42 indicadores em 6 áreas, sendo 8 do IEG-M (resultado geral e 7 dimensões). Textos neutros (classe transparência). Até 4 destaques na página inicial (padrão: receita do ano, saúde 15%, educação 25%, população). O código atualiza fonte, link e unidade; texto explicativo, meta, visibilidade, ordem e destaque são do administrador e nunca são sobrescritos.
+- **Coletores** (`app/coletores/indicadores.py`, no worker, só com o módulo "bi" ligado):
+  - IBGE (população 6579 + Censo 4709, PIB per capita 38/47001, CEMPRE 19 pela última versão, Censo 2022 10101, IDEB 40, SIDRA 2612/2654): semanal.
+  - CNES por tipo: semanal.
+  - `painel` (receita/despesa Fiorilli, TCESP para anos fechados, PNCP, e-SIC/Ouvidoria e mínimos do Siconfi): a cada hora das 7h às 19h; o Siconfi, no máximo 1 vez por dia, e anos fechados só uma vez.
+  - MDS e PNI ficam prontos e **desligados**.
+- **Correção da Fase 4:** a busca do PNCP traz `valor_global` sempre vazio; o coletor agora grava o homologado ou, se não houver, o estimado.
+- **Siconfi:** em 2022 e 2023 o Anexo 14 de Borá não traz as linhas dos mínimos, então esses anos ficam sem valor (nada inventado). Em 2026, o FUNDEB ainda não aparece em nenhum bimestre.
+- **LGPD:**
+  - Contagens de pessoas abaixo de 5 aparecem como "menos de 5" em telas, gráficos, CSV, JSON, ODS e API (valor vazio).
+  - Percentual e prazo médio do e-SIC só são calculados com 5 ou mais pedidos respondidos.
+  - Nunca nome de solicitante; nunca a lista de profissionais do CNES; vacinação desligada (microdados).
+- **Portal:**
+  - `/painel` com abas, cartões (número, unidade, referência, variação em texto, situação da meta em texto, mini gráfico decorativo, fonte e atualização, aviso "dado de <data>" se a última coleta falhou).
+  - `/painel/<indicador>` com gráfico SVG gerado no servidor (paleta Okabe-Ito, rótulos em todas as barras, meta tracejada, barra tracejada para "menos de 5", `role=img` com título e descrição), tabela equivalente, ficha (fonte com link, periodicidade, referência, atualização) e "Base legal:".
+  - Downloads CSV/JSON/ODS por indicador e do painel inteiro, também listados em `/dados-abertos`.
+  - API pública `/painel/api/indicadores.json` e `/painel/api/<indicador>.json`; a Câmara deve ler por aqui, se precisar.
+- **Página inicial:** o bloco "Indicadores em números" mostra os destaques do catálogo quando o módulo está ligado; sem o módulo, volta ao conteúdo da Fase 4.
+- **Painel administrativo** `/admin/indicadores` (só perfil admin, só com "bi"):
+  - situação da última coleta, ativar/ocultar, ordem e meta (exige base legal);
+  - texto explicativo, recusado se tiver tom de propaganda;
+  - destaque (máximo 4);
+  - lançamento manual só para indicadores sem fonte automática (IEG-M e Saeb), com motivo obrigatório, histórico e auditoria; exclusão com motivo;
+  - botão "Coletar agora".
+- **Testes** (`tests/teste_painel.py`, respostas gravadas em `tests/fixtures/painel_respostas.json`, sem internet, banco de TESTE): coleta e série, falha mantendo o último valor com aviso, "menos de 5", lançamento manual com auditoria e histórico, CSV/JSON/ODS, módulo desligado esconde tudo, acessibilidade (gráfico com título/descrição e tabela equivalente). Resultado: **ERROS: 0**; as 4 suítes anteriores também com **ERROS: 0** (código novo montado na imagem atual, sem build).
+- **Conferência só de leitura dos coletores contra as fontes reais** (sem gravar): população 2026 = 935; IDEB anos iniciais (municipal) 2025 = 6,6; saúde 2025 = 20,36%; MDE 2025 = 31,23%; FUNDEB 2025 = 97,73%; CNES = 2 estabelecimentos. Tudo bate com a ETAPA 0.
+
+### Onde parou
+Código pronto e testado na branch `fase-7` (sem build nem implantação). **Aguardando aprovação** para:
+1. snapshot;
+2. build;
+3. backup e `up -d`;
+4. `provision atualizar`;
+5. ligar o módulo "bi" da Prefeitura no console;
+6. primeira coleta real;
+7. conferência de 5 indicadores com a fonte;
+8. merge e tag `fase-7`.
+
+### Implantação (07/11/2026, aprovada: "Aprovo os 6 passos" + "Snapshot ok")
+- Build feito; as 5 suítes com a imagem nova deram ERROS: 0. Backup feito, `up -d` de app e worker (app saudável) e `provision atualizar` (42 indicadores e 5 fontes do painel em pm-bora; migração 010 também no banco da Câmara, sem catálogo).
+- Módulo "bi" contratado para pm-bora (UPDATE em `orgao_modulos` + registro em `log_console`). `/painel` responde 200.
+- Primeira coleta: CNES ok (2), IBGE ok (67 valores de 11 indicadores), Siconfi ok (11 valores), dados próprios ok.
+- **Problema encontrado:** o PNCP derrubou a conexão nas páginas 7 e 11, então a coleta foi parcial. Os registros de 2025 no banco vão só de 07/08 a 18/12/2025, mas o painel publicou 2025 como "ano completo" (184 contratações). Decisão do usuário: "Aprovo os dois".
+- **Correção (aprovada):**
+  - Os 3 indicadores de contratações foram ocultados de imediato.
+  - Código: um ano do PNCP só é publicado se o banco já tem publicações do ano anterior (a busca vem da mais recente para a mais antiga), e valores de anos incompletos são apagados. Há teste novo para isso.
+  - As 5 suítes deram ERROS: 0. Depois: build, backup, `up -d` e a coleta do painel.
+  - Hoje o painel publica só 2026 (466 contratações, parcial, até 07/11). Os 3 indicadores voltaram a ficar visíveis.
+  - Pendente: o PNCP derruba a conexão por volta da página 7 a 11. Os anos anteriores entram quando uma coleta de 6 em 6 horas conseguir ler mais páginas. Uma melhoria futura é retomar a paginação de onde parou.
+- **Conferência de 5 indicadores no domínio × fonte original** (07/11/2026, 13h54 de Brasília; valor do domínio lido em `/painel/api/<indicador>.json`, valor da fonte lido direto da API oficial):
+
+| Indicador | Domínio (pmbora.conectatech.tech) | Fonte original | Resposta da fonte | Confere |
+|---|---|---|---|---|
+| População estimada 2026 | 935 | IBGE agregados v3, tabela 6579, variável 9324, N6[3507209] | `{'2026': '935'}` | sim |
+| PIB per capita 2023 | R$ 133.365,32 | IBGE pesquisas v1, 38/47001/3507209 | `{'2023': '133365.32'}` | sim |
+| IDEB anos iniciais, rede municipal, 2025 | 6,6 | IBGE pesquisas v1, 40/78188/3507209 (INEP) | `{'2025': '6.6'}` | sim |
+| Aplicação em saúde 2025 | 20,36% | Siconfi RREO 2025, 6º bimestre, Anexo 14, id_ente 3507209 | "% Aplicado Até o Bimestre" = 20.36 | sim |
+| Estabelecimentos de saúde (nov/2026) | 2 | CNES, `estabelecimentos?codigo_municipio=350720` | 2 (tipos 2 e 68) | sim |
+
+- Verificação final:
+  - pmbora: `/`, `/painel`, `/painel/saude_minimo`, `/dados-abertos`, download ODS e `/admin/login` respondem 200; a página inicial mostra o bloco de destaques.
+  - cmbora responde 200, e `/painel` da Câmara responde 404 (sem painel próprio, como pedido).
+  - Worker sem erros; demais sites da VPS no ar.
+
+### Onde parou
+Fase 7 concluída (07/11/2026): implantada, conferida, `fase-7` mesclada em `main` com tag `fase-7` (aprovado: "Aprovo o merge"). Pendências fora do código: PNCP instável (anos anteriores entram quando uma coleta ler mais páginas), MDS fora do ar (ligar a fonte `mds` quando voltar), IEG-M e Saeb por lançamento manual, `Docs/fase7.tgz` nunca chegou à VPS.

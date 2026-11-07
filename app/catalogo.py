@@ -42,7 +42,7 @@ BLOCOS = {
     'emendas': ('Emendas impositivas', ['principal', 'lateral'], 'emend', False, 'legislativo'),
     'sessoes': ('Últimas sessões', ['principal', 'lateral'], 'sess', False, 'legislativo'),
     'projetos': ('Projetos em tramitação', ['principal', 'lateral'], 'prop', False, 'legislativo'),
-    'numeros': ('Números do município (só aparece com dados)', ['principal'], 'transp', False, 'executivo'),
+    'numeros': ('Indicadores em números (só aparece com dados; com o módulo "bi", mostra os destaques do painel)', ['principal'], 'transp', False, 'executivo'),
     'conheca': ('Conheça a cidade (mosaico de fotos)', ['principal'], None, False, 'executivo'),
     'sede': ('Sede e atendimento', ['principal', 'lateral'], None, False, 'ambos'),
     'rodape': ('Rodapé com links obrigatórios', ['rodape'], None, True, 'ambos'),
