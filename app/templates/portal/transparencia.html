@@ -1,17 +1,21 @@
 {% extends 'portal/base.html' %}
-{% block conteudo %}<h1>Transparência</h1>
-<p>Receitas, despesas, contratos, pessoal e relatórios fiscais de {{ ident.nome }}.</p>
-{% if orgao.tipo == 'legislativo' and fin %}
-<section class="secao"><h2>Despesa com pessoal (RGF do Legislativo)</h2><div class="tabela"><table><thead><tr><th scope="col">Exercício</th><th scope="col">Período</th><th scope="col">Despesa</th><th scope="col">% da RCL</th></tr></thead><tbody>
-{% for x in fin.dtp %}<tr><td>{{ x[0] }}</td><td>{{ x[1] }}</td><td>{{ x[2]|moeda }}</td><td>{{ x[3]|string|replace('.', ',') }}%</td></tr>{% endfor %}</tbody></table></div><p class="legal">Limite: 6% da receita corrente líquida (LRF, art. 20, III, a). Fonte: {{ fin.fonte }}</p></section>
-<section class="secao"><h2>Entregas do RGF ao Siconfi</h2><ul>{% for x in fin.rgf %}<li>{{ x[0] }}: entregue em {{ x[1] }}</li>{% endfor %}</ul></section>
-{% else %}
-<div class="grade">
-<a class="cartao" href="https://borasp.dcfiorilli.com.br:879/transparencia/"><h3>Receitas e despesas</h3><span>Sistema contábil (dados em tempo real)</span></a>
-<a class="cartao" href="https://pncp.gov.br/app/editais?q=&municipios=3507209"><h3>Licitações e contratos</h3><span>Portal Nacional de Contratações Públicas</span></a>
-<a class="cartao" href="https://siconfi.tesouro.gov.br/"><h3>Relatórios fiscais (RREO e RGF)</h3><span>Siconfi — Tesouro Nacional</span></a>
-{% if mods.diario %}<a class="cartao" href="/diario"><h3>Diário Oficial</h3><span>Atos oficiais publicados</span></a>{% endif %}
+{% block titulo %}Transparência — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Transparência</span></nav>
+<h1>Portal da Transparência</h1>
+<p class="intro">Receitas, despesas, contratações, pessoal e relatórios fiscais de {{ ident.nome or orgao.nome }}, com filtros e download em CSV e JSON.</p>
+<div class="servicos" style="margin-bottom:28px">
+{% for c in cards %}<a class="serv sem-foto" href="/transparencia/{{ c.chave }}">
+<span class="tema"><span class="ico">{{ icone(c.icone, 26) }}</span>{{ '%d registros'|format(c.n) if c.n else 'sem dados ainda' }}</span>
+<span class="t">{{ c.titulo }}</span><span class="d">{{ c.desc }}</span>
+<span style="margin-top:auto;font-size:13px;color:var(--sub)">{% if c.atualizado %}Atualizado em {{ c.atualizado|br }}{% else %}Aguardando a primeira coleta{% endif %}{% if c.falhou %} · <span class="chip alerta">última coleta falhou</span>{% endif %}</span>
+</a>{% endfor %}
+{% if leg and mods.emend %}<a class="serv sem-foto" href="/emendas"><span class="tema"><span class="ico">{{ icone('emendas', 26) }}</span>Prefeitura → Câmara</span><span class="t">Emendas impositivas</span><span class="d">Empenho, liquidação e pagamento de cada emenda, lidos da Prefeitura.</span></a>{% endif %}
+<a class="serv sem-foto" href="/dados-abertos"><span class="tema"><span class="ico">{{ icone('bases', 26) }}</span>CSV · JSON · API</span><span class="t">Dados abertos</span><span class="d">Todas as bases em formato aberto, com a mesma filtragem das telas.</span></a>
 </div>
-<p class="legal" style="margin-top:14px">No piloto, as bases detalhadas abrem nas fontes oficiais. A integração das telas próprias (com filtros e dados abertos) vem nas próximas fases.</p>
+{% if leg and fin and fin.dtp %}
+<section class="secao"><h2>Despesa com pessoal (RGF do Legislativo)</h2><div class="tabela"><table><caption class="sr">Despesa com pessoal da Câmara</caption><thead><tr><th scope="col">Exercício</th><th scope="col">Período</th><th scope="col" class="num">Despesa</th><th scope="col" class="num">% da RCL</th></tr></thead><tbody>
+{% for x in fin.dtp|reverse %}<tr><td>{{ x[0] }}</td><td>{{ x[1] }}</td><td class="num">{{ x[2]|moeda }}</td><td class="num">{{ '%.2f'|format(x[3])|replace('.', ',') }}%</td></tr>{% endfor %}</tbody></table></div>
+<p class="legal" style="margin-top:8px">Limite: 6% da receita corrente líquida (LRF, art. 20, III, a). Fonte: {{ fin.fonte }}</p></section>
 {% endif %}
 {% endblock %}

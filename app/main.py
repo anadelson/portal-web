@@ -4,11 +4,12 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from . import config, portal, admin, console
+from . import config, portal, admin, console, transparencia
 from .web import RoteadorPorDominio, templates
 
 app = FastAPI(title='Portais de Borá — piloto', docs_url=None, redoc_url=None, openapi_url=None)
 app.mount('/static', StaticFiles(directory=str(Path(__file__).parent / 'static')), name='static')
+app.include_router(transparencia.r)
 app.include_router(portal.r)
 app.include_router(admin.r)
 app.include_router(console.r)

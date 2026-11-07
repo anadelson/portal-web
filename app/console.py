@@ -193,5 +193,11 @@ async def layout_post(request: Request, oid: int):
 @r.get('/log')
 def ver_log(request: Request):
     gestor(request)
-    return T('log', request, itens=db.todos(db.PLATAFORMA, 'SELECT * FROM log_console ORDER BY id DESC LIMIT 300'),
-             coletas=db.todos(db.PLATAFORMA, 'SELECT * FROM coletas ORDER BY id DESC LIMIT 50'))
+    situacao = db.todos(db.PLATAFORMA, """SELECT DISTINCT ON (c.orgao_slug, c.fonte) c.*,
+        (SELECT max(fim) FROM coletas v WHERE v.orgao_slug IS NOT DISTINCT FROM c.orgao_slug AND v.fonte=c.fonte AND v.ok) ultima_ok,
+        (SELECT count(*) FROM coletas x WHERE x.orgao_slug IS NOT DISTINCT FROM c.orgao_slug AND x.fonte=c.fonte AND NOT x.ok AND x.inicio > now() - interval '24 hours') falhas_24h
+        FROM coletas c ORDER BY c.orgao_slug, c.fonte, c.id DESC""")
+    situacao.sort(key=lambda x: (x['ok'], x['orgao_slug'] or '', x['fonte']))
+    fontes = db.todos(db.PLATAFORMA, 'SELECT o.slug, f.fonte, f.ativo FROM fontes f JOIN orgaos o ON o.id=f.orgao_id ORDER BY o.slug, f.fonte')
+    return T('log', request, itens=db.todos(db.PLATAFORMA, 'SELECT * FROM log_console ORDER BY id DESC LIMIT 300'), situacao=situacao, fontes=fontes,
+             coletas=db.todos(db.PLATAFORMA, 'SELECT * FROM coletas ORDER BY id DESC LIMIT 80'))

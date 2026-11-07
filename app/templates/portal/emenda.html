@@ -11,10 +11,11 @@
 <div><dt>Empenhado (líquido)</dt><dd class="v">{{ tot.empenhado|moeda }}</dd></div>
 <div><dt>Liquidado</dt><dd class="v">{{ tot.liquidado|moeda }}</dd></div>
 <div style="border-top-color:#146C43"><dt>Pago nos empenhos</dt><dd class="v">{{ tot.pago|moeda }}</dd></div>
-<div style="border-top-color:#7A4A00"><dt>Pago segundo o cadastro</dt><dd class="v">{{ tot.pago_cadastro|moeda }}</dd></div>
+<div style="border-top-color:#7A4A00"><dt>Pago segundo o cadastro</dt><dd class="v">{{ tot.pago_cadastro|moeda }}</dd>{% if e.empenhado_cadastro is not none %}<dd class="d">cadastro: empenhado {{ e.empenhado_cadastro|moeda }} · liquidado {{ e.liquidado_cadastro|moeda }}</dd>{% endif %}</div>
 </dl>
 <p style="margin:0 0 6px;font-size:14px;color:var(--sub)">Executado: {{ '%.1f'|format(tot.pct)|replace('.', ',') }}% do valor indicado</p>
 <div class="barra" role="img" aria-label="{{ '%.1f'|format(tot.pct)|replace('.', ',') }}% do valor indicado foi pago" style="height:10px;margin-bottom:18px"><span style="width:{{ [tot.pct, 100]|min }}%;min-width:3px;background:#146C43"></span></div>
+{% if e.conferencia == 'nao_atribuivel' %}<p class="nota" role="note">O vereador tem mais de uma emenda e os empenhos com o vínculo dele não indicam a qual emenda pertencem. A execução aparece no cadastro; o caminho por empenho aguarda a identificação pela Prefeitura.</p>{% endif %}
 {% if e.conferencia == 'divergente' %}<p class="nota" role="note"><strong>Divergência:</strong> o valor pago no cadastro de emendas ({{ e.pago_cadastro|moeda }}) é diferente do valor pago nos empenhos ({{ (e.pago_empenho or 0)|moeda }}). As duas fontes são mostradas.</p>{% endif %}
 {% set d = e.detalhe %}
 {% if d %}

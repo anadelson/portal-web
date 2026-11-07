@@ -72,6 +72,25 @@ IDENT_VISUAL = {
     },
 }
 
+# Fontes de dados por órgão (Fase 4). Só valores padrão de configuração: ficam na tabela `fontes` e podem ser trocados.
+FIORILLI_BORA = 'https://borasp.dcfiorilli.com.br:879/transparencia/VersaoJson/'
+FONTES_PADRAO = {
+    'pm-bora': {'fiorilli': {'base': FIORILLI_BORA, 'empresa': '2', 'bases': ['receitas', 'despesas_unidade', 'empenhos', 'diarias', 'restos_pagar', 'ordem_cronologica', 'licitacoes', 'contratos', 'transferencias', 'servidores']},
+                'pncp': {'ibge': '3507209', 'cnpj': '44.544.906/0001-42'},
+                'siconfi': {'ibge': '3507209', 'rreo': True, 'rgf_poder': 'E'},
+                'tcesp': {'municipio': 'bora', 'anos': [2025]}},
+    'cm-bora': {'fiorilli': {'base': FIORILLI_BORA, 'empresa': '2', 'bases': ['transferencias', 'emendas'], 'recebedora': 'Câmara Municipal'},
+                'siconfi': {'ibge': '3507209', 'rgf_poder': 'L'}},
+}
+
+def configurar_fontes(oid, slug):
+    """Cadastra as fontes padrão do órgão se ainda não existirem (nunca sobrescreve a configuração feita)."""
+    n = 0
+    for fonte, params in FONTES_PADRAO.get(slug, {}).items():
+        r = db.exe(db.PLATAFORMA, 'INSERT INTO fontes (orgao_id, fonte, params) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING RETURNING 1', (oid, fonte, Jsonb(params)))
+        n += 1 if r else 0
+    return n
+
 def completar_identidade(banco, slug, tipo):
     """Acrescenta à identidade do órgão as chaves visuais que ainda não existem (nunca sobrescreve o que o órgão definiu)."""
     ident = db.cfg(banco, 'identidade', {}) or {}
@@ -128,6 +147,7 @@ def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, mun
     if not db.cfg(banco, 'identidade'):
         db.set_cfg(banco, 'identidade', IDENT.get(slug, {'nome': nome, 'cor': cor}))
     completar_identidade(banco, slug, tipo)
+    configurar_fontes(oid, slug)
     if not db.um(banco, 'SELECT 1 FROM blocos LIMIT 1'):
         for i, (k, reg) in enumerate(LAYOUT_PADRAO[tipo]):
             db.exe(banco, 'INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING', ('home', k, reg, i))
@@ -219,7 +239,8 @@ def atualizar():
     for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos ORDER BY id'):
         aplicar(o['banco'], MIG_ORGAO)
         ident = 'identidade completada' if completar_identidade(o['banco'], o['slug'], o['tipo']) else 'identidade sem mudança'
-        print(f"{o['slug']} ({o['banco']}): migrações {', '.join(m.name for m in MIG_ORGAO)} · {ident} · layout: {atualizar_layout(o['banco'], o['tipo'])}")
+        nf = configurar_fontes(o['id'], o['slug'])
+        print(f"{o['slug']} ({o['banco']}): {nf} fonte(s) nova(s) · migrações {', '.join(m.name for m in MIG_ORGAO)} · {ident} · layout: {atualizar_layout(o['banco'], o['tipo'])}")
     print('pronto.')
 
 if __name__ == '__main__':

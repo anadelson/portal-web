@@ -5,7 +5,7 @@
 <title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/portal.css?v=3">
+<link rel="stylesheet" href="/static/portal.css?v=4">
 <style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
 <script>try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
 </head>
@@ -33,8 +33,8 @@
 <a href="/acesso">e-SIC</a>
 <a href="/acesso#ouvidoria">Ouvidoria</a>
 {% if leg %}<a href="/sessoes">Sessões</a>{% if mods.emend %}<a href="/emendas">Emendas</a>{% endif %}
-{% else %}{% if mods.diario %}<a href="/diario">Diário Oficial</a>{% endif %}<a href="/transparencia#licitacoes">Licitações</a>{% endif %}
-<a href="/transparencia#dados-abertos">Dados abertos</a>
+{% else %}{% if mods.diario %}<a href="/diario">Diário Oficial</a>{% endif %}<a href="/transparencia/licitacoes">Licitações</a>{% endif %}
+<a href="/dados-abertos">Dados abertos</a>
 <a href="/admin">Área restrita (servidores)</a>
 {% for v in vizinhos %}<a class="vizinho" href="https://{{ v.dominio }}/">{{ icone('predio', 16) }}{{ v.nome.replace(' Municipal de ' ~ v.municipio.split(' (')[0], ' Municipal') if v.municipio else v.nome }}</a>{% endfor %}
 </nav></div>
@@ -81,10 +81,10 @@
 <nav class="fcol" aria-labelledby="f-ai"><h2 id="f-ai">Acesso à informação</h2><ul>
 <li><a href="/transparencia">Portal da Transparência</a></li><li><a href="/acesso">Acesso à Informação (e-SIC)</a></li><li><a href="/acesso#ouvidoria">Ouvidoria</a></li>
 {% if leg %}<li><a href="/sessoes">Sessões e votações</a></li>{% else %}<li><a href="/servicos">Carta de Serviços</a></li>{% endif %}
-<li><a href="/transparencia#dados-abertos">Dados abertos</a></li></ul></nav>
+<li><a href="/dados-abertos">Dados abertos</a></li></ul></nav>
 <nav class="fcol" aria-labelledby="f-inst"><h2 id="f-inst">Institucional</h2><ul>
 {% if leg %}<li><a href="/vereadores">Vereadores e Mesa Diretora</a></li><li><a href="/proposicoes">Projetos e proposições</a></li>{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
-{% else %}{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/transparencia#licitacoes">Licitações e contratos</a></li>{% endif %}
+{% else %}{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/transparencia/licitacoes">Licitações</a></li><li><a href="/transparencia/contratos">Contratos</a></li>{% endif %}
 {% if mods.noticias %}<li><a href="/noticias">Notícias e avisos</a></li>{% endif %}</ul>
 {% for v in vizinhos %}<a class="f-viz" href="https://{{ v.dominio }}/"><span><small>{{ 'Poder Legislativo' if v.tipo == 'legislativo' else 'Poder Executivo' }}</small><strong>{{ v.nome }}</strong></span>{{ icone('seta', 18) }}</a>{% endfor %}
 </nav>

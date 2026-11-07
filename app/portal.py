@@ -105,11 +105,6 @@ def conteudo(request: Request, cid: int):
         return templates.TemplateResponse(request, 'portal/suspenso.html', ctx, status_code=451)
     return templates.TemplateResponse(request, 'portal/conteudo.html', dict(ctx, c=c))
 
-@r.get('/transparencia')
-def transparencia(request: Request):
-    ctx = ctx_orgao(request)
-    return templates.TemplateResponse(request, 'portal/transparencia.html', dict(ctx, fin=db.cfg(ctx['orgao']['banco'], 'financas', {}), legal='transparencia'))
-
 # ---------- Câmara ----------
 def _norm(s):
     return (s or '').lower().replace('í', 'i').replace('é', 'e').replace('ã', 'a').replace('ç', 'c').replace('á', 'a').replace('ó', 'o').replace('luiz', 'luis')
