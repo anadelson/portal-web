@@ -159,6 +159,69 @@ def valores_inep(redes, etapa, edicao):
                 out.append((chave, str(a), P.fim_do_ano(a), round(x, casas), '', base, det if chave.startswith('edu_ideb') else None))
     return out
 
+COMP_URL = {'BR': 'https://download.inep.gov.br/ideb/resultados/divulgacao_brasil_ideb_{edicao}.zip',
+            'UF': 'https://download.inep.gov.br/ideb/resultados/divulgacao_regioes_ufs_ideb_{edicao}.zip'}
+ABA_ETAPA = {'ai': 1, 'af': 2, 'em': 3}
+UF_NOME = {'11': 'Rondônia', '12': 'Acre', '13': 'Amazonas', '14': 'Roraima', '15': 'Pará', '16': 'Amapá', '17': 'Tocantins', '21': 'Maranhão', '22': 'Piauí',
+           '23': 'Ceará', '24': 'Rio Grande do Norte', '25': 'Paraíba', '26': 'Pernambuco', '27': 'Alagoas', '28': 'Sergipe', '29': 'Bahia', '31': 'Minas Gerais',
+           '32': 'Espírito Santo', '33': 'Rio de Janeiro', '35': 'São Paulo', '41': 'Paraná', '42': 'Santa Catarina', '43': 'Rio Grande do Sul',
+           '50': 'Mato Grosso do Sul', '51': 'Mato Grosso', '52': 'Goiás', '53': 'Distrito Federal'}
+
+def _rede(v):
+    return re.sub(r'\s*\(\d+\)\s*$', '', str(v or '')).strip()
+
+def ler_comparacao(caminho_zip, etapa, alvo):
+    """Linha da rede Pública da etapa: alvo = 'Brasil' ou o nome da UF. Devolve {ano: {ideb, mat, lp}} ou {}."""
+    import zipfile, io
+    z = zipfile.ZipFile(caminho_zip)
+    nome = [n for n in z.namelist() if n.lower().endswith('.xlsx')][0]
+    dados = io.BytesIO(z.read(nome))
+    cod, achou = None, None
+    for _, l in planilha.linhas(dados, ABA_ETAPA[etapa]):
+        if cod is None:
+            if any(str(c).startswith('VL_OBSERVADO_') for c in l):
+                cod = l
+            continue
+        if len(l) > 1 and str(l[0]).strip() == alvo and _rede(l[1]) == 'Pública':
+            achou = dict(zip(cod, l))
+            break
+    if not achou:
+        return {}
+    anos = sorted({int(k[-4:]) for k in achou if re.match(r'VL_OBSERVADO_\d{4}$', str(k))})
+    out = {}
+    for a in anos:
+        v = {'ideb': _n(achou.get(f'VL_OBSERVADO_{a}')), 'mat': _n(achou.get(f'VL_NOTA_MATEMATICA_{a}')), 'lp': _n(achou.get(f'VL_NOTA_PORTUGUES_{a}'))}
+        if any(x is not None for x in v.values()):
+            out[str(a)] = v
+    return out
+
+def coletar_comparacao(ibge, edicao):
+    """Brasil e UF do município (rede Pública, mesma etapa). Sem linha equivalente, não grava (o painel não mostra)."""
+    uf = UF_NOME.get(str(ibge)[:2])
+    res = []
+    for escopo, url in COMP_URL.items():
+        alvo = 'Brasil' if escopo == 'BR' else uf
+        if not alvo:
+            continue
+        url = url.format(edicao=edicao)
+        marca = db.um(db.PLATAFORMA, "SELECT payload FROM dados_publicos WHERE ibge=%s AND fonte='inep_arquivo' AND chave=%s", (escopo if escopo == 'BR' else str(ibge)[:2], f'comparacao_{edicao}'))
+        st, lm, tam = cabecalho(url)
+        if st != 200:
+            res.append(f'{escopo}: {st}')
+            continue
+        if marca and marca['payload'].get('last_modified') == lm:
+            res.append(f'{escopo}: sem mudança')
+            continue
+        with tempfile.NamedTemporaryFile(suffix='.zip') as tmp:
+            baixar(url, tmp.name)
+            for etapa in ETAPAS:
+                serie = ler_comparacao(tmp.name, etapa, alvo)
+                if serie:
+                    guardar_publico('BR' if escopo == 'BR' else str(ibge)[:2], 'ideb_comparacao', etapa, {'nome': alvo, 'rede': 'Pública', 'edicao': edicao, 'serie': serie})
+        guardar_publico('BR' if escopo == 'BR' else str(ibge)[:2], 'inep_arquivo', f'comparacao_{edicao}', {'url': url, 'last_modified': lm})
+        res.append(f'{escopo}: ok')
+    return res
+
 def edicoes_candidatas(hoje):
     """O IDEB é bienal (anos ímpares) e sai no ano seguinte: tenta da mais recente possível para trás."""
     return [a for a in range(hoje.year - 1, hoje.year - 8, -1) if a % 2 == 1]
@@ -201,6 +264,13 @@ def coletar_inep(o, p, hoje=None):
         except Exception as e:
             P.marcar_coleta(o['banco'], 'inep', False, f'{type(e).__name__}: {str(e)[:120]}', chaves)
             res.append((etapa, False, 0, f'{nome}: {type(e).__name__}: {str(e)[:150]}'))
+    edicao = next((int(m.group(1)) for x in res for m in [re.search(r'edição (\d{4})', x[3])] if m), None)
+    if edicao:
+        try:
+            r = coletar_comparacao(ibge, edicao)
+            res.append(('comparacao', True, 0, f'comparação com UF e Brasil (rede pública), edição {edicao}: ' + ', '.join(r)))
+        except Exception as e:
+            res.append(('comparacao', False, 0, f'comparação com UF e Brasil: {type(e).__name__}: {str(e)[:120]}'))
     return res
 
 # ---------- IEG-M (TCESP) ----------
@@ -331,10 +401,26 @@ def mapear_iegm(d, ibge, fixo=None):
         por(chave, t, l0[i], cols[i])
     return {k: v for k, v in out.items() if v[0] or v[1] is not None}, cols, info
 
+def distribuicao_iegm(d):
+    """Contagem de municípios por faixa do resultado geral (só números agregados; nenhum município identificado)."""
+    meta = d.get('metadata') or []
+    cols = [m.get('colName', '') for m in sorted(meta, key=lambda m: m.get('colIndex', 0))]
+    ig = next((i for i, c in enumerate(cols) if _dim(c) == 'gestao_iegm' and not IEGM_IDENT.match(_chave_col(c))), None)
+    if ig is None:
+        return None
+    cont = {f: 0 for f in P.FAIXAS_IEGM}
+    for l in d.get('resultset') or []:
+        f = _faixa(l[ig]) if ig < len(l) else ''
+        if f:
+            cont[f] += 1
+    total = sum(cont.values())
+    return {'faixas': cont, 'total': total} if total else None
+
 def ler_iegm(ibge, anos_base, auth, fixo=None):
     """{ano_base: (valores, edicao)}, colunas vistas (só nomes) e colunas ignoradas. Ano-base e edição vêm de
     exercicio_ref e ano_apuracao da própria resposta; edição repetida é recusada."""
     out, colunas, ignoradas = {}, [], set()
+    ler_iegm.distribuicoes = {}
     for a in anos_base:
         d = buscar('iegm', IEGM_URL, {**IEGM_CONSULTA, 'parampExercicio_mapa': a}, auth=auth, tentativas=2)
         if not isinstance(d, dict) or 'resultset' not in d:
@@ -350,6 +436,9 @@ def ler_iegm(ibge, anos_base, auth, fixo=None):
         if ab in out:
             raise ValueError(f'edição repetida para o ano-base {ab}')
         out[ab] = (vals, info['edicao'] or ab + 1)
+        dist = distribuicao_iegm(d)
+        if dist:
+            ler_iegm.distribuicoes[ab] = dict(dist, edicao=info['edicao'] or ab + 1)
     edicoes = [e for _, e in out.values()]
     if len(edicoes) != len(set(edicoes)):
         raise ValueError('a mesma edição (ano_apuracao) apareceu para anos-base diferentes')
@@ -381,6 +470,8 @@ def coletar_iegm(o, p, hoje=None):
             nota = f'edição {edicao} (ano-base {a})' + (f'; nota {str(nt).replace(".", ",")}' if nt is not None else '')
             P.gravar_publico(ibge, chave, str(a), P.fim_do_ano(a), 'iegm', nt, texto=fx, nota=nota)
             n += 1
+    for a, dist in getattr(ler_iegm, 'distribuicoes', {}).items():
+        guardar_publico(ibge[:2], 'iegm_distribuicao', str(a), dist)  # por UF (código IBGE de 2 dígitos): só contagens
     copiados = P.copiar_publicos(o['banco'], ibge, IEGM_CHAVES)
     achadas = sorted({k for por, _ in vals.values() for k in por})
     faltam = [k for k in IEGM_CHAVES if k not in achadas]

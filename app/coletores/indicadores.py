@@ -113,7 +113,19 @@ def ler_cnes(ibge, hoje=None):
         t = tipos.get(e.get('codigo_tipo_unidade'), f"Tipo {e.get('codigo_tipo_unidade')}")
         cont[t] = cont.get(t, 0) + 1
     det = [[t, n] for t, n in sorted(cont.items(), key=lambda x: (-x[1], x[0]))]
+    ler_cnes.ultima_lista = lista_cnes(estab, tipos)
     return [('saude_estabelecimentos', P.rotulo_mes(hoje), P.fim_do_mes(hoje.year, hoje.month), len(estab), 'cadastro vigente na data da coleta', det)]
+
+def lista_cnes(estab, tipos):
+    """Só dados institucionais do estabelecimento (nome, tipo, endereço, código CNES). Nunca a lista de profissionais."""
+    def t(v):
+        return re.sub(r'\s+', ' ', str(v or '')).strip()
+    out = []
+    for e in estab:
+        end = ', '.join(x for x in (t(e.get('endereco_estabelecimento')).title(), t(e.get('numero_estabelecimento')), t(e.get('bairro_estabelecimento')).title()) if x and x not in ('0', 'S/N'))
+        out.append({'cnes': t(e.get('codigo_cnes')), 'nome': t(e.get('nome_fantasia') or e.get('nome_razao_social')).title(),
+                    'tipo': tipos.get(e.get('codigo_tipo_unidade'), ''), 'endereco': end})
+    return sorted(out, key=lambda x: x['nome'])
 
 # ---------- MDS (MI Social) ----------
 MDS_PADRAO = {'url': 'https://aplicacoes.mds.gov.br/sagi/servicos/misocial/',
@@ -259,6 +271,8 @@ def coletar_cnes(o, p, hoje=None):
         raise
     for chave, per, dref, v, nota, det in vals:
         P.gravar_publico(ibge, chave, per, dref, 'cnes', v, detalhe=det, nota=nota)
+    from .comum import guardar_publico
+    guardar_publico(ibge, 'cnes_lista', 'atual', {'competencia': vals[0][1], 'estabelecimentos': getattr(ler_cnes, 'ultima_lista', [])})
     n = P.copiar_publicos(o['banco'], ibge, _chaves('cnes'))
     P.marcar_coleta(o['banco'], 'cnes', True, f'{vals[0][3]:.0f} estabelecimentos')
     return [('estabelecimentos', True, n, f'{vals[0][3]:.0f} estabelecimentos no CNES')]
@@ -317,7 +331,9 @@ def coletar_painel(o, p, hoje=None):
     return res
 
 from .inep_iegm import coletar_inep, coletar_iegm
-COLETORES = {'ibge': coletar_ibge, 'cnes': coletar_cnes, 'mds': coletar_mds, 'pni': coletar_pni, 'painel': coletar_painel, 'inep': coletar_inep, 'iegm': coletar_iegm}
+from . import financas as _financas
+COLETORES = {'ibge': coletar_ibge, 'cnes': coletar_cnes, 'mds': coletar_mds, 'pni': coletar_pni, 'painel': coletar_painel, 'inep': coletar_inep, 'iegm': coletar_iegm,
+             'financas': _financas.coletar}
 
 class _Modulo:
     """Adaptador para o worker (MODULOS[fonte].coletar(o, p))."""

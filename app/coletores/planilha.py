@@ -11,8 +11,8 @@ def _col(ref):
         n = n * 26 + ord(ch) - 64
     return n - 1
 
-def linhas(arquivo):
-    """Gera (número da linha, [valores como texto]) da primeira aba de um .xlsx (caminho ou arquivo aberto)."""
+def linhas(arquivo, aba_n=1):
+    """Gera (número da linha, [valores como texto]) de uma aba (1 = primeira) de um .xlsx (caminho ou arquivo aberto)."""
     z = zipfile.ZipFile(arquivo)
     ss = []
     if 'xl/sharedStrings.xml' in z.namelist():
@@ -20,7 +20,8 @@ def linhas(arquivo):
             if el.tag == NS + 'si':
                 ss.append(''.join(t.text or '' for t in el.iter(NS + 't')))
                 el.clear()
-    aba = 'xl/worksheets/sheet1.xml' if 'xl/worksheets/sheet1.xml' in z.namelist() else sorted(n for n in z.namelist() if n.startswith('xl/worksheets/sheet'))[0]
+    abas = sorted((n for n in z.namelist() if re.match(r'xl/worksheets/sheet\d+\.xml$', n)), key=lambda n: int(re.search(r'(\d+)\.xml$', n).group(1)))
+    aba = f'xl/worksheets/sheet{aba_n}.xml' if f'xl/worksheets/sheet{aba_n}.xml' in z.namelist() else abas[aba_n - 1]
     pai = None  # <sheetData>: as linhas são filhas dele; limpar a cada linha mantém a memória constante
     for ev, el in iterparse(z.open(aba), events=('start', 'end')):
         if ev == 'start':
