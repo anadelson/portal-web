@@ -25,6 +25,16 @@
 </tr>{% endfor %}
 </tbody></table></div>
 
+<section class="cx" id="areas"><h2>Agrupamento das unidades por área</h2>
+<p>Usado nos blocos “Para onde vai o dinheiro” e “Orçamento da área” do painel. A sugestão automática é a função de governo com mais empenho em cada unidade; troque quando não representar a área. Para aparecer nas seções do painel, use exatamente {% for a in areas_tema %}“{{ a }}”{{ ', ' if not loop.last }}{% endfor %}.</p>
+{% if areas %}<form method="post" action="/admin/indicadores"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="areas">
+<datalist id="opcoes-area">{% for o in opcoes_area %}<option value="{{ o }}">{% endfor %}</datalist>
+<div class="tabela"><table><caption class="sr">Unidades orçamentárias e área</caption><thead><tr><th scope="col">Código</th><th scope="col">Unidade orçamentária</th><th scope="col">Área</th><th scope="col">Origem</th></tr></thead><tbody>
+{% for a in areas %}<tr><td>{{ a.codigo }}</td><td>{{ a.unidade }}</td><td><label class="sr" for="area-{{ a.codigo }}">Área de {{ a.unidade }}</label><input id="area-{{ a.codigo }}" name="area_{{ a.codigo }}" value="{{ a.area }}" list="opcoes-area" maxlength="60"></td>
+<td>{% if a.origem == 'admin' %}<span class="chip ok">definida por {{ a.usuario }}</span> <label style="flex-direction:row;gap:4px;font-weight:400;display:inline-flex"><input type="checkbox" name="sugestao_{{ a.codigo }}" value="1"> voltar à sugestão</label>{% else %}<span class="chip">sugestão automática</span>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div><button class="btn">Salvar agrupamento</button></form>{% else %}<p>As unidades aparecem depois da primeira coleta da fonte <code>financas</code>.</p>{% endif %}
+</section>
+
 <section class="cx"><h2>Histórico de alterações</h2>
 <div class="tabela"><table><caption class="sr">Histórico de alterações do painel</caption><thead><tr><th scope="col">Quando</th><th scope="col">Quem</th><th scope="col">Indicador</th><th scope="col">O que mudou</th></tr></thead><tbody>
 {% for h in hist %}<tr><td>{{ h.quando|br }}</td><td>{{ h.usuario }}</td><td>{{ h.nome or '—' }}</td><td>{{ h.acao }}</td></tr>{% else %}<tr><td colspan="4">Nenhuma alteração registrada.</td></tr>{% endfor %}
