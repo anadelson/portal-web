@@ -227,6 +227,10 @@ def init():
         registrar_orgao(slug, nome, tipo, dom(), banco, plano, cor, opc)
     seed_prefeitura('bd_pm_bora')
     seed_camara('bd_cm_bora')
+    from . import remessa
+    np = remessa.configurar_pares()
+    if np:
+        print(f'{np} integração(ões) entre órgãos criada(s) (token guardado no banco de controle)')
     print('pronto.')
 
 def atualizar():
@@ -246,6 +250,10 @@ def atualizar():
             if na:
                 print(f"  {na} proposição(ões) antiga(s) com autoria vinculada aos vereadores")
         print(f"{o['slug']} ({o['banco']}): {nf} fonte(s) nova(s) · migrações {', '.join(m.name for m in MIG_ORGAO)} · {ident} · layout: {atualizar_layout(o['banco'], o['tipo'])}")
+    from . import remessa
+    np = remessa.configurar_pares()
+    if np:
+        print(f'{np} integração(ões) entre órgãos criada(s) (token guardado no banco de controle)')
     print('pronto.')
 
 if __name__ == '__main__':

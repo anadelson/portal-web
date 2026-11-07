@@ -647,3 +647,34 @@ async def diario_config_post(request: Request):
         return ir('/admin/diario/config', str(ex), request)
     auditar(request, f'Diário (configuração): {acao}')
     return ir('/admin/diario/config', msg, request)
+
+# ---------- remessa ao Diário de outro órgão (ex.: Câmara → caderno Legislativo da Prefeitura) ----------
+from . import remessa as RM
+from starlette.concurrency import run_in_threadpool
+
+@r.get('/remessas')
+def remessas(request: Request):
+    u = exige(request)
+    o = request.state.orgao
+    destino = RM.destino_do(o)
+    if not destino:
+        raise HTTPException(404, 'Este órgão não envia atos ao Diário de outro órgão.')
+    return T('remessas', request, u, destino=destino, tipos=RM.TIPOS_REMESSA, itens=db.todos(o['banco'], 'SELECT * FROM remessas ORDER BY id DESC LIMIT 100'))
+
+@r.post('/remessas')
+async def remessas_post(request: Request):
+    u = exige(request, 'diario_enviar'); f = await ler_form(request)
+    o = request.state.orgao
+    try:
+        if f.get('acao') == 'enviar':
+            rid = await run_in_threadpool(RM.enviar, o, u['nome'], f.get('tipo', ''), f.get('numero', ''), f.get('ementa', ''), f.get('texto', ''))
+            msg = f'Remessa nº {rid} enviada ao Diário. Acompanhe a situação abaixo.'
+        elif f.get('acao') == 'atualizar':
+            res = await run_in_threadpool(RM.atualizar, o, int(f['id']))
+            msg = f"Situação: {res['situacao']}" + (f" · edição nº {res['edicao']}, página {res['pagina']}" if res.get('edicao') else '')
+        else:
+            raise HTTPException(400)
+    except ValueError as e:
+        return ir('/admin/remessas', str(e), request)
+    auditar(request, f'Remessa ao Diário: {msg}')
+    return ir('/admin/remessas', msg, request)
