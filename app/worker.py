@@ -17,7 +17,9 @@ FREQ = {'fiorilli': (60, range(7, 20)), 'pncp': (360, range(0, 24)), 'siconfi': 
         'ibge': (7 * 24 * 60, range(2, 6)), 'cnes': (7 * 24 * 60, range(2, 6)), 'mds': (7 * 24 * 60, range(2, 6)), 'pni': (7 * 24 * 60, range(2, 6)),
         'painel': (60, range(7, 20)),
         # dados anuais/bienais: INEP (planilhas, só baixa se mudarem) e IEG-M do TCESP, verificados a cada 30 dias
-        'inep': (30 * 24 * 60, range(2, 6)), 'iegm': (30 * 24 * 60, range(2, 6))}
+        'inep': (30 * 24 * 60, range(2, 6)), 'iegm': (30 * 24 * 60, range(2, 6)),
+        # série mensal das finanças (Fiorilli): uma vez por dia, de madrugada
+        'financas': (20 * 60, range(1, 5))}
 
 def fontes_ativas():
     return db.todos(db.PLATAFORMA, 'SELECT o.*, f.fonte, f.params FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE f.ativo AND o.ativo ORDER BY o.id, f.fonte')
