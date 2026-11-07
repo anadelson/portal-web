@@ -45,6 +45,21 @@ def ultimas_execucoes():
         r[(x['orgao_slug'], x['f'])] = x['t'].astimezone().replace(tzinfo=None)
     return r
 
+def diario_tick(agora):
+    """Rotina do Diário Oficial (Lei 910/2026): edição sem atos, alerta das 16h30 e publicação das 17h, só com edição assinada."""
+    from . import diario_servico as DS
+    from .web import modulos_do_orgao
+    for o in db.todos(db.PLATAFORMA, "SELECT * FROM orgaos WHERE ativo AND tipo='executivo'"):
+        try:
+            if not modulos_do_orgao(o).get('diario'):
+                continue
+            for r in DS.tick(o, agora):
+                comum.registrar(o['slug'], 'diario:rotina', True, 1, r)
+                print(agora, 'DIÁRIO', o['slug'], r, flush=True)
+        except Exception as e:
+            comum.registrar(o['slug'], 'diario:rotina', False, 0, f'{type(e).__name__}: {e}')
+            traceback.print_exc()
+
 def main():
     ultimo = ultimas_execucoes()
     print('worker iniciado', flush=True)
@@ -63,6 +78,7 @@ def main():
                 ultimo[k] = agora
         except Exception:
             traceback.print_exc()
+        diario_tick(datetime.now())
         time.sleep(60)
 
 if __name__ == '__main__':

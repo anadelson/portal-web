@@ -19,11 +19,21 @@ COOKIE_SEGURO = env('COOKIE_SEGURO', '1') not in ('0', 'false', 'nao')
 IBGE_BORA = '3507209'
 
 def hoje() -> date:
-    """Data de referência. DATA_SIMULADA permite testar o período eleitoral."""
+    """Data de referência. DATA_SIMULADA (AAAA-MM-DD ou AAAA-MM-DDTHH:MM) permite testar período eleitoral, Diário etc."""
     s = env('DATA_SIMULADA')
     if s:
-        return date.fromisoformat(s)
+        return date.fromisoformat(s[:10])
     return date.today()
+
+def agora():
+    """Data e hora de referência (com DATA_SIMULADA, a data e a hora simuladas; sem hora, a hora real)."""
+    from datetime import datetime
+    s = env('DATA_SIMULADA')
+    if s and len(s) > 10:
+        return datetime.fromisoformat(s)
+    if s:
+        return datetime.combine(hoje(), datetime.now().time())
+    return datetime.now()
 
 def dsn(banco: str) -> str:
     return f"host={PG_HOST} port={PG_PORT} user={PG_USER} password={PG_PASSWORD} dbname={banco}"

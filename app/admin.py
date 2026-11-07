@@ -576,7 +576,7 @@ def diario(request: Request):
     o = request.state.orgao; b = o['banco']
     if not modulos_do_orgao(o).get('diario'):
         raise HTTPException(404)
-    agora = datetime.now()
+    agora = config.agora()
     return T('diario', request, u, atos=db.todos(b, "SELECT * FROM diario_atos WHERE situacao <> 'publicado' ORDER BY id DESC"),
              eds=db.todos(b, 'SELECT * FROM diario_edicoes ORDER BY id DESC LIMIT 20'), aberta=DS.em_andamento(b), prox=DS.proxima_ordinaria(b),
              corte=agora.hour >= config.DIARIO_CORTE_HORA, alvo=diario_pdf.data_alvo(b, agora), modo_teste=AS.modo_teste(),
@@ -594,7 +594,7 @@ async def diario_ato(request: Request):
         if re.search(r'\d{3}\.\d{3}\.\d{3}-\d{2}', f['texto'] + f['ementa']):
             return ir('/admin/diario', 'O texto tem CPF completo. Remova ou mascare antes de enviar (LGPD).', request)
         ret = int(f['retifica']) if f.get('retifica', '').isdigit() else None
-        alvo = diario_pdf.data_alvo(b, datetime.now())
+        alvo = diario_pdf.data_alvo(b, config.agora())
         db.exe(b, "INSERT INTO diario_atos (caderno, tipo, numero, orgao, ementa, texto, situacao, autor, retifica_ato_id, data_alvo) VALUES (%s,%s,%s,%s,%s,%s,'revisao',%s,%s,%s)",
                (f.get('caderno', 'executivo') if f.get('caderno') in ('executivo', 'legislativo') else 'executivo', f['tipo'], f.get('numero', ''), f.get('orgao', ''), f['ementa'], f['texto'], u['nome'], ret, alvo))
         msg = f"Ato enviado para revisão. Edição prevista: {alvo.strftime('%d/%m/%Y')}" + (' (passou do horário de corte das 16h).' if alvo > config.hoje() else '.')

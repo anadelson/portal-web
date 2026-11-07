@@ -140,7 +140,7 @@ async def receber(request: Request):
         a = db.exe(b, """INSERT INTO diario_atos (caderno, tipo, numero, orgao, ementa, texto, situacao, autor, origem_orgao, remessa_externa, data_alvo)
                          VALUES ('legislativo',%s,%s,%s,%s,%s,'revisao',%s,%s,%s,%s) RETURNING *""",
                   (d['tipo'], str(d.get('numero', ''))[:40], str(d.get('orgao') or origem['nome'])[:160], d['ementa'][:500], d['texto'][:50000],
-                   f"Remessa de {origem['nome']}", origem['slug'], ext, D.data_alvo(b, datetime.now())))
+                   f"Remessa de {origem['nome']}", origem['slug'], ext, D.data_alvo(b, config.agora())))
     _log(origem['slug'], destino['slug'], 'remessa recebida', True, f"ato {a['id']}")
     return _situacao(b, a)
 
