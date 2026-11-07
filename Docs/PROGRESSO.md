@@ -326,5 +326,32 @@ Roteiro `app/coletores/descoberta.py` executado dentro do container `app` (1 req
 - Console: "Registro e coletas" com a situação de cada fonte e as falhas em destaque.
 - Testes offline (`tests/teste_transparencia.py`) com as amostras e linhas sintéticas com CPF. Amostras completas do RGF Legislativo (64 linhas) e do RREO 14 (46 linhas) salvas para os testes.
 
+## Passo 8 — Implantação (aprovada em 2026-11-07)
+- Build ok. Testes em bancos descartáveis: `teste_fluxos` **ERROS: 0**; `teste_transparencia` **ERROS: 0** (1ª tentativa tinha limite de teste errado: 90 = 3 amostras × 30, corrigido).
+- Backup → `up -d` → `provision atualizar` (fontes: 4 da Prefeitura, 2 da Câmara; migrações 004/005) → `worker uma-vez` (1 min 42 s).
+- Resultado da 1ª coleta: Fiorilli 10/10 bases OK (receitas 244, despesas 22, empenhos 4.738, diárias 675, restos 58, ordem cronológica 3.356, licitações 786, contratos 133, transferências 11, servidores 159); Siconfi OK (RREO 14 de 2026/4º bim., RGF E 2026/2º quadr., RGF L); TCESP 2025 OK (571 linhas, 12 meses); Câmara: 29 emendas e 11 repasses. "Borá em números": receita R$ 22.565.789,79, empenhado R$ 22.424.024,18.
+- ⚠️ **PNCP falhou**: a API derruba conexões (teste manual: das páginas 1, 2 e 5, só a 2 respondeu). Corrigido no código: 6 tentativas e aproveitamento das páginas já lidas (coleta parcial registrada).
+- ⚠️ RREO de 2026/4º bim. vem sem as linhas de saúde/MDE: o coletor passa a guardar também o último período que as tem (2025, 6º bim.: saúde 20,36%, MDE 31,23%).
+
+## Conferência de 3 registros por base contra a fonte oficial (2026-11-07)
+Registros sorteados do portal público (`/dados/<base>.json`) comparados com nova consulta à fonte; empenhos conferidos na consulta de **detalhe** por número (independente da listagem).
+| Base | Registros conferidos | Resultado |
+|---|---|---|
+| Receitas 2026 (Fiorilli) | 1311.01.1.3, 1114.51.1.2 (R$ 812,23), 1323.00 (R$ 19.457,95) | 3/3 OK |
+| Receitas 2025 (TCESP) | fev/11210100 (R$ 317,46), fev/17215200, dez/17135100 (R$ 22.994,62) | 3/3 OK — a fonte tem duas linhas para fev/17215200 (R$ 3.278,56 e dedução −R$ 655,72); o portal mostra as duas |
+| Despesas por unidade | 020201, 020502, 020803 (pago) | 3/3 OK |
+| Empenhos | 4359/2026, 237/2026, 2904/2026 (valor e credor) | 3/3 OK |
+| Diárias | 4514, 4192, 1920 | 3/3 OK |
+| Restos a pagar | 2797, 6739, 5368 | 3/3 OK |
+| Licitações (Fiorilli) | 000404/26, 000131/25, 000060/26 | 3/3 OK |
+| Contratos | 0035/26, 0020/26, 0003/26 | 3/3 OK |
+| Transferências | jan (2 lançamentos: R$ 25.000 + R$ 70.800 = R$ 95.800), out (R$ 95.800) | 3/3 OK (a conferência somou o mês) |
+| Servidores | 2 nomes OK; **1 sem nome** | ❌ **defeito**: 103 de 159 sem nome (NOME_SOCIAL vem com espaço). Corrigido no código e no teste; precisa de rebuild + nova coleta |
+| Ordem cronológica | 2006, 608, 92 (valor pago) | 3/3 OK |
+| Relatórios fiscais (Siconfi) | RREO 2026/4 total, RGF 2026/2 vencimentos, ACS | 3/3 OK |
+| Câmara: repasses | 3 meses, todos para a Câmara | 3/3 OK |
+| Câmara: emendas | 22, 12, 13: pago no cadastro = pago nos empenhos (R$ 1.160, R$ 1.225, R$ 3.600) | 3/3 OK — a divergência de 05/11 nas 12 e 13 não existe mais na fonte |
+| Licitações (PNCP) | — | não conferido: coleta falhou (fonte instável) |
+
 ## Onde parou
-Código pronto. Aguardando aprovação de: build → testes em banco isolado → implantação + coleta.
+Correções commitadas (servidores sem nome, PNCP, RREO, worker não repete fontes ao reiniciar). Aguardando aprovação de rebuild → testes → reimplantação + coleta de Fiorilli, PNCP e Siconfi.
