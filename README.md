@@ -61,6 +61,23 @@ tests/               teste de ponta a ponta (usar só em banco de teste)
 
 Comandos úteis: `docker compose logs -f app`, `docker compose logs -f worker`, `docker compose exec app python -m app.worker uma-vez`.
 
+## Atualizar uma instalação existente (Fase 3 em diante)
+```bash
+cd /opt/portal_web && ./deploy/backup.sh && docker compose build app worker && docker compose up -d app worker
+docker compose exec app python -m app.provision atualizar   # migrações idempotentes + blocos/identidade novos, sem apagar nada
+```
+Na VPS o HTTPS fica no nginx existente (não no Caddy): ver `Docs/PROGRESSO.md`.
+
+## Identidade visual (Fase 3)
+- Tema base em `app/templates/portal/base.html` + `app/static/portal.css` (Public Sans, cores do órgão a partir da identidade, foco amarelo, alto contraste, rodapé em 4 faixas).
+- Fotos do tema em `app/static/img` (originais); as `.webp` otimizadas são geradas no build (`python -m app.imagens otimizar`).
+- Blocos da página inicial em `app/catalogo.py` (`BLOCOS`, `LAYOUT_PADRAO`); o editor de regiões do console e a página inicial do /admin leem o mesmo catálogo.
+- `/admin/identidade`: textos, cores, redes e imagens (brasão, destaque, sede, mosaico) — PNG/JPG/WEBP até 3 MB, texto alternativo obrigatório, guardadas em `/srv/dados/<órgão>/midia` e servidas em `/midia/<arquivo>`.
+- `/admin/vereadores` (Câmara): perfil e foto oficial. Sem foto oficial, o portal mostra as iniciais.
+
+## Testes (só em banco de teste)
+`tests/teste_fluxos.py` recusa rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
+
 ## O que é real e o que é exemplo
 - **Real**: vereadores, partidos, votos e Mesas da 13ª à 15ª legislatura; 29 emendas impositivas com a execução de 3 delas; indicações de 2026 e parte de 2025; sessões com data; RGF/despesa com pessoal da Câmara; endereços e contatos.
 - **Exemplo (marcado “exemplo”)**: conteúdos da Prefeitura. Fotos oficiais, biografias, atas e presenças não vêm preenchidas.
