@@ -106,7 +106,7 @@ r = post(pm, '/admin/diario/edicao', {'acao': 'assinar'}, de='/admin/diario')
 if 'Caderno do Poder Executivo: assinada' not in msg(r): falha(f'assinar executivo: {msg(r)}')
 # etapa do Legislativo por upload (A3): o "computador do signatário" assina o PDF baixado
 pdf_atual = ok(pm.get(f"/admin/diario/edicao/{e['id']}.pdf"), nome='baixar para A3').content
-outro = A.assinar(pdf_atual[:-1] + b'\n', 'legislativo', None, 'documento diferente', 'Teste')  # assinado sobre um arquivo diferente
+outro = A.assinar(pdf_atual.replace(b'%%EOF', b'%%EOF ', 1), 'legislativo', None, 'documento diferente', 'Teste')  # assinado sobre um arquivo diferente
 r = post(pm, '/admin/diario/edicao', {'acao': 'a3'}, files={'arquivo': ('x.pdf', outro, 'application/pdf')}, de='/admin/diario')
 if 'não é o PDF desta edição' not in msg(r): falha(f'A3 adulterado deveria ser recusado: {msg(r)}')
 assinado = A.assinar(pdf_atual, 'legislativo', None, 'Caderno do Poder Legislativo (teste)', 'Teste')
