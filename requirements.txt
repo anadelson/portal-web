@@ -8,3 +8,7 @@ itsdangerous==2.2.0
 reportlab==4.2.5
 httpx==0.28.1
 pillow==11.0.0
+pyhanko==0.37.0
+pyhanko-certvalidator==0.32.1
+requests==2.32.3
+qrcode==8.2

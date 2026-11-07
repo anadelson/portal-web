@@ -23,8 +23,9 @@ PDF = b'%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Page
 CM = 'bd_cm_bora'
 
 cm = TestClient(app, base_url='http://cmbora.localhost')
-t = tok(cm, '/admin/login'); cm.post('/admin/login', data={'csrf': t, 'email': 'admin@cmbora.localhost', 'senha': 'admin123'})
-t = tok(cm, '/admin/senha'); cm.post('/admin/senha', data={'csrf': t, 'atual': 'admin123', 'nova': 'senhaforte123', 'conf': 'senhaforte123'})
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from apoio import entrar
+entrar(cm, 'admin@cmbora.localhost', 'admin123', 'senhaforte123')
 ok(cm.get('/admin/'), txt='Visão geral', nome='login cm')
 
 # ---------- 1. legislatura fictícia, vereadores e Mesa ----------

@@ -153,10 +153,9 @@ if db.um(PM, 'SELECT count(*) n FROM empenhos')['n'] != n1: falha('falha da font
 ok(pm.get('/transparencia/empenhos'), txt='última coleta válida', nome='aviso de falha')
 ok(pm.get('/'), nome='home com fonte fora')
 g = TestClient(app, base_url='http://gestao.localhost')
-r = g.get('/login'); t = re.search(r'name="csrf" value="([^"]+)"', r.text).group(1)
-g.post('/login', data={'csrf': t, 'email': 'gestor@gestao.localhost', 'senha': os.environ.get('SENHA_INICIAL_GESTOR', 'gestor123')})
-r = g.get('/senha'); m = re.search(r'name="csrf" value="([^"]+)"', r.text)
-if m: g.post('/senha', data={'csrf': m.group(1), 'atual': 'gestor123', 'nova': 'gestorforte1234', 'conf': 'gestorforte1234'})
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from apoio import entrar
+entrar(g, 'gestor@gestao.localhost', os.environ.get('SENHA_INICIAL_GESTOR', 'gestor123'), 'gestorforte1234', prefixo='')
 ok(g.get('/log'), txt='Situação por fonte', nome='console situação')
 ok(g.get('/log'), txt='fonte(s) com falha', nome='console destaca falha')
 print('ERROS:', len(erros)); print('\n'.join(erros))

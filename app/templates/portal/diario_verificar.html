@@ -1,5 +1,20 @@
 {% extends 'portal/base.html' %}
-{% block conteudo %}<h1>Verificar edição do Diário Oficial</h1>
-{% if e %}<p class="msg">Edição autêntica: nº {{ e.numero }}{{ e.letra }} de {{ e.data|br }}.</p><p>Impressão digital do arquivo (SHA-256): <code style="word-break:break-all">{{ e.sha256 }}</code></p><p>Assinatura digital: {{ 'ICP-Brasil com carimbo do tempo' if e.assinatura == 'assinada' else 'pendente (piloto sem certificado)' }}</p><p><a class="btn" href="/diario/{{ e.id }}.pdf">Baixar a edição</a></p>
-{% elif codigo %}<p class="msg" style="background:#FBE4D8">Nenhuma edição publicada com o código {{ codigo }}.</p>{% endif %}
-<p><a href="/diario">Voltar às edições</a></p>{% endblock %}
+{% block titulo %}Verificar edição do Diário Oficial — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/diario">Diário Oficial</a><span aria-hidden="true">›</span><span aria-current="page">Verificar</span></nav>
+<h1>Verificar edição do Diário Oficial</h1>
+<form action="/diario/verificar" class="campos" style="max-width:420px;margin:12px 0 20px"><label>Código de verificação<input name="codigo" value="{{ codigo }}" placeholder="Ex.: 7F3A-91C2-0B5E"></label><button class="btn" type="submit">Verificar</button></form>
+{% if e %}
+{% if e.modo_teste %}<p class="nota" role="alert" style="background:#FBE4D8;color:#9B1C1C"><strong>EDIÇÃO DE TESTE — SEM VALOR OFICIAL.</strong> Assinada com certificados e carimbo do tempo de teste.</p>
+{% elif e.situacao == 'invalidada' %}<p class="nota" role="alert"><strong>Edição invalidada</strong> por {{ e.invalidacao.ato }}. {{ e.invalidacao.comunicado }}</p>
+{% else %}<p class="msg">Edição autêntica: nº {{ e.numero }}{{ e.letra }} de {{ e.data|br }}.</p>{% endif %}
+<dl class="campos" style="margin-bottom:14px"><div><dt>Edição</dt><dd>nº {{ e.numero }}{{ e.letra }}{% if e.letra %} (extra){% endif %} · {{ e.data|br }}{% if e.sem_atos %} · sem atos{% endif %}</dd></div>
+<div><dt>Formato de arquivo</dt><dd>{{ 'PDF/A-2b (arquivo permanente)' if e.pdfa else 'PDF' }}</dd></div>
+<div><dt>Situação da validação</dt><dd>{% if not sigs %}Sem assinatura digital{% elif sigs|selectattr('valida')|list|length == sigs|length %}{{ 'Assinaturas válidas (cadeia de TESTE)' if e.modo_teste else 'Assinaturas válidas' }}{% else %}Há assinatura inválida{% endif %}</dd></div></dl>
+<p>Impressão digital do arquivo (SHA-256): <code>{{ e.sha256 }}</code></p>
+{% if sigs %}<div class="tabela"><table><caption class="sr">Assinaturas digitais</caption><thead><tr><th scope="col">Etapa</th><th scope="col">Signatário (certificado)</th><th scope="col">Carimbo do tempo</th><th scope="col">Resultado</th></tr></thead><tbody>
+{% for s in sigs %}<tr><td>{{ etapas.get(s.campo.split('_')[1], s.campo) if '_' in s.campo else s.campo }}</td><td>{{ s.signatario }}</td><td>{{ s.carimbo[:19]|replace('T', ' ') if s.carimbo else '—' }}{% if s.carimbo and not s.carimbo_valido %} (não validado){% endif %}</td><td><span class="chip {{ 'ok' if s.valida and s.integra else 'erro' }}">{{ 'Íntegra e válida' if s.valida and s.integra else 'Inválida' }}</span>{% if s.valida and not s.confiavel and not e.modo_teste %} <span class="chip alerta">cadeia não confiável</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+<p style="margin-top:14px"><a class="btn" href="/diario/{{ e.id }}.pdf">Baixar a edição</a> <a class="btn sec" href="https://validar.iti.gov.br/">Validar no ITI (validar.iti.gov.br)</a></p>
+<p class="legal">No validador do ITI, envie o PDF baixado. Edições de teste não são reconhecidas pelo ITI (certificados de teste).</p>
+{% elif codigo %}<p class="msg" style="background:#FBE4D8">Nenhuma edição com o código {{ codigo }}.</p>{% endif %}
+{% endblock %}

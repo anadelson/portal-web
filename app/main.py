@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from . import config, portal, admin, console, transparencia, admin_leg, portal_leg
+from . import config, portal, admin, console, transparencia, admin_leg, portal_leg, remessa
 from .web import RoteadorPorDominio, templates
 
 app = FastAPI(title='Portais de Borá — piloto', docs_url=None, redoc_url=None, openapi_url=None)
@@ -14,6 +14,7 @@ app.include_router(portal.r)
 app.include_router(admin.r)
 app.include_router(admin_leg.r)
 app.include_router(portal_leg.r)
+app.include_router(remessa.r)
 app.include_router(console.r)
 
 @app.get('/saude')
@@ -32,6 +33,34 @@ async def erros(request: Request, exc: HTTPException):
     html = f'<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>{exc.status_code}</title><body style="font-family:system-ui;max-width:640px;margin:10vh auto;padding:0 20px"><h1>{exc.status_code}</h1><p>{msg}</p><p><a href="/">Voltar ao início</a></p></body></html>'
     return HTMLResponse(html, status_code=exc.status_code)
 
+CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; "
+       "img-src 'self' data:; frame-src https://www.youtube-nocookie.com https:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
+
+class Cabecalhos:
+    """Cabeçalhos de segurança em todas as respostas (o HSTS vem do nginx)."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope['type'] != 'http':
+            return await self.app(scope, receive, send)
+        caminho = scope['path']  # o roteador por domínio reescreve scope['path'] (/admin → /_a): guarda o original
+        async def enviar(msg):
+            if msg['type'] == 'http.response.start':
+                h = [(k, v) for k, v in msg.get('headers', []) if k.lower() not in (b'server',)]
+                nomes = {k.lower() for k, _ in h}
+                for k, v in ((b'content-security-policy', CSP.encode()), (b'x-frame-options', b'DENY'), (b'x-content-type-options', b'nosniff'),
+                             (b'referrer-policy', b'strict-origin-when-cross-origin'), (b'permissions-policy', b'camera=(), microphone=(), geolocation=(), payment=()')):
+                    if k not in nomes:
+                        h.append((k, v))
+                host = dict(scope.get('headers') or []).get(b'host', b'').decode().split(':')[0].lower()
+                if caminho.startswith('/admin') or host == config.DOMINIO_GESTAO.lower():
+                    h.append((b'cache-control', b'no-store'))
+                msg = dict(msg, headers=h)
+            await send(msg)
+        return await self.app(scope, receive, enviar)
+
 # Ordem: a sessão precisa existir antes do roteamento (middlewares rodam de fora para dentro: último adicionado = mais externo)
 app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, session_cookie='sessao', same_site='lax', https_only=config.COOKIE_SEGURO, max_age=8 * 3600)
 app.add_middleware(RoteadorPorDominio)
+app.add_middleware(Cabecalhos)

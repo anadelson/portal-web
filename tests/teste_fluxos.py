@@ -7,6 +7,8 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app import db, provision
 from app.catalogo import LAYOUT_PADRAO_V1
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from apoio import entrar
 def cli(host):
     return TestClient(app, base_url=f'http://{host}')
 def token(c, url):
@@ -35,11 +37,7 @@ r = pm.post('/acesso', data={'csrf': t, 'tipo': 'pedido', 'assunto': 'Teste', 't
 ok(r, txt='Protocolo SIC-', nome='esic envio')
 # admin
 ok(pm.get('/admin/', follow_redirects=False), 303, nome='admin redireciona')
-t = token(pm, '/admin/login')
-r = pm.post('/admin/login', data={'csrf': t, 'email': 'admin@pmbora.localhost', 'senha': 'admin123'}, follow_redirects=True)
-ok(r, txt='Primeiro acesso', nome='login admin')
-t = token(pm, '/admin/senha')
-ok(pm.post('/admin/senha', data={'csrf': t, 'atual': 'admin123', 'nova': 'senhaforte123', 'conf': 'senhaforte123'}, follow_redirects=True), txt='Visão geral', nome='troca senha')
+ok(entrar(pm, 'admin@pmbora.localhost', 'admin123', 'senhaforte123'), txt='Visão geral', nome='login com 2º fator e troca de senha')
 for p in ['/admin/conteudos', '/admin/conteudos/novo', '/admin/conteudos/1', '/admin/pagina-inicial', '/admin/funcionalidades', '/admin/eleicao', '/admin/atendimento', '/admin/usuarios', '/admin/auditoria', '/admin/identidade', '/admin/diario']:
     ok(pm.get(p), nome=p)
 # fluxo de conteúdo
@@ -56,11 +54,12 @@ pm.post('/admin/diario/ato', data={'csrf': t, 'acao': 'novo', 'caderno': 'execut
 r = pm.get('/admin/diario'); aid = re.search(r'name="id" value="(\d+)"><button class="btn sec" name="acao" value="aprovar"', r.text).group(1)
 t = token(pm, '/admin/diario')
 pm.post('/admin/diario/ato', data={'csrf': t, 'acao': 'aprovar', 'id': aid})
-for a in ['abrir', 'fechar', 'publicar']:
+for a in ['abrir', 'fechar', 'assinar', 'assinar', 'publicar']:
     t = token(pm, '/admin/diario'); r = pm.post('/admin/diario/edicao', data={'csrf': t, 'acao': a}, follow_redirects=True)
-ok(r, txt='publicada', nome='diario publicar')
-r = pm.get('/diario'); cod = re.search(r'<code>([0-9A-F-]{14})</code>', r.text).group(1)
-ok(pm.get(f'/diario/verificar?codigo={cod}'), txt='Edição autêntica', nome='verificar')
+ok(r, txt='MODO TESTE', nome='diario concluir (teste)')
+cod = db.um('bd_pm_bora', "SELECT codigo FROM diario_edicoes WHERE situacao='publicada' ORDER BY id DESC LIMIT 1")['codigo']
+ok(pm.get('/diario'), txt='Nenhuma edição oficial publicada', nome='edição de teste fora da lista oficial')
+r = ok(pm.get(f'/diario/verificar?codigo={cod}'), txt='EDIÇÃO DE TESTE', nome='verificar teste')
 eid = re.search(r'/diario/(\d+)\.pdf', r.text).group(1)
 rp = pm.get(f'/diario/{eid}.pdf'); ok(rp, nome='pdf'); assert rp.content[:4] == b'%PDF'
 # eleição: simular defeso
@@ -72,16 +71,12 @@ ok(pm.get('/conteudo/2'), 451, nome='conteudo suspenso')
 t = token(pm, '/admin/eleicao')
 pm.post('/admin/eleicao', data={'csrf': t, 'acao': 'salvar', 'nome': 'Eleições municipais 2028', 'inicio': '2028-07-01', 'fim': '2028-10-01', 'aviso': 'on', 'bloquear': 'on'})
 # câmara admin
-t = token(cm, '/admin/login')
-cm.post('/admin/login', data={'csrf': t, 'email': 'admin@cmbora.localhost', 'senha': 'admin123'})
-t = token(cm, '/admin/senha'); cm.post('/admin/senha', data={'csrf': t, 'atual': 'admin123', 'nova': 'senhaforte123', 'conf': 'senhaforte123'})
+entrar(cm, 'admin@cmbora.localhost', 'admin123', 'senhaforte123')
 for p in ['/admin/sessoes', '/admin/sessoes/1', '/admin/emendas', '/admin/']:
     ok(cm.get(p), nome='cm'+p)
 # console
 g = cli('gestao.localhost')
-t = token(g, '/login')
-r = g.post('/login', data={'csrf': t, 'email': 'gestor@gestao.localhost', 'senha': 'gestor123'}, follow_redirects=True)
-t = token(g, '/senha'); g.post('/senha', data={'csrf': t, 'atual': 'gestor123', 'nova': 'gestorforte1234', 'conf': 'gestorforte1234'})
+entrar(g, 'gestor@gestao.localhost', 'gestor123', 'gestorforte1234', prefixo='')
 for p in ['/', '/orgao/1', '/orgao/2', '/catalogo', '/layout/2', '/log', '/orgaos/novo']:
     ok(g.get(p), nome='g'+p)
 t = token(g, '/orgao/2'); ok(g.post('/orgao/2', data={'csrf': t, 'acao': 'modulo', 'chave': 'integpref'}, follow_redirects=True), txt='desligado', nome='desliga integ')

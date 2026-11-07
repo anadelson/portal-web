@@ -1,6 +1,7 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Entrar — {{ ident.nome }}</title><link rel="stylesheet" href="/static/admin.css"><style>:root{--cor:{{ cor }}}</style></head>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Entrar — {{ ident.nome }}</title><link rel="stylesheet" href="/static/admin.css?v=3"><style>:root{--cor:{{ cor }}}</style></head>
 <body><main class="login"><h1 style="margin-top:0;font-size:22px">Painel administrativo</h1><p>{{ ident.nome }}</p>
 {% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status" style="background:#FCEFD9">{{ m }}</p>{% endif %}
 <form class="campos" method="post" action="/admin/login"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
 <label>E-mail<input name="email" type="email" autocomplete="username" required></label><label>Senha<input name="senha" type="password" autocomplete="current-password" required></label><button class="btn" type="submit">Entrar</button></form>
-<p class="legal" style="margin-top:14px">Piloto: login com e-mail e senha. No sistema final, conta gov.br com segundo fator.</p></main></body></html>
+{% if govbr %}<p style="margin-top:14px"><a class="btn sec" href="/admin/govbr">Entrar com gov.br</a> <small>(conta nível prata ou ouro)</small></p>{% endif %}
+<p class="legal" style="margin-top:14px">Depois da senha é pedido o código do aplicativo autenticador (segundo fator). Depois de várias tentativas erradas, o acesso fica bloqueado por alguns minutos.</p></main></body></html>

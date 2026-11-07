@@ -11,6 +11,10 @@ from . import provision
 r = APIRouter(prefix='/_g')
 
 def gestor(request: Request):
+    from .acesso import sessao_expirada
+    if request.session.get('gestor') and sessao_expirada(request):
+        request.session['msg'] = 'Sessão encerrada por inatividade. Entre de novo.'
+        raise HTTPException(status_code=307, headers={'Location': '/login'})
     g = request.session.get('gestor')
     if not g:
         raise HTTPException(status_code=307, headers={'Location': '/login'})
@@ -29,21 +33,82 @@ def contrato(oid):
 
 @r.get('/login')
 def login(request: Request):
-    return T('login', request)
+    from . import acesso as AC
+    return T('login', request, govbr=AC.govbr_ativo())
+
+def _log_anonimo(acao):
+    db.exe(db.PLATAFORMA, 'INSERT INTO log_console (quem, acao) VALUES (%s,%s)', ('anônimo', acao[:300]))
 
 @r.post('/login')
 async def login_post(request: Request):
+    from . import acesso as AC
     f = await ler_form(request)
-    g = db.um(db.PLATAFORMA, 'SELECT * FROM gestores WHERE lower(email)=lower(%s) AND ativo', (f.get('email', ''),))
-    if not g or not confere_senha(f.get('senha', ''), g['senha_hash']):
-        return ir('/login', 'E-mail ou senha incorretos.', request)
-    request.session['gestor'] = {'id': g['id'], 'nome': g['nome'], 'trocar': g['trocar_senha']}
-    log(request.session['gestor'], 'Entrou no console')
-    return ir('/senha' if g['trocar_senha'] else '/', '', request)
+    c = AC.Conta(request, 'gestor')
+    conta, erro = AC.verificar_senha(request, c, f.get('email', ''), f.get('senha', ''))
+    if erro:
+        _log_anonimo(f"Tentativa de acesso recusada: {f.get('email','')[:60]}")
+        return ir('/login', erro, request)
+    AC.iniciar_segundo_fator(request, c, conta)
+    return ir('/2fa', '', request)
+
+@r.get('/2fa')
+def segundo_fator(request: Request):
+    from . import acesso as AC
+    c = AC.Conta(request, 'gestor'); conta = AC.pre_conta(request, c)
+    if not conta:
+        return ir('/login', 'Entre com e-mail e senha.', request)
+    cad = None if conta['totp_ativo'] else AC.preparar_cadastro(request, c, conta)
+    return templates.TemplateResponse(request, 'acesso/2fa.html', dict(request=request, acao='/2fa', cadastro=cad, titulo='Console do gestor', codigos=None, sair='/login', cor='#1B1E30'))
+
+@r.post('/2fa')
+async def segundo_fator_post(request: Request):
+    from . import acesso as AC
+    f = await ler_form(request)
+    c = AC.Conta(request, 'gestor'); conta = AC.pre_conta(request, c)
+    if not conta:
+        return ir('/login', 'Tempo esgotado. Entre de novo.', request)
+    if not conta['totp_ativo']:
+        cods = AC.confirmar_cadastro(request, c, conta, f.get('codigo', ''))
+        if not cods:
+            return ir('/2fa', 'Código não confere. Digite o código atual do aplicativo.', request)
+        AC.concluir_login(request, c, c.por_id(conta['id']), 'senha+totp')
+        log(request.session['gestor'], 'Cadastrou o segundo fator e entrou no console')
+        return templates.TemplateResponse(request, 'acesso/2fa.html', dict(request=request, acao='', cadastro=None, titulo='Console do gestor', codigos=cods, continuar='/senha' if conta['trocar_senha'] else '/', cor='#1B1E30'))
+    ok, msg = AC.conferir_segundo_fator(request, c, conta, f.get('codigo', ''), f.get('recuperacao', ''))
+    if not ok:
+        ate = AC.registrar_tentativa(request, c, conta, False)
+        _log_anonimo(f"Segundo fator incorreto: {conta['email']}")
+        if ate:
+            request.session.pop('pre', None)
+            return ir('/login', AC.msg_bloqueio(ate), request)
+        return ir('/2fa', msg, request)
+    AC.concluir_login(request, c, conta, 'senha+totp')
+    log(request.session['gestor'], 'Entrou no console (senha + segundo fator)')
+    return ir('/senha' if conta['trocar_senha'] else '/', msg, request)
+
+@r.get('/govbr')
+def govbr(request: Request):
+    from . import acesso as AC
+    from fastapi.responses import RedirectResponse
+    if not AC.govbr_ativo():
+        raise HTTPException(404, 'Login gov.br ainda não configurado.')
+    return RedirectResponse(AC.govbr_redirecionar(request, AC.Conta(request, 'gestor')), status_code=303)
+
+@r.get('/govbr/retorno')
+def govbr_retorno(request: Request, code: str = '', state: str = ''):
+    from . import acesso as AC
+    c = AC.Conta(request, 'gestor')
+    conta, erro = AC.govbr_concluir(request, c, code, state)
+    if erro:
+        _log_anonimo(f'Login gov.br recusado: {erro[:80]}')
+        return ir('/login', erro, request)
+    AC.concluir_login(request, c, conta, 'gov.br')
+    log(request.session['gestor'], 'Entrou no console (gov.br)')
+    return ir('/', '', request)
 
 @r.get('/sair')
 def sair(request: Request):
-    request.session.pop('gestor', None)
+    request.session.pop('gestor', None); request.session.pop('ultimo', None)
     return ir('/login', 'Sessão encerrada.', request)
 
 @r.get('/senha')
