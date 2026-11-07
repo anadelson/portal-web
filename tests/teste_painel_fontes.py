@@ -208,7 +208,7 @@ eds = [r['nota'] for r in db.todos(PM, "SELECT v.nota FROM indicador_valores v J
 if len(eds) != len(set(eds)): falha(f'edições repetidas: {eds}')
 if val('gestao_iegm', '2014')['origem'] != 'manual': falha('coleta sobrescreveu o lançamento manual')
 if not db.um(db.PLATAFORMA, "SELECT 1 FROM indicadores_publicos WHERE ibge='3507209' AND fonte='iegm' AND indicador='gestao_iegm_ti' AND periodo='2024' AND texto='A'"): falha('IEG-M não gravou por código IBGE')
-ok(pm.get('/painel?tema=mun'), txt='governança de TI (i-Gov TI)', nome='IEG-M no painel')
+ok(pm.get('/painel?tema=mun'), txt='Governança de TI (i-Gov TI)', nome='IEG-M no painel')
 ok(pm.get('/painel/edu_ideb_af'), txt='rede estadual (responsabilidade do Governo do Estado)', nome='rede responsável dos anos finais')
 # falha da consulta: mantém o último valor, aviso no painel e coleta com falha registrada
 def quebra(*a, **k): raise comum.httpx.ConnectError('fonte fora do ar (teste)')

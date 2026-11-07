@@ -90,7 +90,7 @@
 <details><summary>Ver a evolução por edição</summary><div class="tabela"><table><caption class="sr">Faixas do IEG-M por edição e área</caption><thead><tr><th scope="col">Área</th>{% for e in g.edicoes %}<th scope="col">{{ e|replace('edição ', '')|replace(' (ano-base ', ' (base ') }}</th>{% endfor %}</tr></thead><tbody>{% for r in g.evol %}<tr><th scope="row">{{ r.l }}</th>{% for c in r.cells %}<td>{{ c }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></details>
 <p class="d">Faixas: A altamente efetiva · B+ muito efetiva · B efetiva · C+ em fase de adequação · C baixo nível de adequação.</p>
 {{ fonte('TCESP, painel público do IEG-M (consulta sem documentação oficial).', g.coletado) }}</section>{% endif %}
-{% if m.municipio %}<section class="pcard"><h3>O município</h3><dl class="pnum">{% for x in m.municipio %}<div><dt><a href="{{ x.href }}">{{ x.l }}</a></dt><dd>{{ x.v }}</dd><dd class="d">{{ x.f }}</dd></div>{% endfor %}</dl></section>{% endif %}
+{% if m.municipio %}<section class="pcard{{ ' pcard-largo' if not m.sic }}"><h3>O município</h3><dl class="pnum">{% for x in m.municipio %}<div><dt><a href="{{ x.href }}">{{ x.l }}</a></dt><dd>{{ x.v }}</dd><dd class="d">{{ x.f }}</dd></div>{% endfor %}</dl></section>{% endif %}
 {% if m.sic %}<section class="pcard"><h3>Acesso à informação</h3><ul class="plista">{% for x in m.sic %}<li><span><a href="/painel/{{ x.chave }}">{{ x.nome }}</a> ({{ x.ult.periodo }})</span><strong>{{ x.valor_curto }}</strong></li>{% endfor %}</ul>{{ fonte('e-SIC e Ouvidoria deste portal. Só quantidades; nunca quem pediu.', None) }}</section>{% endif %}
 </div></section>
 {% endif %}

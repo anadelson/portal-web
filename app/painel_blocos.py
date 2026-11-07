@@ -7,6 +7,17 @@ from . import config, db, painel as P
 
 ESCURO, LARANJA, VERDE = '#1D4E89', '#E8A33D', '#146C43'
 
+NOMES_PROPRIOS = {'união': 'União', 'distrito federal': 'Distrito Federal', 'estados': 'Estados', 'municípios': 'Municípios', 'sus': 'SUS', 'fundeb': 'FUNDEB',
+                  'sistema único de saúde': 'Sistema Único de Saúde', 'iptu': 'IPTU', 'iss': 'ISS', 'itbi': 'ITBI', 'irrf': 'IRRF', 'fpm': 'FPM', 'icms': 'ICMS', 'ipva': 'IPVA'}
+
+def frase(t):
+    """Texto em caixa alta da fonte → só a primeira letra maiúscula, preservando nomes próprios e siglas comuns."""
+    import re
+    s = str(t or '').strip().lower()
+    for k, v in NOMES_PROPRIOS.items():
+        s = re.sub(rf'\b{re.escape(k)}\b', v, s)
+    return s[:1].upper() + s[1:]
+
 def mi(v):
     return 'R$ ' + P._br(float(v) / 1e6, 1) + ' mi'
 
@@ -94,10 +105,10 @@ def financas(o, hoje):
     if tot_emp:
         mx = max(float(a['emp'] or 0) for a in ar) or 1
         itens = [{'area': a['area'], 'v': mi(a['emp'] or 0), 'p': pct(a['emp'] or 0, tot_emp), 'w': round(float(a['emp'] or 0) / mx * 100, 1)} for a in ar if a['emp']]
-        frase = ''
+        frase_area = ''
         if porarea.get('Saúde') and porarea.get('Educação'):
-            frase = f"Saúde e educação somam {pct(float(porarea['Saúde']['emp'] or 0) + float(porarea['Educação']['emp'] or 0), tot_emp)} do que a Prefeitura já empenhou em {ano}."
-        para_onde = {'itens': itens, 'frase': frase, 'n_unid': sum(a['n'] for a in ar)}
+            frase_area = f"Saúde e educação somam {pct(float(porarea['Saúde']['emp'] or 0) + float(porarea['Educação']['emp'] or 0), tot_emp)} do que a Prefeitura já empenhou em {ano}."
+        para_onde = {'itens': itens, 'frase': frase_area, 'n_unid': sum(a['n'] for a in ar)}
     # de onde vem
     de_onde = None
     if bruta:
@@ -106,7 +117,7 @@ def financas(o, hoje):
         rp = round(repasses / bruta * 100)
         de_onde = {'rep': pct(repasses, bruta), 'prop': pct(bruta - repasses, bruta), 'w': round(repasses / bruta * 100, 1),
                    'frase': f'De cada R$ 100 que entram, R$ {rp} vêm de repasses da União e do Estado.',
-                   'origens': [{'nome': t['nome'].capitalize(), 'v': mi(t['v']), 'p': pct(t['v'], bruta)} for t in top]}
+                   'origens': [{'nome': frase(t['nome']), 'v': mi(t['v']), 'p': pct(t['v'], bruta)} for t in top]}
     # execução
     dias = 366 if calendar.isleap(ano) else 365
     ritmo = (ate - date(ano, 1, 1)).days + 1
@@ -229,7 +240,8 @@ def iegm(o):
         _, sd = _serie(b, ch)
         x = next((v for v in sd if v['periodo'] == ult['periodo']), None)
         if x:
-            dims.append({'l': nome.split('— ')[-1], 'f': x['texto'], 'href': f'/painel/{ch}'})
+            rot = nome.split('— ')[-1]
+            dims.append({'l': rot[:1].upper() + rot[1:], 'f': x['texto'], 'href': f'/painel/{ch}'})
     dist, _ = _publico(str(o['ibge'])[:2], 'iegm_distribuicao', ult['periodo'])
     leg = {'A': 'altamente efetiva', 'B+': 'muito efetiva', 'B': 'efetiva', 'C+': 'em fase de adequação', 'C': 'baixo nível de adequação'}
     distrib = None
@@ -243,7 +255,7 @@ def iegm(o):
     for ch, nome in P._IEGM:
         _, sd = _serie(b, ch)
         mp = {v['periodo']: v['texto'] for v in sd}
-        evol.append({'l': nome.split('— ')[-1], 'cells': [mp.get(v['periodo'], '—') for v in s]})
+        evol.append({'l': (lambda r: r[:1].upper() + r[1:])(nome.split('— ')[-1]), 'cells': [mp.get(v['periodo'], '—') for v in s]})
     return {'ult': ult, 'leg': leg, 'dims': dims, 'distrib': distrib, 'evol': evol, 'edicoes': [v['nota'].split(';')[0] for v in s], 'coletado': ult['coletado_em']}
 
 def municipio(b):
