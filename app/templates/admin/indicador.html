@@ -18,8 +18,8 @@
 
 {% if alternavel %}
 <section class="cx"><h2>Modo de atualização</h2>
-<p>Consulta automática ao painel público do TCESP com o acesso anônimo publicado pelo próprio Tribunal. <strong>É uma consulta sem documentação oficial e pode mudar sem aviso</strong>: se falhar, o portal mantém o último valor válido e mostra o aviso “dado de &lt;data&gt;”. A troca vale para os 8 indicadores do IEG-M e fica registrada na auditoria.</p>
-<p>Credencial no servidor (variáveis IEGM_USUARIO e IEGM_SENHA no .env): <span class="chip {{ 'ok' if credencial else 'alerta' }}">{{ 'preenchida' if credencial else 'vazia — coleta automática desligada' }}</span></p>
+<p>Consulta automática ao painel público do TCESP com o acesso anônimo publicado pelo próprio Tribunal, configurado pela equipe da plataforma. <strong>É uma consulta sem documentação oficial e pode mudar sem aviso</strong>: se falhar, o portal mantém o último valor válido e mostra o aviso “dado de &lt;data&gt;”. A troca vale para os 8 indicadores do IEG-M e fica registrada na auditoria.</p>
+<p>Acesso ao TCESP: {% if credencial == 'plataforma' %}<span class="chip ok">configurado pela plataforma</span>{% elif credencial == 'env' %}<span class="chip ok">configurado (reserva do servidor)</span>{% elif i.modo == 'automatico' %}<span class="chip alerta">aguardando configuração da plataforma</span>{% else %}<span class="chip alerta">ainda não configurado pela plataforma</span>{% endif %}</p>
 <form class="campos" method="post" action="/admin/indicadores/{{ i.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="modo">
 <fieldset><legend>Modo de atualização</legend>
 <label style="flex-direction:row;gap:6px;font-weight:400"><input type="radio" name="modo" value="automatico" {{ 'checked' if i.modo == 'automatico' }}> Automático (acesso anônimo do TCESP)</label>

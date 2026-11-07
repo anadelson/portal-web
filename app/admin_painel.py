@@ -20,6 +20,13 @@ def _mods(request, u):
     if not modulos_do_orgao(request.state.orgao).get('bi'):
         raise HTTPException(404, 'O módulo "Painel de indicadores" não está contratado para este órgão.')
 
+def _origem_iegm():
+    from .coletores.inep_iegm import origem_credencial
+    try:
+        return origem_credencial()
+    except Exception:
+        return None
+
 def _num(s):
     s = (s or '').strip().replace(' ', '')
     if not s:
@@ -44,7 +51,7 @@ def lista(request: Request):
         aviso_cert = aviso_certificado()
     except Exception as e:
         aviso_cert = f'Não foi possível ler o certificado intermediário do INEP ({type(e).__name__}).'
-    return T('indicadores', request, u, itens=itens, fontes=fontes, coletas=coletas, hist=hist, max_dest=P.MAX_DESTAQUES, aviso_cert=aviso_cert)
+    return T('indicadores', request, u, itens=itens, fontes=fontes, coletas=coletas, hist=hist, max_dest=P.MAX_DESTAQUES, aviso_cert=aviso_cert, origem_iegm=_origem_iegm())
 
 FONTES_PAINEL = ('ibge', 'cnes', 'inep', 'iegm', 'mds', 'pni', 'painel')
 
@@ -84,7 +91,7 @@ def editar(request: Request, iid: int):
     ult_coleta = db.um(db.PLATAFORMA, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1)=%s ORDER BY id DESC LIMIT 1", (request.state.orgao['slug'], ind['coletor'])) if ind['coletor'] else None
     return T('indicador', request, u, i=ind, serie=serie, hist=hist, exibir=P.exibir, faixas=P.FAIXAS_IEGM, tema_nome=P.TEMA_NOME[ind['tema']],
              link=P.link_fonte(ind, request.state.orgao), aviso=P.aviso_antigo(ind), alternavel=cat.get('alternavel'), reserva=cat.get('reserva'),
-             credencial=bool(config.IEGM_USUARIO and config.IEGM_SENHA) if ind['coletor'] == 'iegm' else None, ult_coleta=ult_coleta)
+             credencial=_origem_iegm() if ind['coletor'] == 'iegm' else None, ult_coleta=ult_coleta)
 
 @r.post('/indicadores/{iid}')
 async def editar_post(request: Request, iid: int):

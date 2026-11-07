@@ -18,7 +18,7 @@
 <td>{{ i.tema_nome }}</td>
 <td><strong>{{ i.nome }}</strong><br><small>{{ i.fonte }} · {{ i.periodicidade }} · {{ 'automático' if i.modo == 'automatico' else 'manual' }}</small>{% if i.pendente %}<br><small class="chip alerta">{{ i.pendente }}</small>{% endif %}</td>
 <td>{% if i.ult %}{{ i.valor }}<br><small>{{ i.ult.periodo }}</small>{% else %}<span class="chip alerta">aguardando primeira coleta</span>{% endif %}</td>
-<td>{% if i.ultima_tentativa %}<span class="chip {{ 'erro' if i.aviso else 'ok' }}">{{ 'falhou' if i.aviso else 'ok' }}</span><br><small>{{ i.ultima_tentativa|br }}{% if i.ultima_msg %} · {{ i.ultima_msg }}{% endif %}</small>{% else %}—{% endif %}</td>
+<td>{% if i.coletor == 'iegm' and i.modo == 'automatico' and not origem_iegm %}<span class="chip alerta">aguardando configuração da plataforma</span>{% elif i.ultima_tentativa %}<span class="chip {{ 'erro' if i.aviso else 'ok' }}">{{ 'falhou' if i.aviso else 'ok' }}</span><br><small>{{ i.ultima_tentativa|br }}{% if i.ultima_msg %} · {{ i.ultima_msg }}{% endif %}</small>{% else %}—{% endif %}</td>
 <td>{{ 'visível' if i.visivel else 'oculto' }}{% if i.destaque %}<br><small class="chip ok">destaque na página inicial</small>{% endif %}{% if i.meta is not none %}<br><small>meta: {{ i.meta|float }}</small>{% endif %}</td>
 <td class="num">{{ i.ordem }}</td>
 <td><a class="btn sec" href="/admin/indicadores/{{ i.id }}">Editar<span class="sr"> {{ i.nome }}</span></a></td>

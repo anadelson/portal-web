@@ -8,8 +8,8 @@ O servidor do INEP não envia o certificado intermediário: ele fica em deploy/c
 verificação TLS continua ligada). Arquivo já importado (mesma data de modificação) não é baixado de novo.
 
 IEG-M (fonte 'iegm', anual): consulta do painel público do TCESP (Pentaho CDA, sem documentação oficial: pode mudar
-sem aviso), com o acesso anônimo publicado pelo próprio Tribunal (IEGM_USUARIO/IEGM_SENHA, preenchidos só no .env;
-uso autorizado pelo órgão em 07/11/2026). Sem credencial ou com o IEG-M em modo manual, não coleta (sem erro).
+sem aviso), com o acesso anônimo publicado pelo próprio Tribunal (uso autorizado pelo órgão em 07/11/2026). Credencial: a cadastrada no console do gestor (Credenciais de fontes, cifrada); reserva: IEGM_USUARIO/IEGM_SENHA do .env.
+Sem credencial ou com o IEG-M em modo manual, não coleta (sem erro).
 Colunas mapeadas por metadata[].colName; o mapeamento pode ser fixado no parâmetro 'colunas' da fonte."""
 import re, ssl, tempfile, unicodedata
 from datetime import date, timedelta
@@ -216,7 +216,21 @@ FAIXA = re.compile(r'^(A|B\+|B|C\+|C)$')
 def _sem_acento(s):
     return unicodedata.normalize('NFKD', str(s or '')).encode('ascii', 'ignore').decode().lower()
 
+def origem_credencial():
+    """De onde vem a credencial do IEG-M: 'plataforma' (console do gestor), 'env' (reserva) ou None (coleta desligada)."""
+    from .. import credenciais as CR
+    if CR.obter('iegm'):
+        return 'plataforma'
+    if config.IEGM_USUARIO and config.IEGM_SENHA:
+        return 'env'
+    return None
+
 def credenciais():
+    """Ordem: credencial cadastrada no console; senão IEGM_USUARIO/IEGM_SENHA do .env; senão nenhuma."""
+    from .. import credenciais as CR
+    c = CR.obter('iegm')
+    if c:
+        return c
     return (config.IEGM_USUARIO, config.IEGM_SENHA) if config.IEGM_USUARIO and config.IEGM_SENHA else None
 
 def modo_automatico(banco):
