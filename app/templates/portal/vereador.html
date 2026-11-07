@@ -1,14 +1,49 @@
 {% extends 'portal/base.html' %}
 {% block titulo %}{{ v.nome }} — {{ ident.nome }}{% endblock %}
-{% block conteudo %}<p><a href="/vereadores?leg={{ v.legislatura }}">‹ Vereadores</a></p>
-<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><span class="avatar" style="width:84px;height:84px;font-size:26px" aria-hidden="true">{{ v.nome.split()[0][:1] }}{{ v.nome.split()[-1][:1] }}</span><div><h1>{{ v.nome }}</h1><p>{{ v.apelido and '“' ~ v.apelido ~ '” · ' or '' }}{{ v.partido }} · {{ v.votos }} votos · {{ v.legislatura }}ª Legislatura</p></div></div>
-{% if v.bio %}<p>{{ v.bio }}</p>{% endif %}
-<div class="grade" style="margin:18px 0">
-<div class="cartao"><h3>Proposições</h3><p style="font-size:28px;font-weight:800;margin:0">{{ props|length }}</p><small>nos registros importados</small></div>
-<div class="cartao"><h3>Presença</h3>{% if pres.presente or pres.ausente or pres.justificada %}<p>{{ pres.presente }} presenças · {{ pres.ausente }} faltas · {{ pres.justificada }} justificadas</p>{% else %}<p>A carregar: depende das atas publicadas.</p>{% endif %}</div>
-<div class="cartao"><h3>Cargos na Mesa</h3>{% for c in cargos %}<p>{{ c.cargo }} ({{ c.bienio }})</p>{% else %}<p>Nenhum</p>{% endfor %}</div>
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/vereadores?leg={{ v.legislatura }}">Vereadores · {{ v.legislatura }}ª Legislatura</a><span aria-hidden="true">›</span><span aria-current="page">{{ v.nome }}</span></nav>
+<section class="perfil" aria-labelledby="h-nome">
+<figure><span class="retrato">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt or ('Foto oficial de ' ~ v.nome) }}">{% else %}<span class="ini" aria-hidden="true">{{ v.nome|iniciais }}</span>{% endif %}</span>
+<figcaption>{% if v.foto_url %}{{ v.foto_credito or 'Foto oficial enviada pela Câmara.' }}{% else %}Foto oficial ainda não enviada pela Câmara.{% endif %}</figcaption></figure>
+<div class="dados">
+<div class="tags">{% if v.apelido %}<span class="tag">“{{ v.apelido }}”</span>{% endif %}<span class="tag forte">{{ v.partido }}</span>{% for c in cargos if c.legislatura == v.legislatura %}<span class="tag">{{ c.cargo }} · {{ c.bienio }}</span>{% endfor %}</div>
+<h1 id="h-nome" style="margin:0">{{ v.nome }}</h1>
+<dl class="campos">
+<div><dt>Mandato</dt><dd>{{ v.legislatura }}ª Legislatura{% if leg %} · {{ leg.anos }}{% endif %}</dd></div>
+<div><dt>Eleição</dt><dd>{{ (v.votos ~ ' votos') if v.votos else '—' }}</dd></div>
+<div><dt>Trajetória na Câmara</dt><dd>{{ mandatos|length }} mandato(s) nos registros</dd></div>
+<div><dt>Contato do gabinete</dt><dd style="font-weight:400">{{ v.contato or 'a informar pelo gabinete' }}</dd></div>
+</dl>
+{% if v.bio %}<p style="margin:0">{{ v.bio }}</p>{% else %}<p style="margin:0;color:var(--sub)">Biografia a ser enviada pelo gabinete.</p>{% endif %}
+<dl class="kpis">
+<div><dt>Proposições</dt><dd class="v">{{ props|length }}</dd><dd class="d">nos registros importados</dd></div>
+{% if emendas %}<div style="border-top-color:#146C43"><dt>Emendas impositivas</dt><dd class="v">{{ emendas|length }}</dd><dd class="d">{{ emendas|sum(attribute='valor')|moeda }} indicados</dd></div>{% endif %}
+<div style="border-top-color:#7A4A00"><dt>Presença</dt>{% if pres.presente or pres.ausente or pres.justificada %}<dd class="v">{{ pres.presente }}</dd><dd class="d">{{ pres.ausente }} faltas · {{ pres.justificada }} justificadas</dd>{% else %}<dd class="v">—</dd><dd class="d">depende das atas publicadas</dd>{% endif %}</div>
+</dl>
+</div></section>
+
+{% if emendas %}
+<section class="emendas-dest" aria-labelledby="h-pf-em" style="margin-bottom:20px">
+<div class="cab" style="margin:0"><h2 id="h-pf-em" style="margin:0;font-size:22px">Emendas impositivas {{ emendas[0].numero.split('/')[1] }}</h2><span style="font-size:14px;color:#E3EADF">{{ emendas|sum(attribute='valor')|moeda }} indicados · {{ emendas|map(attribute='pago_empenho')|map('default', 0, true)|sum|moeda }} pagos nos empenhos</span></div>
+<ul style="list-style:none;margin:0;padding:0;display:grid;gap:8px">{% for e in emendas %}<li><a href="/emendas/{{ e.numero.split('/')[1] }}/{{ e.numero.split('/')[0] }}" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.1);color:#fff;text-decoration:none"><span><strong>{{ e.numero }}</strong> · {{ e.objeto }}</span><span style="font-variant-numeric:tabular-nums;white-space:nowrap">{{ e.valor|moeda }} · <span style="color:var(--destaque)">{{ e.pago_empenho|moeda if e.pago_empenho is not none else 'sem pagamento' }}</span></span></a></li>{% endfor %}</ul>
+<a class="btn-claro" href="/emendas">Ver o caminho de cada emenda na Prefeitura</a>
+<p style="font-size:12px">Fonte: cadastro de emendas e empenhos do sistema contábil da Prefeitura (Fiorilli).</p>
+</section>
+{% endif %}
+
+<div class="duas-col">
+{% for titulo, sub, itens in grupos %}
+<section class="caixa"><h2>{{ titulo }}</h2><p class="sub">{{ sub }}</p>
+{% if itens %}<ul class="itens">{% for p in itens %}<li><strong style="font-size:14px">{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</strong><span style="display:block">{{ p.ementa }}</span><small style="color:var(--sub)">{{ p.situacao }}</small></li>{% endfor %}</ul>
+{% else %}<p class="vazio"><strong>A carregar.</strong> Nenhum registro importado nesta categoria.</p>{% endif %}
+</section>
+{% endfor %}
 </div>
-{% if emendas %}<section class="secao"><h2>Emendas impositivas</h2><div class="tabela"><table><thead><tr><th scope="col">Emenda</th><th scope="col">Objeto</th><th scope="col">Valor</th><th scope="col">Pago</th></tr></thead><tbody>{% for e in emendas %}<tr><td><a href="/emendas/{{ e.numero.split('/')[1] }}/{{ e.numero.split('/')[0] }}">{{ e.numero }}</a></td><td>{{ e.objeto }}</td><td>{{ e.valor|moeda }}</td><td>{{ e.pago_cadastro|moeda }}</td></tr>{% endfor %}</tbody></table></div></section>{% endif %}
-<section class="secao"><h2>Proposições</h2>{% for p in props %}<p><strong>{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</strong> — {{ p.ementa }} <span class="chip">{{ p.situacao }}</span></p>{% else %}<p>Nenhuma proposição nos registros importados.</p>{% endfor %}</section>
-<section class="secao"><h2>Mandatos</h2><ul>{% for m in mandatos %}<li>{{ m.legislatura }}ª Legislatura ({{ m.anos }}) · {{ m.partido }} · {{ m.votos }} votos</li>{% endfor %}</ul></section>
+
+<section class="caixa" aria-labelledby="h-hist"><h2 id="h-hist" style="margin-bottom:12px">Mandatos na Câmara</h2>
+<ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px">
+{% for m in mandatos %}<li><a href="/vereador/{{ m.id }}"{% if m.id == v.id %} aria-current="page"{% endif %} style="display:block;padding:12px 14px;border-radius:14px;border:1px solid {{ 'var(--cor)' if m.id == v.id else 'var(--bd)' }};background:{{ 'var(--cor-clara)' if m.id == v.id else '#fff' }};color:var(--tx);text-decoration:none"><strong style="display:block">{{ m.legislatura }}ª Legislatura · {{ m.anos }}</strong><small style="color:var(--sub)">{{ m.partido }}{% if m.votos %} · {{ m.votos }} votos{% endif %}</small></a></li>{% endfor %}
+</ol>
+<p class="legal" style="margin:10px 0 0">Registros consultados: legislaturas importadas do portal da Câmara. Mandatos anteriores entram com a importação do acervo.</p>
+</section>
 {% endblock %}

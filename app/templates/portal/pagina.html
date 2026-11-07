@@ -1,0 +1,46 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ titulo }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">{{ titulo }}</span></nav>
+<h1>{{ titulo }}</h1>
+{% if pagina == 'privacidade' %}
+<p class="intro">Como o portal trata dados pessoais, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018).</p>
+<div class="duas-col">
+<section class="caixa"><h2>O que o portal guarda</h2><ul>
+<li>Pedidos de informação e manifestações de ouvidoria: nome e e-mail de quem pediu, só para responder. Esses dados <strong>nunca</strong> aparecem no portal.</li>
+<li>Registro de acesso ao painel administrativo, com o IP parcialmente mascarado.</li>
+<li>Preferências de acessibilidade (contraste, tamanho do texto) ficam só no seu navegador.</li>
+</ul></section>
+<section class="caixa"><h2>O que o portal não faz</h2><ul>
+<li>Não grava nem exibe CPF de cidadãos, credores ou servidores.</li>
+<li>Não usa cookies de publicidade nem rastreadores de terceiros.</li>
+<li>Não vende nem compartilha dados pessoais.</li>
+</ul></section>
+</div>
+<section class="caixa" id="encarregado" tabindex="-1"><h2>Encarregado de dados (LGPD, art. 41)</h2>
+<p>{{ ident.encarregado or '[a designar]' }}{% if ident.encarregado_email %} · <a href="mailto:{{ ident.encarregado_email }}">{{ ident.encarregado_email }}</a>{% endif %}</p>
+<p>Para pedir acesso, correção ou exclusão dos seus dados, use o <a href="/acesso">e-SIC e Ouvidoria</a> ou escreva ao encarregado.</p></section>
+{% elif pagina == 'acessibilidade' %}
+<p class="intro">Este portal segue o Modelo de Acessibilidade em Governo Eletrônico (eMAG) e as diretrizes WCAG 2.1, nível AA.</p>
+<div class="duas-col">
+<section class="caixa"><h2>Atalhos de teclado</h2><ul>
+<li><kbd>Alt</kbd> + <kbd>1</kbd>: ir para o conteúdo</li><li><kbd>Alt</kbd> + <kbd>2</kbd>: ir para o menu</li><li><kbd>Alt</kbd> + <kbd>3</kbd>: ir para a busca</li><li><kbd>Alt</kbd> + <kbd>4</kbd>: ir para o rodapé</li></ul>
+<p class="legal">No Firefox use <kbd>Alt</kbd> + <kbd>Shift</kbd> + número; no Mac, <kbd>Ctrl</kbd> + <kbd>Option</kbd> + número.</p></section>
+<section class="caixa"><h2>Ferramentas na barra do topo</h2><ul>
+<li><strong>Alto contraste</strong>: fundo preto, texto branco e links amarelos.</li><li><strong>Sublinhar links</strong>: todos os links ficam sublinhados.</li>
+<li><strong>A+ / A / A−</strong>: aumenta, restaura ou diminui o tamanho do texto.</li><li>As escolhas ficam guardadas só neste navegador.</li></ul></section>
+</div>
+<section class="caixa"><h2>Encontrou uma barreira?</h2><p>Conte para nós pela <a href="/acesso#ouvidoria">Ouvidoria</a>, informando a página e o que aconteceu.</p></section>
+{% else %}
+<div class="duas-col">
+<section class="caixa"><h2>Portal</h2><ul>
+<li><a href="/">Início</a></li>
+{% if leg %}<li><a href="/vereadores">Vereadores e Mesa Diretora</a></li><li><a href="/sessoes">Sessões</a></li><li><a href="/proposicoes">Projetos e proposições</a></li>{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
+{% else %}<li><a href="/servicos">Serviços</a></li>{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li><li><a href="/diario/verificar">Verificar autenticidade do Diário</a></li>{% endif %}{% endif %}
+{% if mods.noticias %}<li><a href="/noticias">Notícias e avisos</a></li>{% endif %}</ul></section>
+<section class="caixa"><h2>Transparência e atendimento</h2><ul>
+<li><a href="/transparencia">Portal da Transparência</a></li><li><a href="/acesso">e-SIC (pedido de informação)</a></li><li><a href="/acesso#ouvidoria">Ouvidoria</a></li>
+<li><a href="/privacidade">Política de privacidade</a></li><li><a href="/acessibilidade">Acessibilidade</a></li><li><a href="/admin">Área restrita</a></li></ul></section>
+</div>
+{% endif %}
+{% endblock %}

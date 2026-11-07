@@ -1,11 +1,32 @@
 {% extends 'portal/base.html' %}
-{% block conteudo %}<p><a href="/emendas">‹ Emendas impositivas</a></p><h1>Emenda nº {{ e.numero }}</h1>
-<p>{{ e.autor }} · {{ e.objeto }}</p>
-<div class="grade"><div class="cartao"><h3>Valor indicado</h3><p>{{ e.valor|moeda }}</p></div><div class="cartao"><h3>Pago segundo o cadastro</h3><p>{{ e.pago_cadastro|moeda }}</p></div><div class="cartao"><h3>Pago segundo o empenho</h3><p>{{ e.pago_empenho|moeda }}</p></div></div>
-{% if e.conferencia == 'divergente' %}<p class="msg" style="background:#FCEFD9">O valor pago no cadastro de emendas é diferente do valor pago nos empenhos. A Câmara pediu esclarecimento.</p>{% endif %}
-{% set d = e.detalhe %}{% if d %}
-<section class="secao cartao"><h2>Caminho na Prefeitura</h2><dl>
-<dt>Órgão</dt><dd>{{ d.orgao }}</dd><dt>Programa e ação</dt><dd>{{ d.programa }} · {{ d.acao }}</dd><dt>Natureza</dt><dd>{{ d.natureza }}</dd><dt>Fonte</dt><dd>{{ d.fonte }}</dd><dt>Contratação</dt><dd>{{ d.contratacao }}</dd><dt>Credor</dt><dd>{{ d.credor }}</dd></dl>
-{% for em in d.empenhos %}<h3>Empenho {{ em.num }} ({{ em.tipo }}) · {{ em.data }} · {{ em.valor|moeda }}</h3><ul>{% for a in em.anul %}<li>Anulação {{ a[0] }}: {{ a[1]|moeda }}</li>{% endfor %}{% for l in em.liq %}<li>Liquidação {{ l[0] }}: {{ l[1]|moeda }}</li>{% endfor %}{% for p in em.pag %}<li>Pagamento {{ p[0] }}: {{ p[1]|moeda }}</li>{% endfor %}</ul>{% endfor %}
-</section>{% else %}<p>Nenhum empenho localizado para esta emenda até a última leitura.</p>{% endif %}
-<p class="legal">Fonte: {{ e.fonte }}.</p>{% endblock %}
+{% block titulo %}Emenda {{ e.numero }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/emendas">Emendas impositivas</a><span aria-hidden="true">›</span><span aria-current="page">Emenda {{ e.numero }}</span></nav>
+<section class="caminho" aria-labelledby="h-cam">
+<p class="rotulo" style="font-size:13px">Caminho da emenda na Prefeitura</p>
+<h1 id="h-cam" style="font-size:clamp(24px,3vw,30px)">Emenda {{ e.numero }} · {{ e.autor }}</h1>
+<p style="margin:0;color:var(--sub)">{{ e.objeto }}</p>
+<dl class="kpis" style="margin:16px 0 10px">
+<div><dt>Valor indicado</dt><dd class="v">{{ tot.indicado|moeda }}</dd></div>
+<div><dt>Empenhado (líquido)</dt><dd class="v">{{ tot.empenhado|moeda }}</dd></div>
+<div><dt>Liquidado</dt><dd class="v">{{ tot.liquidado|moeda }}</dd></div>
+<div style="border-top-color:#146C43"><dt>Pago nos empenhos</dt><dd class="v">{{ tot.pago|moeda }}</dd></div>
+<div style="border-top-color:#7A4A00"><dt>Pago segundo o cadastro</dt><dd class="v">{{ tot.pago_cadastro|moeda }}</dd></div>
+</dl>
+<p style="margin:0 0 6px;font-size:14px;color:var(--sub)">Executado: {{ '%.1f'|format(tot.pct)|replace('.', ',') }}% do valor indicado</p>
+<div class="barra" role="img" aria-label="{{ '%.1f'|format(tot.pct)|replace('.', ',') }}% do valor indicado foi pago" style="height:10px;margin-bottom:18px"><span style="width:{{ [tot.pct, 100]|min }}%;min-width:3px;background:#146C43"></span></div>
+{% if e.conferencia == 'divergente' %}<p class="nota" role="note"><strong>Divergência:</strong> o valor pago no cadastro de emendas ({{ e.pago_cadastro|moeda }}) é diferente do valor pago nos empenhos ({{ (e.pago_empenho or 0)|moeda }}). As duas fontes são mostradas.</p>{% endif %}
+{% set d = e.detalhe %}
+{% if d %}
+<dl class="campos" style="margin:16px 0 18px">
+<div><dt>Órgão</dt><dd>{{ d.orgao }}</dd></div><div><dt>Programa</dt><dd>{{ d.programa }}</dd></div><div><dt>Ação</dt><dd>{{ d.acao }}</dd></div>
+<div><dt>Natureza da despesa</dt><dd>{{ d.natureza }}</dd></div><div><dt>Fonte de recurso</dt><dd>{{ d.fonte }}</dd></div><div><dt>Contratação</dt><dd>{{ d.contratacao }}</dd></div>
+<div><dt>Credor</dt><dd>{{ d.credor }}</dd></div>{% if d.destinacao %}<div><dt>Destinação</dt><dd>{{ d.destinacao }}</dd></div>{% endif %}
+</dl>
+{% endif %}
+<h2 style="font-size:20px">Etapas da execução</h2>
+<ol class="passos">{% for x in passos %}<li><span class="n {{ x.tipo }}" aria-hidden="true">{{ x.n }}</span><span><strong>{{ x.t }}</strong><span style="display:block;font-size:14px;color:#374151">{{ x.d }}</span></span><span class="q"><span>{{ x.data }}</span>{% if x.v is not none %}<strong>{{ x.v|moeda }}</strong>{% endif %}</span></li>{% endfor %}</ol>
+{% if not d %}<p class="vazio">Nenhum empenho localizado para esta emenda até a última leitura do sistema contábil.</p>{% endif %}
+<p class="legal" style="margin:6px 0 0">Fonte: {{ e.fonte }}. Base legal da execução: Lei 4.320/1964, arts. 58 a 65 (empenho, liquidação e pagamento).</p>
+</section>
+{% endblock %}

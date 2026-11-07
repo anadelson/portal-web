@@ -1,10 +1,10 @@
 """Portal público de cada órgão (Prefeitura ou Câmara)."""
-import secrets
+import re, secrets
 from pathlib import Path
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import FileResponse
 from . import config, db, eleicao
-from .catalogo import BLOCOS, VEDADAS
+from .catalogo import BLOCOS, VEDADAS, LARGURA
 from .web import templates, ctx_orgao, ler_form, ir
 
 r = APIRouter(prefix='/_p')
@@ -26,10 +26,35 @@ def conteudos_publicos(banco, secao=None, limite=50):
         itens = [c for c in itens if c['classe'] not in VEDADAS or c['excecao_eleitoral']]
     return itens
 
+def bienio_atual(bienio: str, ano: int) -> bool:
+    try:
+        a, b = [int(x) for x in bienio.replace('–', '-').split('-')[:2]]
+        return a <= ano <= b
+    except ValueError:
+        return False
+
+def dados_camara(b, hoje):
+    leg = db.um(b, 'SELECT max(numero) n FROM legislaturas')['n']
+    ver = db.todos(b, 'SELECT * FROM vereadores WHERE legislatura=%s ORDER BY nome', (leg,))
+    por_nome = {v['nome']: v for v in ver}
+    mesas, atual, pres = [], None, None
+    for g in db.todos(b, 'SELECT bienio, array_agg(cargo ORDER BY id) cargos, array_agg(nome ORDER BY id) nomes FROM mesas WHERE legislatura=%s GROUP BY bienio ORDER BY bienio', (leg,)):
+        em = bienio_atual(g['bienio'], hoje.year)
+        membros = [{'cargo': c, 'nome': n, 'vid': por_nome.get(n, {}).get('id'), 'foto': por_nome.get(n, {}).get('foto_url')} for c, n in zip(g['cargos'], g['nomes']) if n]
+        mesas.append({'bienio': g['bienio'], 'atual': em, 'membros': membros})
+        if em:
+            atual = g['bienio']
+            for m in membros:
+                if m['vid']:
+                    por_nome[m['nome']]['cargo'] = m['cargo']
+                if m['cargo'] == 'Presidente':
+                    pres = m['vid']
+    return dict(legislatura=leg, vereadores=ver, mesas=mesas, bienio_atual=atual, presidente_id=pres)
+
 @r.get('/')
 def home(request: Request):
     ctx = ctx_orgao(request)
-    o = ctx['orgao']; b = o['banco']
+    o = ctx['orgao']; b = o['banco']; hoje = config.hoje()
     blocos = []
     for bl in db.todos(b, "SELECT * FROM blocos WHERE pagina='home' AND visivel ORDER BY ordem"):
         info = BLOCOS.get(bl['chave'])
@@ -39,21 +64,22 @@ def home(request: Request):
             continue
         if bl['chave'] == 'defeso' and not ctx['defeso']:
             continue
-        blocos.append(dict(bl, nome=info[0]))
-    dados = {'noticias': conteudos_publicos(b, 'Notícias', 6), 'servicos': conteudos_publicos(b, 'Serviços', 8)}
+        blocos.append(dict(bl, nome=info[0], largura=LARGURA.get(bl['chave'], '')))
+    dados = {'noticias': conteudos_publicos(b, 'Notícias', 6), 'servicos': conteudos_publicos(b, 'Serviços', 8),
+             'numeros': db.cfg(b, 'numeros')}  # "números do município": preenchido pelos coletores (Fase 4); vazio = bloco oculto
     if o['tipo'] == 'legislativo':
-        leg = db.um(b, 'SELECT max(numero) n FROM legislaturas')['n']
-        dados['vereadores'] = db.todos(b, 'SELECT * FROM vereadores WHERE legislatura=%s ORDER BY nome', (leg,))
-        dados['mesa'] = db.todos(b, 'SELECT * FROM mesas WHERE legislatura=%s ORDER BY id', (leg,))
-        dados['sessoes'] = db.todos(b, 'SELECT * FROM sessoes ORDER BY data DESC LIMIT 5')
-        dados['emendas'] = db.um(b, "SELECT count(*) n, coalesce(sum(valor),0) total, coalesce(sum(pago_cadastro),0) pago FROM emendas")
+        dados.update(dados_camara(b, hoje))
+        dados['sessoes'] = db.todos(b, 'SELECT * FROM sessoes WHERE data < %s ORDER BY data DESC LIMIT 4', (hoje,))
+        dados['proxima'] = db.um(b, 'SELECT * FROM sessoes WHERE data >= %s ORDER BY data, id LIMIT 1', (hoje,))
+        dados['projetos'] = db.todos(b, "SELECT * FROM proposicoes ORDER BY (tipo = 'Indicação'), ano DESC, numero DESC LIMIT 4")
+        dados['emendas'] = db.um(b, "SELECT count(*) n, coalesce(sum(valor),0) total, coalesce(sum(pago_cadastro),0) pago, coalesce(sum(pago_empenho),0) pago_emp, count(*) FILTER (WHERE conferencia='divergente') divergentes FROM emendas")
         dados['financas'] = db.cfg(b, 'financas', {})
-        dados['legislatura'] = leg
     if ctx['mods'].get('diario'):
-        dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' ORDER BY data DESC, numero DESC, letra DESC LIMIT 5")
-    principal = [x for x in blocos if x['regiao'] in ('destaque', 'principal')]
+        dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' ORDER BY data DESC, numero DESC, letra DESC LIMIT 4")
+    destaque = [x for x in blocos if x['regiao'] == 'destaque']
+    principal = [x for x in blocos if x['regiao'] == 'principal']
     lateral = [x for x in blocos if x['regiao'] == 'lateral']
-    return templates.TemplateResponse(request, 'portal/home.html', dict(ctx, principal=principal, lateral=lateral, d=dados))
+    return templates.TemplateResponse(request, 'portal/home.html', dict(ctx, destaque=destaque, principal=principal, lateral=lateral, d=dados))
 
 @r.get('/noticias')
 def noticias(request: Request):
@@ -85,17 +111,31 @@ def transparencia(request: Request):
     return templates.TemplateResponse(request, 'portal/transparencia.html', dict(ctx, fin=db.cfg(ctx['orgao']['banco'], 'financas', {}), legal='transparencia'))
 
 # ---------- Câmara ----------
+def _norm(s):
+    return (s or '').lower().replace('í', 'i').replace('é', 'e').replace('ã', 'a').replace('ç', 'c').replace('á', 'a').replace('ó', 'o').replace('luiz', 'luis')
+
+def proposicoes_de(b, nome):
+    n = _norm(nome)
+    return [p for p in db.todos(b, 'SELECT * FROM proposicoes ORDER BY ano DESC, numero DESC') if n in _norm(p['autor'])]
+
 @r.get('/vereadores')
-def vereadores(request: Request, leg: int | None = None):
+def vereadores(request: Request, leg: str = ''):
     ctx = ctx_orgao(request); precisa(ctx, 'ver')
     b = ctx['orgao']['banco']
     legs = db.todos(b, 'SELECT * FROM legislaturas ORDER BY numero DESC')
     if not legs:
         raise HTTPException(404, 'Composição ainda não cadastrada.')
-    leg = leg or legs[0]['numero']
-    return templates.TemplateResponse(request, 'portal/vereadores.html', dict(ctx, legs=legs, leg=db.um(b, 'SELECT * FROM legislaturas WHERE numero=%s', (leg,)),
-        ver=db.todos(b, 'SELECT * FROM vereadores WHERE legislatura=%s ORDER BY nome', (leg,)),
-        mesas=db.todos(b, 'SELECT * FROM mesas WHERE legislatura=%s ORDER BY bienio, id', (leg,)), legal='vereadores'))
+    if leg == 'acervo':
+        return templates.TemplateResponse(request, 'portal/vereadores.html', dict(ctx, legs=legs, leg=None, ver=[], mesas=[], legal='vereadores'))
+    num = int(leg) if leg.isdigit() else legs[0]['numero']
+    lg = db.um(b, 'SELECT * FROM legislaturas WHERE numero=%s', (num,))
+    if not lg:
+        raise HTTPException(404, 'Legislatura não encontrada.')
+    ver = db.todos(b, 'SELECT * FROM vereadores WHERE legislatura=%s ORDER BY nome', (num,))
+    atual = num == legs[0]['numero']
+    props = {v['id']: len(proposicoes_de(b, v['nome'])) for v in ver} if atual else {}
+    return templates.TemplateResponse(request, 'portal/vereadores.html', dict(ctx, legs=legs, leg=lg, ver=ver, loop_atual=atual, props=props,
+        mesas=db.todos(b, 'SELECT * FROM mesas WHERE legislatura=%s ORDER BY bienio, id', (num,)), legal='vereadores'))
 
 @r.get('/vereador/{vid}')
 def vereador(request: Request, vid: int):
@@ -104,14 +144,16 @@ def vereador(request: Request, vid: int):
     v = db.um(b, 'SELECT * FROM vereadores WHERE id=%s', (vid,))
     if not v:
         raise HTTPException(404, 'Vereador não encontrado.')
-    primeiro = v['nome'].split()[0]
-    norm = lambda s: s.lower().replace('í', 'i').replace('é', 'e').replace('ã', 'a').replace('ç', 'c').replace('luiz', 'luis')
-    props = [p for p in db.todos(b, 'SELECT * FROM proposicoes ORDER BY ano DESC, numero DESC') if norm(v['nome']) in norm(p['autor'])]
-    emendas = [e for e in db.todos(b, 'SELECT * FROM emendas ORDER BY numero') if norm(e['autor']) == norm(v['nome'])] if v['legislatura'] == db.um(b, 'SELECT max(numero) n FROM legislaturas')['n'] else []
+    props = proposicoes_de(b, v['nome'])
+    atual = v['legislatura'] == db.um(b, 'SELECT max(numero) n FROM legislaturas')['n']
+    emendas = [e for e in db.todos(b, "SELECT * FROM emendas ORDER BY split_part(numero, '/', 1)::int") if _norm(e['autor']) == _norm(v['nome'])] if atual and ctx['mods'].get('emend') else []
     mandatos = db.todos(b, 'SELECT v.*, l.anos FROM vereadores v JOIN legislaturas l ON l.numero=v.legislatura WHERE v.nome=%s ORDER BY v.legislatura DESC', (v['nome'],))
     cargos = db.todos(b, 'SELECT * FROM mesas WHERE nome=%s ORDER BY legislatura DESC, bienio', (v['nome'],))
     pres = db.um(b, "SELECT count(*) FILTER (WHERE p.situacao='presente') presente, count(*) FILTER (WHERE p.situacao='ausente') ausente, count(*) FILTER (WHERE p.situacao='justificada') justificada FROM presencas p JOIN sessoes s ON s.id=p.sessao_id WHERE s.presenca_publicada AND p.vereador_id=%s", (vid,))
-    return templates.TemplateResponse(request, 'portal/vereador.html', dict(ctx, v=v, props=props, emendas=emendas, mandatos=mandatos, cargos=cargos, pres=pres, legal='vereadores'))
+    grupos = [('Indicações', 'Pedidos ao Poder Executivo', [p for p in props if p['tipo'] == 'Indicação']),
+              ('Requerimentos, moções e projetos', 'Demais proposições com autoria ou coautoria', [p for p in props if p['tipo'] != 'Indicação'])]
+    return templates.TemplateResponse(request, 'portal/vereador.html', dict(ctx, v=v, props=props, emendas=emendas, mandatos=mandatos, cargos=cargos, pres=pres, grupos=grupos,
+        leg=db.um(b, 'SELECT * FROM legislaturas WHERE numero=%s', (v['legislatura'],)), legal='vereadores'))
 
 @r.get('/sessoes')
 def sessoes(request: Request):
@@ -129,7 +171,27 @@ def emendas(request: Request):
     ctx = ctx_orgao(request); precisa(ctx, 'emend')
     b = ctx['orgao']['banco']
     return templates.TemplateResponse(request, 'portal/emendas.html', dict(ctx, emendas=db.todos(b, 'SELECT * FROM emendas ORDER BY split_part(numero, %s, 1)::int', ('/',)),
-        tot=db.um(b, 'SELECT count(*) n, sum(valor) total, sum(pago_cadastro) pago FROM emendas'), legal='emendas'))
+        tot=db.um(b, 'SELECT count(*) n, coalesce(sum(valor),0) total, coalesce(sum(pago_cadastro),0) pago, coalesce(sum(pago_empenho),0) pago_emp FROM emendas'), legal='emendas'))
+
+def caminho_emenda(e):
+    """Passos da emenda na Prefeitura (cadastro → empenho → anulação → liquidação → pagamento) e totais."""
+    d = e['detalhe'] or {}
+    passos = [{'n': 1, 't': 'Emenda cadastrada', 'd': d.get('vinculo') or e['objeto'], 'data': '', 'v': e['valor'], 'tipo': ''}]
+    emp = anul = liq = pag = 0
+    for em in d.get('empenhos', []):
+        emp += em.get('valor') or 0
+        passos.append({'t': f"Empenho {em['num']} ({em.get('tipo', '')})", 'd': d.get('credor', ''), 'data': em.get('data', ''), 'v': em.get('valor'), 'tipo': ''})
+        for dt, v in em.get('anul', []):
+            anul += v; passos.append({'t': 'Anulação de empenho', 'd': f"Empenho {em['num']}", 'data': dt, 'v': -v, 'tipo': 'anul'})
+        for dt, v in em.get('liq', []):
+            liq += v; passos.append({'t': 'Liquidação', 'd': 'Serviço ou material entregue e conferido', 'data': dt, 'v': v, 'tipo': ''})
+        for dt, v in em.get('pag', []):
+            pag += v; passos.append({'t': 'Pagamento', 'd': f"Empenho {em['num']}", 'data': dt, 'v': v, 'tipo': 'pago'})
+    for i, x in enumerate(passos, 1):
+        x['n'] = i
+    tot = {'indicado': e['valor'], 'empenhado': emp - anul, 'liquidado': liq, 'pago': pag, 'pago_cadastro': e['pago_cadastro']}
+    tot['pct'] = float(pag) / float(e['valor']) * 100 if e['valor'] else 0
+    return passos, tot
 
 @r.get('/emendas/{ano}/{num}')
 def emenda(request: Request, ano: int, num: int):
@@ -137,7 +199,8 @@ def emenda(request: Request, ano: int, num: int):
     e = db.um(ctx['orgao']['banco'], 'SELECT * FROM emendas WHERE numero=%s', (f'{num}/{ano}',))
     if not e:
         raise HTTPException(404, 'Emenda não encontrada.')
-    return templates.TemplateResponse(request, 'portal/emenda.html', dict(ctx, e=e, legal='emendas'))
+    passos, tot = caminho_emenda(e)
+    return templates.TemplateResponse(request, 'portal/emenda.html', dict(ctx, e=e, passos=passos, tot=tot, legal='emendas'))
 
 # ---------- Diário Oficial ----------
 @r.get('/diario')
@@ -159,6 +222,32 @@ def diario_verificar(request: Request, codigo: str = ''):
     ctx = ctx_orgao(request); precisa(ctx, 'diario')
     e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE codigo=%s AND situacao='publicada'", (codigo.strip().upper(),)) if codigo else None
     return templates.TemplateResponse(request, 'portal/diario_verificar.html', dict(ctx, e=e, codigo=codigo, legal='diario'))
+
+# ---------- Páginas institucionais e mídia ----------
+MIDIA_OK = re.compile(r'^[0-9a-f]{32}\.(png|jpg|webp)$')
+TIPOS = {'png': 'image/png', 'jpg': 'image/jpeg', 'webp': 'image/webp'}
+
+@r.get('/midia/{arquivo}')
+def midia(request: Request, arquivo: str):
+    """Fotos enviadas pelo painel (brasão, destaque, Conheça, vereadores), guardadas em DADOS_DIR/<órgão>/midia."""
+    if not MIDIA_OK.match(arquivo):
+        raise HTTPException(404)
+    f = Path(config.DADOS_DIR) / request.state.orgao['slug'] / 'midia' / arquivo
+    if not f.is_file():
+        raise HTTPException(404)
+    return FileResponse(f, media_type=TIPOS[arquivo.rsplit('.', 1)[1]], headers={'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff'})
+
+@r.get('/privacidade')
+def privacidade(request: Request):
+    return templates.TemplateResponse(request, 'portal/pagina.html', dict(ctx_orgao(request), pagina='privacidade', titulo='Política de privacidade', legal='acesso'))
+
+@r.get('/acessibilidade')
+def acessibilidade(request: Request):
+    return templates.TemplateResponse(request, 'portal/pagina.html', dict(ctx_orgao(request), pagina='acessibilidade', titulo='Acessibilidade'))
+
+@r.get('/mapa-do-site')
+def mapa(request: Request):
+    return templates.TemplateResponse(request, 'portal/pagina.html', dict(ctx_orgao(request), pagina='mapa', titulo='Mapa do site'))
 
 # ---------- Acesso à informação ----------
 @r.get('/acesso')

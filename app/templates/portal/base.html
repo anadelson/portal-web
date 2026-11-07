@@ -1,46 +1,111 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" id="topo">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
-<link rel="stylesheet" href="/static/portal.css">
-<style>:root{--cor:{{ cor }}}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/static/portal.css?v=3">
+<style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
+<script>try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
 </head>
-<body>
-<a class="pular" href="#conteudo">Ir para o conteúdo [1]</a>
-<div class="acess"><div>
-<a href="#conteudo" accesskey="1">Conteúdo [1]</a><a href="#menu" accesskey="2">Menu [2]</a><a href="#rodape" accesskey="4">Rodapé [4]</a>
-<button type="button" onclick="document.body.classList.toggle('alto-contraste')">Alto contraste</button>
-<button type="button" onclick="document.body.style.fontSize=(parseFloat(getComputedStyle(document.body).fontSize)+2)+'px'">A+</button>
-<button type="button" onclick="document.body.style.fontSize=''">A</button>
-<a href="/acesso">Acesso à informação</a>
+<body class="{{ orgao.tipo }}">
+{% set busca_url = '/proposicoes' if leg else '/servicos' %}
+<a class="pular" href="#conteudo" accesskey="1">Ir para o conteúdo [1]</a>
+<a class="pular" href="#menu" accesskey="2">Ir para o menu [2]</a>
+<a class="pular" href="#busca-topo" accesskey="3">Ir para a busca [3]</a>
+<a class="pular" href="#rodape" accesskey="4">Ir para o rodapé [4]</a>
+
+<div class="barra-acess"><div class="int">
+<span class="atalhos-tec" aria-label="Atalhos de teclado"><a href="#conteudo">Conteúdo [1]</a><a href="#menu">Menu [2]</a><a href="#busca-topo">Busca [3]</a><a href="#rodape">Rodapé [4]</a></span>
+<span class="ferramentas" role="group" aria-label="Ferramentas de acessibilidade">
+<button type="button" data-acess="hc" aria-pressed="false">Alto contraste</button>
+<button type="button" data-acess="sub" aria-pressed="false">Sublinhar links</button>
+<button type="button" data-fonte="10" aria-label="Aumentar o texto">A+</button>
+<button type="button" data-fonte="0" aria-label="Tamanho normal do texto">A</button>
+<button type="button" data-fonte="-10" aria-label="Diminuir o texto">A−</button>
+<a href="/acessibilidade">{{ icone('acess', 16) }}Acessibilidade</a>
+</span>
 </div></div>
-<header class="topo"><div>
-<a class="marca" href="/"><span class="selo" aria-hidden="true">{{ (ident.nome or orgao.nome)[:1] }}</span><span><strong>{{ ident.nome or orgao.nome }}</strong><br><small>{{ orgao.municipio }}</small></span></a>
-<nav class="menu" id="menu" aria-label="Menu principal"><ul>
-<li><a href="/">Início</a></li>
-{% if orgao.tipo == 'legislativo' %}
-<li><a href="/vereadores">Vereadores</a></li><li><a href="/sessoes">Sessões</a></li><li><a href="/proposicoes">Projetos</a></li>
-{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
-{% else %}
-<li><a href="/servicos">Serviços</a></li>{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}
-{% endif %}
-<li><a href="/transparencia">Transparência</a></li>
-{% if mods.noticias %}<li><a href="/noticias">Notícias</a></li>{% endif %}
-<li><a href="/acesso">e-SIC e Ouvidoria</a></li>
+
+<div class="barra-util"><nav class="int" aria-label="Acesso rápido">
+<a href="/transparencia">Transparência</a>
+<a href="/acesso">e-SIC</a>
+<a href="/acesso#ouvidoria">Ouvidoria</a>
+{% if leg %}<a href="/sessoes">Sessões</a>{% if mods.emend %}<a href="/emendas">Emendas</a>{% endif %}
+{% else %}{% if mods.diario %}<a href="/diario">Diário Oficial</a>{% endif %}<a href="/transparencia#licitacoes">Licitações</a>{% endif %}
+<a href="/transparencia#dados-abertos">Dados abertos</a>
+<a href="/admin">Área restrita (servidores)</a>
+{% for v in vizinhos %}<a class="vizinho" href="https://{{ v.dominio }}/">{{ icone('predio', 16) }}{{ v.nome.replace(' Municipal de ' ~ v.municipio.split(' (')[0], ' Municipal') if v.municipio else v.nome }}</a>{% endfor %}
+</nav></div>
+
+<header class="topo"><div class="int">
+<a class="marca" href="/" aria-label="Página inicial — {{ ident.nome or orgao.nome }}">
+{% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="" width="64" height="56">{% else %}<span class="selo" aria-hidden="true">{{ (ident.nome or orgao.nome)|iniciais }}</span>{% endif %}
+<span class="nome">{% if ident.prefixo and not leg %}<span class="pre">{{ ident.prefixo }}</span><strong>{{ ident.nome_curto or ident.nome }}</strong>{% else %}<span class="pre">{{ ident.prefixo or '' }}</span><strong>{{ ident.nome or orgao.nome }}</strong>{% endif %}<span class="sub">{{ ident.subtitulo or orgao.municipio }}</span></span>
+</a>
+{% set atual = request.url.path[3:] or '/' %}
+<nav class="menu" id="menu" tabindex="-1" aria-label="Menu principal"><ul>
+{% macro item(href, rotulo) %}<li><a href="{{ href }}"{% if atual == href or (href != '/' and atual.startswith(href)) %} aria-current="page"{% endif %}>{{ rotulo }}</a></li>{% endmacro %}
+{{ item('/', 'Início') }}
+{% if leg %}{{ item('/vereadores', 'Vereadores') }}{{ item('/sessoes', 'Sessões') }}{{ item('/proposicoes', 'Projetos') }}{% if mods.emend %}{{ item('/emendas', 'Emendas') }}{% endif %}
+{% else %}{{ item('/servicos', 'Serviços') }}{% if mods.diario %}{{ item('/diario', 'Diário Oficial') }}{% endif %}{% endif %}
+{{ item('/transparencia', 'Transparência') }}
+{% if mods.noticias %}{{ item('/noticias', 'Notícias') }}{% endif %}
+{{ item('/acesso', 'Fale conosco') }}
 </ul></nav>
+<form class="busca-topo" action="{{ busca_url }}" role="search"><label class="sr" for="busca-topo">Buscar no portal</label><input id="busca-topo" name="q" type="search" placeholder="Buscar"><button type="submit" aria-label="Buscar">{{ icone('busca', 18) }}</button></form>
 </div></header>
-{% if defeso and eleicao.aviso %}<div class="aviso-defeso" role="note"><p>Em cumprimento à Lei 9.504/1997, art. 73, VI, b, parte do conteúdo está suspensa até {{ eleicao.fim|br }}. Transparência, serviços e atos oficiais seguem disponíveis.</p></div>{% endif %}
-<main id="conteudo" tabindex="-1">
+
+{% if defeso and eleicao.aviso %}<div class="aviso-defeso" role="note"><p class="int">Em cumprimento à Lei 9.504/1997, art. 73, VI, b, parte do conteúdo está suspensa até {{ eleicao.fim|br }}. Transparência, serviços e atos oficiais seguem disponíveis.</p></div>{% endif %}
+
+{% block destaque %}{% endblock %}
+<main id="conteudo" tabindex="-1" class="{% block classe_main %}{% endblock %}">
 {% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}
 {% block conteudo %}{% endblock %}
 {% if legal %}<p class="legal" style="margin-top:28px"><strong>Base legal:</strong> {{ BASE_LEGAL[legal] }}</p>{% endif %}
 </main>
-<footer class="rodape" id="rodape"><div class="int">
-<section><h2>Atendimento</h2><p>{{ ident.endereco }}<br>{{ ident.telefone }} · {{ ident.email }}<br>{{ ident.horario }}<br>CNPJ {{ ident.cnpj }}</p></section>
-<section><h2>Acesso à informação</h2><ul><li><a href="/transparencia">Portal da Transparência</a></li><li><a href="/acesso">e-SIC</a></li><li><a href="/acesso#ouvidoria">Ouvidoria</a></li>{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}</ul></section>
-<section><h2>Privacidade</h2><p>Encarregado de dados (LGPD): {{ ident.encarregado }} · {{ ident.encarregado_email }}</p><p><a href="https://radardatransparencia.atricon.org.br/">Radar da Transparência Pública</a></p></section>
-<section><h2>Área restrita</h2><p><a href="/admin">Painel administrativo</a></p><p style="font-size:13px">Piloto em homologação. Conteúdos marcados como “exemplo” são ilustrativos.</p></section>
-</div></footer>
+
+<footer class="rodape" id="rodape" tabindex="-1">
+<div class="f1"><div class="int">
+<div class="f-id">{% if ident.brasao and ident.brasao.url %}<span class="f-bras"><img src="{{ ident.brasao.url }}" alt="" width="46" height="40"></span>{% endif %}<span><strong>{{ ident.nome or orgao.nome }}</strong><span>{{ ident.subtitulo or orgao.municipio }} · Portal oficial e da transparência</span></span></div>
+<div class="f-bot"><a class="f-radar" href="https://radardatransparencia.atricon.org.br/">{{ icone('radar', 18) }}Radar da Transparência Pública</a><a class="f-aval" href="/acesso?tipo=manifestacao#ouvidoria">{{ icone('estrela', 18) }}Avalie este portal</a></div>
+</div></div>
+<div class="f2 int">
+<section class="fcol" aria-labelledby="f-atend"><h2 id="f-atend">Atendimento</h2><ul class="f-ic">
+{% if ident.endereco %}<li>{{ icone('local', 18) }}<span>{{ ident.endereco }}</span></li>{% endif %}
+{% if ident.horario %}<li>{{ icone('relogio', 18) }}<span>{{ ident.horario }}</span></li>{% endif %}
+{% if ident.telefone %}<li>{{ icone('telefone', 18) }}<span>{{ ident.telefone }}</span></li>{% endif %}
+{% if ident.whatsapp %}<li>{{ icone('whatsapp', 18) }}<span>WhatsApp {{ ident.whatsapp }}</span></li>{% endif %}
+{% if ident.email %}<li>{{ icone('ouvidoria', 18) }}<span><a href="mailto:{{ ident.email }}">{{ ident.email }}</a></span></li>{% endif %}
+</ul></section>
+<nav class="fcol" aria-labelledby="f-ai"><h2 id="f-ai">Acesso à informação</h2><ul>
+<li><a href="/transparencia">Portal da Transparência</a></li><li><a href="/acesso">Acesso à Informação (e-SIC)</a></li><li><a href="/acesso#ouvidoria">Ouvidoria</a></li>
+{% if leg %}<li><a href="/sessoes">Sessões e votações</a></li>{% else %}<li><a href="/servicos">Carta de Serviços</a></li>{% endif %}
+<li><a href="/transparencia#dados-abertos">Dados abertos</a></li></ul></nav>
+<nav class="fcol" aria-labelledby="f-inst"><h2 id="f-inst">Institucional</h2><ul>
+{% if leg %}<li><a href="/vereadores">Vereadores e Mesa Diretora</a></li><li><a href="/proposicoes">Projetos e proposições</a></li>{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
+{% else %}{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/transparencia#licitacoes">Licitações e contratos</a></li>{% endif %}
+{% if mods.noticias %}<li><a href="/noticias">Notícias e avisos</a></li>{% endif %}</ul>
+{% for v in vizinhos %}<a class="f-viz" href="https://{{ v.dominio }}/"><span><small>{{ 'Poder Legislativo' if v.tipo == 'legislativo' else 'Poder Executivo' }}</small><strong>{{ v.nome }}</strong></span>{{ icone('seta', 18) }}</a>{% endfor %}
+</nav>
+<nav class="fcol" aria-labelledby="f-priv"><h2 id="f-priv">Privacidade e acessibilidade</h2><ul>
+<li><a href="/privacidade">Política de privacidade</a></li><li><a href="/privacidade#encarregado">Encarregado de dados (LGPD)</a></li><li><a href="/acessibilidade">Acessibilidade</a></li><li><a href="/mapa-do-site">Mapa do site</a></li></ul></nav>
+</div>
+<div class="f3 int">
+{% if ident.redes %}<nav class="f-redes" aria-label="Redes sociais"><span>Siga {{ 'a Câmara' if leg else 'a Prefeitura' }}</span>{% for r in ident.redes %}<a href="{{ r[1] }}">{{ r[0] }}</a>{% endfor %}</nav>{% else %}<span></span>{% endif %}
+<a class="f-topo" href="#topo">{{ icone('topo', 16) }}Voltar ao topo</a>
+</div>
+<div class="f4"><div class="int">
+<span class="f-legal"><span>© {{ hoje.year }} {{ ident.nome or orgao.nome }}{% if ident.cnpj %} · CNPJ {{ ident.cnpj }}{% endif %}{% if ident.revisado_em %} · Portal revisado em {{ ident.revisado_em|br }}{% endif %}</span>
+<a href="/admin">{{ icone('cadeado', 14) }}Área restrita · painel administrativo</a></span>
+<span class="f-cred">{% if ident.creditos %}{{ ident.creditos }} {% endif %}Piloto em homologação: conteúdos marcados como “exemplo” são ilustrativos.</span>
+</div></div>
+</footer>
+<script>
+(function(){var h=document.documentElement;function ler(){try{return JSON.parse(localStorage.getItem('acess')||'{}')}catch(e){return{}}}function gravar(p){try{localStorage.setItem('acess',JSON.stringify(p))}catch(e){}}
+var p=ler();document.querySelectorAll('[data-acess]').forEach(function(b){var k=b.getAttribute('data-acess');b.setAttribute('aria-pressed',p[k]?'true':'false');b.addEventListener('click',function(){p[k]=!p[k];h.classList.toggle(k,!!p[k]);b.setAttribute('aria-pressed',p[k]?'true':'false');gravar(p)})});
+document.querySelectorAll('[data-fonte]').forEach(function(b){b.addEventListener('click',function(){var d=parseInt(b.getAttribute('data-fonte'),10);p.fonte=d===0?0:Math.min(150,Math.max(80,(p.fonte||100)+d));h.style.fontSize=p.fonte?p.fonte+'%':'';gravar(p)})});})();
+</script>
 </body>
 </html>

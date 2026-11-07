@@ -1,6 +1,17 @@
 {% extends 'portal/base.html' %}
-{% block conteudo %}<h1>Emendas impositivas</h1>
-<p>{{ tot.n }} emendas · {{ tot.total|moeda }} indicados · {{ tot.pago|moeda }} pagos segundo o cadastro.</p>
-<div class="tabela"><table><thead><tr><th scope="col">Emenda</th><th scope="col">Vereador</th><th scope="col">Objeto</th><th scope="col">Valor</th><th scope="col">Pago (cadastro)</th><th scope="col">Conferência</th></tr></thead><tbody>
-{% for e in emendas %}<tr><td><a href="/emendas/{{ e.numero.split('/')[1] }}/{{ e.numero.split('/')[0] }}">{{ e.numero }}</a></td><td>{{ e.autor }}</td><td>{{ e.objeto }}</td><td>{{ e.valor|moeda }}</td><td>{{ e.pago_cadastro|moeda }}</td><td><span class="chip {{ 'ok' if e.conferencia == 'conferido' else 'erro' if e.conferencia == 'divergente' else '' }}">{{ {'conferido':'Confere com o empenho','divergente':'Diverge do empenho','sem_execucao':'Sem execução','pendente':'Pendente'}[e.conferencia] }}</span></td></tr>{% endfor %}
-</tbody></table></div><p class="legal">Fonte: sistema contábil da Prefeitura (Fiorilli).</p>{% endblock %}
+{% block titulo %}Emendas impositivas — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Emendas impositivas</span></nav>
+<h1>Emendas impositivas</h1>
+<p class="intro">Parte do orçamento que cada vereador direcionou para a cidade. Para cada emenda, veja o caminho na Prefeitura: empenho, liquidação e pagamento.</p>
+<dl class="kpis" style="margin-bottom:20px">
+<div><dt>Emendas</dt><dd class="v">{{ tot.n }}</dd><dd class="d">cadastradas</dd></div>
+<div><dt>Valor indicado</dt><dd class="v">{{ tot.total|moeda }}</dd></div>
+<div style="border-top-color:#146C43"><dt>Pago nos empenhos</dt><dd class="v">{{ tot.pago_emp|moeda }}</dd></div>
+<div style="border-top-color:#7A4A00"><dt>Pago segundo o cadastro</dt><dd class="v">{{ tot.pago|moeda }}</dd></div>
+</dl>
+<div class="tabela"><table><caption class="sr">Emendas impositivas</caption><thead><tr><th scope="col">Emenda</th><th scope="col">Vereador(a)</th><th scope="col">Objeto</th><th scope="col" class="num">Valor</th><th scope="col" class="num">Pago (empenhos)</th><th scope="col" class="num">Pago (cadastro)</th><th scope="col">Conferência</th><th scope="col"><span class="sr">Ação</span></th></tr></thead><tbody>
+{% for e in emendas %}{% set url = '/emendas/' ~ e.numero.split('/')[1] ~ '/' ~ e.numero.split('/')[0] %}<tr><td style="white-space:nowrap">{{ e.numero }}</td><td><strong>{{ e.autor }}</strong></td><td>{{ e.objeto }}</td><td class="num">{{ e.valor|moeda }}</td><td class="num">{{ e.pago_empenho|moeda }}</td><td class="num">{{ e.pago_cadastro|moeda }}</td><td><span class="chip {{ 'ok' if e.conferencia == 'conferido' else 'erro' if e.conferencia == 'divergente' else '' }}">{{ {'conferido':'Confere com o empenho','divergente':'Diverge do empenho','sem_execucao':'Sem execução','pendente':'Pendente'}.get(e.conferencia, e.conferencia) }}</span></td><td><a class="btn sec" style="min-height:36px;padding:0 12px;font-size:14px;white-space:nowrap" href="{{ url }}" aria-label="Ver o caminho da emenda {{ e.numero }}">Ver o caminho</a></td></tr>{% endfor %}
+</tbody></table></div>
+<p class="legal" style="margin-top:12px">Fonte: sistema contábil da Prefeitura (Fiorilli), cadastro de emendas e empenhos. Quando o pago do cadastro difere do pago nos empenhos, a emenda é marcada como divergente e as duas fontes são mostradas.</p>
+{% endblock %}
