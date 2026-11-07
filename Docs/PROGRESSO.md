@@ -621,3 +621,25 @@ INEP no ar e conferido. **Aguardando o usuário preencher `IEGM_USUARIO` e `IEGM
 3. primeira coleta e conferência das colunas;
 4. merge de `fase-7-fontes` e tag;
 5. ETAPA 1 do `Docs/PEDIDO-FASE7-LAYOUT.md`.
+
+### Mudança pedida pelo usuário (07/11/2026): credencial do IEG-M pelo console, não pelo .env
+- **Console → Integrações → Credenciais de fontes**, só para o gestor da plataforma; o domínio do órgão responde 404 e o console sem login redireciona.
+  - Por fonte, começando pelo `iegm`: usuário e senha só de gravação. A tela mostra "configurada em <data> por <usuário>", com os botões Trocar, Apagar e "Testar conexão".
+  - O teste mostra só o código HTTP e se veio JSON válido; em erro, só o tipo do erro.
+- **Gravação:** tabela `credenciais_fontes` (migração 012), cifrada com Fernet usando `CHAVE_CREDENCIAIS` do `.env`. Sem a chave, o cadastro fica desligado; com chave errada, a credencial aparece como "ilegível: recadastre".
+- **Ordem de leitura no coletor:** console, depois reserva `IEGM_USUARIO`/`IEGM_SENHA` do `.env`, depois nenhuma (desligado, sem erro).
+- **Admin do órgão:** continua só "automático/manual". Em automático sem credencial, aparece "aguardando configuração da plataforma" na tela do IEG-M e na lista.
+- **Auditoria:** cadastrar, trocar, apagar e testar vão para o `log_console`, sem valores. O teste confere que nenhum valor aparece em `log_console`, `coletas`, `auditoria`, `indicador_historico`, no resultado do teste nem na saída do processo.
+- **Backup:** `deploy/backup.sh` passa a copiar o `.env` (com `CHAVE_CREDENCIAIS`) para `backups/env-AAAA-MM-DD`, com permissão 600 e retenção de 14 dias. O README avisa que perder a chave obriga a recadastrar.
+- **Testes:** `teste_painel_fontes` e as outras 5 suítes deram ERROS: 0 (código montado na imagem atual).
+
+### Onde parou
+Aguardando aprovação para:
+1. build;
+2. 6 suítes com a imagem nova;
+3. backup;
+4. gerar `CHAVE_CREDENCIAIS` direto no `.env`, sem exibir;
+5. `up -d`;
+6. `provision atualizar` (migração 012).
+
+Depois, o usuário cadastra a credencial pela tela. Em seguida vêm: modo automático do IEG-M, primeira coleta, merge e tag, e a ETAPA 1 do layout.
