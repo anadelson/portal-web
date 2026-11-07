@@ -36,16 +36,24 @@ def lista(request: Request):
     for ind in P.catalogo(b, so_visiveis=False):
         ult = db.um(b, 'SELECT * FROM indicador_valores WHERE indicador_id=%s ORDER BY data_ref DESC, periodo DESC LIMIT 1', (ind['id'],))
         itens.append(dict(ind, ult=ult, valor=P.exibir(ind, ult) if ult else '', aviso=P.aviso_antigo(ind), tema_nome=P.TEMA_NOME[ind['tema']]))
-    fontes = db.todos(db.PLATAFORMA, "SELECT fonte, ativo FROM fontes WHERE orgao_id=%s AND fonte IN ('ibge','cnes','mds','pni','painel') ORDER BY fonte", (request.state.orgao['id'],))
-    coletas = db.todos(db.PLATAFORMA, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1) IN ('ibge','cnes','mds','pni','painel') ORDER BY id DESC LIMIT 15", (request.state.orgao['slug'],))
+    fontes = db.todos(db.PLATAFORMA, 'SELECT fonte, ativo FROM fontes WHERE orgao_id=%s AND fonte = ANY(%s) ORDER BY fonte', (request.state.orgao['id'], list(FONTES_PAINEL)))
+    coletas = db.todos(db.PLATAFORMA, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1) = ANY(%s) ORDER BY id DESC LIMIT 15", (request.state.orgao['slug'], list(FONTES_PAINEL)))
     hist = db.todos(b, 'SELECT h.*, i.nome FROM indicador_historico h LEFT JOIN indicadores i ON i.id=h.indicador_id ORDER BY h.id DESC LIMIT 40')
-    return T('indicadores', request, u, itens=itens, fontes=fontes, coletas=coletas, hist=hist, max_dest=P.MAX_DESTAQUES)
+    from .coletores.inep_iegm import aviso_certificado
+    try:
+        aviso_cert = aviso_certificado()
+    except Exception as e:
+        aviso_cert = f'Não foi possível ler o certificado intermediário do INEP ({type(e).__name__}).'
+    return T('indicadores', request, u, itens=itens, fontes=fontes, coletas=coletas, hist=hist, max_dest=P.MAX_DESTAQUES, aviso_cert=aviso_cert)
 
-def coletar_agora(o):
+FONTES_PAINEL = ('ibge', 'cnes', 'inep', 'iegm', 'mds', 'pni', 'painel')
+
+def coletar_agora(o, so=None):
     """Roda as fontes ativas do painel deste órgão (mesma rotina do worker, com registro em `coletas`)."""
     from .worker import rodar
     res = []
-    for f in db.todos(db.PLATAFORMA, "SELECT o.*, f.fonte, f.params FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE o.id=%s AND f.ativo AND f.fonte IN ('ibge','cnes','mds','pni','painel') ORDER BY f.fonte", (o['id'],)):
+    for f in db.todos(db.PLATAFORMA, 'SELECT o.*, f.fonte, f.params FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE o.id=%s AND f.ativo AND f.fonte = ANY(%s) ORDER BY f.fonte',
+                      (o['id'], [so] if so else list(FONTES_PAINEL))):
         res += rodar(f, f['fonte'], f['params'])
     return res
 
@@ -71,8 +79,12 @@ def editar(request: Request, iid: int):
         raise HTTPException(404, 'Indicador não encontrado.')
     serie = list(reversed(P.serie(b, iid)))
     hist = db.todos(b, 'SELECT * FROM indicador_historico WHERE indicador_id=%s ORDER BY id DESC LIMIT 50', (iid,))
+    cat = P.CAT.get(ind['chave'], {})
+    from . import config
+    ult_coleta = db.um(db.PLATAFORMA, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1)=%s ORDER BY id DESC LIMIT 1", (request.state.orgao['slug'], ind['coletor'])) if ind['coletor'] else None
     return T('indicador', request, u, i=ind, serie=serie, hist=hist, exibir=P.exibir, faixas=P.FAIXAS_IEGM, tema_nome=P.TEMA_NOME[ind['tema']],
-             link=P.link_fonte(ind, request.state.orgao), aviso=P.aviso_antigo(ind))
+             link=P.link_fonte(ind, request.state.orgao), aviso=P.aviso_antigo(ind), alternavel=cat.get('alternavel'), reserva=cat.get('reserva'),
+             credencial=bool(config.IEGM_USUARIO and config.IEGM_SENHA) if ind['coletor'] == 'iegm' else None, ult_coleta=ult_coleta)
 
 @r.post('/indicadores/{iid}')
 async def editar_post(request: Request, iid: int):
@@ -108,8 +120,30 @@ async def editar_post(request: Request, iid: int):
             P.historico(b, iid, u['nome'], 'Configuração alterada: ' + ', '.join(mud), {k: antes[k] for k in mud}, {k: depois[k] for k in mud})
             auditar(request, f"Painel de indicadores: {ind['nome']} — alterado ({', '.join(mud)})")
         return ir(volta, 'Indicador atualizado.' if mud else 'Nada mudou.', request)
+    cat = P.CAT.get(ind['chave'], {})
+    if acao == 'modo':
+        if not cat.get('alternavel'):
+            return ir(volta, 'Este indicador não tem modo de atualização alternável.', request)
+        novo = 'automatico' if f.get('modo') == 'automatico' else 'manual'
+        if novo == ind['modo']:
+            return ir(volta, 'Nada mudou.', request)
+        grupo = [c['chave'] for c in P.CATALOGO if c.get('alternavel') and c['coletor'] == ind['coletor']]
+        for x in db.todos(b, 'SELECT id, modo FROM indicadores WHERE chave = ANY(%s)', (grupo,)):
+            db.exe(b, 'UPDATE indicadores SET modo=%s WHERE id=%s', (novo, x['id']))
+            P.historico(b, x['id'], u['nome'], f"Modo de atualização: {x['modo']} → {novo}", {'modo': x['modo']}, {'modo': novo})
+        rot = 'automático (acesso anônimo do TCESP)' if novo == 'automatico' else 'manual'
+        auditar(request, f"Painel de indicadores: IEG-M — modo de atualização alterado para {rot} ({len(grupo)} indicadores)")
+        return ir(volta, f'Modo de atualização do IEG-M: {rot}.', request)
+    if acao == 'coletar':
+        if not ind['coletor']:
+            return ir(volta, 'Este indicador não tem coletor.', request)
+        res = await run_in_threadpool(coletar_agora, request.state.orgao, ind['coletor'])
+        auditar(request, f"Painel de indicadores: coleta manual da fonte {ind['coletor']}")
+        if not res:
+            return ir(volta, 'Nada a coletar: a fonte está desligada, sem credencial ou o indicador está em modo manual.', request)
+        return ir(volta, ' '.join(('OK: ' if x[1] else 'FALHA: ') + x[3][:160] for x in res), request)
     if acao == 'lancar':
-        if ind['modo'] != 'manual':
+        if ind['modo'] != 'manual' and not cat.get('reserva'):
             return ir(volta, 'Este indicador tem fonte automática: o valor vem do coletor.', request)
         periodo = f.get('periodo', '').strip()[:40]
         motivo = f.get('motivo', '').strip()
