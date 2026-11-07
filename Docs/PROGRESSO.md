@@ -316,5 +316,15 @@ Roteiro `app/coletores/descoberta.py` executado dentro do container `app` (1 req
 - `EmendasImpositivasArt166A`: só totais de transferências, descartada para emendas.
 - Na leitura de hoje, o pago do cadastro **bate** com o pago dos empenhos nas emendas 12 e 13, que divergiam em 05/11. A conferência passará a ser recalculada a cada coleta.
 
+✅ **Mapeamento aprovado pelo usuário em 2026-11-07.**
+
+## Passos 2 a 7 — implementação (branch `fase-4`)
+- Migrações: `004_plataforma_fontes.sql` (tabela `fontes` por órgão) e `005_orgao_transparencia.sql` (receitas, despesas_unidade, empenhos, licitacoes, contratos, servidores, diarias, transferencias, ordem_cronologica, restos_pagar, relatorios_fiscais; colunas novas em emendas). Idempotentes, aplicadas por `provision atualizar`, que também cadastra as fontes padrão.
+- Coletores: `fiorilli.py` (11 bases + emendas), `pncp.py`, `siconfi.py` (RREO 14, RGF 01, entregas; atualiza a despesa com pessoal da Câmara), `tcesp.py` (receitas 2025 mês a mês), `numeros.py` ("Borá em números"), `comum.py` (1 req/s, timeout, novas tentativas, upsert, LGPD).
+- Worker por fonte: Fiorilli de hora em hora das 7h às 19h, PNCP a cada 6 h, Siconfi diária, TCESP no dia 20 ou enquanto faltar 2025.
+- Telas: `/transparencia` (central com cartões e data de cada base), `/transparencia/<base>` (filtros de ano, mês, unidade, credor e texto; paginação; totais; fonte e data de atualização; "Base legal:"; aviso quando a última coleta falhou), `.csv`/`.json`, API `/dados/<base>.json`, página `/dados-abertos`.
+- Console: "Registro e coletas" com a situação de cada fonte e as falhas em destaque.
+- Testes offline (`tests/teste_transparencia.py`) com as amostras e linhas sintéticas com CPF. Amostras completas do RGF Legislativo (64 linhas) e do RREO 14 (46 linhas) salvas para os testes.
+
 ## Onde parou
-**Aguardando aprovação do mapeamento** (quadro acima e proposta mostrada ao usuário) antes de criar a migração 003/004.
+Código pronto. Aguardando aprovação de: build → testes em banco isolado → implantação + coleta.

@@ -1,0 +1,17 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Dados abertos — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/transparencia">Transparência</a><span aria-hidden="true">›</span><span aria-current="page">Dados abertos</span></nav>
+<h1>Dados abertos</h1>
+<p class="intro" style="margin-bottom:6px">Todas as bases do Portal da Transparência em formato aberto (CSV e JSON), sem cadastro, para qualquer pessoa reutilizar.</p>
+<p class="legal"><strong>Base legal:</strong> {{ legal_txt }}</p>
+<section class="caixa" style="margin-bottom:20px"><h2>Como usar a API</h2>
+<p><code>GET https://{{ orgao.dominio }}/dados/&lt;base&gt;.json</code> — devolve JSON com <code>fontes</code>, <code>base_legal</code>, <code>atualizado_em</code>, <code>total_registros</code>, <code>totais</code>, <code>campos</code> e <code>registros</code> (até 50.000 por resposta).</p>
+<p>Parâmetros opcionais (os mesmos filtros das telas): <code>ano</code>, <code>mes</code> (1 a 12; em receitas, 0 = acumulado), <code>unidade</code>, <code>credor</code>, <code>q</code> (texto). Exemplo: <code>/dados/empenhos.json?ano={{ hoje.year }}&amp;mes=3&amp;credor=posto</code></p>
+<p>CSV: <code>/transparencia/&lt;base&gt;.csv</code> com os mesmos parâmetros (UTF-8, vírgula como separador, ponto decimal). Atualização: a cada hora, das 7h às 19h, para o sistema contábil; a cada 6 horas para o PNCP; diária para o Siconfi.</p>
+<p class="legal">LGPD: nenhuma base contém CPF. Pessoas físicas aparecem sem documento; servidores, só com nome, cargo, vínculo, lotação e remuneração bruta.</p></section>
+<div class="tabela"><table><caption class="sr">Bases disponíveis</caption><thead><tr><th scope="col">Base</th><th scope="col">Fonte</th><th scope="col" class="num">Registros</th><th scope="col">Atualizado em</th><th scope="col">Baixar</th></tr></thead><tbody>
+{% for x in bases %}<tr><td><a href="/transparencia/{{ x.chave }}"><strong>{{ x.titulo }}</strong></a><small style="display:block;color:var(--sub)"><code>{{ x.chave }}</code> · campos: {{ x.colunas|map(attribute=0)|join(', ') }}</small></td><td>{{ x.fontes.values()|join('; ') }}</td><td class="num">{{ x.n }}</td><td>{{ x.atualizado|br if x.atualizado else '—' }}</td>
+<td style="white-space:nowrap"><a href="/transparencia/{{ x.chave }}.csv" download aria-label="CSV de {{ x.titulo }}">CSV</a> · <a href="/dados/{{ x.chave }}.json" aria-label="JSON de {{ x.titulo }}">JSON</a></td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

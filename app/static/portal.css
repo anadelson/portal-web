@@ -243,3 +243,11 @@ body.legislativo .f2 .fcol h2,body.legislativo .f-ic .ic{color:#F7C948}
 .hc .barra>span,.hc .emendas-dest .barra>span{background-color:#FFFF00!important}
 @media (max-width:640px){.hero{min-height:0}.hero .int{padding-bottom:120px}.busca-topo{flex:1 1 100%}.busca-topo input{width:100%}.barra-util a.vizinho{margin-left:0}.painel{padding:20px}.conheca .txt{padding:22px}}
 @media print{.barra-acess,.barra-util,.busca-topo,footer.rodape .f1,footer.rodape .f3{display:none}}
+
+/* Transparência: filtros, paginação (Fase 4) */
+form.filtros{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;background:#fff;border:1px solid var(--bd);border-radius:14px;padding:16px;margin-top:14px}
+form.filtros label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600;flex:1 1 160px;min-width:0}
+form.filtros select,form.filtros input{min-height:44px;font:inherit;font-weight:400;padding:0 10px;border:1px solid #6B7684;border-radius:8px;background:#fff;color:var(--tx);max-width:100%}
+nav.paginacao{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin-top:14px}
+.tabela td{font-size:14px}
+code{font-size:.92em;background:#EEF1F4;padding:1px 5px;border-radius:4px;word-break:break-all}
