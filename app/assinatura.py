@@ -47,7 +47,9 @@ def gerar_cadeia_teste(destino: str | None = None):
             .add_extension(x509.KeyUsage(digital_signature=False, content_commitment=False, key_encipherment=False, data_encipherment=False, key_agreement=False, key_cert_sign=True, crl_sign=True, encipher_only=False, decipher_only=False), critical=True)
             .add_extension(x509.SubjectKeyIdentifier.from_public_key(rk.public_key()), critical=False)
             .sign(rk, hashes.SHA256()))
-    escrever = lambda nome_arq, dados: (d / nome_arq).write_bytes(dados) or os.chmod(d / nome_arq, 0o600)
+    def escrever(nome_arq, dados):
+        (d / nome_arq).write_bytes(dados)
+        os.chmod(d / nome_arq, 0o600)
     escrever('raiz.crt', raiz.public_bytes(serialization.Encoding.PEM))
     def emitir(cn, tsa=False):
         k = chave()

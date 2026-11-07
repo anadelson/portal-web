@@ -24,6 +24,7 @@ def msg(r):
 PM, CM = 'bd_pm_bora', 'bd_cm_bora'
 if not A.modo_teste(): sys.exit('Este teste roda em DIARIO_MODO=teste.')
 if not Path(config.SEGREDOS_DIR, 'teste', 'raiz.crt').is_file(): A.gerar_cadeia_teste()
+if any(oct(p.stat().st_mode)[-3:] != '600' for p in Path(config.SEGREDOS_DIR, 'teste').iterdir()): falha('arquivos da cadeia de teste devem ter permissão 600')
 O = {o['slug']: o for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos')}
 
 pm = TestClient(app, base_url='http://pmbora.localhost')
