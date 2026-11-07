@@ -209,8 +209,13 @@ IEGM_CONSULTA = {'path': '/public/ieg_m/iegm.cda', 'dataAccessId': 'faixaTodosMu
 IEGM_PRIMEIRO_ANO_BASE = 2014
 IEGM_CHAVES = [k for k, _ in P._IEGM]
 # padrões (sem acento, minúsculos) que identificam cada dimensão no nome da coluna ou no valor de uma coluna "dimensão"
-IEGM_DIM = [('gestao_iegm_educ', r'educ'), ('gestao_iegm_saude', r'saude'), ('gestao_iegm_planej', r'planej'), ('gestao_iegm_fiscal', r'fiscal'),
-            ('gestao_iegm_amb', r'amb'), ('gestao_iegm_cidade', r'cidade'), ('gestao_iegm_ti', r'gov.?ti|\bti\b|tecnologia')]
+# Nome normalizado (sem acento, só letras e números, sem prefixos faixa/nota/vl) -> indicador. Só estes nomes são aceitos:
+# coluna desconhecida é IGNORADA (com aviso na coleta), nunca encaixada por falta de regra.
+IEGM_DIM = [('gestao_iegm', r'^(iegm|iegmgeral|geral)$'), ('gestao_iegm_educ', r'^i?educ'), ('gestao_iegm_saude', r'^i?saude'),
+            ('gestao_iegm_planej', r'^i?planej'), ('gestao_iegm_fiscal', r'^i?fiscal'), ('gestao_iegm_amb', r'^i?amb'),
+            ('gestao_iegm_cidade', r'^i?cidade'), ('gestao_iegm_ti', r'^i?gov(ti)?$|^i?govti|^i?tecnologia')]
+# colunas de identificação (não são indicadores)
+IEGM_IDENT = re.compile(r'^(exercicioref|exercicio|anoapuracao|anobase|ano|codigomunicipio|codmunicipio|codibge|codigoibge|ibge|nome|municipio|nomemunicipio|regiao|periodo)$')
 FAIXA = re.compile(r'^(A|B\+|B|C\+|C)$')
 
 def _sem_acento(s):
@@ -241,27 +246,44 @@ def _faixa(v):
     s = str(v or '').strip().upper().replace(' ', '')
     return s if FAIXA.match(s) else ''
 
+def _chave_col(nome):
+    n = re.sub(r'[^a-z0-9]', '', _sem_acento(nome))
+    n = re.sub(r'^(faixa|nota|vl|indice)', '', n) or n
+    return n
+
+def _dim(nome):
+    n = _chave_col(nome)
+    return next((k for k, p in IEGM_DIM if re.search(p, n)), None)
+
 def mapear_iegm(d, ibge, fixo=None):
-    """De uma resposta do CDA ({metadata, resultset}), extrai {indicador: (faixa, nota)} do município.
-    Aceita tabela larga (uma coluna por dimensão) ou longa (uma linha por dimensão). Devolve (valores, colunas)."""
+    """De uma resposta do CDA ({metadata, resultset}), extrai do município {indicador: (faixa, nota)}.
+    Devolve (valores, colunas, info) com info = {'ano_base', 'edicao', 'ignoradas'}.
+    Tabela larga (uma coluna por dimensão) ou longa (uma linha por dimensão). Colunas de identificação ficam de fora;
+    colunas desconhecidas são ignoradas e listadas; duas colunas para o mesmo indicador = erro (nada é gravado)."""
     meta = d.get('metadata') or []
     cols = [m.get('colName', '') for m in sorted(meta, key=lambda m: m.get('colIndex', 0))]
     linhas = d.get('resultset') or []
-    norm = [_sem_acento(c) for c in cols]
+    norm = [_chave_col(c) for c in cols]
     fixo = fixo or {}
+    info = {'ano_base': None, 'edicao': None, 'ignoradas': []}
     alvo = {str(ibge), str(ibge)[:6]}
     if fixo.get('codigo') in cols:
         ic = cols.index(fixo['codigo'])
     else:
-        cand = [i for i, c in enumerate(norm) if re.search(r'cod|ibge', c)]
-        ic = next((i for i in cand if any(str(l[i]).strip() in alvo for l in linhas if i < len(l))), None)
+        ic = next((i for i, c in enumerate(norm) if re.match(r'^(codigomunicipio|codmunicipio|codibge|codigoibge|ibge)$', c)), None)
         if ic is None:
             ic = next((i for i in range(len(cols)) if any(str(l[i]).strip() in alvo for l in linhas if i < len(l))), None)
     if ic is None:
-        return {}, cols
+        return {}, cols, info
     minhas = [l for l in linhas if ic < len(l) and str(l[ic]).strip() in alvo]
     if not minhas:
-        return {}, cols
+        return {}, cols, info
+    l0 = minhas[0]
+    for i, c in enumerate(norm):
+        if c in ('exercicioref', 'exercicio', 'anobase') and info['ano_base'] is None:
+            info['ano_base'] = int(num(l0[i])) if num(l0[i]) is not None else None
+        if c == 'anoapuracao':
+            info['edicao'] = int(num(l0[i])) if num(l0[i]) is not None else None
     def tipo(i):
         vs = [l[i] for l in minhas if i < len(l) and l[i] not in (None, '')]
         if vs and all(_faixa(v) for v in vs):
@@ -270,57 +292,68 @@ def mapear_iegm(d, ibge, fixo=None):
             return 'nota'
         return 'texto'
     out = {}
-    # mapeamento fixo pelo parâmetro da fonte: {'gestao_iegm': {'faixa': 'colName', 'nota': 'colName'}, ...}
-    for chave in IEGM_CHAVES:
-        f = fixo.get(chave) or {}
-        if f:
-            l = minhas[0]
-            fx = _faixa(l[cols.index(f['faixa'])]) if f.get('faixa') in cols else ''
-            nt = num(l[cols.index(f['nota'])]) if f.get('nota') in cols else None
-            if fx or nt is not None:
-                out[chave] = (fx, nt)
-    if out:
-        return out, cols
-    # tabela longa: uma coluna de texto com o nome da dimensão
-    idim = next((i for i in range(len(cols)) if i != ic and tipo(i) == 'texto' and any(re.search(p, _sem_acento(l[i])) for _, p in IEGM_DIM for l in minhas if i < len(l))), None)
-    ifx = next((i for i in range(len(cols)) if tipo(i) == 'faixa'), None)
-    inota = next((i for i in range(len(cols)) if i != ic and tipo(i) == 'nota' and not re.search(r'cod|ibge|ano|exerc|regiao|periodo', norm[i])), None)
-    if idim is not None and ifx is not None:
-        for l in minhas:
-            nome = _sem_acento(l[idim])
-            chave = next((k for k, p in IEGM_DIM if re.search(p, nome)), 'gestao_iegm' if re.search(r'ieg.?m|geral', nome) else None)
-            if chave:
-                out[chave] = (_faixa(l[ifx]), num(l[inota]) if inota is not None else None)
-        return out, cols
-    # tabela larga: colunas por dimensão; sem nome de dimensão = resultado geral
-    l = minhas[0]
-    for i, c in enumerate(norm):
-        if i == ic or re.search(r'cod|ibge|ano|exerc|regiao|periodo|munic|nome', c):
-            continue
-        t = tipo(i)
-        if t not in ('faixa', 'nota'):
-            continue
-        chave = next((k for k, p in IEGM_DIM if re.search(p, c)), 'gestao_iegm')
+    def por(chave, t, v, origem):
         fx, nt = out.get(chave, ('', None))
-        if t == 'faixa':
-            fx = _faixa(l[i])
-        else:
-            nt = num(l[i])
-        out[chave] = (fx, nt)
-    return {k: v for k, v in out.items() if v[0] or v[1] is not None}, cols
+        if (t == 'faixa' and fx) or (t == 'nota' and nt is not None):
+            raise ValueError(f'duas colunas para o mesmo indicador ({chave}, {t}): {origem}')
+        out[chave] = (_faixa(v), nt) if t == 'faixa' else (fx, num(v))
+    # mapeamento fixo pelo parâmetro da fonte: {'gestao_iegm': {'faixa': 'colName', 'nota': 'colName'}, ...}
+    if any(k in fixo for k in IEGM_CHAVES):
+        for chave in IEGM_CHAVES:
+            f = fixo.get(chave) or {}
+            if f.get('faixa') in cols:
+                por(chave, 'faixa', l0[cols.index(f['faixa'])], f['faixa'])
+            if f.get('nota') in cols:
+                por(chave, 'nota', l0[cols.index(f['nota'])], f['nota'])
+        return {k: v for k, v in out.items() if v[0] or v[1] is not None}, cols, info
+    # tabela longa: uma coluna de texto com o nome da dimensão
+    idim = next((i for i in range(len(cols)) if i != ic and not IEGM_IDENT.match(norm[i]) and tipo(i) == 'texto'
+                 and all(_dim(l[i]) for l in minhas if i < len(l))), None)
+    if idim is not None:
+        ifx = next((i for i in range(len(cols)) if tipo(i) == 'faixa'), None)
+        inota = next((i for i in range(len(cols)) if i not in (ic, idim) and not IEGM_IDENT.match(norm[i]) and tipo(i) == 'nota'), None)
+        for l in minhas:
+            chave = _dim(l[idim])
+            if ifx is not None:
+                por(chave, 'faixa', l[ifx], l[idim])
+            if inota is not None:
+                por(chave, 'nota', l[inota], l[idim])
+        info['ignoradas'] = [cols[i] for i in range(len(cols)) if i not in (ic, idim, ifx, inota) and not IEGM_IDENT.match(norm[i])]
+        return {k: v for k, v in out.items() if v[0] or v[1] is not None}, cols, info
+    # tabela larga: só colunas com nome de indicador conhecido
+    for i, c in enumerate(norm):
+        if i == ic or IEGM_IDENT.match(c):
+            continue
+        chave, t = _dim(cols[i]), tipo(i)
+        if not chave or t not in ('faixa', 'nota'):
+            info['ignoradas'].append(cols[i])
+            continue
+        por(chave, t, l0[i], cols[i])
+    return {k: v for k, v in out.items() if v[0] or v[1] is not None}, cols, info
 
 def ler_iegm(ibge, anos_base, auth, fixo=None):
-    """{ano_base: {indicador: (faixa, nota)}} e as colunas vistas (só nomes, sem valores)."""
-    out, colunas = {}, []
+    """{ano_base: (valores, edicao)}, colunas vistas (só nomes) e colunas ignoradas. Ano-base e edição vêm de
+    exercicio_ref e ano_apuracao da própria resposta; edição repetida é recusada."""
+    out, colunas, ignoradas = {}, [], set()
     for a in anos_base:
         d = buscar('iegm', IEGM_URL, {**IEGM_CONSULTA, 'parampExercicio_mapa': a}, auth=auth, tentativas=2)
         if not isinstance(d, dict) or 'resultset' not in d:
             raise ValueError('a consulta do TCESP mudou: resposta sem "resultset"')
-        vals, cols = mapear_iegm(d, ibge, fixo)
+        vals, cols, info = mapear_iegm(d, ibge, fixo)
         colunas = cols or colunas
-        if vals:
-            out[a] = vals
-    return out, colunas
+        ignoradas.update(info['ignoradas'])
+        if not vals:
+            continue
+        ab = info['ano_base'] or a
+        if ab != a:
+            raise ValueError(f'ano-base pedido {a}, resposta com exercicio_ref {ab}')
+        if ab in out:
+            raise ValueError(f'edição repetida para o ano-base {ab}')
+        out[ab] = (vals, info['edicao'] or ab + 1)
+    edicoes = [e for _, e in out.values()]
+    if len(edicoes) != len(set(edicoes)):
+        raise ValueError('a mesma edição (ano_apuracao) apareceu para anos-base diferentes')
+    return out, colunas, sorted(ignoradas)
 
 def coletar_iegm(o, p, hoje=None):
     """Sem credencial ou com o IEG-M em modo manual: não coleta e não registra erro (lista vazia)."""
@@ -333,24 +366,25 @@ def coletar_iegm(o, p, hoje=None):
     ultimo = hoje.year - 1
     anos = [a for a in range(IEGM_PRIMEIRO_ANO_BASE, ultimo + 1) if str(a) not in feitos or a >= ultimo - 1]
     try:
-        vals, cols = ler_iegm(ibge, anos, auth, p.get('colunas'))
+        vals, cols, ignoradas = ler_iegm(ibge, anos, auth, p.get('colunas'))
     except Exception as e:
         msg = f'consulta do TCESP falhou ({type(e).__name__}); mantido o último valor válido. Consulta sem documentação oficial: pode ter mudado.'
         P.marcar_coleta(o['banco'], 'iegm', False, msg)
-        return [('iegm', False, 0, msg + f' Detalhe: {str(e)[:120]}')]
+        return [('iegm', False, 0, msg + f' Detalhe: {str(e)[:160]}')]
     if not vals:
         msg = f"município {ibge} não encontrado ou colunas não reconhecidas (colunas recebidas: {', '.join(cols)[:300]})"
         P.marcar_coleta(o['banco'], 'iegm', False, msg)
         return [('iegm', False, 0, msg)]
     n = 0
-    for a, por in vals.items():
+    for a, (por, edicao) in vals.items():
         for chave, (fx, nt) in por.items():
-            nota = f'edição {a + 1} (ano-base {a})' + (f'; nota {str(nt).replace(".", ",")}' if nt is not None else '')
+            nota = f'edição {edicao} (ano-base {a})' + (f'; nota {str(nt).replace(".", ",")}' if nt is not None else '')
             P.gravar_publico(ibge, chave, str(a), P.fim_do_ano(a), 'iegm', nt, texto=fx, nota=nota)
             n += 1
     copiados = P.copiar_publicos(o['banco'], ibge, IEGM_CHAVES)
-    achadas = sorted({k for por in vals.values() for k in por})
+    achadas = sorted({k for por, _ in vals.values() for k in por})
     faltam = [k for k in IEGM_CHAVES if k not in achadas]
-    msg = f"{n} valores em {len(vals)} edição(ões)" + (f"; sem dado nesta consulta: {', '.join(faltam)}" if faltam else '')
+    msg = (f"{n} valores em {len(vals)} edição(ões)" + (f"; sem dado nesta consulta: {', '.join(faltam)}" if faltam else '')
+           + (f"; AVISO: colunas desconhecidas ignoradas: {', '.join(ignoradas)}" if ignoradas else ''))
     P.marcar_coleta(o['banco'], 'iegm', True, msg, achadas)
     return [('iegm', True, copiados, msg)]

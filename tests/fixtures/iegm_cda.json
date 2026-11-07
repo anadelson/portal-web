@@ -1,5 +1,5 @@
 {
- "_origem": "Formato da resposta do Pentaho CDA ({metadata, resultset}). VALORES FICTÍCIOS, só para teste: não são resultados reais do IEG-M.",
+ "_origem": "Formato da resposta do Pentaho CDA ({metadata, resultset}); \"real\" usa os 12 nomes de coluna vistos em 07/11/2026. VALORES FICTÍCIOS, só para teste.",
  "larga": {
   "2023": {
    "metadata": [
@@ -344,6 +344,460 @@
   "resultset": [
    [
     "nada"
+   ]
+  ]
+ },
+ "real": {
+  "2022": {
+   "metadata": [
+    {
+     "colIndex": 0,
+     "colName": "exercicio_ref",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 1,
+     "colName": "ano_apuracao",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 2,
+     "colName": "codigo_municipio",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 3,
+     "colName": "nome",
+     "colType": "String"
+    },
+    {
+     "colIndex": 4,
+     "colName": "iegm",
+     "colType": "String"
+    },
+    {
+     "colIndex": 5,
+     "colName": "iplanejamento",
+     "colType": "String"
+    },
+    {
+     "colIndex": 6,
+     "colName": "ifiscal",
+     "colType": "String"
+    },
+    {
+     "colIndex": 7,
+     "colName": "ieduc",
+     "colType": "String"
+    },
+    {
+     "colIndex": 8,
+     "colName": "isaude",
+     "colType": "String"
+    },
+    {
+     "colIndex": 9,
+     "colName": "iamb",
+     "colType": "String"
+    },
+    {
+     "colIndex": 10,
+     "colName": "icidade",
+     "colType": "String"
+    },
+    {
+     "colIndex": 11,
+     "colName": "igov",
+     "colType": "String"
+    }
+   ],
+   "resultset": [
+    [
+     2022,
+     2023,
+     3507209,
+     "Borá",
+     "C",
+     "C",
+     "B",
+     "B+",
+     "B",
+     "A",
+     "C+",
+     "B"
+    ],
+    [
+     2022,
+     2023,
+     9999999,
+     "Município Fictício",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A"
+    ]
+   ]
+  },
+  "2023": {
+   "metadata": [
+    {
+     "colIndex": 0,
+     "colName": "exercicio_ref",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 1,
+     "colName": "ano_apuracao",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 2,
+     "colName": "codigo_municipio",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 3,
+     "colName": "nome",
+     "colType": "String"
+    },
+    {
+     "colIndex": 4,
+     "colName": "iegm",
+     "colType": "String"
+    },
+    {
+     "colIndex": 5,
+     "colName": "iplanejamento",
+     "colType": "String"
+    },
+    {
+     "colIndex": 6,
+     "colName": "ifiscal",
+     "colType": "String"
+    },
+    {
+     "colIndex": 7,
+     "colName": "ieduc",
+     "colType": "String"
+    },
+    {
+     "colIndex": 8,
+     "colName": "isaude",
+     "colType": "String"
+    },
+    {
+     "colIndex": 9,
+     "colName": "iamb",
+     "colType": "String"
+    },
+    {
+     "colIndex": 10,
+     "colName": "icidade",
+     "colType": "String"
+    },
+    {
+     "colIndex": 11,
+     "colName": "igov",
+     "colType": "String"
+    }
+   ],
+   "resultset": [
+    [
+     2023,
+     2024,
+     3507209,
+     "Borá",
+     "C",
+     "C",
+     "B",
+     "B+",
+     "B",
+     "A",
+     "C+",
+     "B"
+    ],
+    [
+     2023,
+     2024,
+     9999999,
+     "Município Fictício",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A"
+    ]
+   ]
+  },
+  "2024": {
+   "metadata": [
+    {
+     "colIndex": 0,
+     "colName": "exercicio_ref",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 1,
+     "colName": "ano_apuracao",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 2,
+     "colName": "codigo_municipio",
+     "colType": "Numeric"
+    },
+    {
+     "colIndex": 3,
+     "colName": "nome",
+     "colType": "String"
+    },
+    {
+     "colIndex": 4,
+     "colName": "iegm",
+     "colType": "String"
+    },
+    {
+     "colIndex": 5,
+     "colName": "iplanejamento",
+     "colType": "String"
+    },
+    {
+     "colIndex": 6,
+     "colName": "ifiscal",
+     "colType": "String"
+    },
+    {
+     "colIndex": 7,
+     "colName": "ieduc",
+     "colType": "String"
+    },
+    {
+     "colIndex": 8,
+     "colName": "isaude",
+     "colType": "String"
+    },
+    {
+     "colIndex": 9,
+     "colName": "iamb",
+     "colType": "String"
+    },
+    {
+     "colIndex": 10,
+     "colName": "icidade",
+     "colType": "String"
+    },
+    {
+     "colIndex": 11,
+     "colName": "igov",
+     "colType": "String"
+    }
+   ],
+   "resultset": [
+    [
+     2024,
+     2025,
+     3507209,
+     "Borá",
+     "C+",
+     "C",
+     "B",
+     "B+",
+     "B",
+     "A",
+     "C+",
+     "A"
+    ],
+    [
+     2024,
+     2025,
+     9999999,
+     "Município Fictício",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A",
+     "A"
+    ]
+   ]
+  }
+ },
+ "real_extra": {
+  "metadata": [
+   {
+    "colIndex": 0,
+    "colName": "exercicio_ref",
+    "colType": "Numeric"
+   },
+   {
+    "colIndex": 1,
+    "colName": "ano_apuracao",
+    "colType": "Numeric"
+   },
+   {
+    "colIndex": 2,
+    "colName": "codigo_municipio",
+    "colType": "Numeric"
+   },
+   {
+    "colIndex": 3,
+    "colName": "nome",
+    "colType": "String"
+   },
+   {
+    "colIndex": 4,
+    "colName": "iegm",
+    "colType": "String"
+   },
+   {
+    "colIndex": 5,
+    "colName": "iplanejamento",
+    "colType": "String"
+   },
+   {
+    "colIndex": 6,
+    "colName": "ifiscal",
+    "colType": "String"
+   },
+   {
+    "colIndex": 7,
+    "colName": "ieduc",
+    "colType": "String"
+   },
+   {
+    "colIndex": 8,
+    "colName": "isaude",
+    "colType": "String"
+   },
+   {
+    "colIndex": 9,
+    "colName": "iamb",
+    "colType": "String"
+   },
+   {
+    "colIndex": 10,
+    "colName": "icidade",
+    "colType": "String"
+   },
+   {
+    "colIndex": 11,
+    "colName": "igov",
+    "colType": "String"
+   },
+   {
+    "colIndex": 12,
+    "colName": "icovid"
+   }
+  ],
+  "resultset": [
+   [
+    2024,
+    2025,
+    3507209,
+    "Borá",
+    "C+",
+    "C",
+    "B",
+    "B+",
+    "B",
+    "A",
+    "C+",
+    "A",
+    "B"
+   ]
+  ]
+ },
+ "conflito": {
+  "metadata": [
+   {
+    "colIndex": 0,
+    "colName": "exercicio_ref",
+    "colType": "Numeric"
+   },
+   {
+    "colIndex": 1,
+    "colName": "ano_apuracao",
+    "colType": "Numeric"
+   },
+   {
+    "colIndex": 2,
+    "colName": "codigo_municipio",
+    "colType": "Numeric"
+   },
+   {
+    "colIndex": 3,
+    "colName": "nome",
+    "colType": "String"
+   },
+   {
+    "colIndex": 4,
+    "colName": "iegm",
+    "colType": "String"
+   },
+   {
+    "colIndex": 5,
+    "colName": "iplanejamento",
+    "colType": "String"
+   },
+   {
+    "colIndex": 6,
+    "colName": "ifiscal",
+    "colType": "String"
+   },
+   {
+    "colIndex": 7,
+    "colName": "ieduc",
+    "colType": "String"
+   },
+   {
+    "colIndex": 8,
+    "colName": "isaude",
+    "colType": "String"
+   },
+   {
+    "colIndex": 9,
+    "colName": "iamb",
+    "colType": "String"
+   },
+   {
+    "colIndex": 10,
+    "colName": "icidade",
+    "colType": "String"
+   },
+   {
+    "colIndex": 11,
+    "colName": "igov",
+    "colType": "String"
+   },
+   {
+    "colIndex": 12,
+    "colName": "faixa_iegm"
+   }
+  ],
+  "resultset": [
+   [
+    2024,
+    2025,
+    3507209,
+    "Borá",
+    "C+",
+    "C",
+    "B",
+    "B+",
+    "B",
+    "A",
+    "C+",
+    "A",
+    "B"
    ]
   ]
  }

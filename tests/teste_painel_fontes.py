@@ -41,7 +41,7 @@ def buscar_cda(fonte, url, params=None, auth=None, **kw):
     if not auth or not all(auth): raise AssertionError('IEG-M chamado sem credencial')
     if auth != esperado_auth[0]: raise AssertionError('IEG-M chamado com a credencial errada (ordem de leitura)')
     cda_chamadas.append(params['parampExercicio_mapa'])
-    return CDA['larga'].get(str(params['parampExercicio_mapa']), {'metadata': CDA['larga']['2024']['metadata'], 'resultset': []})
+    return CDA['real'].get(str(params['parampExercicio_mapa']), {'metadata': CDA['real']['2024']['metadata'], 'resultset': []})
 X.cabecalho, X.baixar, X.buscar = cabecalho, baixar, buscar_cda
 
 oid = db.um(db.PLATAFORMA, "SELECT id FROM orgaos WHERE slug='pm-bora'")['id']
@@ -110,12 +110,23 @@ ctx = X.contexto_tls()
 if ctx.verify_mode != __import__('ssl').CERT_REQUIRED or not ctx.check_hostname: falha('verificação TLS desligada')
 
 # ---------- IEG-M: mapeamento por metadata.colName ----------
-v, cols = X.mapear_iegm(CDA['larga']['2024'], '3507209')
-if set(v) != set(X.IEGM_CHAVES) or v['gestao_iegm'][0] not in P.FAIXAS_IEGM or v['gestao_iegm'][1] is None: falha(f'mapeamento tabela larga: {v}')
-v, _ = X.mapear_iegm(CDA['longa'], '3507209')
+v, cols, info = X.mapear_iegm(CDA['real']['2024'], '3507209')
+esp = {'gestao_iegm': 'C+', 'gestao_iegm_planej': 'C', 'gestao_iegm_fiscal': 'B', 'gestao_iegm_educ': 'B+', 'gestao_iegm_saude': 'B', 'gestao_iegm_amb': 'A',
+       'gestao_iegm_cidade': 'C+', 'gestao_iegm_ti': 'A'}
+if {k: x[0] for k, x in v.items()} != esp: falha(f'mapeamento das 12 colunas reais: {v}')
+if info != {'ano_base': 2024, 'edicao': 2025, 'ignoradas': []}: falha(f'ano-base/edição/ignoradas: {info}')
+v, _, info = X.mapear_iegm(CDA['real_extra'], '3507209')
+if info['ignoradas'] != ['icovid'] or v.get('gestao_iegm') != ('C+', None): falha(f'coluna desconhecida deveria ser ignorada e avisada: {info} {v}')
+try:
+    X.mapear_iegm(CDA['conflito'], '3507209'); falha('duas colunas para o resultado geral deveriam ser recusadas')
+except ValueError:
+    pass
+v, cols, info = X.mapear_iegm(CDA['larga']['2024'], '3507209')
+if set(v) != set(X.IEGM_CHAVES) or v['gestao_iegm'][0] not in P.FAIXAS_IEGM or v['gestao_iegm'][1] is None: falha(f'mapeamento tabela larga com notas: {v}')
+v, _, _ = X.mapear_iegm(CDA['longa'], '3507209')
 if v.get('gestao_iegm') != ('B', 0.61) or v.get('gestao_iegm_educ') != ('B+', 0.7) or v.get('gestao_iegm_ti') != ('C', 0.4) or len(v) != 3: falha(f'mapeamento tabela longa: {v}')
 if X.mapear_iegm(CDA['outra'], '3507209')[0]: falha('colunas desconhecidas deveriam dar vazio')
-v, _ = X.mapear_iegm(CDA['larga']['2024'], '3507209', {'codigo': 'codigo_municipio', 'gestao_iegm': {'faixa': 'faixa_i_amb', 'nota': 'nota_i_amb'}})
+v, _, _ = X.mapear_iegm(CDA['larga']['2024'], '3507209', {'codigo': 'codigo_municipio', 'gestao_iegm': {'faixa': 'faixa_i_amb', 'nota': 'nota_i_amb'}})
 if v.get('gestao_iegm') != (CDA['larga']['2024']['resultset'][0][13], CDA['larga']['2024']['resultset'][0][14]): falha(f'mapeamento fixo pelo parâmetro: {v}')
 
 # ---------- credenciais de fontes (console do gestor): cifradas, só gravação ----------
@@ -189,11 +200,14 @@ if not val('gestao_iegm', '2014') or val('gestao_iegm', '2014')['origem'] != 'ma
 r = pm.post(url, data={'csrf': tok(pm, url), 'acao': 'coletar'}, follow_redirects=True)
 if 'OK:' not in r.text: falha(f'coletar agora (IEG-M): {r.text[:300]}')
 v24 = val('gestao_iegm', '2024')
-if not v24 or v24['texto'] not in P.FAIXAS_IEGM or v24['valor'] is None or 'edição 2025 (ano-base 2024)' not in v24['nota']: falha(f'IEG-M 2024: {v24}')
+if not v24 or v24['texto'] != 'C+' or v24['nota'] != 'edição 2025 (ano-base 2024)': falha(f'IEG-M 2024: {v24 and (v24["texto"], v24["nota"])}')
+if val('gestao_iegm_ti', '2024')['texto'] != 'A' or val('gestao_iegm', '2023')['texto'] != 'C' or val('gestao_iegm_ti', '2023')['texto'] != 'B': falha('IEG-M: geral e TI trocados')
 for k in X.IEGM_CHAVES:
-    if not val(k, '2023') or not val(k, '2024'): falha(f'{k}: sem as duas edições')
+    if not val(k, '2022') or not val(k, '2023') or not val(k, '2024'): falha(f'{k}: sem as três edições')
+eds = [r['nota'] for r in db.todos(PM, "SELECT v.nota FROM indicador_valores v JOIN indicadores i ON i.id=v.indicador_id WHERE i.chave='gestao_iegm' AND v.origem='coletor'")]
+if len(eds) != len(set(eds)): falha(f'edições repetidas: {eds}')
 if val('gestao_iegm', '2014')['origem'] != 'manual': falha('coleta sobrescreveu o lançamento manual')
-if not db.um(db.PLATAFORMA, "SELECT 1 FROM indicadores_publicos WHERE ibge='3507209' AND fonte='iegm' AND indicador='gestao_iegm_ti' AND periodo='2024'"): falha('IEG-M não gravou por código IBGE')
+if not db.um(db.PLATAFORMA, "SELECT 1 FROM indicadores_publicos WHERE ibge='3507209' AND fonte='iegm' AND indicador='gestao_iegm_ti' AND periodo='2024' AND texto='A'"): falha('IEG-M não gravou por código IBGE')
 ok(pm.get('/painel?aba=mun'), txt='IEG-M — governança de TI', nome='IEG-M no painel')
 # falha da consulta: mantém o último valor, aviso no painel e coleta com falha registrada
 def quebra(*a, **k): raise comum.httpx.ConnectError('fonte fora do ar (teste)')
