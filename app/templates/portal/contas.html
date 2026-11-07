@@ -1,0 +1,11 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Julgamento das contas do Prefeito — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Contas do Prefeito</span></nav>
+<h1>Julgamento das contas do Prefeito</h1><p class="intro" style="margin-bottom:6px">Parecer prévio do Tribunal de Contas, parecer da comissão, votação nominal e decreto legislativo de cada exercício.</p>
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.contas }}</p>
+{% for c in contas %}<section class="caixa" style="margin-bottom:16px" aria-labelledby="h-ct{{ c.id }}"><h2 id="h-ct{{ c.id }}">Exercício de {{ c.exercicio }} · {{ c.responsavel }}</h2>
+<dl class="campos" style="margin:10px 0"><div><dt>Parecer prévio do TCESP</dt><dd>{{ c.tce_parecer or '—' }}{% if c.tce_processo %} · processo {{ c.tce_processo }}{% endif %}</dd></div><div><dt>Parecer da comissão</dt><dd>{{ c.comissao_parecer or '—' }}</dd></div>
+<div><dt>Votação</dt><dd>{% if c.cont %}<a href="/sessoes/{{ c.sessao_id }}">{{ c.sessao }}</a>: {{ c.cont.sim }} sim · {{ c.cont.nao }} não · {{ c.cont.abstencao }} abst. · {{ c.cont.ausente }} aus.{% else %}a realizar ou a publicar{% endif %}</dd></div><div><dt>Resultado · decreto legislativo</dt><dd>{{ c.resultado or '—' }}{% if c.decreto %} · {{ c.decreto }}{% endif %}</dd></div></dl>
+{% if c.docs %}<ul>{% for d in c.docs %}<li><a href="/documento/{{ d.arquivo }}">{{ d.titulo }}</a> <small>({{ doc_tipos.get(d.tipo, d.tipo) }}, PDF)</small></li>{% endfor %}</ul>{% endif %}</section>
+{% else %}<p class="vazio">Nenhum julgamento de contas publicado ainda.</p>{% endfor %}{% endblock %}

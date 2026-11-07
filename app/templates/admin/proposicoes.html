@@ -1,0 +1,7 @@
+{% extends 'admin/base.html' %}{% block h1 %}Proposições{% endblock %}
+{% block conteudo %}
+<div class="acoes" style="margin-bottom:12px"><a class="btn" href="/admin/proposicoes/nova">+ Nova proposição</a><a class="btn sec" href="/admin/importar">Importar de arquivo CSV</a></div>
+<form class="inline" method="get" action="/admin/proposicoes" style="flex-wrap:wrap;margin-bottom:12px"><label>Tipo <select name="tipo"><option value="">Todos</option>{% for t, s in tipos %}<option {{ 'selected' if f.tipo == t }}>{{ t }}</option>{% endfor %}</select></label> <label>Ano <input name="ano" value="{{ f.ano }}" size="5"></label> <label>Texto <input name="q" value="{{ f.q }}"></label> <button class="btn sec">Filtrar</button></form>
+<div class="tabela"><table><thead><tr><th scope="col">Proposição</th><th scope="col">Ementa</th><th scope="col">Autoria</th><th scope="col">Situação</th><th scope="col">Tramitação · docs</th></tr></thead><tbody>
+{% for p in itens %}<tr><td><a href="/admin/proposicoes/{{ p.id }}">{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</a></td><td>{{ p.ementa[:140] }}</td><td>{{ p.autor }}</td><td><span class="chip">{{ p.situacao }}</span></td><td>{{ p.n_tram }} evento(s) · {{ p.n_doc }} PDF</td></tr>{% else %}<tr><td colspan="5">Nenhuma proposição.</td></tr>{% endfor %}
+</tbody></table></div><p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.proposicoes }}</p>{% endblock %}

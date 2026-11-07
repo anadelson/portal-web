@@ -1,0 +1,24 @@
+{% extends 'admin/base.html' %}{% block h1 %}{{ (p.tipo ~ ' nº ' ~ p.numero ~ '/' ~ p.ano) if p else 'Nova proposição' }}{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<p><a href="/admin/proposicoes">‹ Proposições</a>{% if p %} · <a href="/proposicoes/{{ p.id }}">ver no portal ↗</a>{% endif %}</p>
+<section class="cx"><h2>Dados</h2><form class="campos" method="post" action="/admin/proposicoes/{{ p.id if p else 'nova' }}"><input type="hidden" name="csrf" value="{{ C }}">
+<div class="grade2"><label>Tipo<select name="tipo" {{ 'disabled' if p }} required>{% for t, s in tipos %}<option {{ 'selected' if p and p.tipo == t }}>{{ t }}</option>{% endfor %}</select>{% if p %}<input type="hidden" name="tipo" value="{{ p.tipo }}">{% endif %}</label>
+<label>Ano<input name="ano" value="{{ p.ano if p else hoje.year }}" {{ 'disabled' if p }} inputmode="numeric"></label>
+<label>Número<input value="{{ p.numero if p else 'automático (próximo do tipo no ano)' }}" disabled></label>
+<label>Apresentada em<input type="date" name="apresentada" value="{{ p.apresentada if p and p.apresentada }}"></label></div>
+<label>Ementa<textarea name="ementa" rows="3" required>{{ p.ementa if p }}</textarea></label>
+<fieldset><legend>Autoria (um ou vários)</legend><div class="grade2">{% for v in ver %}<label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="autor" value="{{ v.nome }}" {{ 'checked' if v.nome in autores }}> {{ v.nome }}</label>{% endfor %}</div>
+<label>Outros autores (separe por ;) — ex.: Poder Executivo; Mesa Diretora; Comissão de Finanças<input name="autor_outro" value="{{ autores|reject('in', ver|map(attribute='nome')|list)|join('; ') }}"></label></fieldset>
+<div class="grade2"><label>Relator<select name="relator"><option value="">—</option>{% for v in ver %}<option {{ 'selected' if p and p.relator == v.nome }}>{{ v.nome }}</option>{% endfor %}</select></label>
+<label>Situação<select name="situacao">{% for s in situacoes %}<option {{ 'selected' if p and p.situacao == s }}>{{ s }}</option>{% endfor %}</select></label></div>
+<button class="btn" name="acao" value="salvar">Salvar</button></form></section>
+{% if p %}
+<section class="cx"><h2>Tramitação</h2><ol>{% for t in tram %}<li><strong>{{ t.data|br }}</strong> · {{ t.fase }} — {{ t.descricao }} <small class="legal">({{ t.registrado_por or t.origem }})</small></li>{% else %}<li>Nenhum evento.</li>{% endfor %}</ol>
+<form class="campos" method="post" action="/admin/proposicoes/{{ p.id }}"><input type="hidden" name="csrf" value="{{ C }}"><div class="grade2"><label>Data<input type="date" name="data" value="{{ hoje }}" required></label><label>Fase<input name="fase" list="fases" required placeholder="Ex.: Encaminhada à Comissão de Justiça"></label><label>Nova situação (opcional)<select name="nova_situacao"><option value="">— manter —</option>{% for s in situacoes %}<option>{{ s }}</option>{% endfor %}</select></label></div>
+<datalist id="fases"><option>Leitura em Plenário</option><option>Encaminhada à Comissão</option><option>Parecer da Comissão</option><option>Encaminhada ao Executivo</option><option>Sanção</option><option>Promulgação</option><option>Veto</option><option>Arquivamento</option></datalist>
+<label>Descrição<textarea name="descricao" rows="2"></textarea></label><button class="btn sec" name="acao" value="tramitar">Registrar evento</button></form>
+<p class="legal">Votações em Plenário entram na tramitação automaticamente quando a votação nominal é registrada na sessão.</p></section>
+<section class="cx"><h2>Documentos (PDF)</h2><ul>{% for d in docs %}<li><a href="/documento/{{ d.arquivo }}">{{ d.titulo }}</a> · {{ doc_tipos.get(d.tipo, d.tipo) }} · {{ (d.bytes / 1024)|round|int }} KB<form class="inline" method="post" action="/admin/proposicoes/{{ p.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="doc" value="{{ d.id }}"><button class="btn perigo" name="acao" value="remover_doc" aria-label="Remover {{ d.titulo }}">Remover</button></form></li>{% else %}<li>Nenhum documento.</li>{% endfor %}</ul>
+<form class="campos" method="post" action="/admin/proposicoes/{{ p.id }}" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}"><div class="grade2"><label>Tipo<select name="tipo_doc">{% for k, t in doc_tipos.items() if k not in ('ata', 'parecer_tce', 'decreto') %}<option value="{{ k }}">{{ t }}</option>{% endfor %}</select></label><label>Título<input name="titulo" required></label><label>Arquivo PDF (até 20 MB)<input type="file" name="arquivo" accept="application/pdf" required></label></div>
+<label>Descrição do conteúdo (obrigatória, para leitores de tela)<textarea name="descricao" rows="2" required minlength="10"></textarea></label><button class="btn sec" name="acao" value="documento">Anexar</button></form></section>
+{% endif %}{% endblock %}

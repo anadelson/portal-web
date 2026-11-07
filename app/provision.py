@@ -240,6 +240,11 @@ def atualizar():
         aplicar(o['banco'], MIG_ORGAO)
         ident = 'identidade completada' if completar_identidade(o['banco'], o['slug'], o['tipo']) else 'identidade sem mudança'
         nf = configurar_fontes(o['id'], o['slug'])
+        if o['tipo'] == 'legislativo':
+            from . import legislativo
+            na = legislativo.vincular_autores_antigos(o['banco'])
+            if na:
+                print(f"  {na} proposição(ões) antiga(s) com autoria vinculada aos vereadores")
         print(f"{o['slug']} ({o['banco']}): {nf} fonte(s) nova(s) · migrações {', '.join(m.name for m in MIG_ORGAO)} · {ident} · layout: {atualizar_layout(o['banco'], o['tipo'])}")
     print('pronto.')
 

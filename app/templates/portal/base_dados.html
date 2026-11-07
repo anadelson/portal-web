@@ -1,6 +1,6 @@
 {% extends 'portal/base.html' %}
 {% block titulo %}{{ b.titulo }} — Transparência — {{ ident.nome }}{% endblock %}
-{% macro celula(v, fmt, l) %}{% if v is none or v == '' %}—{% elif fmt == 'm' %}{{ v|moeda }}{% elif fmt == 'd' %}{{ v|br }}{% elif fmt == 'mes' %}{{ meses[v] if v is number and 0 <= v <= 12 else v }}{% elif fmt == 'link' %}<a href="{{ v }}" aria-label="Abrir no PNCP">PNCP ↗</a>{% elif fmt == 'fonte' %}{{ 'PNCP' if v == 'pncp' else 'TCESP' if v == 'tcesp' else 'Prefeitura' }}{% elif fmt == 'n' and v is number %}{{ '{:,.2f}'.format(v).replace(',', 'X').replace('.', ',').replace('X', '.') if v != v|int else v|int }}{% else %}{{ v }}{% endif %}{% endmacro %}
+{% macro celula(v, fmt, l) %}{% if v is none or v == '' %}—{% elif fmt == 'm' %}{{ v|moeda }}{% elif fmt == 'd' %}{{ v|br }}{% elif fmt == 'mes' %}{{ meses[v] if v is number and 0 <= v <= 12 else v }}{% elif fmt == 'link' %}<a href="{{ v }}" aria-label="Abrir no PNCP">PNCP ↗</a>{% elif fmt == 'fonte' %}{{ 'PNCP' if v == 'pncp' else 'TCESP' if v == 'tcesp' else 'Cadastro' if v in ('cadastro', 'importacao') else 'Prefeitura' }}{% elif fmt == 'n' and v is number %}{{ '{:,.2f}'.format(v).replace(',', 'X').replace('.', ',').replace('X', '.') if v != v|int else v|int }}{% else %}{{ v }}{% endif %}{% endmacro %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/transparencia">Transparência</a><span aria-hidden="true">›</span><span aria-current="page">{{ b.titulo }}</span></nav>
 <h1>{{ b.titulo }}</h1>

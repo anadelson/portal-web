@@ -251,3 +251,12 @@ form.filtros select,form.filtros input{min-height:44px;font:inherit;font-weight:
 nav.paginacao{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin-top:14px}
 .tabela td{font-size:14px}
 code{font-size:.92em;background:#EEF1F4;padding:1px 5px;border-radius:4px;word-break:break-all}
+
+/* Fase 5: ao vivo, aviso diário e avaliação da página */
+.ao-vivo{background:#7F1414;color:#fff}.ao-vivo .int{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding-top:10px;padding-bottom:10px;font-size:15px}
+.pulso-txt{display:inline-flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.06em}.ponto{width:10px;height:10px;border-radius:50%;background:#FF6B6B;animation:pulso 2s ease-in-out infinite}
+@keyframes pulso{0%,100%{opacity:1}50%{opacity:.35}}
+.ao-vivo .t{flex:1 1 300px}.btn-vivo{min-height:40px;padding:0 16px;display:inline-flex;align-items:center;font-weight:700;color:#7F1414;background:#fff;border-radius:8px;text-decoration:none}
+dialog#aviso-vivo{border:0;border-radius:18px;padding:24px;max-width:min(92vw,460px)}dialog#aviso-vivo::backdrop{background:rgba(11,22,32,.6)}dialog#aviso-vivo h2{color:#7F1414}
+form.avaliar{margin-top:32px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--bd);border-radius:14px;padding:14px 18px}
+form.avaliar details{flex:1 1 100%}form.avaliar textarea{width:100%;font:inherit;padding:8px;border:1px solid #6B7684;border-radius:8px;margin-top:6px}

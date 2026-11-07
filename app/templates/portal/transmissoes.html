@@ -1,0 +1,15 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Transmissões — {{ ident.nome }}{% endblock %}
+{% macro player(t) %}{% if t.video|length == 11 %}<iframe src="https://www.youtube-nocookie.com/embed/{{ t.video }}?rel=0{{ '&cc_load_policy=1' if t.legendas }}" title="Vídeo: {{ t.titulo }}" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin" style="width:100%;aspect-ratio:16/9;border:0;border-radius:14px;background:#0B1620"></iframe>{% elif t.video %}<iframe src="{{ t.video }}" title="Vídeo: {{ t.titulo }}" allowfullscreen loading="lazy" style="width:100%;aspect-ratio:16/9;border:0;border-radius:14px;background:#0B1620"></iframe>{% endif %}{% endmacro %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Transmissões</span></nav>
+<h1>Transmissões</h1><p class="intro" style="margin-bottom:6px">{{ 'Sessões e audiências' if leg else 'Audiências públicas' }} ao vivo e gravadas{% if conf.canal_url %}. Canal oficial: <a href="{{ conf.canal_url }}">{{ conf.canal_url }}</a>{% endif %}.</p>
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.transmissoes }}</p>
+{% if sel %}<section class="caixa" style="margin-bottom:20px" aria-labelledby="h-player">{% if sel.ao_vivo %}<span class="chip erro">● AO VIVO</span>{% endif %}<h2 id="h-player" style="margin-top:6px">{{ sel.titulo }}</h2>
+<p class="sub">{{ sel.tipo }}{% if sel.sessao %} · {{ sel.sessao }}{% endif %}{% if sel.legendas %} · com legendas{% endif %}{% if sel.libras %} · com janela de Libras{% endif %}{% if not sel.legendas and not sel.libras %} · sem legendas ou Libras informadas{% endif %}</p>
+{{ player(sel) }}
+{% if sel.capitulos %}<h3 style="margin-top:12px">Capítulos</h3><ol>{% for c in sel.capitulos %}<li><strong>{{ c[0] }}</strong> {{ c[1] }}</li>{% endfor %}</ol>{% endif %}</section>{% else %}<p class="vazio">Nenhuma transmissão ao vivo agora.</p>{% endif %}
+<div class="duas-col">
+<section class="caixa" aria-labelledby="h-agenda"><h2 id="h-agenda">Agenda</h2>{% if agenda %}<ul class="itens">{% for t in agenda %}<li><strong>{{ t.previsto_para|br }}</strong> · {{ t.titulo }} <small>({{ t.tipo }})</small></li>{% endfor %}</ul>{% else %}<p class="vazio">Nenhuma transmissão agendada.</p>{% endif %}</section>
+<section class="caixa" aria-labelledby="h-grav"><h2 id="h-grav">Gravações</h2>{% if grav or sessoes_video %}<ul class="itens">{% for t in grav %}<li><a href="/transmissoes?v={{ t.id }}"><strong>{{ t.titulo }}</strong></a><small style="display:block;color:var(--sub)">{{ t.encerrada_em|br }}{% if t.sessao %} · {{ t.sessao }}{% endif %}</small></li>{% endfor %}{% for s in sessoes_video %}<li><a href="{{ s.video_url }}"><strong>{{ s.nome }}</strong> ↗</a><small style="display:block;color:var(--sub)">{{ s.data|br }}</small></li>{% endfor %}</ul>{% else %}<p class="vazio">Nenhuma gravação ainda.</p>{% endif %}</section>
+</div>{% endblock %}

@@ -1,0 +1,4 @@
+{% extends 'admin/base.html' %}{% block h1 %}Comissões{% endblock %}
+{% block conteudo %}<p><a class="btn" href="/admin/comissoes/nova">+ Nova comissão</a></p>
+<div class="tabela"><table><thead><tr><th scope="col">Comissão</th><th scope="col">Tipo</th><th scope="col">Membros</th><th scope="col">Situação</th></tr></thead><tbody>{% for c in itens %}<tr><td><a href="/admin/comissoes/{{ c.id }}">{{ c.nome }}</a></td><td>{{ 'Permanente' if c.tipo == 'permanente' else 'Temporária' }}</td><td>{{ c.n }}</td><td><span class="chip {{ 'ok' if c.ativa }}">{{ 'Ativa' if c.ativa else 'Encerrada' }}</span></td></tr>{% else %}<tr><td colspan="4">Nenhuma comissão cadastrada.</td></tr>{% endfor %}</tbody></table></div>
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.comissoes }}</p>{% endblock %}
