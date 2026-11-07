@@ -5,6 +5,7 @@
 {% if c %}<p>Situação: <span class="chip">{{ SITUACOES[c.situacao] }}</span> · autor: {{ c.autor }}</p>{% endif %}
 <label>Tipo<select name="tipo">{% for t in ['Notícia','Página','Aviso','Banner','Documento'] %}<option {{ 'selected' if c and c.tipo == t }}>{{ t }}</option>{% endfor %}</select></label>
 <label>Seção do portal<select name="secao">{% for t in ['Notícias','Serviços','Transparência','Página inicial'] %}<option {{ 'selected' if c and c.secao == t }}>{{ t }}</option>{% endfor %}</select></label>
+<label>Foto do cartão (serviços)<select name="imagem"><option value="">Sem foto (cartão só com ícone)</option>{% for k, t in TEMAS.items() %}<option value="{{ k }}" {{ 'selected' if c and c.imagem == k }}>{{ t }}</option>{% endfor %}</select><small style="font-weight:400;color:#4B5563">Fotos de tema (CC0) usadas nos cartões de “Serviços mais procurados”. A foto é decorativa: o título do cartão descreve o serviço.</small></label>
 <label>Título<input name="titulo" value="{{ c.titulo if c else '' }}" required></label>
 <label>Resumo<textarea name="resumo" rows="2">{{ c.resumo if c else '' }}</textarea></label>
 <label>Texto<textarea name="texto" rows="8">{{ c.texto if c else '' }}</textarea></label>

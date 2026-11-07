@@ -1,16 +1,21 @@
 """Painel administrativo de cada órgão (servido em <domínio>/admin)."""
+import re, secrets
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from fastapi import APIRouter, Request, HTTPException
 from . import config, db, eleicao, diario as diario_pdf
-from .catalogo import MOD, serve, BLOCOS, CLASSES, VEDADAS, PERFIS, PODE
+from .catalogo import MOD, serve, BLOCOS, CLASSES, VEDADAS, PERFIS, PODE, TEMAS
 from .security import hash_senha, confere_senha
 from .web import templates, ctx_orgao, ler_form, ir, usuario, exige, auditar, modulos_do_orgao
 
 r = APIRouter(prefix='/_a')
 
+def pendencias(b):
+    """Contadores do menu: conteúdos esperando revisão e pedidos do e-SIC/Ouvidoria em aberto."""
+    return db.um(b, "SELECT (SELECT count(*) FROM conteudos WHERE situacao='revisao') revisao, (SELECT count(*) FROM esic WHERE situacao <> 'respondido') esic")
+
 def ctx(request, u, **kw):
-    c = ctx_orgao(request, u=u, pode=lambda p: u['perfil'] in PODE[p], **kw)
+    c = ctx_orgao(request, u=u, pode=lambda p: u['perfil'] in PODE[p], pend=pendencias(request.state.orgao['banco']), **kw)
     return c
 
 def T(nome, request, u, **kw):
@@ -111,11 +116,12 @@ async def conteudo_salvar(request: Request):
             raise HTTPException(403)
         if not f.get('titulo'):
             return ir(f"/admin/conteudos/{cid or 'novo'}", 'Informe o título.', request)
-        vals = (f.get('tipo', 'Notícia'), f.get('secao', 'Notícias'), f['titulo'], f.get('resumo', ''), f.get('texto', ''), f['classe'], acao, pub, tirar)
+        img = f.get('imagem', '') if f.get('imagem', '') in TEMAS else ''
+        vals = (f.get('tipo', 'Notícia'), f.get('secao', 'Notícias'), f['titulo'], f.get('resumo', ''), f.get('texto', ''), f['classe'], acao, pub, tirar, img)
         if c:
-            db.exe(b, 'UPDATE conteudos SET tipo=%s, secao=%s, titulo=%s, resumo=%s, texto=%s, classe=%s, situacao=%s, publicar_em=%s, tirar_em=%s, atualizado_em=now() WHERE id=%s', vals + (cid,))
+            db.exe(b, 'UPDATE conteudos SET tipo=%s, secao=%s, titulo=%s, resumo=%s, texto=%s, classe=%s, situacao=%s, publicar_em=%s, tirar_em=%s, imagem=%s, atualizado_em=now() WHERE id=%s', vals + (cid,))
         else:
-            cid = db.exe(b, 'INSERT INTO conteudos (tipo, secao, titulo, resumo, texto, classe, situacao, publicar_em, tirar_em, autor) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
+            cid = db.exe(b, 'INSERT INTO conteudos (tipo, secao, titulo, resumo, texto, classe, situacao, publicar_em, tirar_em, imagem, autor) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
         obs = 'Salvou rascunho' if acao == 'rascunho' else 'Enviou para revisão'
     elif acao in ('aprovar', 'devolver', 'arquivar'):
         if not pode('publicar') or not c:
@@ -316,12 +322,47 @@ def auditoria(request: Request):
     return T('auditoria', request, u, itens=db.todos(request.state.orgao['banco'], 'SELECT * FROM auditoria ORDER BY id DESC LIMIT 300'))
 
 # ---------- identidade ----------
-CAMPOS_ID = [('nome', 'Nome do órgão'), ('cnpj', 'CNPJ'), ('endereco', 'Endereço'), ('telefone', 'Telefone'), ('email', 'E-mail de atendimento'), ('horario', 'Horário'), ('encarregado', 'Encarregado de dados (LGPD)'), ('encarregado_email', 'E-mail do encarregado'), ('cor', 'Cor principal (#RRGGBB)')]
+CAMPOS_ID = [('nome', 'Nome do órgão'), ('prefixo', 'Linha acima do nome no cabeçalho (ex.: Prefeitura Municipal de)'), ('nome_curto', 'Nome curto no cabeçalho (ex.: Borá)'),
+             ('subtitulo', 'Linha abaixo do nome (ex.: Estado de São Paulo)'), ('cnpj', 'CNPJ'), ('endereco', 'Endereço'), ('telefone', 'Telefone'), ('whatsapp', 'WhatsApp'),
+             ('email', 'E-mail de atendimento'), ('horario', 'Horário'), ('encarregado', 'Encarregado de dados (LGPD)'), ('encarregado_email', 'E-mail do encarregado'),
+             ('cor', 'Cor principal (#RRGGBB)'), ('cor_destaque', 'Cor de destaque (#RRGGBB)'), ('hero_rotulo', 'Destaque: rótulo'), ('hero_titulo', 'Destaque: título'),
+             ('hero_texto', 'Destaque: texto'), ('busca_dica', 'Destaque: exemplo na busca'), ('creditos', 'Créditos das fotos (rodapé)')]
+COR = re.compile(r'^#[0-9A-Fa-f]{6}$')
+USOS = {'brasao': 'Brasão', 'hero': 'Foto do destaque (página inicial)', 'sede': 'Foto da sede', 'conheca': 'Foto do “Conheça a cidade”'}
+MAX_CONHECA = 4
+
+async def salvar_midia(request, u, arquivo, uso, alt, credito):
+    """Valida e guarda uma imagem enviada (PNG/JPG/WEBP, até 3 MB) em DADOS_DIR/<órgão>/midia. Devolve a URL pública."""
+    from .imagens import validar_upload, LIMITE_UPLOAD
+    if not alt or len(alt) < 5:
+        raise ValueError('Escreva o texto alternativo da imagem (o que ela mostra), com pelo menos 5 caracteres.')
+    dados = await arquivo.read(LIMITE_UPLOAD + 1)
+    ext = validar_upload(dados)
+    o = request.state.orgao
+    pasta = Path(config.DADOS_DIR) / o['slug'] / 'midia'
+    pasta.mkdir(parents=True, exist_ok=True)
+    nome = f'{secrets.token_hex(16)}.{ext}'
+    (pasta / nome).write_bytes(dados)
+    db.exe(o['banco'], 'INSERT INTO midias (arquivo, uso, alt, credito, bytes, enviado_por) VALUES (%s,%s,%s,%s,%s,%s)', (nome, uso, alt[:300], credito[:300], len(dados), u['nome']))
+    return f'/midia/{nome}'
 
 @r.get('/identidade')
 def identidade(request: Request):
     u = exige(request)
-    return T('identidade', request, u, campos=CAMPOS_ID)
+    ident = db.cfg(request.state.orgao['banco'], 'identidade', {}) or {}
+    cx = ident.get('conheca') or {}
+    return T('identidade', request, u, campos=CAMPOS_ID, usos=USOS, cx=cx, max_conheca=MAX_CONHECA,
+             redes_txt='\n'.join(f'{a} | {b}' for a, b in ident.get('redes', [])),
+             numeros_txt='\n'.join(f'{a} | {b}' for a, b in cx.get('numeros', [])))
+
+def _linhas(txt):
+    out = []
+    for l in (txt or '').splitlines():
+        if '|' in l:
+            a, b = [x.strip() for x in l.split('|', 1)]
+            if a and b:
+                out.append([a[:80], b[:300]])
+    return out
 
 @r.post('/identidade')
 async def identidade_post(request: Request):
@@ -330,10 +371,120 @@ async def identidade_post(request: Request):
     ident = db.cfg(b, 'identidade', {}) or {}
     for k, _ in CAMPOS_ID:
         if k in f:
-            ident[k] = f[k][:300]
+            if k in ('cor', 'cor_destaque') and f[k] and not COR.match(f[k]):
+                return ir('/admin/identidade', 'Cor inválida: use o formato #RRGGBB.', request)
+            ident[k] = f[k][:400]
+    if 'redes' in f:
+        ident['redes'] = [r for r in _linhas(f['redes']) if r[1].startswith('https://')]
+    if 'conheca_titulo' in f:
+        cx = ident.get('conheca') or {}
+        cx.update({'rotulo': f.get('conheca_rotulo', '')[:80], 'titulo': f['conheca_titulo'][:160], 'texto': f.get('conheca_texto', '')[:1200],
+                   'fonte': f.get('conheca_fonte', '')[:300], 'numeros': _linhas(f.get('conheca_numeros', ''))[:6]})
+        ident['conheca'] = cx
+    if 'sede_titulo' in f:
+        ident.setdefault('sede', {})['titulo'] = f['sede_titulo'][:120]
+    ident['revisado_em'] = config.hoje().isoformat()
     db.set_cfg(b, 'identidade', ident)
     auditar(request, 'Atualizou a identidade do órgão')
     return ir('/admin/identidade', 'Identidade salva.', request)
+
+@r.post('/identidade/midia')
+async def identidade_midia(request: Request):
+    u = exige(request, 'config'); f = await ler_form(request)
+    b = request.state.orgao['banco']
+    uso = f.get('uso', '')
+    if uso not in USOS:
+        raise HTTPException(400)
+    ident = db.cfg(b, 'identidade', {}) or {}
+    alt, credito = f.get('alt', ''), f.get('credito', '')
+    arq = f.get('arquivo')
+    tem_arquivo = arq is not None and hasattr(arq, 'read') and getattr(arq, 'filename', '')
+    i = int(f.get('indice') or 0)
+    if uso == 'conheca':
+        fotos = (ident.setdefault('conheca', {})).setdefault('fotos', [])
+        if f.get('acao') == 'remover':
+            if 0 <= i < len(fotos):
+                fotos.pop(i)
+            db.set_cfg(b, 'identidade', ident)
+            auditar(request, 'Removeu foto do “Conheça a cidade”')
+            return ir('/admin/identidade#imagens', 'Foto removida.', request)
+        atual = fotos[i] if 0 <= i < len(fotos) else None
+    else:
+        atual = (ident.get('sede') or {}).get('foto') if uso == 'sede' else ident.get(uso)
+    try:
+        if tem_arquivo:
+            url = await salvar_midia(request, u, arq, uso, alt, credito)
+        elif atual and atual.get('url'):
+            if not alt or len(alt) < 5:
+                raise ValueError('O texto alternativo é obrigatório (pelo menos 5 caracteres).')
+            url = atual['url']
+        else:
+            raise ValueError('Escolha o arquivo da imagem.')
+    except ValueError as e:
+        return ir('/admin/identidade#imagens', str(e), request)
+    item = {'url': url, 'alt': alt[:300], 'credito': credito[:300]}
+    if uso == 'conheca':
+        item['legenda'] = f.get('legenda', '')[:120]
+        if atual is not None:
+            fotos[i] = item
+        elif len(fotos) < MAX_CONHECA:
+            fotos.append(item)
+        else:
+            return ir('/admin/identidade#imagens', f'O mosaico aceita até {MAX_CONHECA} fotos.', request)
+    elif uso == 'sede':
+        ident.setdefault('sede', {})['foto'] = item
+    else:
+        ident[uso] = item
+    ident['revisado_em'] = config.hoje().isoformat()
+    db.set_cfg(b, 'identidade', ident)
+    auditar(request, f'Atualizou a imagem: {USOS[uso]}')
+    return ir('/admin/identidade#imagens', f'{USOS[uso]} atualizada.', request)
+
+# ---------- Câmara: vereadores ----------
+@r.get('/vereadores')
+def vereadores_adm(request: Request, leg: int | None = None):
+    u = exige(request)
+    o = request.state.orgao
+    if o['tipo'] != 'legislativo':
+        raise HTTPException(404)
+    b = o['banco']
+    legs = db.todos(b, 'SELECT * FROM legislaturas ORDER BY numero DESC')
+    leg = leg or (legs[0]['numero'] if legs else 0)
+    return T('vereadores', request, u, legs=legs, leg=leg, itens=db.todos(b, 'SELECT * FROM vereadores WHERE legislatura=%s ORDER BY nome', (leg,)))
+
+@r.get('/vereadores/{vid}')
+def vereador_adm(request: Request, vid: int):
+    u = exige(request)
+    o = request.state.orgao
+    v = db.um(o['banco'], 'SELECT * FROM vereadores WHERE id=%s', (vid,)) if o['tipo'] == 'legislativo' else None
+    if not v:
+        raise HTTPException(404)
+    return T('vereador', request, u, v=v)
+
+@r.post('/vereadores/{vid}')
+async def vereador_adm_post(request: Request, vid: int):
+    u = exige(request, 'editar'); f = await ler_form(request)
+    o = request.state.orgao; b = o['banco']
+    v = db.um(b, 'SELECT * FROM vereadores WHERE id=%s', (vid,)) if o['tipo'] == 'legislativo' else None
+    if not v:
+        raise HTTPException(404)
+    if not f.get('partido'):
+        return ir(f'/admin/vereadores/{vid}', 'Informe o partido.', request)
+    foto, alt, cred = v['foto_url'], f.get('foto_alt', ''), f.get('foto_credito', '')
+    arq = f.get('foto')
+    try:
+        if f.get('remover_foto'):
+            foto, alt, cred = '', '', ''
+        elif arq is not None and hasattr(arq, 'read') and getattr(arq, 'filename', ''):
+            foto = await salvar_midia(request, u, arq, 'vereador', alt, cred)
+        elif foto and len(alt) < 5:
+            raise ValueError('A foto precisa de texto alternativo (pelo menos 5 caracteres).')
+    except ValueError as e:
+        return ir(f'/admin/vereadores/{vid}', str(e), request)
+    db.exe(b, 'UPDATE vereadores SET apelido=%s, partido=%s, bio=%s, contato=%s, foto_url=%s, foto_alt=%s, foto_credito=%s WHERE id=%s',
+           (f.get('apelido', '')[:60], f['partido'][:20], f.get('bio', '')[:3000], f.get('contato', '')[:300], foto, alt[:300], cred[:300], vid))
+    auditar(request, f"Atualizou o perfil do vereador {v['nome']}")
+    return ir(f"/admin/vereadores?leg={v['legislatura']}", 'Perfil salvo.', request)
 
 # ---------- Câmara: sessões e emendas ----------
 @r.get('/sessoes')

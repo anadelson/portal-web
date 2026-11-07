@@ -44,7 +44,6 @@
 {% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="" width="64" height="56">{% else %}<span class="selo" aria-hidden="true">{{ (ident.nome or orgao.nome)|iniciais }}</span>{% endif %}
 <span class="nome">{% if ident.prefixo and not leg %}<span class="pre">{{ ident.prefixo }}</span><strong>{{ ident.nome_curto or ident.nome }}</strong>{% else %}<span class="pre">{{ ident.prefixo or '' }}</span><strong>{{ ident.nome or orgao.nome }}</strong>{% endif %}<span class="sub">{{ ident.subtitulo or orgao.municipio }}</span></span>
 </a>
-{% set atual = request.url.path[3:] or '/' %}
 <nav class="menu" id="menu" tabindex="-1" aria-label="Menu principal"><ul>
 {% macro item(href, rotulo) %}<li><a href="{{ href }}"{% if atual == href or (href != '/' and atual.startswith(href)) %} aria-current="page"{% endif %}>{{ rotulo }}</a></li>{% endmacro %}
 {{ item('/', 'Início') }}

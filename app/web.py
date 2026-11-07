@@ -185,7 +185,7 @@ def ctx_orgao(request: Request, **extra):
     cor = ident.get('cor') or o['cor']
     tokens = {'cor': cor, 'cor_escura': mistura(cor, '#000000', .3), 'cor_clara': mistura(cor, '#FFFFFF', .88),
               'destaque': ident.get('cor_destaque') or '#F0B429'}
-    d = dict(request=request, orgao=o, ident=ident, mods=mods, cor=cor, tokens=tokens, vizinhos=vizinhos(o), leg=o['tipo'] == 'legislativo',
+    d = dict(request=request, orgao=o, ident=ident, mods=mods, cor=cor, tokens=tokens, vizinhos=vizinhos(o), leg=o['tipo'] == 'legislativo', atual=request.url.path[3:] or '/',
              defeso=mods.get('eleicao') and eleicao.em_defeso(o['banco']), eleicao=eleicao.conf(o['banco']), hoje=config.hoje())
     d.update(extra)
     return d
