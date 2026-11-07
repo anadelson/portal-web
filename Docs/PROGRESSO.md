@@ -676,3 +676,18 @@ Depois, o usuário cadastra a credencial pela tela. Em seguida vêm: modo autom�
 
 ### Onde parou
 Fontes da Fase 7 concluídas: INEP e IEG-M no ar, credencial pelo console. Próximo passo: ETAPA 1 do `Docs/PEDIDO-FASE7-LAYOUT.md` (avaliação só leitura), numa branch própria.
+
+## Fase 7 — layout do /painel (branch `fase-7-layout`)
+### ETAPA 1 — Avaliação (07/11/2026, só leitura)
+- **Capturas:** feitas com o Playwright 1.49, num container descartável da imagem `mcr.microsoft.com/playwright:v1.49.0-jammy`, que já existia na VPS. O `playwright-core` foi instalado só dentro desse container, que foi removido; nada foi instalado na VPS.
+  - 14 capturas de página inteira (7 abas × 1280 px e 390 px) e 2 do foco das abas, em `Docs/avaliacao-painel/`, com as medidas em `medidas.json`.
+- **Tabela comparativa:** está em `Docs/avaliacao-painel/AVALIACAO.md`.
+  - **O que está igual:** fonte e cores, nenhuma rolagem horizontal em 390 px, aba guardada na URL.
+  - **Divergências principais:**
+    - abas em caixas em vez de pílulas, e sem o selo da data das finanças;
+    - faltam os gráficos de finanças (mês a mês, para onde vai, de onde vem, execução);
+    - as seções por tema estão em cartões genéricos;
+    - o IEG-M está sem o bloco próprio e sem a distribuição dos municípios;
+    - falta a lista "Ainda não disponíveis";
+    - o foco amarelo tem contraste baixo sobre fundo branco.
+- **Parado aguardando aprovação das correções** e de 5 decisões: cálculo por habitante, coletor mensal da Fiorilli, semântica das abas, comparação do IDEB com SP e Brasil, e novos dados agregados do CNES e do IEG-M.
