@@ -75,7 +75,7 @@ def home(request: Request):
         dados['emendas'] = db.um(b, "SELECT count(*) n, coalesce(sum(valor),0) total, coalesce(sum(pago_cadastro),0) pago, coalesce(sum(pago_empenho),0) pago_emp, count(*) FILTER (WHERE conferencia='divergente') divergentes FROM emendas")
         dados['financas'] = db.cfg(b, 'financas', {})
     if ctx['mods'].get('diario'):
-        dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' ORDER BY data DESC, numero DESC, letra DESC LIMIT 4")
+        dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND NOT modo_teste ORDER BY data DESC, numero DESC, letra DESC LIMIT 4")
     destaque = [x for x in blocos if x['regiao'] == 'destaque']
     principal = [x for x in blocos if x['regiao'] == 'principal']
     lateral = [x for x in blocos if x['regiao'] == 'lateral']
@@ -193,22 +193,30 @@ def emenda(request: Request, ano: int, num: int):
 @r.get('/diario')
 def diario(request: Request):
     ctx = ctx_orgao(request); precisa(ctx, 'diario')
-    eds = db.todos(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE situacao='publicada' ORDER BY data DESC, numero DESC, letra DESC LIMIT 100")
-    return templates.TemplateResponse(request, 'portal/diario.html', dict(ctx, edicoes=eds, legal='diario'))
+    b = ctx['orgao']['banco']
+    eds = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao IN ('publicada','invalidada') AND NOT modo_teste ORDER BY data DESC, numero DESC, letra DESC LIMIT 100")
+    return templates.TemplateResponse(request, 'portal/diario.html', dict(ctx, edicoes=eds, invalidadas=[e for e in eds if e['situacao'] == 'invalidada'], legal='diario'))
 
 @r.get('/diario/{eid}.pdf')
 def diario_pdf(request: Request, eid: int):
     ctx = ctx_orgao(request); precisa(ctx, 'diario')
-    e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE id=%s AND situacao='publicada'", (eid,))
+    e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE id=%s AND situacao IN ('publicada','invalidada')", (eid,))
     if not e or not e['pdf_arquivo'] or not Path(e['pdf_arquivo']).exists():
         raise HTTPException(404, 'Edição não encontrada.')
-    return FileResponse(e['pdf_arquivo'], media_type='application/pdf', filename=f"diario-oficial-{e['numero']}{e['letra']}.pdf")
+    return FileResponse(e['pdf_arquivo'], media_type='application/pdf', filename=f"diario-oficial-{e['numero']}{e['letra']}{'-TESTE' if e['modo_teste'] else ''}.pdf")
 
 @r.get('/diario/verificar')
 def diario_verificar(request: Request, codigo: str = ''):
+    from . import assinatura as A
     ctx = ctx_orgao(request); precisa(ctx, 'diario')
-    e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE codigo=%s AND situacao='publicada'", (codigo.strip().upper(),)) if codigo else None
-    return templates.TemplateResponse(request, 'portal/diario_verificar.html', dict(ctx, e=e, codigo=codigo, legal='diario'))
+    e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE codigo=%s AND situacao IN ('publicada','invalidada')", (codigo.strip().upper()[:20],)) if codigo else None
+    sigs = []
+    if e and e['pdf_arquivo'] and Path(e['pdf_arquivo']).is_file():
+        try:
+            sigs = A.validar(Path(e['pdf_arquivo']).read_bytes())
+        except Exception:
+            sigs = [{'campo': f"Assinatura_{x['etapa']}", 'signatario': x.get('signatario', ''), 'integra': True, 'valida': True, 'confiavel': not e['modo_teste'], 'carimbo': x.get('carimbo'), 'carimbo_valido': False} for x in e['assinaturas'] if x.get('feita')]
+    return templates.TemplateResponse(request, 'portal/diario_verificar.html', dict(ctx, e=e, codigo=codigo, sigs=sigs, etapas=A.ETAPAS, legal='diario'))
 
 # ---------- Páginas institucionais e mídia ----------
 MIDIA_OK = re.compile(r'^[0-9a-f]{32}\.(png|jpg|webp)$')

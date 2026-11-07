@@ -499,20 +499,23 @@ async def emendas_post(request: Request):
     auditar(request, f"Marcou a emenda {f['numero']} como conferida")
     return ir('/admin/emendas', 'Emenda marcada como conferida.', request)
 
-# ---------- Diário Oficial ----------
-def proxima_edicao(b):
-    r_ = db.um(b, "SELECT coalesce(max(numero),0) n FROM diario_edicoes WHERE letra=''")
-    return r_['n'] + 1
+# ---------- Diário Oficial (Fase 6: assinatura por caderno, regras da Lei 910/2026) ----------
+from . import diario_servico as DS, assinatura as AS
+from fastapi.responses import FileResponse as _FR
 
 @r.get('/diario')
 def diario(request: Request):
     u = exige(request)
-    b = request.state.orgao['banco']
-    atos = db.todos(b, "SELECT * FROM diario_atos WHERE situacao <> 'publicado' ORDER BY id DESC")
-    eds = db.todos(b, 'SELECT * FROM diario_edicoes ORDER BY id DESC LIMIT 20')
-    aberta = db.um(b, "SELECT * FROM diario_edicoes WHERE situacao IN ('montagem','fechada') ORDER BY id DESC LIMIT 1")
+    o = request.state.orgao; b = o['banco']
+    if not modulos_do_orgao(o).get('diario'):
+        raise HTTPException(404)
     agora = datetime.now()
-    return T('diario', request, u, atos=atos, eds=eds, aberta=aberta, prox=proxima_edicao(b), corte=agora.hour >= 16)
+    return T('diario', request, u, atos=db.todos(b, "SELECT * FROM diario_atos WHERE situacao <> 'publicado' ORDER BY id DESC"),
+             eds=db.todos(b, 'SELECT * FROM diario_edicoes ORDER BY id DESC LIMIT 20'), aberta=DS.em_andamento(b), prox=DS.proxima_ordinaria(b),
+             corte=agora.hour >= config.DIARIO_CORTE_HORA, alvo=diario_pdf.data_alvo(b, agora), modo_teste=AS.modo_teste(),
+             alertas=db.todos(b, 'SELECT * FROM diario_alertas WHERE NOT resolvido ORDER BY id DESC LIMIT 10'),
+             publicados=db.todos(b, "SELECT a.id, a.tipo, a.numero, a.ementa, e.numero en, e.letra el FROM diario_atos a JOIN diario_edicoes e ON e.id=a.edicao_id WHERE a.situacao='publicado' ORDER BY a.id DESC LIMIT 100"),
+             designacoes={d['caderno']: d for d in db.todos(b, 'SELECT * FROM designacoes WHERE ativo ORDER BY id')})
 
 @r.post('/diario/ato')
 async def diario_ato(request: Request):
@@ -521,13 +524,13 @@ async def diario_ato(request: Request):
     if acao == 'novo':
         if not (f.get('ementa') and f.get('texto') and f.get('tipo')):
             return ir('/admin/diario', 'Preencha tipo, ementa e texto.', request)
-        txt = f['texto']
-        import re
-        if re.search(r'\d{3}\.\d{3}\.\d{3}-\d{2}', txt):
+        if re.search(r'\d{3}\.\d{3}\.\d{3}-\d{2}', f['texto'] + f['ementa']):
             return ir('/admin/diario', 'O texto tem CPF completo. Remova ou mascare antes de enviar (LGPD).', request)
-        db.exe(b, "INSERT INTO diario_atos (caderno, tipo, numero, orgao, ementa, texto, situacao, autor) VALUES (%s,%s,%s,%s,%s,%s,'revisao',%s)",
-               (f.get('caderno', 'executivo'), f['tipo'], f.get('numero', ''), f.get('orgao', ''), f['ementa'], txt, u['nome']))
-        msg = 'Ato enviado para revisão.'
+        ret = int(f['retifica']) if f.get('retifica', '').isdigit() else None
+        alvo = diario_pdf.data_alvo(b, datetime.now())
+        db.exe(b, "INSERT INTO diario_atos (caderno, tipo, numero, orgao, ementa, texto, situacao, autor, retifica_ato_id, data_alvo) VALUES (%s,%s,%s,%s,%s,%s,'revisao',%s,%s,%s)",
+               (f.get('caderno', 'executivo') if f.get('caderno') in ('executivo', 'legislativo') else 'executivo', f['tipo'], f.get('numero', ''), f.get('orgao', ''), f['ementa'], f['texto'], u['nome'], ret, alvo))
+        msg = f"Ato enviado para revisão. Edição prevista: {alvo.strftime('%d/%m/%Y')}" + (' (passou do horário de corte das 16h).' if alvo > config.hoje() else '.')
     else:
         aid = int(f['id'])
         if acao == 'aprovar' and u['perfil'] in PODE['diario_revisar']:
@@ -535,7 +538,7 @@ async def diario_ato(request: Request):
         elif acao == 'devolver' and u['perfil'] in PODE['diario_revisar']:
             db.exe(b, "UPDATE diario_atos SET situacao='devolvido', comentario=%s WHERE id=%s", (f.get('comentario', ''), aid)); msg = 'Ato devolvido.'
         elif acao == 'excluir':
-            db.exe(b, "DELETE FROM diario_atos WHERE id=%s AND edicao_id IS NULL", (aid,)); msg = 'Ato excluído (antes da certificação).'
+            db.exe(b, "DELETE FROM diario_atos WHERE id=%s AND edicao_id IS NULL AND origem_orgao=''", (aid,)); msg = 'Ato excluído (antes da certificação).'
         else:
             raise HTTPException(403)
     auditar(request, f'Diário: {msg}')
@@ -545,44 +548,102 @@ async def diario_ato(request: Request):
 async def diario_edicao(request: Request):
     u = exige(request, 'diario_fechar'); f = await ler_form(request)
     o = request.state.orgao; b = o['banco']; acao = f.get('acao')
-    if acao in ('abrir', 'extra'):
-        if db.um(b, "SELECT 1 FROM diario_edicoes WHERE situacao IN ('montagem','fechada')"):
-            return ir('/admin/diario', 'Já existe uma edição em andamento.', request)
-        if acao == 'abrir':
-            num, letra = proxima_edicao(b), ''
+    try:
+        if acao in ('abrir', 'extra'):
+            e = DS.abrir(b, u['nome'], extra=acao == 'extra')
+            msg = f"Edição nº {e['numero']}{e['letra']} aberta" + (' em MODO TESTE (sem valor oficial).' if e['modo_teste'] else '.')
+        elif acao == 'invalidar':
+            e = db.um(b, 'SELECT * FROM diario_edicoes WHERE id=%s', (int(f['id']),))
+            DS.invalidar(o, e, f.get('ato', ''), f.get('comunicado', ''), f.get('prorrogacao', ''), u['nome'])
+            msg = f"Edição nº {e['numero']}{e['letra']} invalidada; comunicado publicado no portal."
         else:
-            ult = db.um(b, "SELECT numero FROM diario_edicoes WHERE letra='' ORDER BY numero DESC LIMIT 1")
-            if not ult:
-                return ir('/admin/diario', 'Publique uma edição ordinária antes de criar uma extra.', request)
-            num = ult['numero']
-            l = db.um(b, 'SELECT max(letra) l FROM diario_edicoes WHERE numero=%s', (num,))['l'] or ''
-            letra = chr(ord(l) + 1) if l else 'A'
-        db.exe(b, 'INSERT INTO diario_edicoes (numero, letra, data, responsavel) VALUES (%s,%s,%s,%s)', (num, letra, config.hoje(), u['nome']))
-        msg = f'Edição nº {num}{letra} aberta.'
-    else:
-        e = db.um(b, "SELECT * FROM diario_edicoes WHERE situacao IN ('montagem','fechada') ORDER BY id DESC LIMIT 1")
-        if not e:
-            return ir('/admin/diario', 'Nenhuma edição em andamento.', request)
-        if acao == 'fechar':
-            db.exe(b, "UPDATE diario_atos SET edicao_id=%s WHERE situacao='aprovado' AND edicao_id IS NULL", (e['id'],))
-            atos = db.todos(b, 'SELECT * FROM diario_atos WHERE edicao_id=%s ORDER BY caderno, id', (e['id'],))
-            ident = db.cfg(b, 'identidade', {}) or {}
-            caminho, sha, cod = diario_pdf.gerar_pdf(e, atos, ident, str(Path(config.DADOS_DIR) / o['slug'] / 'diario'))
-            assinada = diario_pdf.assinar_edicao(caminho)
-            db.exe(b, "UPDATE diario_edicoes SET situacao='fechada', sem_atos=%s, pdf_arquivo=%s, sha256=%s, codigo=%s, assinatura=%s WHERE id=%s",
-                   (len(atos) == 0, caminho, sha, cod, 'assinada' if assinada else 'pendente', e['id']))
-            msg = f"Edição fechada com {len(atos)} ato(s). Código {cod}." + ('' if assinada else ' Assinatura ICP-Brasil pendente (piloto).')
-        elif acao == 'publicar':
-            if e['situacao'] != 'fechada':
-                return ir('/admin/diario', 'Feche a edição antes de publicar.', request)
-            db.exe(b, "UPDATE diario_edicoes SET situacao='publicada', publicada_em=now() WHERE id=%s", (e['id'],))
-            db.exe(b, "UPDATE diario_atos SET situacao='publicado' WHERE edicao_id=%s", (e['id'],))
-            msg = f"Edição nº {e['numero']}{e['letra']} publicada."
-        elif acao == 'reabrir' and e['situacao'] == 'fechada':
-            db.exe(b, "UPDATE diario_atos SET edicao_id=NULL WHERE edicao_id=%s", (e['id'],))
-            db.exe(b, "UPDATE diario_edicoes SET situacao='montagem', pdf_arquivo=NULL, sha256=NULL, codigo=NULL WHERE id=%s", (e['id'],))
-            msg = 'Edição reaberta para ajustes (ainda não publicada).'
-        else:
-            raise HTTPException(400)
+            e = DS.em_andamento(b)
+            if not e:
+                raise ValueError('Nenhuma edição em andamento.')
+            if acao == 'fechar':
+                if e['situacao'] != 'montagem':
+                    raise ValueError('A edição já está fechada.')
+                n, cod, pdfa = DS.fechar(o, e, u['nome'])
+                msg = f"Edição fechada com {n} ato(s). Código {cod}. {'PDF/A-2b gerado.' if pdfa else 'Atenção: conversão para PDF/A indisponível.'} Agora assine as etapas."
+            elif acao == 'assinar':
+                rot, completa = DS.assinar_etapa(o, e, u['nome'])
+                msg = f'{rot}: assinada.' + (' Edição totalmente assinada.' if completa else '')
+            elif acao == 'a3':
+                arq = f.get('arquivo')
+                if arq is None or not getattr(arq, 'filename', ''):
+                    raise ValueError('Escolha o PDF assinado.')
+                rot, completa = DS.receber_a3(o, e, await arq.read(30 * 1024 * 1024), u['nome'])
+                msg = f'{rot}: assinatura recebida e validada.' + (' Edição totalmente assinada.' if completa else '')
+            elif acao == 'publicar':
+                teste = DS.publicar(o, e, u['nome'])
+                msg = f"Edição nº {e['numero']}{e['letra']} " + ('concluída em MODO TESTE: não aparece como oficial no portal.' if teste else 'publicada.')
+            elif acao == 'reabrir':
+                if any(x['feita'] for x in e['assinaturas']):
+                    raise ValueError('Edição já assinada não pode ser reaberta: use retificação ou edição extra.')
+                db.exe(b, 'UPDATE diario_atos SET edicao_id=NULL, pagina=NULL WHERE edicao_id=%s', (e['id'],))
+                db.exe(b, "UPDATE diario_edicoes SET situacao='montagem', pdf_arquivo=NULL, sha256=NULL, codigo=NULL, assinaturas='[]', assinatura='pendente' WHERE id=%s", (e['id'],))
+                msg = 'Edição reaberta para ajustes (ainda não assinada nem publicada).'
+            else:
+                raise HTTPException(400)
+    except AS.NaoConfigurado as ex:
+        return ir('/admin/diario', f'Assinatura não configurada: {ex}', request)
+    except ValueError as ex:
+        return ir('/admin/diario', str(ex), request)
     auditar(request, f'Diário: {msg}')
     return ir('/admin/diario', msg, request)
+
+@r.get('/diario/edicao/{eid}.pdf')
+def diario_edicao_pdf(request: Request, eid: int):
+    """PDF atual da edição (para o signatário com token A3 assinar no próprio computador)."""
+    u = exige(request, 'diario_fechar')
+    e = db.um(request.state.orgao['banco'], 'SELECT * FROM diario_edicoes WHERE id=%s', (eid,))
+    if not e or not e['pdf_arquivo'] or not Path(e['pdf_arquivo']).is_file():
+        raise HTTPException(404)
+    auditar(request, f"Baixou a edição nº {e['numero']}{e['letra']} para assinar")
+    return _FR(e['pdf_arquivo'], media_type='application/pdf', filename=f"diario-{e['numero']}{e['letra']}-para-assinar.pdf")
+
+@r.post('/diario/alertas')
+async def diario_alertas(request: Request):
+    u = exige(request, 'diario_fechar'); f = await ler_form(request)
+    db.exe(request.state.orgao['banco'], 'UPDATE diario_alertas SET resolvido=TRUE WHERE id=%s', (int(f['id']),))
+    return ir('/admin/diario', 'Alerta marcado como resolvido.', request)
+
+@r.get('/diario/config')
+def diario_config(request: Request):
+    u = exige(request)
+    b = request.state.orgao['banco']
+    return T('diario_config', request, u, desig=db.todos(b, 'SELECT * FROM designacoes ORDER BY ativo DESC, caderno, id DESC'), etapas=AS.ETAPAS,
+             feriados=db.todos(b, 'SELECT * FROM feriados WHERE data >= %s ORDER BY data', (config.hoje().replace(month=1, day=1),)), conf=db.cfg(b, 'diario', {}) or {}, modo_teste=AS.modo_teste())
+
+@r.post('/diario/config')
+async def diario_config_post(request: Request):
+    u = exige(request, 'config'); f = await ler_form(request)
+    b = request.state.orgao['banco']; acao = f.get('acao')
+    try:
+        if acao == 'designar':
+            if f.get('caderno') not in AS.ETAPAS or not f.get('nome') or not f.get('cargo') or not f.get('ato'):
+                raise ValueError('Informe caderno, nome, cargo e o ato de designação.')
+            if f.get('provedor') == 'a1' and not (re.fullmatch(r'[\w.-]+\.(p12|pfx)', f.get('certificado', '')) and re.fullmatch(r'[A-Z][A-Z0-9_]{2,40}', f.get('senha_env', ''))):
+                raise ValueError('A1: informe o nome do arquivo .p12 (em segredos/a1) e o NOME da variável do .env com a senha (ex.: A1_SENHA_PREFEITO). Nunca digite a senha aqui.')
+            db.exe(b, 'UPDATE designacoes SET ativo=FALSE WHERE caderno=%s', (f['caderno'],))
+            db.exe(b, 'INSERT INTO designacoes (caderno, nome, cargo, ato, ato_data, provedor, certificado, senha_env) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
+                   (f['caderno'], f['nome'][:120], f['cargo'][:120], f['ato'][:200], f.get('ato_data') or None, f.get('provedor') if f.get('provedor') in ('a1', 'nuvem', 'a3') else 'a3', f.get('certificado', '')[:120], f.get('senha_env', '')[:60]))
+            msg = 'Signatário designado.'
+        elif acao == 'feriado':
+            if not f.get('data') or not f.get('descricao'):
+                raise ValueError('Informe data e descrição.')
+            db.exe(b, 'INSERT INTO feriados (data, descricao, tipo) VALUES (%s,%s,%s) ON CONFLICT (data) DO UPDATE SET descricao=EXCLUDED.descricao, tipo=EXCLUDED.tipo',
+                   (f['data'], f['descricao'][:120], f.get('tipo') if f.get('tipo') in ('feriado', 'sem_expediente', 'ponto_facultativo') else 'feriado'))
+            msg = 'Data cadastrada no calendário do Diário.'
+        elif acao == 'tirar_feriado':
+            db.exe(b, 'DELETE FROM feriados WHERE data=%s', (f['data'],)); msg = 'Data removida.'
+        elif acao == 'lei':
+            conf = db.cfg(b, 'diario', {}) or {}
+            conf['lei'] = f.get('lei', '')[:200]
+            db.set_cfg(b, 'diario', conf); msg = 'Texto da lei de instituição salvo.'
+        else:
+            raise HTTPException(400)
+    except ValueError as ex:
+        return ir('/admin/diario/config', str(ex), request)
+    auditar(request, f'Diário (configuração): {acao}')
+    return ir('/admin/diario/config', msg, request)
