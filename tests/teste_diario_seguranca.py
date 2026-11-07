@@ -148,15 +148,15 @@ if not sa or not sa['sem_atos'] or sa['assinatura'] != 'teste': falha(f'edição
 DS.tick(o, datetime(2026, 11, 9, 17, 5))
 if db.um(PM, "SELECT situacao FROM diario_edicoes WHERE data='2026-11-09'")['situacao'] != 'publicada': falha('publicação automática às 17h')
 if DS.tick(o, datetime(2026, 11, 10, 16, 5)) or db.um(PM, "SELECT 1 FROM diario_edicoes WHERE data='2026-11-10'"): falha('feriado não tem edição')
-DS.tick(o, datetime(2026, 11, 11, 16, 5))
-if not db.um(PM, "SELECT 1 FROM diario_edicoes WHERE data='2026-11-11'"): falha('ponto facultativo é dia útil')
+DS.tick(o, datetime(2026, 11, 11, 16, 5)); DS.tick(o, datetime(2026, 11, 11, 17, 5))
+if not db.um(PM, "SELECT 1 FROM diario_edicoes WHERE data='2026-11-11' AND situacao='publicada'"): falha('ponto facultativo é dia útil')
 os.environ['DATA_SIMULADA'] = '2026-11-12T09:00'
 novo_ato(pm, 'executivo', 'Ato do dia 12 (alerta)')
 post(pm, '/admin/diario/ato', {'acao': 'aprovar', 'id': db.um(PM, "SELECT id FROM diario_atos WHERE ementa='Ato do dia 12 (alerta)'")['id']}, de='/admin/diario')
 post(pm, '/admin/diario/edicao', {'acao': 'abrir'}, de='/admin/diario'); post(pm, '/admin/diario/edicao', {'acao': 'fechar'}, de='/admin/diario')
 r = DS.tick(o, datetime(2026, 11, 12, 16, 35)); DS.tick(o, datetime(2026, 11, 12, 17, 10))
 if 'alerta de assinatura' not in r or not db.um(PM, "SELECT 1 FROM diario_alertas WHERE mensagem LIKE '%%não está assinada%%'"): falha(f'alerta 16h30: {r}')
-if db.um(PM, "SELECT situacao FROM diario_edicoes WHERE data='2026-11-12'")['situacao'] == 'publicada': falha('edição não assinada foi publicada')
+if (db.um(PM, "SELECT situacao FROM diario_edicoes WHERE data='2026-11-12'") or {}).get('situacao') != 'fechada': falha('edição de 12/11 deveria estar fechada e não publicada (sem assinatura)')
 ok(pm.get('/admin/diario'), txt='ainda não está assinada', nome='alerta no painel')
 for a in ('assinar', 'assinar', 'publicar'):
     post(pm, '/admin/diario/edicao', {'acao': a}, de='/admin/diario')
