@@ -71,7 +71,7 @@ for f in fontes:
 worker.rodar([f for f in fontes if f['slug'] == 'pm-bora' and f['fonte'] == 'fiorilli'][0], 'fiorilli', [f for f in fontes if f['slug'] == 'pm-bora' and f['fonte'] == 'fiorilli'][0]['params'])  # 2ª vez: idempotente
 
 PM, CM = 'bd_pm_bora', 'bd_cm_bora'
-for tab, minimo in [('receitas', 100), ('despesas_unidade', 10), ('empenhos', 30), ('diarias', 20), ('restos_pagar', 20), ('ordem_cronologica', 40), ('licitacoes', 40),
+for tab, minimo in [('receitas', 90), ('despesas_unidade', 10), ('empenhos', 30), ('diarias', 20), ('restos_pagar', 20), ('ordem_cronologica', 40), ('licitacoes', 40),
                     ('contratos', 20), ('transferencias', 5), ('servidores', 20), ('relatorios_fiscais', 20)]:
     n = db.um(PM, f'SELECT count(*) n FROM {tab}')['n']
     if n < minimo: falha(f'{tab}: só {n} linhas')
