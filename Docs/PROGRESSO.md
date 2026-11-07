@@ -230,3 +230,28 @@ O que foi alterado na VPS (tudo aprovado): código em `/opt/portal_web` (+ `.env
 
 ## Onde parou
 **Fase 2 concluída em 2026-11-07.** Piloto no ar. Nenhuma ação em andamento.
+
+
+---
+
+# Fase 3 — Identidade visual (iniciada em 2026-11-07)
+
+## Feito (sem alterar a VPS em produção)
+- Referência `Docs/fase34.tgz` extraída em `Docs/` (PEDIDO-FASE3/4, ESPEC-VISUAL, FONTES-DADOS, 4 protótipos, 13 imagens).
+- **Git**: `/opt/portal_web` virou repositório. `main` = commit "piloto fase 2" + tag **`fase-2`** (estado em produção). `.gitignore` exclui `.env`, `backups/`, `Docs/diagnostico-*.txt`, `Docs/*.tgz` e os `.webp` gerados.
+- Branch **`fase-3`** com commits pequenos:
+  1. imagens em `app/static/img` (+ `.webp` ≤ 250 KB geradas no build com Pillow), migração `003_orgao_identidade.sql`, `python -m app.provision atualizar`;
+  2. base do portal (barra de acessibilidade, barra utilitária, cabeçalho com brasão, menu, busca, rodapé em 4 faixas, Public Sans, tokens de cor), página inicial em blocos, páginas da Câmara (galeria, perfil, caminho da emenda), privacidade/acessibilidade/mapa do site, rota `/midia/`;
+  3. painel e console com menu de ícones; identidade com upload de imagens; vereadores no /admin; foto de tema no conteúdo;
+  4. testes de ponta a ponta (recusam rodar fora do banco de teste).
+- Os 45 modelos Jinja compilam sem erro (checagem no host).
+- Observação: instalar Pillow numa pasta temporária do host foi bloqueado pela política de segurança; por isso as `.webp` são geradas dentro do build da imagem.
+
+## Decisões de implementação
+- `provision atualizar`: aplica todas as migrações (idempotentes) em todos os bancos, completa a identidade **sem sobrescrever** o que o órgão definiu e acrescenta blocos novos. Se o layout ainda é exatamente o padrão da Fase 2, aplica o novo padrão inteiro (para a Câmara ficar com contas 55% × emendas 45%).
+- Cor da Prefeitura: troca `#1D4E89` (padrão da Fase 2) por `#0E4D64` (protótipo) só se ainda estiver no padrão.
+- Câmara: o destaque usa `paco-municipal.jpg` (conforme ESPEC-VISUAL) com texto alternativo honesto ("Fachada do Paço Municipal"); a Câmara deve enviar a foto do próprio prédio em /admin/identidade.
+- "Borá em números" fica oculto até a Fase 4 gravar `config.numeros`.
+
+## Onde parou
+Aguardando aprovação de: build da imagem → testes em banco de teste isolado → implantação (`up -d` + `provision atualizar`).
