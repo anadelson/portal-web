@@ -136,7 +136,7 @@ def servidores(b, p, ano, hoje):
             break
     # LGPD: só nome (nome social quando houver), cargo, vínculo, lotação, admissão e remuneração bruta. CPF e descontos não são lidos.
     L = [{'chave': chave('srv', ano, mes, r.get('REGISTRO'), r.get('CONTRATO')), 'fonte': FONTE, 'ano': ano, 'mes': mes, 'registro': txt(r.get('REGISTRO'), 20),
-          'nome': txt(sem_cpf(r.get('NOME_SOCIAL') or r.get('NOME')), 200), 'cargo': txt(r.get('CARGO'), 120), 'vinculo': txt(r.get('VINCULO'), 60),
+          'nome': txt(sem_cpf((r.get('NOME_SOCIAL') or '').strip() or r.get('NOME')), 200), 'cargo': txt(r.get('CARGO'), 120), 'vinculo': txt(r.get('VINCULO'), 60),
           'lotacao': txt(r.get('UNIDADE') or r.get('DIVISAO'), 200), 'admissao': data_br(r.get('DATAADMISSAO')), 'proventos': num(r.get('PROVENTOS'))} for r in rows]
     return gravar(b, 'servidores', L, {'ano': ano, 'mes': mes}, FONTE)
 

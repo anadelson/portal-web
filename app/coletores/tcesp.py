@@ -15,7 +15,7 @@ def coletar(orgao, p, hoje=None):
             for i in (itens if isinstance(itens, list) else []):
                 alinea = txt(i.get('ds_alinea'), 300)
                 nome = alinea.split(' - ', 1)[-1] + (f" · {txt(i.get('ds_subalinea'), 200)}" if i.get('ds_subalinea') else '')
-                L.append({'chave': chave('tce', ano, mes, i.get('ds_fonte_recurso'), i.get('ds_cd_aplicacao_fixo'), alinea, i.get('ds_subalinea')), 'fonte': FONTE,
+                L.append({'chave': chave('tce', ano, mes, i.get('ds_fonte_recurso'), i.get('ds_cd_aplicacao_fixo'), alinea, i.get('ds_subalinea'), 'ded' if (num(i.get('vl_arrecadacao')) or 0) < 0 else ''), 'fonte': FONTE,
                           'ano': ano, 'mes': mes, 'codigo': alinea.split(' - ', 1)[0][:40], 'nome': nome[:300], 'fonte_recurso': txt(i.get('ds_fonte_recurso'), 200),
                           'previsto': None, 'atualizado': None, 'arrecadado': num(i.get('vl_arrecadacao')) or 0, 'soma': True})
         n = gravar(orgao['banco'], 'receitas', L, {'ano': ano}, FONTE)

@@ -51,7 +51,7 @@ def fake(fonte, url, params=None, **kw):
     if l == 'DespesasRestosPagar':
         return amostra('restos_pagar') + [{'EMPRESA': '2', 'CODIGO': '1', 'DESCRICAO': f'{CPF_FALSO} FULANA PF', 'EMPENHADO': '5', 'LIQUIDADO': '5', 'PAGO': '0'}]
     if l == 'Servidores':
-        rows = amostra('servidores'); x = dict(rows[0]); x.update({'REGISTRO': '999', 'NOME': 'SERVIDOR TESTE', 'CPF': '12345678909', 'CPFFORMATADO': CPF_FALSO, 'DESCONTOS': '999,99'}); return rows + [x]
+        rows = amostra('servidores'); x = dict(rows[0]); x.update({'REGISTRO': '999', 'NOME': 'SERVIDOR TESTE', 'NOME_SOCIAL': ' ', 'CPF': '12345678909', 'CPFFORMATADO': CPF_FALSO, 'DESCONTOS': '999,99'}); return rows + [x]
     nome = {'ReceitaOrcamentaria': 'receitas', 'DespesasPorUnidade': 'despesas_unidade', 'Diarias': 'diarias', 'Licitacoes': 'licitacoes', 'Contratos': 'contratos',
             'Transf': 'transferencias', 'CadEmendasImpositivas': 'emendas_cad_transf'}.get(l)
     if nome:
@@ -99,6 +99,7 @@ if db.um(CM, 'SELECT count(*) n FROM emendas')['n'] < 29: falha('cadastro de eme
 if db.um(CM, "SELECT count(*) n FROM transferencias WHERE recebedora NOT ILIKE '%%Câmara%%'")['n']: falha('Câmara gravou transferência de outro órgão')
 if not (db.cfg(CM, 'financas') or {}).get('dtp'): falha('financas.dtp da Câmara não atualizado pelo RGF')
 num = db.cfg(PM, 'numeros')
+if db.um(PM, "SELECT count(*) n FROM servidores WHERE nome=''")['n']: falha('servidor sem nome')
 if not num or not num['kpis'] or 'Receita arrecadada' not in num['kpis'][0]['l']: falha(f'números do município não calculados: {num}')
 
 # ---------- telas, exportação e API ----------

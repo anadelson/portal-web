@@ -38,8 +38,15 @@ def rodar(o, fonte, p):
             traceback.print_exc()
     return res
 
+def ultimas_execucoes():
+    """Lembra a última coleta de cada fonte (no banco), para um reinício não repetir as fontes à toa."""
+    r = {}
+    for x in db.todos(db.PLATAFORMA, "SELECT orgao_slug, split_part(fonte, ':', 1) f, max(inicio) t FROM coletas WHERE fonte LIKE '%%:%%' GROUP BY 1, 2"):
+        r[(x['orgao_slug'], x['f'])] = x['t'].astimezone().replace(tzinfo=None)
+    return r
+
 def main():
-    ultimo = {}
+    ultimo = ultimas_execucoes()
     print('worker iniciado', flush=True)
     while True:
         agora = datetime.now()
@@ -60,8 +67,10 @@ def main():
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'uma-vez':
+        so = set(sys.argv[2:])  # opcional: só estas fontes (ex.: uma-vez fiorilli pncp)
         for f in fontes_ativas():
-            rodar(f, f['fonte'], f['params'])
+            if not so or f['fonte'] in so:
+                rodar(f, f['fonte'], f['params'])
         db.fechar()
     else:
         main()
