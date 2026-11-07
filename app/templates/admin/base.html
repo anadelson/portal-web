@@ -1,18 +1,24 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block titulo %}Painel{% endblock %} — {{ ident.nome }}</title><link rel="stylesheet" href="/static/admin.css"><style>:root{--cor:{{ cor }}}</style></head>
-<body><div class="casca">
+<title>{% block titulo %}Painel{% endblock %} — {{ ident.nome }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="/static/admin.css?v=3"><style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }}}</style></head>
+<body><a class="pular" href="#conteudo">Ir para o conteúdo</a><div class="casca">
+{% macro item(href, ic, rotulo, badge=0) %}<a href="/admin{{ href }}"{% if atual == href or (href != '/' and atual.startswith(href)) %} aria-current="page"{% endif %}>{{ icone(ic, 20) }}<span>{{ rotulo }}</span>{% if badge %}<span class="badge" aria-label="{{ badge }} pendente(s)">{{ badge }}</span>{% endif %}</a>{% endmacro %}
+{% macro grupo(nome, chave, hrefs) %}<details class="grupo" open><summary>{{ nome }}</summary>{{ caller() }}</details>{% endmacro %}
 <nav class="lado" aria-label="Menu do painel">
-<div class="marca">Painel administrativo<small>{{ ident.nome }}</small></div>
-<a href="/admin/">Visão geral</a>
-<span class="grupo">Conteúdo</span><a href="/admin/conteudos">Conteúdos</a><a href="/admin/pagina-inicial">Página inicial (blocos)</a>
-{% if orgao.tipo == 'legislativo' %}<span class="grupo">Legislativo</span><a href="/admin/sessoes">Sessões e presença</a>{% if mods.emend %}<a href="/admin/emendas">Emendas impositivas</a>{% endif %}{% endif %}
-{% if mods.diario %}<span class="grupo">Publicações oficiais</span><a href="/admin/diario">Diário Oficial</a>{% endif %}
-<span class="grupo">Atendimento</span><a href="/admin/atendimento">e-SIC e Ouvidoria</a>
-<span class="grupo">Configuração</span><a href="/admin/identidade">Identidade do órgão</a><a href="/admin/funcionalidades">Funcionalidades</a>{% if mods.eleicao %}<a href="/admin/eleicao">Período eleitoral</a>{% endif %}<a href="/admin/usuarios">Usuários e perfis</a><a href="/admin/auditoria">Registro de ações</a>
-<div class="rodape">{{ u.nome }} · {{ PERFIS[u.perfil] }}<br><a href="/admin/senha" style="padding:0;color:#C9D1D9">Trocar senha</a> · <a href="/admin/sair" style="padding:0;color:#C9D1D9">Sair</a><br><a href="/" style="padding:0;color:#C9D1D9">Ver portal ↗</a></div>
+<div class="marca">{% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="" width="40" height="35">{% endif %}<span>Painel administrativo<small>{{ ident.nome }}</small></span></div>
+{{ item('/', 'painel', 'Visão geral') }}
+{% call grupo('Conteúdo', 'c', ['/conteudos', '/pagina-inicial']) %}{{ item('/conteudos', 'lista', 'Conteúdos', pend.revisao) }}{{ item('/pagina-inicial', 'home', 'Página inicial (blocos)') }}{% endcall %}
+{% if orgao.tipo == 'legislativo' %}{% call grupo('Legislativo', 'l', []) %}{% if mods.ver %}{{ item('/vereadores', 'vereadores', 'Vereadores') }}{% endif %}{{ item('/sessoes', 'sessoes', 'Sessões e presença') }}{% if mods.emend %}{{ item('/emendas', 'emendas', 'Emendas impositivas') }}{% endif %}{% endcall %}{% endif %}
+{% if mods.diario %}{% call grupo('Publicações oficiais', 'p', []) %}{{ item('/diario', 'diario', 'Diário Oficial') }}{% endcall %}{% endif %}
+{% call grupo('Atendimento', 'a', []) %}{{ item('/atendimento', 'esic', 'e-SIC e Ouvidoria', pend.esic) }}{% endcall %}
+{% call grupo('Configuração', 'g', []) %}{{ item('/identidade', 'ident', 'Identidade e imagens') }}{{ item('/funcionalidades', 'mods', 'Funcionalidades') }}{% if mods.eleicao %}{{ item('/eleicao', 'eleicao', 'Período eleitoral') }}{% endif %}{{ item('/usuarios', 'users', 'Usuários e perfis') }}{{ item('/auditoria', 'aud', 'Registro de ações') }}{% endcall %}
+<div class="usuario"><span class="ini" aria-hidden="true">{{ u.nome|iniciais }}</span><span><strong>{{ u.nome }}</strong><small>{{ PERFIS[u.perfil] }}</small></span></div>
+<div class="rodape"><a href="/admin/senha">Trocar senha</a> · <a href="/admin/sair">Sair</a> · <a href="/">Ver portal ↗</a></div>
 </nav>
 <div class="principal">
 {% if defeso %}<div class="defeso" role="status">Período eleitoral em vigor até {{ eleicao.fim|br }}: conteúdos de publicidade, agentes políticos e marcas de gestão estão fora do ar.</div>{% endif %}
 <header class="barra"><h1>{% block h1 %}{% endblock %}</h1><span class="legal">{{ orgao.dominio }} · banco {{ orgao.banco }}</span></header>
-<main>{% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}{% block conteudo %}{% endblock %}</main>
+<main id="conteudo" tabindex="-1">{% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}{% block conteudo %}{% endblock %}</main>
 </div></div></body></html>

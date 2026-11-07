@@ -6,3 +6,4 @@ __pycache__/
 /backups/
 Docs/diagnostico-*.txt
 Docs/*.tgz
+app/static/img/*.webp

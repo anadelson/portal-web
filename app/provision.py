@@ -2,7 +2,11 @@
 
 Uso:
   python -m app.provision init        # primeira instalação (idempotente)
+  python -m app.provision atualizar   # aplica as migrações em todos os bancos e acrescenta blocos/identidade novos
   python -m app.provision orgao SLUG  # aplica o esquema de novo num órgão existente
+
+Migrações: app/migrations/NNN_*.sql em ordem; as que têm "plataforma" no nome vão para o banco de
+controle, as demais para o banco de cada órgão. Todas precisam ser idempotentes.
 """
 import json, sys
 from datetime import date
@@ -10,12 +14,13 @@ from pathlib import Path
 import psycopg
 from psycopg.types.json import Jsonb
 from . import config, db
-from .catalogo import MODULOS, LAYOUT_PADRAO, serve
+from .catalogo import MODULOS, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, serve
 from .security import hash_senha
 
 AQUI = Path(__file__).parent
-SQL_PLAT = (AQUI / 'migrations' / '001_plataforma.sql').read_text(encoding='utf-8')
-SQL_ORGAO = (AQUI / 'migrations' / '002_orgao.sql').read_text(encoding='utf-8')
+MIGRACOES = sorted((AQUI / 'migrations').glob('[0-9][0-9][0-9]_*.sql'))
+MIG_PLAT = [m for m in MIGRACOES if 'plataforma' in m.stem]
+MIG_ORGAO = [m for m in MIGRACOES if 'plataforma' not in m.stem]
 
 def criar_banco(nome: str):
     with psycopg.connect(config.dsn('postgres'), autocommit=True) as c:
@@ -23,14 +28,84 @@ def criar_banco(nome: str):
             c.execute(f'CREATE DATABASE "{nome}"')
             print('banco criado:', nome)
 
-def aplicar(banco: str, sql: str):
+def aplicar(banco: str, migracoes):
     with psycopg.connect(config.dsn(banco), autocommit=True) as c:
-        c.execute(sql)
+        for m in migracoes:
+            c.execute(m.read_text(encoding='utf-8'))
 
 IDENT = {
     'pm-bora': {'nome': 'Prefeitura Municipal de Borá', 'endereco': 'Praça Santo Antonio, 10 · Borá (SP) · CEP 19740-005', 'telefone': '(18) 3367-1103', 'email': 'pmbora@bora.sp.gov.br', 'cnpj': '44.544.906/0001-42', 'horario': 'Segunda a sexta, 8h às 17h', 'encarregado': '[nome do encarregado de dados]', 'encarregado_email': '[e-mail do encarregado]', 'cor': '#1D4E89'},
     'cm-bora': {'nome': 'Câmara Municipal de Borá', 'endereco': 'Rua Vereador Herculano Azevedo, 10 · Centro · Borá (SP) · CEP 19740-000', 'telefone': '(18) 3367-1146', 'email': 'camara@camarabora.sp.gov.br', 'cnpj': '[CNPJ da Câmara]', 'horario': 'Segunda a sexta, 9h às 11h e 13h às 17h', 'encarregado': '[nome do encarregado de dados]', 'encarregado_email': '[e-mail do encarregado]', 'cor': '#2F5233'},
 }
+
+# Identidade visual (Fase 3): valores padrão por tipo de órgão; cada órgão pode trocar tudo em /admin/identidade.
+VISUAL_PADRAO = {
+    'executivo': {'prefixo': 'Prefeitura Municipal de', 'cor_destaque': '#F0B429', 'hero_rotulo': 'Portal oficial da Prefeitura',
+                  'hero_titulo': 'O que você precisa hoje?', 'hero_texto': 'Peça serviços, acompanhe seus pedidos e veja como a Prefeitura usa o dinheiro público.',
+                  'busca_dica': 'Ex.: IPTU, creche, edital, diário oficial', 'mais_buscados': ['IPTU', 'Vacinação', 'Concurso', 'Nota fiscal']},
+    'legislativo': {'prefixo': 'Poder Legislativo', 'cor_destaque': '#F7C948', 'hero_rotulo': 'Portal oficial da Câmara Municipal',
+                    'hero_titulo': 'Acompanhe o trabalho dos vereadores', 'hero_texto': 'Sessões, projetos, votações e gastos da Câmara, num só lugar e em linguagem simples.',
+                    'busca_dica': 'Busque projeto, indicação ou vereador', 'mais_buscados': []},
+}
+_CREDITO_PM = 'Foto: Prefeitura Municipal de Borá'
+IDENT_VISUAL = {
+    'pm-bora': {
+        'nome_curto': 'Borá', 'subtitulo': 'Estado de São Paulo', 'cor_antiga': '#1D4E89', 'cor': '#0E4D64',
+        'brasao': {'url': '/static/img/brasao.webp', 'alt': 'Brasão do Município de Borá'},
+        'hero': {'url': '/static/img/vista-aerea.webp', 'alt': 'Vista aérea de Borá, com a praça central, a Igreja Matriz e as ruas arborizadas', 'credito': _CREDITO_PM},
+        'conheca': {'rotulo': 'Conheça Borá', 'titulo': 'Pequena, tranquila e acolhedora',
+                    'texto': 'O segundo menor município do Brasil em população (IBGE, Censo 2022), com praça arborizada no centro, a Igreja Matriz como cartão-postal e a agroindústria da cana-de-açúcar movimentando a economia.',
+                    'numeros': [['Habitantes (Censo 2022)', '907'], ['Área territorial', '119 km²'], ['Distância da capital', '~500 km'], ['IDHM (2010)', '0,746']],
+                    'fonte': 'IBGE: Censo 2022, área territorial e IDHM 2010.',
+                    'fotos': [{'url': '/static/img/praca-aerea.webp', 'alt': 'Vista aérea da praça central com a Igreja Matriz, o chafariz, o coreto e as ruas arborizadas', 'legenda': 'Praça e Igreja Matriz, vistas do alto', 'credito': _CREDITO_PM},
+                              {'url': '/static/img/igreja-matriz.webp', 'alt': 'Igreja Matriz branca de torre pontiaguda, cercada de palmeiras e árvores', 'legenda': 'Igreja Matriz', 'credito': _CREDITO_PM},
+                              {'url': '/static/img/usina.webp', 'alt': 'Portaria de uma usina de açúcar e etanol, com caminhão na entrada', 'legenda': 'Agroindústria da cana-de-açúcar', 'credito': _CREDITO_PM}]},
+        'sede': {'titulo': 'Paço Municipal', 'foto': {'url': '/static/img/paco-municipal.webp', 'alt': 'Fachada do Paço Municipal, prédio branco arredondado com jardim de roseiras na frente', 'credito': _CREDITO_PM}},
+        'creditos': 'Fotos da cidade: Prefeitura Municipal de Borá. Fotos dos cartões de serviços: Unsplash e Rawpixel, CC0, via Wikimedia Commons.',
+    },
+    'cm-bora': {
+        'nome_curto': 'Câmara Municipal de Borá', 'subtitulo': 'Estado de São Paulo',
+        'brasao': {'url': '/static/img/brasao.webp', 'alt': 'Brasão do Município de Borá'},
+        'hero': {'url': '/static/img/paco-municipal.webp', 'alt': 'Fachada do Paço Municipal de Borá, prédio branco arredondado com jardim na frente', 'credito': _CREDITO_PM},
+        'sede': {'titulo': 'Sede da Câmara', 'foto': {}},
+        'creditos': 'Foto do destaque: Prefeitura Municipal de Borá.',
+    },
+}
+
+def completar_identidade(banco, slug, tipo):
+    """Acrescenta à identidade do órgão as chaves visuais que ainda não existem (nunca sobrescreve o que o órgão definiu)."""
+    ident = db.cfg(banco, 'identidade', {}) or {}
+    novo = dict(VISUAL_PADRAO.get(tipo, {}))
+    novo.update(IDENT_VISUAL.get(slug, {}))
+    antiga = novo.pop('cor_antiga', None)
+    mudou = False
+    for k, v in novo.items():
+        if k == 'cor':
+            if antiga and ident.get('cor') == antiga:  # ainda na cor padrão da Fase 2: troca pela cor do protótipo
+                ident['cor'] = v; mudou = True
+            continue
+        if k not in ident:
+            ident[k] = v; mudou = True
+    ident.setdefault('revisado_em', date.today().isoformat())
+    if mudou:
+        db.set_cfg(banco, 'identidade', ident)
+    return mudou
+
+def atualizar_layout(banco, tipo):
+    """Acrescenta blocos novos ao layout sem apagar os existentes. Se o órgão nunca mexeu no layout
+    (ainda igual ao padrão da Fase 2), aplica o novo padrão inteiro."""
+    atual = [(b['chave'], b['regiao']) for b in db.todos(banco, "SELECT chave, regiao FROM blocos WHERE pagina='home' ORDER BY ordem, id")]
+    alvo = LAYOUT_PADRAO[tipo]
+    if atual == LAYOUT_PADRAO_V1.get(tipo):
+        for i, (k, reg) in enumerate(alvo):
+            db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES ('home',%s,%s,%s) ON CONFLICT (pagina, chave) DO UPDATE SET regiao=EXCLUDED.regiao, ordem=EXCLUDED.ordem", (k, reg, i))
+        return 'padrão novo aplicado'
+    usados = {k for k, _ in atual}
+    novos = [(k, reg) for k, reg in alvo if k not in usados]
+    for k, reg in novos:
+        mx = db.um(banco, "SELECT coalesce(max(ordem),0)+1 n FROM blocos WHERE pagina='home' AND regiao<>'rodape'")['n']
+        db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES ('home',%s,%s,%s) ON CONFLICT DO NOTHING", (k, reg, mx))
+    return f"{len(novos)} bloco(s) novo(s) acrescentado(s)" if novos else 'sem blocos novos'
 
 ORGAOS = [
     ('pm-bora', 'Prefeitura Municipal de Borá', 'executivo', lambda: config.DOMINIO_PM, 'bd_pm_bora', 'Executivo', '#1D4E89', {'diario': True, 'bi': False, 'tema3': False}),
@@ -49,9 +124,10 @@ def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, mun
         if m[3] == 'opc' and serve(m[0], tipo):
             db.exe(db.PLATAFORMA, 'INSERT INTO orgao_modulos (orgao_id, chave, contratado) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING', (oid, m[0], bool(opcionais.get(m[0]))))
     criar_banco(banco)
-    aplicar(banco, SQL_ORGAO)
+    aplicar(banco, MIG_ORGAO)
     if not db.cfg(banco, 'identidade'):
         db.set_cfg(banco, 'identidade', IDENT.get(slug, {'nome': nome, 'cor': cor}))
+    completar_identidade(banco, slug, tipo)
     if not db.um(banco, 'SELECT 1 FROM blocos LIMIT 1'):
         for i, (k, reg) in enumerate(LAYOUT_PADRAO[tipo]):
             db.exe(banco, 'INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING', ('home', k, reg, i))
@@ -119,7 +195,7 @@ def seed_prefeitura(banco):
 
 def init():
     criar_banco(db.PLATAFORMA)
-    aplicar(db.PLATAFORMA, SQL_PLAT)
+    aplicar(db.PLATAFORMA, MIG_PLAT)
     for m in MODULOS:
         db.exe(db.PLATAFORMA, 'INSERT INTO modulos VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT (chave) DO UPDATE SET nome=EXCLUDED.nome, descricao=EXCLUDED.descricao, oferta=EXCLUDED.oferta, serve=EXCLUDED.serve, depende=EXCLUDED.depende', m)
     if not db.um(db.PLATAFORMA, 'SELECT 1 FROM gestores LIMIT 1'):
@@ -133,13 +209,29 @@ def init():
     seed_camara('bd_cm_bora')
     print('pronto.')
 
+def atualizar():
+    """Atualização sem perda: migrações idempotentes em todos os bancos, catálogo de módulos,
+    chaves novas da identidade e blocos novos da página inicial."""
+    aplicar(db.PLATAFORMA, MIG_PLAT)
+    print('plataforma: migrações', ', '.join(m.name for m in MIG_PLAT))
+    for m in MODULOS:
+        db.exe(db.PLATAFORMA, 'INSERT INTO modulos VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT (chave) DO UPDATE SET nome=EXCLUDED.nome, descricao=EXCLUDED.descricao, oferta=EXCLUDED.oferta, serve=EXCLUDED.serve, depende=EXCLUDED.depende', m)
+    for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos ORDER BY id'):
+        aplicar(o['banco'], MIG_ORGAO)
+        ident = 'identidade completada' if completar_identidade(o['banco'], o['slug'], o['tipo']) else 'identidade sem mudança'
+        print(f"{o['slug']} ({o['banco']}): migrações {', '.join(m.name for m in MIG_ORGAO)} · {ident} · layout: {atualizar_layout(o['banco'], o['tipo'])}")
+    print('pronto.')
+
 if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else 'init'
     if cmd == 'init':
         init()
         db.fechar()
+    elif cmd == 'atualizar':
+        atualizar()
+        db.fechar()
     elif cmd == 'orgao':
         o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE slug=%s', (sys.argv[2],))
-        aplicar(o['banco'], SQL_ORGAO)
+        aplicar(o['banco'], MIG_ORGAO)
         print('esquema aplicado em', o['banco'])
         db.fechar()

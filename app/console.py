@@ -153,7 +153,7 @@ async def novo_post(request: Request):
         return ir('/orgaos/novo', f'Não foi possível criar: {e}', request)
     limpar_cache()
     log(g, f"Cadastrou o órgão {f['nome']} ({f['dominio']}, banco {banco})")
-    return ir('/', f"Órgão criado em implantação. Aponte o DNS de {f['dominio']} para a VPS e inclua o domínio no Caddyfile.", request)
+    return ir('/', f"Órgão criado em implantação. Aponte o DNS de {f["dominio"]} para a VPS, emita o certificado e inclua o domínio no vhost do nginx (Docs/PROGRESSO.md).", request)
 
 @r.get('/catalogo')
 def catalogo(request: Request):

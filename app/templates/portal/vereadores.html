@@ -1,8 +1,31 @@
 {% extends 'portal/base.html' %}
-{% block conteudo %}<h1>Vereadores</h1>
-<nav aria-label="Legislaturas" style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 20px">{% for l in legs %}<a class="btn {{ '' if l.numero == leg.numero else 'sec' }}" href="/vereadores?leg={{ l.numero }}" {% if l.numero == leg.numero %}aria-current="page"{% endif %}>{{ l.numero }}ª Legislatura · {{ l.anos }}</a>{% endfor %}</nav>
-<p>Prefeito: {{ leg.prefeito }} · Vice: {{ leg.vice }}</p>
-<section class="secao"><h2>Mesa Diretora</h2><div class="grade">{% for g in mesas|groupby('bienio') %}<div class="cartao"><h3>Biênio {{ g.grouper }}</h3><ul>{% for m in g.list %}<li>{{ m.cargo }}: {{ m.nome or 'a eleger' }}</li>{% endfor %}</ul></div>{% endfor %}</div></section>
-<section class="secao"><h2>Composição</h2><div class="grade">{% for v in ver %}<a class="cartao" href="/vereador/{{ v.id }}" style="display:flex;gap:12px;align-items:center;text-decoration:none;color:inherit"><span class="avatar" aria-hidden="true">{{ v.nome.split()[0][:1] }}{{ v.nome.split()[-1][:1] }}</span><span><strong>{{ v.nome }}</strong><br><small>{{ v.apelido and '“' ~ v.apelido ~ '” · ' or '' }}{{ v.partido }} · {{ v.votos }} votos</small></span></a>{% endfor %}</div>
-<p class="legal">Nomes, partidos, votos e Mesas: portal da Câmara (consulta de 06/11/2026). Fotos oficiais e biografias são enviadas pelo painel administrativo.</p></section>
+{% block titulo %}Vereadores — {{ ident.nome }}{% endblock %}
+{% macro retrato(v) %}<span class="retrato">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt or ('Foto oficial de ' ~ v.nome) }}">{% else %}<span class="ini" aria-hidden="true">{{ v.nome|iniciais }}</span>{% endif %}<span class="chip-partido">{{ v.partido }}</span></span>{% endmacro %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Vereadores</span></nav>
+<h1>Vereadores e Mesa Diretora</h1>
+<p class="intro">Quem são os vereadores de cada legislatura, os partidos, os votos e a composição da Mesa Diretora.</p>
+<nav class="abas" aria-label="Legislaturas">
+{% for l in legs %}<a href="/vereadores?leg={{ l.numero }}"{% if leg and l.numero == leg.numero %} aria-current="page"{% endif %}><strong>{{ l.numero }}ª Legislatura</strong><span>{{ l.anos }}{% if loop.first %} · atual{% endif %}</span></a>{% endfor %}
+<a href="/vereadores?leg=acervo"{% if not leg %} aria-current="page"{% endif %}><strong>Acervo</strong><span>Legislaturas anteriores</span></a>
+</nav>
+{% if leg %}
+<section aria-labelledby="h-gal" class="secao">
+<h2 id="h-gal">{{ leg.numero }}ª Legislatura · {{ leg.anos }}</h2>
+{% if leg.prefeito %}<p style="margin:0 0 14px;color:var(--sub)">Poder Executivo no período: prefeito(a) {{ leg.prefeito }}{% if leg.vice %} · vice {{ leg.vice }}{% endif %}.</p>{% endif %}
+<div class="duas-col">{% for g in mesas|groupby('bienio') %}<div class="caixa"><div class="cab" style="margin-bottom:10px"><h3 style="margin:0">Mesa Diretora · {{ g.grouper }}</h3>{% set vazia = not (g.list|selectattr('nome')|list) %}<span class="chip {{ '' if vazia else 'ok' }}">{{ 'A eleger' if vazia else 'Eleita' }}</span></div>
+{% if not vazia %}<ul class="itens" style="max-height:none">{% for m in g.list %}<li style="display:flex;justify-content:space-between;gap:10px"><span>{{ m.nome or 'a eleger' }}</span><small style="color:var(--sub)">{{ m.cargo }}</small></li>{% endfor %}</ul>{% else %}<p class="vazio">Eleição da Mesa para este biênio ainda não realizada.</p>{% endif %}</div>{% endfor %}</div>
+<ul class="vers">{% for v in ver %}<li><a class="vcard" href="/vereador/{{ v.id }}" aria-label="Ver perfil de {{ v.nome }}">{{ retrato(v) }}<span class="info"><strong>{{ v.nome }}</strong><span>{% if v.apelido %}“{{ v.apelido }}” · {% endif %}{% if v.votos %}{{ v.votos }} votos{% endif %}</span></span></a></li>{% endfor %}</ul>
+<p class="legal" style="margin-top:12px">Nomes, partidos, votos, prefeito, vice e Mesas: dados reais do portal da Câmara (consulta de 06/11/2026). Sem foto oficial, o cartão mostra as iniciais.</p>
+</section>
+{% if loop_atual %}
+<h2>Atuação dos vereadores da {{ leg.numero }}ª Legislatura</h2>
+<div class="tabela"><table><caption class="sr">Vereadores da {{ leg.numero }}ª Legislatura</caption><thead><tr><th scope="col">Vereador(a)</th><th scope="col">Partido</th><th scope="col" class="num">Proposições</th><th scope="col" class="num">Votos</th><th scope="col">Perfil</th></tr></thead><tbody>
+{% for v in ver %}<tr><th scope="row">{{ v.nome }}{% if v.apelido %}<small style="display:block;font-weight:400;color:var(--sub)">“{{ v.apelido }}”</small>{% endif %}</th><td>{{ v.partido }}</td><td class="num">{{ props.get(v.id, 0) }}</td><td class="num">{{ v.votos or '—' }}</td><td><a href="/vereador/{{ v.id }}">Ver perfil</a></td></tr>{% endfor %}
+</tbody></table></div>
+<p class="legal" style="margin-top:10px">Proposições: registros importados do portal da Câmara. Presença por vereador aparece quando as atas e listas de presença forem publicadas.</p>
+{% endif %}
+{% else %}
+<section class="caixa" style="border-style:dashed"><h2>Legislaturas anteriores</h2><p style="margin:8px 0 0;color:var(--sub)">O portal atual da Câmara lista as legislaturas desde 1965, mas a composição de cada uma ainda não foi importada. Quando o acervo for carregado, cada legislatura ganha a mesma página com vereadores, partidos, votos e Mesas.</p></section>
+{% endif %}
 {% endblock %}

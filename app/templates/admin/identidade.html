@@ -1,3 +1,44 @@
 {% extends 'admin/base.html' %}{% block h1 %}Identidade do órgão{% endblock %}
-{% block conteudo %}<form class="campos" method="post" action="/admin/identidade"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">{% for k, t in campos %}<label>{{ t }}<input name="{{ k }}" value="{{ ident.get(k, '') }}" {{ 'disabled' if not pode('config') }}></label>{% endfor %}{% if pode('config') %}<button class="btn">Salvar</button>{% endif %}</form>
-<p class="legal"><strong>Base legal:</strong> LAI, art. 8º, § 1º, I; LGPD, art. 41.</p>{% endblock %}
+{% block conteudo %}
+{% set pode_cfg = pode('config') %}
+<section class="cx"><h2>Dados e textos do portal</h2>
+<form class="campos" method="post" action="/admin/identidade"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<div class="grade2">{% for k, t in campos %}<label>{{ t }}{% if k in ('hero_texto', 'creditos') %}<textarea name="{{ k }}" rows="2" {{ 'disabled' if not pode_cfg }}>{{ ident.get(k, '') }}</textarea>{% else %}<input name="{{ k }}" value="{{ ident.get(k, '') }}" {{ 'disabled' if not pode_cfg }}{% if k in ('cor', 'cor_destaque') %} pattern="#[0-9A-Fa-f]{6}"{% endif %}>{% endif %}</label>{% endfor %}</div>
+<label>Redes sociais (uma por linha: Nome | https://endereço)<textarea name="redes" rows="3" {{ 'disabled' if not pode_cfg }} placeholder="Instagram | https://www.instagram.com/perfil-oficial">{{ redes_txt }}</textarea></label>
+{% if orgao.tipo == 'executivo' %}
+<fieldset><legend>Bloco “Conheça a cidade”</legend>
+<label>Rótulo<input name="conheca_rotulo" value="{{ cx.rotulo or '' }}" {{ 'disabled' if not pode_cfg }}></label>
+<label>Título<input name="conheca_titulo" value="{{ cx.titulo or '' }}" {{ 'disabled' if not pode_cfg }}></label>
+<label>Texto<textarea name="conheca_texto" rows="3" {{ 'disabled' if not pode_cfg }}>{{ cx.texto or '' }}</textarea></label>
+<label>Números (um por linha: Rótulo | valor)<textarea name="conheca_numeros" rows="4" {{ 'disabled' if not pode_cfg }}>{{ numeros_txt }}</textarea></label>
+<label>Fonte dos números<input name="conheca_fonte" value="{{ cx.fonte or '' }}" {{ 'disabled' if not pode_cfg }}></label>
+</fieldset>{% endif %}
+<label>Título do bloco da sede<input name="sede_titulo" value="{{ (ident.sede or {}).titulo or '' }}" {{ 'disabled' if not pode_cfg }}></label>
+{% if pode_cfg %}<button class="btn">Salvar dados e textos</button>{% endif %}
+</form></section>
+
+<section class="cx" id="imagens"><h2>Imagens</h2>
+<p class="legal">PNG, JPG ou WEBP, até 3 MB. O texto alternativo é obrigatório: descreva o que a imagem mostra para quem usa leitor de tela. Informe também o crédito e a licença da foto.</p>
+{% macro form_midia(uso, titulo, atual, indice=None, legenda=False) %}
+<form class="midia" method="post" action="/admin/identidade/midia" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="uso" value="{{ uso }}">{% if indice is not none %}<input type="hidden" name="indice" value="{{ indice }}">{% endif %}
+<div class="prev">{% if atual and atual.url %}<img src="{{ atual.url }}" alt="{{ atual.alt }}">{% else %}<span>sem imagem</span>{% endif %}</div>
+<div class="campos-m"><strong>{{ titulo }}</strong>
+<label>Arquivo<input type="file" name="arquivo" accept="image/png,image/jpeg,image/webp" {{ 'disabled' if not pode('config') }}></label>
+<label>Texto alternativo (obrigatório)<input name="alt" value="{{ atual.alt if atual else '' }}" required minlength="5" {{ 'disabled' if not pode('config') }}></label>
+{% if legenda %}<label>Legenda<input name="legenda" value="{{ atual.legenda if atual else '' }}" {{ 'disabled' if not pode('config') }}></label>{% endif %}
+<label>Crédito e licença<input name="credito" value="{{ atual.credito if atual else '' }}" placeholder="Ex.: Foto: Fulano / Prefeitura · uso institucional" {{ 'disabled' if not pode('config') }}></label>
+{% if pode('config') %}<span class="acoes"><button class="btn" name="acao" value="salvar">Salvar</button>{% if indice is not none and atual %}<button class="btn perigo" name="acao" value="remover" formnovalidate>Remover</button>{% endif %}</span>{% endif %}
+</div></form>
+{% endmacro %}
+<div class="midias">
+{{ form_midia('brasao', 'Brasão', ident.brasao) }}
+{{ form_midia('hero', 'Foto do destaque (página inicial)', ident.hero) }}
+{{ form_midia('sede', 'Foto da sede', (ident.sede or {}).foto) }}
+{% if orgao.tipo == 'executivo' %}
+{% set fotos = cx.fotos or [] %}
+{% for f in fotos %}{{ form_midia('conheca', 'Conheça a cidade · foto ' ~ loop.index, f, loop.index0, True) }}{% endfor %}
+{% if fotos|length < max_conheca %}{{ form_midia('conheca', 'Conheça a cidade · nova foto', None, fotos|length, True) }}{% endif %}
+{% endif %}
+</div></section>
+<p class="legal"><strong>Base legal:</strong> LAI, art. 8º, § 1º, I; LGPD, art. 41; eMAG 3.1 (texto alternativo em imagens).</p>
+{% endblock %}
