@@ -545,4 +545,4 @@ Código pronto e testado na branch `fase-7` (sem build nem implantação). **Agu
   - Worker sem erros; demais sites da VPS no ar.
 
 ### Onde parou
-Fase 7 implantada e conferida. **Aguardando aprovação para o merge de `fase-7` em `main` e a tag `fase-7`.**
+Fase 7 concluída (07/11/2026): implantada, conferida, `fase-7` mesclada em `main` com tag `fase-7` (aprovado: "Aprovo o merge"). Pendências fora do código: PNCP instável (anos anteriores entram quando uma coleta ler mais páginas), MDS fora do ar (ligar a fonte `mds` quando voltar), IEG-M e Saeb por lançamento manual, `Docs/fase7.tgz` nunca chegou à VPS.
