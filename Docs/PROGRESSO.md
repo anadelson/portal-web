@@ -671,3 +671,8 @@ Depois, o usuário cadastra a credencial pela tela. Em seguida vêm: modo autom�
   - A nova coleta trouxe 88 valores: 11 edições × 8 indicadores, sem colunas ignoradas e sem edição repetida. O TCESP não envia nota numérica, só a faixa.
   - Os 8 indicadores receberam no histórico a nota "valores corrigidos em 07/11/2026 por erro de importação", e a correção foi registrada na auditoria.
 - **Situação:** os indicadores continuam **ocultos** até o ok do usuário, depois da comparação com o painel do TCESP.
+- **Reexibição (07/11/2026, ok do usuário: "Confere, reexibir"):** a série foi conferida pelo usuário com o painel do TCESP. Os 8 indicadores voltaram a ficar visíveis, com histórico e auditoria. API: resultado geral 2024 = C+ e i-Gov TI 2024 = A; o CSV do painel tem 88 linhas do IEG-M.
+- `fase-7-fontes` mesclada em `main` com a tag `fase-7-fontes`.
+
+### Onde parou
+Fontes da Fase 7 concluídas: INEP e IEG-M no ar, credencial pelo console. Próximo passo: ETAPA 1 do `Docs/PEDIDO-FASE7-LAYOUT.md` (avaliação só leitura), numa branch própria.
