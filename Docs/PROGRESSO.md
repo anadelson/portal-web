@@ -464,4 +464,6 @@ Comando para editar na VPS: `nano /opt/portal_web/.env` (depois `docker compose 
 `git checkout fase-5 -- . && docker compose build app worker && docker compose up -d app worker` (tabelas das migrações 007/008 ficam sem uso; `segredos/` pode ser mantida). Dumps de antes: `backups/*-2026-11-07.dump`.
 
 ## Onde parou
-Fase 6 implantada em MODO TESTE; aguardando aprovação para reimplantar a correção da rotina automática; depois merge + tag `fase-6`.
+**Fase 6 concluída em MODO TESTE (07/11/2026).** Correção da rotina automática reimplantada (backup antes; 4 suítes com ERROS: 0 na imagem nova): em modo teste o worker não cria/publica edições sozinho (`DIARIO_AUTOMATICO_TESTE=0`); produção com 0 edições do Diário em pm-bora e cm-bora; branch `fase-6` mesclada em `main` com tag `fase-6`.
+
+Para passar a OFICIAL falta (com o órgão): certificados A1/A3 ICP-Brasil reais em `segredos/a1` e raízes em `segredos/icp`, contrato com ACT (preencher `ACT_*`), credenciais gov.br (`GOVBR_CLIENT_ID`/`GOVBR_CLIENT_SECRET`), lei municipal do Diário e designações; depois `DIARIO_MODO=oficial` e `python -m app.diario_servico limpar-teste` — cada passo com aprovação.
