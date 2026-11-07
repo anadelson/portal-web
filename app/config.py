@@ -64,9 +64,12 @@ INTERNO_BASE = env('INTERNO_BASE', 'http://127.0.0.1:8000')   # endereço intern
 
 # ---------- Fase 7 (fontes): IEG-M do TCESP e planilhas do INEP ----------
 # Acesso anônimo publicado pelo próprio TCESP (uso autorizado pelo órgão em 07/11/2026; ver Docs/PROGRESSO.md).
-# Preenchido só no .env da VPS; vazio = coleta automática do IEG-M desligada, sem erro.
+# Reserva: a credencial principal é cadastrada no console do gestor (Credenciais de fontes). Vazio = sem reserva.
 IEGM_USUARIO = env('IEGM_USUARIO')
 IEGM_SENHA = env('IEGM_SENHA')
+# Chave Fernet que cifra as credenciais de fontes cadastradas no console (gerada na VPS, só no .env).
+# Perder a chave obriga a recadastrar as credenciais pela tela.
+CHAVE_CREDENCIAIS = env('CHAVE_CREDENCIAIS')
 CERTS_DIR = env('CERTS_DIR', '/srv/deploy/certs')                # certificados intermediários públicos (só completam a cadeia TLS)
 
 def govbr_urls():
