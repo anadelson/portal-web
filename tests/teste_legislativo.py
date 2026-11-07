@@ -29,7 +29,7 @@ ok(cm.get('/admin/'), txt='Visão geral', nome='login cm')
 
 # ---------- 1. legislatura fictícia, vereadores e Mesa ----------
 def post(url, data, files=None, txt=None, nome=''):
-    data = dict(data, csrf=tok(cm, url)); return ok(cm.post(url, data=data, files=files, follow_redirects=True), txt=txt, nome=nome)
+    data = dict(data, csrf=tok(cm, '/admin/sessoes' if url == '/admin/sessoes/nova' else url)); return ok(cm.post(url, data=data, files=files, follow_redirects=True), txt=txt, nome=nome)
 post('/admin/legislaturas', {'acao': 'nova', 'numero': '16', 'anos': '2029–2032', 'prefeito': 'Prefeito Fictício', 'vice': 'Vice Fictício'}, txt='Legislatura salva', nome='nova legislatura')
 NOMES = ['Ana Teste', 'Bruno Teste', 'Carla Teste', 'Diego Teste', 'Elisa Teste', 'Fábio Teste', 'Gina Teste', 'Hugo Teste', 'Íris Teste']
 for i, n in enumerate(NOMES):
