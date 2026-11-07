@@ -213,6 +213,9 @@ r = ok(cm.get('/admin/pntp'), txt='20.11', nome='pntp')
 sit = {c: s for c, _, s, _, _ in L.pntp(CM)}
 if sit['20.7'] != 'parcial' or sit['20.6'] == 'pendente' or sit['20.5'] != 'atendido' or sit['20.8'] != 'atendido' or sit['20.10'] != 'atendido' or sit['20.1'] != 'parcial':
     falha(f'PNTP: {sit}')
+if db.um(CM, "SELECT count(*) n FROM sessoes WHERE pauta_publicada AND pauta='' AND NOT EXISTS (SELECT 1 FROM pauta_itens i WHERE i.sessao_id=sessoes.id) AND data > '2028-03-10'")['n'] and sit['20.4'] == 'atendido':
+    falha('20.4 atendido com pauta vazia')
+if not db.um(CM, "SELECT 1 FROM proposicao_autores a JOIN proposicoes p ON p.id=a.proposicao_id WHERE p.tipo='Indicação' AND a.vereador_id IS NOT NULL"): falha('autoria antiga não vinculada')
 # LGPD geral: nenhuma página pública com CPF
 for pg in ('/', '/proposicoes', f"/proposicoes/{pl['id']}", '/sessoes', f'/sessoes/{sid}', '/comissoes', '/contas', '/transmissoes', '/transparencia/diarias-camara', f"/vereador/{V['Ana Teste']}"):
     if re.search(r'\b\d{3}\.\d{3}\.\d{3}-\d{2}\b', cm.get(pg).text): falha(f'CPF em {pg}')

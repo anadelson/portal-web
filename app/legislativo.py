@@ -184,8 +184,8 @@ def pntp(b, hoje=None):
                AND EXISTS (SELECT 1 FROM documentos d WHERE d.proposicao_id=p.id) AND EXISTS (SELECT 1 FROM proposicao_autores a WHERE a.proposicao_id=p.id)) ok
                FROM proposicoes p WHERE p.tipo = ANY(%s) AND p.ano >= %s""", list(PROJETOS), hoje.year - 1)
     r.append(('20.3', 'Projetos com tramitação, autor, relator e documentos', _sit(pj['ok'], pj['n']), f"{pj['n']} projetos de {hoje.year - 1}–{hoje.year}; {pj['ok']} completos.", '/proposicoes'))
-    ses = um("SELECT count(*) n, count(*) FILTER (WHERE pauta_publicada) pauta, count(*) FILTER (WHERE ata_publicada AND presenca_publicada) ata, count(*) FILTER (WHERE votacao_publicada) vot, count(*) FILTER (WHERE video_url<>'' OR EXISTS (SELECT 1 FROM transmissoes t WHERE t.sessao_id=s.id AND t.video<>'')) video FROM sessoes s WHERE data <= %s AND data > %s", hoje, date(hoje.year - 1, hoje.month, min(hoje.day, 28)))
-    r.append(('20.4', 'Pauta das sessões do Plenário', _sit(ses['pauta'], ses['n']), f"{ses['n']} sessões nos últimos 12 meses; {ses['pauta']} com pauta publicada.", '/sessoes'))
+    ses = um("SELECT count(*) n, count(*) FILTER (WHERE pauta_publicada AND (pauta<>'' OR EXISTS (SELECT 1 FROM pauta_itens i WHERE i.sessao_id=s.id))) pauta, count(*) FILTER (WHERE ata_publicada AND presenca_publicada) ata, count(*) FILTER (WHERE votacao_publicada) vot, count(*) FILTER (WHERE video_url<>'' OR EXISTS (SELECT 1 FROM transmissoes t WHERE t.sessao_id=s.id AND t.video<>'')) video FROM sessoes s WHERE data <= %s AND data > %s", hoje, date(hoje.year - 1, hoje.month, min(hoje.day, 28)))
+    r.append(('20.4', 'Pauta das sessões do Plenário', _sit(ses['pauta'], ses['n']), f"{ses['n']} sessões nos últimos 12 meses; {ses['pauta']} com pauta publicada no portal (texto ou itens).", '/sessoes'))
     com = um("SELECT count(*) n, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM comissao_reunioes r WHERE r.comissao_id=c.id AND r.publicada) OR EXISTS (SELECT 1 FROM pareceres p WHERE p.comissao_id=c.id AND p.publicado)) ok FROM comissoes c WHERE ativa")
     r.append(('20.5', 'Pauta e pareceres das Comissões', _sit(com['ok'], com['n']), f"{com['n']} comissões ativas; {com['ok']} com pauta ou parecer publicado.", '/comissoes'))
     r.append(('20.6', 'Atas das sessões com presença', _sit(ses['ata'], ses['n']), f"{ses['ata']} de {ses['n']} sessões com ata e presença publicadas.", '/sessoes'))
@@ -202,3 +202,14 @@ def pntp(b, hoje=None):
                AND EXISTS (SELECT 1 FROM presencas p JOIN sessoes s ON s.id=p.sessao_id WHERE p.vereador_id=v.id AND s.presenca_publicada)) ok FROM vereadores v WHERE legislatura=%s""", leg)
     r.append(('20.11', 'Atividade dos parlamentares', _sit(at['ok'], at['n']), f"{at['ok']} de {at['n']} perfis com proposições vinculadas e presença publicada.", '/vereadores'))
     return r
+
+def vincular_autores_antigos(b):
+    """Proposições antigas (seed/importação sem autoria estruturada): cria os vínculos a partir do autor em texto,
+    ligando ao vereador quando o nome bate exatamente. Idempotente; não inventa autoria."""
+    n = 0
+    for p in db.todos(b, 'SELECT id, autor, ano FROM proposicoes p WHERE autor<>\'\' AND NOT EXISTS (SELECT 1 FROM proposicao_autores a WHERE a.proposicao_id=p.id)'):
+        for nome in [x.strip() for x in re.split(r'[;|]', p['autor']) if x.strip()]:
+            v = db.um(b, 'SELECT id FROM vereadores WHERE lower(nome)=lower(%s) ORDER BY abs(legislatura - 15) LIMIT 1', (nome,))
+            db.exe(b, 'INSERT INTO proposicao_autores (proposicao_id, vereador_id, nome) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING', (p['id'], v['id'] if v else None, nome))
+        n += 1
+    return n
