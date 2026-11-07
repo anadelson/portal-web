@@ -130,7 +130,7 @@ async def conteudo_salvar(request: Request):
             if f['classe'] in VEDADAS and eleicao.em_defeso(b) and eleicao.conf(b).get('bloquear', True) and not c['excecao_eleitoral']:
                 return ir(f'/admin/conteudos/{cid}', 'Período eleitoral: esta classificação não pode ser publicada até o fim do defeso.', request)
             nova = 'agendado' if pub and date.fromisoformat(pub) > config.hoje() else 'publicado'
-            db.exe(b, 'UPDATE conteudos SET situacao=%s, classe=%s, publicar_em=coalesce(%s::date, CURRENT_DATE), tirar_em=%s, atualizado_em=now() WHERE id=%s', (nova, f['classe'], pub, tirar, cid))
+            db.exe(b, 'UPDATE conteudos SET situacao=%s, classe=%s, publicar_em=coalesce(%s::date, %s::date), tirar_em=%s, atualizado_em=now() WHERE id=%s', (nova, f['classe'], pub, config.hoje(), tirar, cid))
             obs = 'Aprovou e ' + ('agendou' if nova == 'agendado' else 'publicou')
         elif acao == 'devolver':
             if not f.get('comentario'):
