@@ -40,13 +40,26 @@ BLOCOS = {
     'contas': ('Prestação de contas', ['principal', 'lateral'], 'transp', False, 'legislativo'),
     'emendas': ('Emendas impositivas', ['principal', 'lateral'], 'emend', False, 'legislativo'),
     'sessoes': ('Últimas sessões', ['principal', 'lateral'], 'sess', False, 'legislativo'),
+    'projetos': ('Projetos em tramitação', ['principal', 'lateral'], 'prop', False, 'legislativo'),
+    'numeros': ('Números do município (só aparece com dados)', ['principal'], 'transp', False, 'executivo'),
+    'conheca': ('Conheça a cidade (mosaico de fotos)', ['principal'], None, False, 'executivo'),
+    'sede': ('Sede e atendimento', ['principal', 'lateral'], None, False, 'ambos'),
     'rodape': ('Rodapé com links obrigatórios', ['rodape'], None, True, 'ambos'),
 }
+# Largura do bloco na página inicial: blocos "meio" lado a lado; contas × emendas na proporção 55/45
+LARGURA = {'contas': 'l55', 'emendas': 'l45', 'sessoes': 'meio', 'projetos': 'meio', 'sede': 'meio', 'noticias': 'meio', 'diario': 'meio'}
 REGIOES = [('topo', 'Cabeçalho'), ('avisos', 'Faixa de avisos'), ('destaque', 'Destaque'), ('principal', 'Área principal'), ('lateral', 'Coluna lateral'), ('rodape', 'Rodapé')]
 LAYOUT_PADRAO = {
+    'executivo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('servicos', 'principal'), ('numeros', 'principal'), ('diario', 'principal'), ('conheca', 'principal'), ('sede', 'principal'), ('noticias', 'principal'), ('rodape', 'rodape')],
+    'legislativo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('ver', 'principal'), ('contas', 'principal'), ('emendas', 'principal'), ('sessoes', 'principal'), ('projetos', 'principal'), ('noticias', 'principal'), ('rodape', 'rodape')],
+}
+# Layout padrão da Fase 2: quem ainda está exatamente nele recebe o novo padrão no "provision atualizar"
+LAYOUT_PADRAO_V1 = {
     'executivo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('servicos', 'principal'), ('noticias', 'principal'), ('diario', 'lateral'), ('rodape', 'rodape')],
     'legislativo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('ver', 'principal'), ('contas', 'principal'), ('noticias', 'principal'), ('emendas', 'lateral'), ('sessoes', 'lateral'), ('rodape', 'rodape')],
 }
+# Fotos de tema dos cartões de serviço (campo "imagem" do conteúdo)
+TEMAS = {'saude': 'Saúde', 'educacao': 'Educação', 'tributos': 'Tributos', 'empresas': 'Empresas', 'cidade': 'Cidade', 'social': 'Assistência', 'atendimento': 'Atendimento'}
 
 # Classificação eleitoral (Lei 9.504/1997, art. 73, VI, b; CF art. 37 §1º)
 CLASSES = {
