@@ -652,3 +652,22 @@ Depois, o usuário cadastra a credencial pela tela. Em seguida vêm: modo autom�
 
 ### Onde parou
 **Aguardando o usuário cadastrar a credencial do IEG-M** em gestao.conectatech.tech → Integrações → Credenciais de fontes. Depois, com aprovação: modo automático do IEG-M, primeira coleta e conferência das colunas, merge de `fase-7-fontes` e tag, e ETAPA 1 do layout.
+
+### Incidente: IEG-M com o resultado geral trocado pela dimensão de TI (07/11/2026)
+- **O que houve:** na primeira coleta real (15h13), a consulta do TCESP veio com 12 colunas: `exercicio_ref, ano_apuracao, codigo_municipio, nome, iegm, iplanejamento, ifiscal, ieduc, isaude, iamb, icidade, igov`.
+  - O mapeamento não reconhecia `igov` como governança de TI e, sem regra, encaixou essa coluna como "resultado geral", sobrescrevendo a coluna `iegm`.
+  - Ficaram publicados por cerca de 10 minutos: o resultado geral com a faixa de TI (ex.: "A" em 2024 em vez de "C+") e a dimensão de TI sem dado. As outras 6 dimensões estavam corretas.
+- **Contenção (aprovada: "Aprovo os 4 passos"):** os 8 indicadores foram ocultados.
+  - Conferido que sumiram de `/painel` (todas as abas), da página inicial, dos downloads CSV/JSON/ODS (do painel inteiro e de cada indicador: 404), de `/dados-abertos` e da API pública (lista e por indicador: 404), também sem o parâmetro anti-cache.
+  - Não há cache no proxy (sem `proxy_cache` no nginx); só o navegador guarda a API e os downloads por até 5 minutos.
+- **Correção do código:**
+  - Só nomes conhecidos são aceitos: `iegm` = geral, `ieduc`, `isaude`, `iplanejamento`, `ifiscal`, `iamb`, `icidade`, `igov` = TI.
+  - As colunas de identificação (`exercicio_ref`, `ano_apuracao`, `codigo_municipio`, `nome`) ficam fora do mapeamento.
+  - Coluna desconhecida é ignorada e aparece como "AVISO: colunas desconhecidas ignoradas" na coleta e no console; nunca é encaixada por falta de regra.
+  - Duas colunas para o mesmo indicador fazem a coleta ser recusada sem gravar nada.
+  - O rótulo vem da própria resposta: período = `exercicio_ref` (ano-base) e "edição `ano_apuracao`"; ano-base divergente ou edição repetida é recusado.
+  - Teste com exatamente as 12 colunas reais (valores fictícios). As 6 suítes deram ERROS: 0; depois vieram build, backup e `up -d`.
+- **Dados:** os valores errados (77 no órgão e 77 em `indicadores_publicos`) foram exportados para `backups/iegm-valores-errados-2026-11-07.csv` (permissão 600) e apagados. Não havia lançamento manual.
+  - A nova coleta trouxe 88 valores: 11 edições × 8 indicadores, sem colunas ignoradas e sem edição repetida. O TCESP não envia nota numérica, só a faixa.
+  - Os 8 indicadores receberam no histórico a nota "valores corrigidos em 07/11/2026 por erro de importação", e a correção foi registrada na auditoria.
+- **Situação:** os indicadores continuam **ocultos** até o ok do usuário, depois da comparação com o painel do TCESP.
