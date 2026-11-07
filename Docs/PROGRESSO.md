@@ -716,3 +716,24 @@ Fontes da Fase 7 concluídas: INEP e IEG-M no ar, credencial pelo console. Próx
   - Sem rolagem horizontal em 390 px; pílulas com 44 px.
   - O brasão quebrado aparece só na prévia: as imagens `.webp` são geradas no build.
 - **Onde parou:** aguardando aprovação para implantar (build, testes, backup, `up -d`, `provision atualizar`, primeiras coletas `financas`, `cnes`, `inep` e `iegm`), merge e tag.
+
+### Implantação do layout (07/11/2026, aprovada: "Aprovo os 6 passos")
+- Build; as 7 suítes com a imagem nova deram ERROS: 0. Backup; `up -d` de app e worker (saudáveis). `provision atualizar` aplicou as migrações 013 e 014 e cadastrou a fonte `financas`, que herda `base` e `empresa` da `fiorilli`.
+- **Primeiras coletas:**
+  - `financas`: 11 meses de 2026 e 22 unidades no agrupamento por área.
+  - `cnes`: lista com 2 estabelecimentos.
+  - `iegm`: distribuição dos 644 municípios.
+  - `inep`: comparação com UF e Brasil, ok.
+- **Conferência no domínio:**
+  - Todos os blocos presentes; o selo mostra "07/11/2026 19:05" (horário local).
+  - `?aba=saude` redireciona com 301 para `?tema=saude`.
+  - A **soma dos meses é igual ao acumulado**: receita R$ 22.565.789,79 e despesa paga R$ 19.999.531,48.
+  - Comparação do IDEB: SP 6,5 e Brasil 6,1 (rede pública, anos iniciais, 2025). IEG-M: C+, a mesma faixa de 261 dos 644 municípios.
+  - Capturas da página no ar em `Docs/avaliacao-painel/implantado/`: nenhuma rolagem horizontal em 390 px, pílulas com 44 px e selo em todas as abas.
+- `fase-7-layout` mesclada em `main` com a tag `fase-7-layout`.
+
+### Onde parou
+Fase 7 (painel, fontes e layout) concluída e no ar. Pendências fora do código:
+- PNCP instável: os anos anteriores entram quando uma coleta conseguir ler mais páginas.
+- MDS fora do ar.
+- Vacinação aguardando uma fonte estável.

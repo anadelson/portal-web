@@ -1,0 +1,800 @@
+[
+ {
+  "largura": 1280,
+  "aba": "tudo",
+  "scrollW": 1280,
+  "innerW": 1280,
+  "altura": 9161,
+  "cartoes": 0,
+  "graficos": 2,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 1280,
+  "aba": "fin",
+  "scrollW": 1280,
+  "innerW": 1280,
+  "altura": 3228,
+  "cartoes": 0,
+  "graficos": 1,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 1280,
+  "aba": "cont",
+  "scrollW": 1280,
+  "innerW": 1280,
+  "altura": 1810,
+  "cartoes": 0,
+  "graficos": 0,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 1280,
+  "aba": "saude",
+  "scrollW": 1280,
+  "innerW": 1280,
+  "altura": 2607,
+  "cartoes": 0,
+  "graficos": 0,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 1280,
+  "aba": "edu",
+  "scrollW": 1280,
+  "innerW": 1280,
+  "altura": 3037,
+  "cartoes": 0,
+  "graficos": 1,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 1280,
+  "aba": "social",
+  "scrollW": 1280,
+  "innerW": 1280,
+  "altura": 2192,
+  "cartoes": 0,
+  "graficos": 0,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 1280,
+  "aba": "mun",
+  "scrollW": 1280,
+  "innerW": 1280,
+  "altura": 2366,
+  "cartoes": 0,
+  "graficos": 0,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 1280,
+  "foco": {
+   "outline": "solid 3px rgb(240, 180, 41)",
+   "boxShadow": "rgb(255, 255, 255) 0px 0px 0px 2px, rgb(23, 33, 43) 0px 0px 0px 7px"
+  }
+ },
+ {
+  "largura": 390,
+  "aba": "tudo",
+  "scrollW": 390,
+  "innerW": 390,
+  "altura": 18490,
+  "cartoes": 0,
+  "graficos": 2,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 390,
+  "aba": "fin",
+  "scrollW": 390,
+  "innerW": 390,
+  "altura": 6686,
+  "cartoes": 0,
+  "graficos": 1,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 390,
+  "aba": "cont",
+  "scrollW": 390,
+  "innerW": 390,
+  "altura": 3623,
+  "cartoes": 0,
+  "graficos": 0,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 390,
+  "aba": "saude",
+  "scrollW": 390,
+  "innerW": 390,
+  "altura": 5590,
+  "cartoes": 0,
+  "graficos": 0,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 390,
+  "aba": "edu",
+  "scrollW": 390,
+  "innerW": 390,
+  "altura": 6440,
+  "cartoes": 0,
+  "graficos": 1,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 390,
+  "aba": "social",
+  "scrollW": 390,
+  "innerW": 390,
+  "altura": 4566,
+  "cartoes": 0,
+  "graficos": 0,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 390,
+  "aba": "mun",
+  "scrollW": 390,
+  "innerW": 390,
+  "altura": 5002,
+  "cartoes": 0,
+  "graficos": 0,
+  "sparks": 0,
+  "abas": [
+   {
+    "t": "Tudo",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Dinheiro público",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Contratações",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Saúde",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Educação",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Assistência social",
+    "h": 44,
+    "atual": null,
+    "pressed": null
+   },
+   {
+    "t": "Município e gestão",
+    "h": 44,
+    "atual": "page",
+    "pressed": null
+   }
+  ],
+  "selo": true,
+  "fonte": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+ },
+ {
+  "largura": 390,
+  "foco": {
+   "outline": "solid 3px rgb(240, 180, 41)",
+   "boxShadow": "rgb(255, 255, 255) 0px 0px 0px 2px, rgb(23, 33, 43) 0px 0px 0px 7px"
+  }
+ }
+]
