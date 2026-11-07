@@ -12,7 +12,7 @@ r = APIRouter(prefix='/_a')
 
 def pendencias(b):
     """Contadores do menu: conteúdos esperando revisão e pedidos do e-SIC/Ouvidoria em aberto."""
-    return db.um(b, "SELECT (SELECT count(*) FROM conteudos WHERE situacao='revisao') revisao, (SELECT count(*) FROM esic WHERE situacao <> 'respondido') esic")
+    return db.um(b, "SELECT (SELECT count(*) FROM conteudos WHERE situacao='revisao') revisao, (SELECT count(*) FROM esic WHERE situacao <> 'respondido') esic, (SELECT count(*) FROM opinioes WHERE situacao='pendente') + (SELECT count(*) FROM tribuna_inscricoes WHERE situacao='pendente') opinioes")
 
 def ctx(request, u, **kw):
     c = ctx_orgao(request, u=u, pode=lambda p: u['perfil'] in PODE[p], pend=pendencias(request.state.orgao['banco']), **kw)
@@ -486,40 +486,7 @@ async def vereador_adm_post(request: Request, vid: int):
     auditar(request, f"Atualizou o perfil do vereador {v['nome']}")
     return ir(f"/admin/vereadores?leg={v['legislatura']}", 'Perfil salvo.', request)
 
-# ---------- Câmara: sessões e emendas ----------
-@r.get('/sessoes')
-def sessoes(request: Request):
-    u = exige(request)
-    return T('sessoes', request, u, itens=db.todos(request.state.orgao['banco'], 'SELECT * FROM sessoes ORDER BY data DESC'))
-
-@r.get('/sessoes/{sid}')
-def sessao(request: Request, sid: int):
-    u = exige(request)
-    b = request.state.orgao['banco']
-    s = db.um(b, 'SELECT * FROM sessoes WHERE id=%s', (sid,))
-    leg = db.um(b, 'SELECT max(numero) n FROM legislaturas')['n']
-    ver = db.todos(b, 'SELECT v.id, v.nome, p.situacao FROM vereadores v LEFT JOIN presencas p ON p.vereador_id=v.id AND p.sessao_id=%s WHERE v.legislatura=%s ORDER BY v.nome', (sid, leg))
-    return T('sessao', request, u, s=s, ver=ver)
-
-@r.post('/sessoes/{sid}')
-async def sessao_post(request: Request, sid: int):
-    u = exige(request, 'editar'); f = await ler_form(request)
-    b = request.state.orgao['banco']; acao = f.get('acao')
-    if acao == 'salvar':
-        db.exe(b, 'UPDATE sessoes SET pauta=%s, ata=%s, video_url=%s WHERE id=%s', (f.get('pauta', ''), f.get('ata', ''), f.get('video_url', ''), sid))
-        for k, v in f.items():
-            if k.startswith('pres_') and v in ('presente', 'ausente', 'justificada'):
-                db.exe(b, 'INSERT INTO presencas (sessao_id, vereador_id, situacao) VALUES (%s,%s,%s) ON CONFLICT (sessao_id, vereador_id) DO UPDATE SET situacao=EXCLUDED.situacao', (sid, int(k[5:]), v))
-        msg = 'Sessão salva.'
-    elif acao in ('pub_pauta', 'pub_presenca', 'pub_ata') and u['perfil'] in PODE['publicar']:
-        col = {'pub_pauta': 'pauta_publicada', 'pub_presenca': 'presenca_publicada', 'pub_ata': 'ata_publicada'}[acao]
-        db.exe(b, f'UPDATE sessoes SET {col}=TRUE WHERE id=%s', (sid,))
-        msg = 'Publicado no portal.'
-    else:
-        raise HTTPException(403)
-    auditar(request, f'Sessão {sid}: {acao}')
-    return ir(f'/admin/sessoes/{sid}', msg, request)
-
+# ---------- Câmara: emendas (sessões, pauta e votação ficam em admin_leg.py) ----------
 @r.get('/emendas')
 def emendas(request: Request):
     u = exige(request)

@@ -5,7 +5,7 @@
 <title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/portal.css?v=4">
+<link rel="stylesheet" href="/static/portal.css?v=5">
 <style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
 <script>try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
 </head>
@@ -32,6 +32,7 @@
 <a href="/transparencia">Transparência</a>
 <a href="/acesso">e-SIC</a>
 <a href="/acesso#ouvidoria">Ouvidoria</a>
+{% if mods.transm or mods.audiencias %}<a href="/transmissoes">Transmissões</a>{% endif %}
 {% if leg %}<a href="/sessoes">Sessões</a>{% if mods.emend %}<a href="/emendas">Emendas</a>{% endif %}
 {% else %}{% if mods.diario %}<a href="/diario">Diário Oficial</a>{% endif %}<a href="/transparencia/licitacoes">Licitações</a>{% endif %}
 <a href="/dados-abertos">Dados abertos</a>
@@ -56,6 +57,9 @@
 <form class="busca-topo" action="{{ busca_url }}" role="search"><label class="sr" for="busca-topo">Buscar no portal</label><input id="busca-topo" name="q" type="search" placeholder="Buscar"><button type="submit" aria-label="Buscar">{{ icone('busca', 18) }}</button></form>
 </div></header>
 
+{% if ao_vivo %}<section class="ao-vivo" aria-label="Transmissão ao vivo"><div class="int"><span class="pulso-txt"><span class="ponto" aria-hidden="true"></span>AO VIVO</span><span class="t">{{ ao_vivo.titulo }}</span><a class="btn-vivo" href="/transmissoes">Assistir agora</a></div></section>
+<dialog id="aviso-vivo" aria-labelledby="h-aviso-vivo"><h2 id="h-aviso-vivo">● Transmissão ao vivo</h2><p>{{ ao_vivo.titulo }} está sendo transmitida agora.</p><div class="botoes"><a class="btn" href="/transmissoes">Assistir no portal</a><button class="btn sec" type="button" data-fechar>Agora não</button></div></dialog>
+<script>(function(){try{var d=document.getElementById('aviso-vivo'),k='aviso-vivo-'+new Date().toISOString().slice(0,10)+'-{{ ao_vivo.id }}';if(d&&d.showModal&&!localStorage.getItem(k)){localStorage.setItem(k,'1');d.showModal();d.querySelector('[data-fechar]').addEventListener('click',function(){d.close()})}}catch(e){}})();</script>{% endif %}
 {% if defeso and eleicao.aviso %}<div class="aviso-defeso" role="note"><p class="int">Em cumprimento à Lei 9.504/1997, art. 73, VI, b, parte do conteúdo está suspensa até {{ eleicao.fim|br }}. Transparência, serviços e atos oficiais seguem disponíveis.</p></div>{% endif %}
 
 {% block destaque %}{% endblock %}
@@ -63,12 +67,15 @@
 {% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}
 {% block conteudo %}{% endblock %}
 {% if legal %}<p class="legal" style="margin-top:28px"><strong>Base legal:</strong> {{ BASE_LEGAL[legal] }}</p>{% endif %}
+<form class="avaliar" id="avaliar" method="post" action="/avaliar" aria-labelledby="h-aval"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="pagina" value="{{ atual }}">
+<span id="h-aval"><strong>Avalie esta página:</strong> as informações foram úteis?</span><span class="botoes"><button class="btn sec" name="util" value="sim">Sim</button><button class="btn sec" name="util" value="nao">Não</button></span>
+<details><summary>Quer comentar? (opcional, sem dados pessoais)</summary><label class="sr" for="aval-c">Comentário</label><textarea id="aval-c" name="comentario" rows="2" maxlength="600"></textarea></details><label class="sr">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label></form>
 </main>
 
 <footer class="rodape" id="rodape" tabindex="-1">
 <div class="f1"><div class="int">
 <div class="f-id">{% if ident.brasao and ident.brasao.url %}<span class="f-bras"><img src="{{ ident.brasao.url }}" alt="" width="46" height="40"></span>{% endif %}<span><strong>{{ ident.nome or orgao.nome }}</strong><span>{{ ident.subtitulo or orgao.municipio }} · Portal oficial e da transparência</span></span></div>
-<div class="f-bot"><a class="f-radar" href="https://radardatransparencia.atricon.org.br/">{{ icone('radar', 18) }}Radar da Transparência Pública</a><a class="f-aval" href="/acesso?tipo=manifestacao#ouvidoria">{{ icone('estrela', 18) }}Avalie este portal</a></div>
+<div class="f-bot"><a class="f-radar" href="https://radardatransparencia.atricon.org.br/">{{ icone('radar', 18) }}Radar da Transparência Pública</a><a class="f-aval" href="#avaliar">{{ icone('estrela', 18) }}Avalie este portal</a></div>
 </div></div>
 <div class="f2 int">
 <section class="fcol" aria-labelledby="f-atend"><h2 id="f-atend">Atendimento</h2><ul class="f-ic">
@@ -83,7 +90,7 @@
 {% if leg %}<li><a href="/sessoes">Sessões e votações</a></li>{% else %}<li><a href="/servicos">Carta de Serviços</a></li>{% endif %}
 <li><a href="/dados-abertos">Dados abertos</a></li></ul></nav>
 <nav class="fcol" aria-labelledby="f-inst"><h2 id="f-inst">Institucional</h2><ul>
-{% if leg %}<li><a href="/vereadores">Vereadores e Mesa Diretora</a></li><li><a href="/proposicoes">Projetos e proposições</a></li>{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
+{% if leg %}<li><a href="/vereadores">Vereadores e Mesa Diretora</a></li><li><a href="/proposicoes">Projetos e proposições</a></li><li><a href="/comissoes">Comissões</a></li><li><a href="/contas">Contas do Prefeito</a></li>{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
 {% else %}{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/transparencia/licitacoes">Licitações</a></li><li><a href="/transparencia/contratos">Contratos</a></li>{% endif %}
 {% if mods.noticias %}<li><a href="/noticias">Notícias e avisos</a></li>{% endif %}</ul>
 {% for v in vizinhos %}<a class="f-viz" href="https://{{ v.dominio }}/"><span><small>{{ 'Poder Legislativo' if v.tipo == 'legislativo' else 'Poder Executivo' }}</small><strong>{{ v.nome }}</strong></span>{{ icone('seta', 18) }}</a>{% endfor %}

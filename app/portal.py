@@ -128,7 +128,8 @@ def vereadores(request: Request, leg: str = ''):
         raise HTTPException(404, 'Legislatura não encontrada.')
     ver = db.todos(b, 'SELECT * FROM vereadores WHERE legislatura=%s ORDER BY nome', (num,))
     atual = num == legs[0]['numero']
-    props = {v['id']: len(proposicoes_de(b, v['nome'])) for v in ver} if atual else {}
+    from . import legislativo as L
+    props = {v['id']: len(L.proposicoes_do_vereador(b, v)) for v in ver} if atual else {}
     return templates.TemplateResponse(request, 'portal/vereadores.html', dict(ctx, legs=legs, leg=lg, ver=ver, loop_atual=atual, props=props,
         mesas=db.todos(b, 'SELECT * FROM mesas WHERE legislatura=%s ORDER BY bienio, id', (num,)), legal='vereadores'))
 
@@ -139,27 +140,18 @@ def vereador(request: Request, vid: int):
     v = db.um(b, 'SELECT * FROM vereadores WHERE id=%s', (vid,))
     if not v:
         raise HTTPException(404, 'Vereador não encontrado.')
-    props = proposicoes_de(b, v['nome'])
+    from . import legislativo as L
+    props = L.proposicoes_do_vereador(b, v)
     atual = v['legislatura'] == db.um(b, 'SELECT max(numero) n FROM legislaturas')['n']
     emendas = [e for e in db.todos(b, "SELECT * FROM emendas ORDER BY split_part(numero, '/', 1)::int") if _norm(e['autor']) == _norm(v['nome'])] if atual and ctx['mods'].get('emend') else []
     mandatos = db.todos(b, 'SELECT v.*, l.anos FROM vereadores v JOIN legislaturas l ON l.numero=v.legislatura WHERE v.nome=%s ORDER BY v.legislatura DESC', (v['nome'],))
     cargos = db.todos(b, 'SELECT * FROM mesas WHERE nome=%s ORDER BY legislatura DESC, bienio', (v['nome'],))
-    pres = db.um(b, "SELECT count(*) FILTER (WHERE p.situacao='presente') presente, count(*) FILTER (WHERE p.situacao='ausente') ausente, count(*) FILTER (WHERE p.situacao='justificada') justificada FROM presencas p JOIN sessoes s ON s.id=p.sessao_id WHERE s.presenca_publicada AND p.vereador_id=%s", (vid,))
+    pres, votos, resumo_votos = L.estatisticas_vereador(b, vid)
     grupos = [('Indicações', 'Pedidos ao Poder Executivo', [p for p in props if p['tipo'] == 'Indicação']),
-              ('Requerimentos, moções e projetos', 'Demais proposições com autoria ou coautoria', [p for p in props if p['tipo'] != 'Indicação'])]
-    return templates.TemplateResponse(request, 'portal/vereador.html', dict(ctx, v=v, props=props, emendas=emendas, mandatos=mandatos, cargos=cargos, pres=pres, grupos=grupos,
+              ('Requerimentos e moções', 'Pedidos de informação, homenagens e manifestações', [p for p in props if p['tipo'] in ('Requerimento', 'Moção')]),
+              ('Projetos, emendas e vetos', 'Proposições normativas com autoria ou coautoria', [p for p in props if p['tipo'] not in ('Indicação', 'Requerimento', 'Moção')])]
+    return templates.TemplateResponse(request, 'portal/vereador.html', dict(ctx, v=v, props=props, emendas=emendas, mandatos=mandatos, cargos=cargos, pres=pres, grupos=grupos, votos=votos, resumo_votos=resumo_votos, votos_nome=L.VOTOS,
         leg=db.um(b, 'SELECT * FROM legislaturas WHERE numero=%s', (v['legislatura'],)), legal='vereadores'))
-
-@r.get('/sessoes')
-def sessoes(request: Request):
-    ctx = ctx_orgao(request); precisa(ctx, 'sess')
-    return templates.TemplateResponse(request, 'portal/sessoes.html', dict(ctx, sessoes=db.todos(ctx['orgao']['banco'], 'SELECT * FROM sessoes ORDER BY data DESC'), legal='sessoes'))
-
-@r.get('/proposicoes')
-def proposicoes(request: Request, q: str = ''):
-    ctx = ctx_orgao(request); precisa(ctx, 'prop')
-    props = db.todos(ctx['orgao']['banco'], "SELECT * FROM proposicoes WHERE %s = '' OR (tipo || ' ' || ementa || ' ' || autor) ILIKE %s ORDER BY ano DESC, numero DESC", (q, f'%{q}%'))
-    return templates.TemplateResponse(request, 'portal/proposicoes.html', dict(ctx, props=props, q=q, legal='proposicoes'))
 
 @r.get('/emendas')
 def emendas(request: Request):

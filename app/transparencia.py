@@ -72,6 +72,11 @@ BASES = {
         legal=f'{LRF}, arts. 42 e 48-A; Lei 4.320/1964, art. 36.', fontes={'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:restos_pagar'],
         ordem='ano DESC, credor', colunas=[('codigo', 'Código', 't'), ('credor', 'Credor', 't'), ('empenhado', 'Inscrito', 'm'), ('liquidado', 'Liquidado', 'm'), ('pago', 'Pago', 'm')],
         mes=None, unidade=None, credor='credor', texto=['credor'], totais=['empenhado', 'liquidado', 'pago'], nota='Pessoas físicas ficam fora desta lista (LGPD).'),
+    'diarias-camara': dict(titulo='Diárias e verbas dos vereadores', icone='relogio', desc='Diárias, adiantamentos e verbas pagos a vereadores e servidores da Câmara.', tipos=('legislativo',), tabela='diarias_legislativo',
+        legal=f'PNTP 2026, critério 20.10; {LAI}, art. 8º; Constituição, art. 37, caput (publicidade).', fontes={'cadastro': 'Secretaria da Câmara (cadastro ou planilha importada)'}, coletas=[],
+        ordem='inicio DESC NULLS LAST, id DESC', colunas=[('inicio', 'Início', 'd'), ('fim', 'Fim', 'd'), ('beneficiario', 'Beneficiário', 't'), ('cargo', 'Cargo', 't'), ('destino', 'Destino', 't'),
+                                                         ('motivo', 'Motivo', 't'), ('valor', 'Valor', 'm')],
+        mes='inicio', unidade='cargo', unidade_rotulo='Cargo', credor='beneficiario', credor_rotulo='Beneficiário', texto=['beneficiario', 'destino', 'motivo'], totais=['valor']),
     'relatorios-fiscais': dict(titulo='Relatórios fiscais (RREO e RGF)', icone='indicadores', desc='Demonstrativos entregues ao Tesouro Nacional (Siconfi).', tipos=('executivo', 'legislativo'), tabela='relatorios_fiscais',
         legal=f'{LRF}, arts. 48, 52 a 55; Constituição, art. 165, § 3º.', fontes={'siconfi': 'Siconfi — Tesouro Nacional'}, coletas=['siconfi:rreo_anexo14', 'siconfi:rgf_anexo01'],
         ordem='ano DESC, demonstrativo, periodo DESC, id', colunas=[('demonstrativo', 'Relatório', 't'), ('anexo', 'Anexo', 't'), ('ano', 'Ano', 'n'), ('periodo', 'Período', 'n'),
@@ -126,7 +131,7 @@ def situacao(o, b):
     """Data da última coleta válida e, se a última tentativa falhou, o aviso."""
     tab = b['tabela']
     atualizado = db.um(o['banco'], f'SELECT max(coletado_em) t, count(*) n FROM {tab}')
-    ult = db.um(db.PLATAFORMA, 'SELECT * FROM coletas WHERE orgao_slug=%s AND fonte = ANY(%s) ORDER BY id DESC LIMIT 1', (o['slug'], b['coletas']))
+    ult = db.um(db.PLATAFORMA, 'SELECT * FROM coletas WHERE orgao_slug=%s AND fonte = ANY(%s) ORDER BY id DESC LIMIT 1', (o['slug'], b['coletas'])) if b['coletas'] else None
     return {'atualizado': atualizado['t'], 'n': atualizado['n'], 'falhou': ult if ult and not ult['ok'] else None}
 
 def consulta(o, b, q, limite=POR_PAGINA, pagina=1):

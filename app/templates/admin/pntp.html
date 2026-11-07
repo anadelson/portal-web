@@ -1,0 +1,5 @@
+{% extends 'admin/base.html' %}{% block h1 %}Autoavaliação PNTP — dimensão 20 (Legislativo){% endblock %}
+{% block conteudo %}<p>Situação calculada agora a partir dos dados publicados no portal. “Parcial” e “pendente” mostram o que falta.</p>
+<div class="tabela"><table><caption class="sr">Critérios 20.1 a 20.11</caption><thead><tr><th scope="col">Critério</th><th scope="col">Descrição</th><th scope="col">Situação</th><th scope="col">Detalhe</th><th scope="col">No portal</th></tr></thead><tbody>
+{% for c, d, s, det, link in itens %}<tr><td><strong>{{ c }}</strong></td><td>{{ d }}</td><td><span class="chip {{ 'ok' if s == 'atendido' else 'alerta' if s == 'parcial' else 'erro' }}">{{ {'atendido':'Atendido','parcial':'Parcial','pendente':'Pendente'}[s] }}</span></td><td>{{ det }}</td><td><a href="{{ link }}">{{ link }} ↗</a></td></tr>{% endfor %}
+</tbody></table></div><p class="legal">Matriz PNTP 2026 (Atricon), dimensão 20 — Poder Legislativo. A avaliação oficial é feita pelo Tribunal de Contas; esta tela é um apoio interno.</p>{% endblock %}

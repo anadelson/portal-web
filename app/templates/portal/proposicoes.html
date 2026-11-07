@@ -1,5 +1,18 @@
 {% extends 'portal/base.html' %}
-{% block conteudo %}<h1>Projetos e proposições</h1>
-<div class="tabela"><table><thead><tr><th scope="col">Proposição</th><th scope="col">Ementa</th><th scope="col">Autoria</th><th scope="col">Situação</th></tr></thead><tbody>
-{% for p in props %}<tr><td>{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</td><td>{{ p.ementa }}</td><td>{{ p.autor }}</td><td><span class="chip">{{ p.situacao }}</span></td></tr>{% endfor %}
-</tbody></table></div><p class="legal">Indicações de 2026 e 2025 (parcial), requerimentos e moções: portal da Câmara, consulta de 06/11/2026.</p>{% endblock %}
+{% block titulo %}Projetos e proposições — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Projetos e proposições</span></nav>
+<h1>Projetos e proposições</h1>
+<p class="intro" style="margin-bottom:6px">Projetos de lei, resoluções, decretos legislativos, indicações, requerimentos, moções, emendas e vetos, com tramitação, votação e documentos.</p>
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.proposicoes }}</p>
+<form class="filtros" method="get" action="/proposicoes" role="search" aria-label="Filtrar proposições">
+<label>Tipo<select name="tipo"><option value="">Todos</option>{% for t, s in tipos %}<option {{ 'selected' if f.tipo == t }}>{{ t }}</option>{% endfor %}</select></label>
+<label>Ano<select name="ano"><option value="">Todos</option>{% for a in anos %}<option {{ 'selected' if f.ano == a|string }}>{{ a }}</option>{% endfor %}</select></label>
+<label>Situação<select name="situacao"><option value="">Todas</option>{% for s in situacoes %}<option {{ 'selected' if f.situacao == s }}>{{ s }}</option>{% endfor %}</select></label>
+<label>Autor<input name="autor" value="{{ f.autor }}"></label><label>Texto<input name="q" type="search" value="{{ f.q }}"></label>
+<span class="botoes"><button class="btn" type="submit">Filtrar</button><a class="btn sec" href="/proposicoes">Limpar</a></span></form>
+<p role="status" style="margin:14px 0 8px"><strong>{{ props|length }}</strong> proposição(ões){% if props|length == 500 %} (mostrando as 500 mais recentes){% endif %}</p>
+<div class="tabela"><table><caption class="sr">Proposições</caption><thead><tr><th scope="col">Proposição</th><th scope="col">Ementa</th><th scope="col">Autoria</th><th scope="col">Situação</th></tr></thead><tbody>
+{% for p in props %}<tr><td style="white-space:nowrap"><a href="/proposicoes/{{ p.id }}">{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</a></td><td>{{ p.ementa }}</td><td>{{ p.autor }}</td><td><span class="chip">{{ p.situacao }}</span></td></tr>{% else %}<tr><td colspan="4">Nenhuma proposição com esses filtros.</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="legal" style="margin-top:10px">Registros anteriores ao portal: importados do portal da Câmara (06/11/2026) ou de arquivos exportados pelo sistema legislativo.</p>{% endblock %}
