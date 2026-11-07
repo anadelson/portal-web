@@ -1,38 +1,105 @@
 {% extends 'portal/base.html' %}
 {% block titulo %}Painel de indicadores — {{ ident.nome }}{% endblock %}
+{% macro kpis(lista, rotulo) %}{% if lista %}<dl class="pk" aria-label="{{ rotulo }}">{% for k in lista %}<div style="border-top-color:{{ k.cor }}"><dt>{% if k.href %}<a href="{{ k.href }}">{{ k.l }}</a>{% else %}{{ k.l }}{% endif %}</dt><dd class="v">{{ k.v }}</dd><dd class="d">{{ k.d }}</dd></div>{% endfor %}</dl>{% endif %}{% endmacro %}
+{% macro fonte(txt, quando) %}<p class="pfonte">Fonte: {{ txt }}{% if quando %} Consulta em {{ quando|br }}.{% endif %}</p>{% endmacro %}
+{% macro barras(itens, rotulo, val='v', pct='p') %}<ul class="pbarras" role="img" aria-label="{{ rotulo }}: {% for x in itens %}{{ x.area or x.l or x.nome }} {{ x[val] }} ({{ x[pct] }}){{ '; ' if not loop.last }}{% endfor %}.">{% for x in itens %}<li><span class="t">{{ x.area or x.l or x.nome }}</span><span class="n">{{ x[pct] }} · {{ x[val] }}</span><span class="b" aria-hidden="true"><span style="width:{{ x.w }}%"></span></span></li>{% endfor %}</ul>{% endmacro %}
+{% macro links(lst) %}{% if lst %}<nav class="plinks" aria-label="Indicadores desta área"><span>Série histórica e downloads:</span>{% for x in lst %}<a href="/painel/{{ x.chave }}">{{ x.nome }}</a>{% endfor %}</nav>{% endif %}{% endmacro %}
+{% macro minimos(lst) %}{% for m in lst %}<div class="pmin"><p class="t"><a href="{{ m.href }}">{{ m.l }}</a></p><p class="d">{{ m.base }}</p>
+<ul role="img" aria-label="{{ m.l }}: {% for a in m.anos %}{{ a.ano }} {{ a.p }}{{ '; ' if not loop.last }}{% endfor %}; mínimo {{ m.meta }}.">{% for a in m.anos %}<li><span class="ano">{{ a.ano }}</span><span class="b" aria-hidden="true"><span style="width:{{ a.w }}%"></span>{% if m.meta_w %}<i style="left:{{ m.meta_w }}%"></i>{% endif %}</span><span class="n">{{ a.p }}</span></li>{% endfor %}</ul>
+<p class="d">Mínimo: {{ m.meta }} (linha tracejada).</p></div>{% endfor %}{% endmacro %}
+{% macro orcamento(o) %}{% if o %}<section class="pcard"><h3>Orçamento da área em {{ hoje.year }}</h3><p class="sub">Quanto da dotação de cada unidade já foi empenhado (barra clara) e pago (barra escura). Unidades agrupadas por área pela Prefeitura.</p>
+<ul class="porc" role="img" aria-label="Orçamento de {{ o.area }}: {% for x in o.itens %}{{ x.nome }}: {{ x.d }}{{ '; ' if not loop.last }}{% endfor %}.">{% for x in o.itens %}<li><span class="t">{{ x.nome }}</span><span class="n">{{ x.p }} empenhado</span><span class="b" aria-hidden="true"><span class="e" style="width:{{ x.we }}%"></span><span class="pg" style="width:{{ x.wp }}%"></span></span><span class="d">{{ x.d }}</span></li>{% endfor %}</ul>
+{{ fonte('dados abertos do sistema contábil da Prefeitura.', d.selo) }}</section>{% endif %}{% endmacro %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/transparencia">Transparência</a><span aria-hidden="true">›</span><span aria-current="page">Painel de indicadores</span></nav>
 <h1>Painel de indicadores</h1>
-<p class="intro" style="margin-bottom:6px">Os principais números do município, cada um com a fonte oficial, o período a que se refere e a data em que foi atualizado. Clique em um indicador para ver a série histórica, a tabela completa e baixar os dados.</p>
+<p class="intro" style="margin-bottom:6px">Os principais números do município, cada um com a fonte oficial, o período a que se refere e a data da consulta. Clique no nome de um indicador para ver a série histórica e baixar os dados.</p>
 <p class="legal"><strong>Base legal:</strong> {{ legal_txt }}</p>
 
-<nav class="abas" aria-label="Áreas do painel">{% for k, nome in abas %}<a href="/painel{{ '' if k == 'tudo' else '?aba=' ~ k }}"{% if aba == k %} aria-current="page"{% endif %}>{{ nome }}</a>{% endfor %}</nav>
+<div class="pcab">
+<nav class="ppilulas" aria-label="Áreas do painel">{% for k, nome in abas %}<a href="/painel{{ '' if k == 'tudo' else '?tema=' ~ k }}"{% if aba == k %} aria-current="page"{% endif %}>{{ nome }}</a>{% endfor %}</nav>
+{% if d.selo %}<p class="pselo"><span class="pulso" aria-hidden="true"></span>Finanças lidas do sistema contábil em {{ d.selo|br }}</p>{% endif %}
+</div>
 
-<div class="cab" style="margin:18px 0 6px"><p style="margin:0" role="status"><strong>{{ total }}</strong> indicador(es) com dados{% if aba != 'tudo' %} nesta área{% endif %}.</p>
-<span class="botoes" role="group" aria-label="Baixar o painel inteiro"><a class="btn sec" href="/painel/baixar/painel.csv" download>Baixar tudo (CSV)</a><a class="btn sec" href="/painel/baixar/painel.ods" download>ODS</a><a class="btn sec" href="/painel/baixar/painel.json">JSON</a></span></div>
-<p class="legal" style="margin-bottom:18px">LGPD: só números agregados. Contagens de pessoas menores que 5 aparecem como “menos de 5”, para não permitir identificar ninguém (LGPD, art. 6º, III).</p>
-
-{% for t, nome, itens in grupos %}
-<section class="ind-tema" aria-labelledby="h-{{ t }}">
-<h2 id="h-{{ t }}">{{ nome }}</h2>
-{% if itens %}
-<ul class="ind-cartoes">
-{% for i in itens %}
-<li class="ind-cartao">
-<h3><a href="/painel/{{ i.chave }}">{{ i.nome }}</a></h3>
-<p class="ind-valor"><span class="v">{{ i.valor_curto }}</span>{% if i.unidade and i.formato not in ('moeda', 'pct') %} <span class="u">{{ i.unidade }}</span>{% endif %}</p>
-<p class="ind-per">Referência: <strong>{{ i.ult.periodo }}</strong>{% if i.ult.nota %} · {{ i.ult.nota }}{% endif %}</p>
-{% if i.variacao %}<p class="ind-var">{{ i.variacao }}</p>{% endif %}
-{% if i.meta_txt %}<p class="ind-meta">{{ i.meta_txt }}</p>{% endif %}
-{{ i.spark }}
-{% if i.aviso %}<p class="nota" role="note">{{ i.aviso }}</p>{% endif %}
-<p class="ind-fonte">Fonte: {% if i.link %}<a href="{{ i.link }}">{{ i.fonte }}</a>{% else %}{{ i.fonte }}{% endif %} · atualizado em {{ i.ult.coletado_em|br }}</p>
-</li>
-{% endfor %}
-</ul>
-{% else %}
-<p class="vazio">{% if t == 'social' %}Os indicadores de assistência social (Bolsa Família, Cadastro Único e BPC) aparecem quando a fonte oficial do Ministério do Desenvolvimento e Assistência Social voltar a responder.{% else %}Ainda não há indicadores com dados nesta área.{% endif %}</p>
+{% if d.fin %}{% set f = d.fin %}
+<section class="psec" aria-labelledby="h-fin"><h2 id="h-fin">Dinheiro público</h2>
+{{ kpis(f.kpis, 'Números do dinheiro público em ' ~ f.ano) }}
+<div class="pgrade">
+{% if f.mensal %}<section class="pcard" aria-labelledby="h-mes"><h3 id="h-mes">Receita e despesa paga, mês a mês</h3><p class="sub">{{ f.mensal.frase }}</p>
+<p class="pleg"><span><i style="background:var(--cor)"></i>Receita arrecadada</span><span><i style="background:#E8A33D"></i>Despesa paga</span></p>
+<div class="prola">{{ f.mensal.grafico }}</div>
+<details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Receita e despesa paga por mês, {{ f.ano }}</caption><thead><tr><th scope="col">Mês</th><th scope="col" class="num">Receita arrecadada</th><th scope="col" class="num">Despesa paga</th></tr></thead><tbody>
+{% for m in f.mensal.meses %}<tr><th scope="row">{{ ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][m.mes - 1] }}{% if m.parcial %} (em andamento){% endif %}</th><td class="num">{{ m.receita|moeda }}</td><td class="num">{{ m.despesa_paga|moeda }}</td></tr>{% endfor %}</tbody></table></div></details>
+{{ fonte('dados abertos do sistema contábil da Prefeitura (consulta mês a mês). Receita já descontado o FUNDEB.', f.mensal.coletado) }}</section>{% endif %}
+{% if f.para_onde %}<section class="pcard" aria-labelledby="h-area"><h3 id="h-area">Para onde vai o dinheiro</h3>{% if f.para_onde.frase %}<p class="sub">{{ f.para_onde.frase }}</p>{% endif %}
+{{ barras(f.para_onde.itens, 'Valor empenhado por área em ' ~ f.ano) }}
+<details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Empenhado por área</caption><thead><tr><th scope="col">Área</th><th scope="col" class="num">Empenhado</th><th scope="col" class="num">%</th></tr></thead><tbody>{% for x in f.para_onde.itens %}<tr><th scope="row">{{ x.area }}</th><td class="num">{{ x.v }}</td><td class="num">{{ x.p }}</td></tr>{% endfor %}</tbody></table></div></details>
+{{ fonte('dados abertos do sistema contábil. Valor empenhado em ' ~ f.ano ~ ' até ' ~ f.ate.strftime('%d/%m') ~ ', agrupando as ' ~ f.para_onde.n_unid ~ ' unidades orçamentárias por área (agrupamento definido pela Prefeitura).', d.selo) }}</section>{% endif %}
+{% if f.de_onde %}<section class="pcard" aria-labelledby="h-orig"><h3 id="h-orig">De onde vem o dinheiro</h3><p class="sub">{{ f.de_onde.frase }}</p>
+<div class="psplit" role="img" aria-label="Repasses da União e do Estado: {{ f.de_onde.rep }}; arrecadação própria: {{ f.de_onde.prop }}."><span style="width:{{ f.de_onde.w }}%">{{ f.de_onde.rep }}</span><span>{{ f.de_onde.prop }}</span></div>
+<p class="pleg"><span><i style="background:#E8A33D"></i>Repasses da União e do Estado</span><span><i style="background:var(--cor)"></i>Arrecadação própria (impostos, taxas e rendimentos)</span></p>
+<h4>Maiores origens</h4><ul class="plista">{% for x in f.de_onde.origens %}<li><span>{{ x.nome }}</span><strong>{{ x.v }}</strong><small>{{ x.p }}</small></li>{% endfor %}</ul>
+{{ fonte('dados abertos do sistema contábil. Receita bruta de ' ~ f.ano ~ ' até ' ~ f.ate.strftime('%d/%m') ~ ' (antes das deduções do FUNDEB).', d.selo) }}</section>{% endif %}
+{% if f.execucao %}<section class="pcard" aria-labelledby="h-exe"><h3 id="h-exe">Execução do orçamento de {{ f.ano }}</h3><p class="sub">A linha tracejada marca quanto do ano já passou: {{ f.execucao.ritmo }}. Barras perto da linha indicam execução no ritmo esperado.</p>
+<ul class="pexe" role="img" aria-label="{% for e in f.execucao.itens %}{{ e.l }}: {{ e.p }}{{ '; ' if not loop.last }}{% endfor %}. Parte do ano já passada: {{ f.execucao.ritmo }}.">{% for e in f.execucao.itens %}<li><span class="t">{{ e.l }}</span><span class="n">{{ e.p }}</span><span class="b" aria-hidden="true"><span style="width:{{ e.w }}%;background:{{ e.cor }}"></span><i style="left:{{ f.execucao.ritmo_w }}%"></i></span><span class="d">{{ e.d }}</span></li>{% endfor %}</ul>
+{{ fonte('dados abertos do sistema contábil (previsão e dotação atualizadas da LOA ' ~ f.ano ~ ').', d.selo) }}</section>{% endif %}
+</div>{{ links(d.fin_links) }}</section>
 {% endif %}
-</section>
-{% endfor %}
+
+{% if d.cont %}{% set c = d.cont %}
+<section class="psec pcard" aria-labelledby="h-cont"><h2 id="h-cont">Contratações publicadas no PNCP</h2>{% if c.frase %}<p class="sub">{{ c.frase }}</p>{% endif %}
+{{ barras(c.itens, 'Contratações por modalidade em ' ~ c.ano, 'n', 'p') }}
+<details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Contratações por modalidade</caption><thead><tr><th scope="col">Modalidade</th><th scope="col" class="num">Quantidade</th><th scope="col" class="num">%</th></tr></thead><tbody>{% for x in c.itens %}<tr><th scope="row">{{ x.l }}</th><td class="num">{{ x.n }}</td><td class="num">{{ x.p }}</td></tr>{% endfor %}</tbody></table></div></details>
+{{ fonte('Portal Nacional de Contratações Públicas (PNCP), publicações do município. Dispensas incluem compras de pequeno valor, permitidas pela Lei 14.133/2021.', c.coletado) }}
+<nav class="plinks" aria-label="Indicadores de contratações"><span>Série histórica e downloads:</span><a href="/painel/cont_publicadas">Contratações publicadas</a><a href="/painel/cont_valor">Valor das contratações</a><a href="/painel/cont_dispensa">Dispensas</a></nav></section>
+{% endif %}
+
+{% for t, titulo, sub, cor in [('saude', 'Saúde', 'Quanto o município aplica, onde atende e como executa o orçamento da saúde.', '#C8553D'), ('edu', 'Educação', 'Mínimos constitucionais, qualidade do ensino medida pelo INEP e gasto da área.', '#6B2D5C'), ('social', 'Assistência social', 'Execução do orçamento da área e benefícios federais (quando a fonte estiver disponível).', '#146C43')] %}{% set s = d[t] %}
+{% if s %}<section class="psec" aria-labelledby="h-{{ t }}"><h2 id="h-{{ t }}" style="border-left:6px solid {{ cor }};padding-left:10px">{{ titulo }}</h2><p class="sub">{{ sub }}</p>
+{{ kpis(s.kpis, 'Números de ' ~ titulo) }}
+<div class="pgrade">
+{% if s.minimos %}<section class="pcard"><h3>Mínimo exigido por lei</h3><p class="sub">A linha tracejada marca o mínimo legal. Barra além da linha: obrigação cumprida.</p>{{ minimos(s.minimos) }}
+{{ fonte('Siconfi (Tesouro Nacional), RREO, Anexo 14, declarado pela Prefeitura. O ano em andamento aparece como parcial.', s.minimos[0].coletado) }}</section>{% endif %}
+{% if t == 'edu' and s.ideb %}{% set ib = s.ideb %}<section class="pcard"><h3><a href="/painel/edu_ideb_ai">IDEB: qualidade do ensino, anos iniciais</a></h3><p class="sub">Nota de 0 a 10 que combina aprendizado (Saeb) e aprovação. Rede pública{% if ib.resp %} — {{ ib.resp }}{% endif %}, 1º ao 5º ano.</p>
+<div class="prola">{{ ib.grafico }}</div>
+{% if ib.comp %}<p class="d">Comparação em {{ ib.per }}, mesma etapa e mesma rede: {% for c in ib.comp %}{{ c.l }} {{ c.v }}{{ '; ' if not loop.last }}{% endfor %}.</p>{% endif %}
+{% if ib.saeb %}<ul class="plista">{% for x in ib.saeb %}<li><span><a href="{{ x.href }}">Saeb {{ x.l }}</a> ({{ x.per }})</span><strong>{{ x.v }}</strong><small>escala Saeb</small></li>{% endfor %}</ul>{% endif %}
+<p class="d">“Não divulgado”: o INEP não publica o resultado quando a participação na prova fica abaixo do mínimo exigido. Losangos verdes: metas projetadas pelo INEP até 2021 (referência histórica, não são meta atual).</p>
+{{ fonte('INEP, planilhas oficiais de resultados do IDEB e do Saeb por município, estado e Brasil.', ib.m.ult.coletado_em) }}</section>{% endif %}
+{% if t == 'saude' and s.cnes %}<section class="pcard"><h3><a href="/painel/saude_estabelecimentos">Onde a população é atendida</a></h3><p class="sub">Estabelecimentos do município no Cadastro Nacional de Estabelecimentos de Saúde ({{ s.cnes.competencia }}).</p>
+{% if s.cnes.lista %}<ul class="plista cnes">{% for u in s.cnes.lista %}<li><strong>{{ u.nome }}</strong><span>{{ u.tipo }}</span><small>CNES {{ u.cnes }}{% if u.endereco %} · {{ u.endereco }}{% endif %}</small></li>{% endfor %}</ul>{% else %}<p class="d">{{ s.cnes.n }} estabelecimento(s); a lista detalhada aparece após a próxima coleta.</p>{% endif %}
+{{ fonte('CNES, API de dados abertos do Ministério da Saúde. Só estabelecimentos; nunca a lista de profissionais.', s.cnes.coletado) }}</section>{% endif %}
+{% if t == 'saude' and s.vitais %}{% set v = s.vitais %}<section class="pcard"><h3><a href="/painel/saude_nascidos">Nascimentos e óbitos</a></h3><p class="sub">Registros em cartório, por ano. Anos com menos de 5 casos aparecem sem número, para proteger as famílias.</p>
+<p class="pleg"><span><i style="background:#C8553D"></i>Nascidos vivos</span><span><i style="background:#6B7684"></i>Óbitos</span></p>
+<div class="pvitais" role="img" aria-label="{{ v.aria }}">{% for x in v.linhas %}<div><span class="col"><b>{{ x.nv }}</b>{% if x.nv_v is not none %}<i style="height:{{ x.nv_h }}px;background:#C8553D"></i>{% else %}<i class="sup"></i>{% endif %}</span><span class="col"><b>{{ x.ob }}</b>{% if x.ob_v is not none %}<i style="height:{{ x.ob_h }}px;background:#6B7684"></i>{% else %}<i class="sup"></i>{% endif %}</span><small>{{ x.ano }}</small></div>{% endfor %}</div>
+<details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Nascidos vivos e óbitos por ano</caption><thead><tr><th scope="col">Ano</th><th scope="col" class="num">Nascidos vivos</th><th scope="col" class="num">Óbitos</th></tr></thead><tbody>{% for x in v.linhas %}<tr><th scope="row">{{ x.ano }}</th><td class="num">{{ x.nv }}</td><td class="num">{{ x.ob }}</td></tr>{% endfor %}</tbody></table></div></details>
+{{ fonte('IBGE, Estatísticas do Registro Civil (SIDRA, tabelas 2612 e 2654).', v.coletado) }}</section>{% endif %}
+{{ orcamento(s.orc) }}
+{% if t == 'social' %}<section class="pcard"><h3>Benefícios e cadastro social</h3>{% if s.beneficios %}<ul class="plista">{% for m in s.beneficios %}<li><span><a href="/painel/{{ m.chave }}">{{ m.nome }}</a> ({{ m.ult.periodo }})</span><strong>{{ m.valor_curto }}</strong></li>{% endfor %}</ul>{% else %}<p class="sub">Números do governo federal sobre o município (Bolsa Família, Cadastro Único e BPC). A fonte oficial do Ministério do Desenvolvimento e Assistência Social (MI Social) está fora do ar; os números aparecem quando ela voltar.</p>{% endif %}
+<p class="d">🔒 Só totais do município; contagens de pessoas abaixo de 5 aparecem como “menos de 5” (LGPD, art. 6º, III).</p></section>{% endif %}
+</div>{{ links(s.links) }}</section>{% endif %}{% endfor %}
+
+{% if d.mun %}{% set m = d.mun %}
+<section class="psec" aria-labelledby="h-mun"><h2 id="h-mun">Município e gestão</h2>
+<div class="pgrade">
+{% if m.iegm %}{% set g = m.iegm %}<section class="pcard pcard-largo" aria-labelledby="h-iegm"><h3 id="h-iegm"><a href="/painel/gestao_iegm">Nota da gestão municipal pelo Tribunal de Contas</a></h3>
+<div class="pieg"><p class="faixa f-{{ g.ult.texto|replace('+', 'mais') }}"><span>{{ g.ult.texto }}</span><small>{{ g.leg[g.ult.texto] }}</small></p><div><p class="sub">IEG-M, {{ g.ult.nota }}. Resultado geral e faixa de cada área avaliada pelo TCESP.</p>
+<ul class="pdims">{% for x in g.dims %}<li><a href="{{ x.href }}">{{ x.l }}</a><b class="f-{{ x.f|replace('+', 'mais') }}">{{ x.f }}</b></li>{% endfor %}</ul></div></div>
+{% if g.distrib %}<h4>Como os municípios paulistas ficaram</h4><p class="sub">{{ g.distrib.frase }}</p>
+<div class="pdist" role="img" aria-label="Distribuição dos {{ g.distrib.total }} municípios paulistas por faixa: {% for x in g.distrib.itens %}{{ x.f }} {{ x.n }}{{ ', ' if not loop.last }}{% endfor %}.">{% for x in g.distrib.itens %}<span class="f-{{ x.f|replace('+', 'mais') }}{{ ' eh' if x.eh }}" style="width:{{ x.w }}%">{{ x.f }} · {{ x.n }}</span>{% endfor %}</div>{% endif %}
+<details><summary>Ver a evolução por edição</summary><div class="tabela"><table><caption class="sr">Faixas do IEG-M por edição e área</caption><thead><tr><th scope="col">Área</th>{% for e in g.edicoes %}<th scope="col">{{ e|replace('edição ', '')|replace(' (ano-base ', ' (base ') }}</th>{% endfor %}</tr></thead><tbody>{% for r in g.evol %}<tr><th scope="row">{{ r.l }}</th>{% for c in r.cells %}<td>{{ c }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></details>
+<p class="d">Faixas: A altamente efetiva · B+ muito efetiva · B efetiva · C+ em fase de adequação · C baixo nível de adequação.</p>
+{{ fonte('TCESP, painel público do IEG-M (consulta sem documentação oficial).', g.coletado) }}</section>{% endif %}
+{% if m.municipio %}<section class="pcard{{ ' pcard-largo' if not m.sic }}"><h3>O município</h3><dl class="pnum">{% for x in m.municipio %}<div><dt><a href="{{ x.href }}">{{ x.l }}</a></dt><dd>{{ x.v }}</dd><dd class="d">{{ x.f }}</dd></div>{% endfor %}</dl></section>{% endif %}
+{% if m.sic %}<section class="pcard"><h3>Acesso à informação</h3><ul class="plista">{% for x in m.sic %}<li><span><a href="/painel/{{ x.chave }}">{{ x.nome }}</a> ({{ x.ult.periodo }})</span><strong>{{ x.valor_curto }}</strong></li>{% endfor %}</ul>{{ fonte('e-SIC e Ouvidoria deste portal. Só quantidades; nunca quem pediu.', None) }}</section>{% endif %}
+</div></section>
+{% endif %}
+
+{% if d.pendentes %}<section class="psec pcard" aria-labelledby="h-pend"><h2 id="h-pend">Ainda não disponíveis</h2><p class="sub">Indicadores previstos que ainda não têm dado de uma fonte oficial. O motivo de cada um:</p>
+<ul class="ppend">{% for x in d.pendentes %}<li><strong>{{ x.nome }}</strong><span>{{ x.motivo }}</span></li>{% endfor %}</ul></section>{% endif %}
+
+{% if not (d.fin or d.cont or d.saude or d.edu or d.social or d.mun) %}<p class="vazio">Ainda não há indicadores com dados nesta área.</p>{% endif %}
+
+<div class="cab pbaixar"><p class="legal" style="margin:0;max-width:70ch">LGPD: só números agregados. Contagens de pessoas menores que 5 aparecem como “menos de 5”, para não permitir identificar ninguém (LGPD, art. 6º, III).</p>
+<span class="botoes" role="group" aria-label="Baixar o painel inteiro"><a class="btn sec" href="/painel/baixar/painel.csv" download>Baixar tudo (CSV)</a><a class="btn sec" href="/painel/baixar/painel.ods" download>ODS</a><a class="btn sec" href="/painel/baixar/painel.json">JSON</a></span></div>
 {% endblock %}

@@ -93,7 +93,7 @@ def configurar_fontes(oid, slug):
 
 # Fontes do painel de indicadores (Fase 7): genéricas para todo órgão do Executivo, pelo código IBGE do município.
 # MDS e vacinação (PNI) nascem desligados: fonte fora do ar / pendente de fonte estável.
-FONTES_PAINEL = {'painel': True, 'ibge': True, 'cnes': True, 'inep': True, 'iegm': True, 'mds': False, 'pni': False}
+FONTES_PAINEL = {'painel': True, 'ibge': True, 'cnes': True, 'inep': True, 'iegm': True, 'financas': True, 'mds': False, 'pni': False}
 # iegm: só coleta com IEGM_USUARIO/IEGM_SENHA no .env e o IEG-M em modo automático no painel administrativo
 
 def configurar_painel(o):
@@ -104,7 +104,13 @@ def configurar_painel(o):
     novos = painel.semear(o['banco'])
     nf = 0
     for fonte, ativo in FONTES_PAINEL.items():
-        r = db.exe(db.PLATAFORMA, 'INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING RETURNING 1', (o['id'], fonte, Jsonb({'ibge': o['ibge']}), ativo))
+        params = {'ibge': o['ibge']}
+        if fonte == 'financas':  # usa a mesma API e entidade da fonte fiorilli do órgão
+            fio = db.um(db.PLATAFORMA, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='fiorilli'", (o['id'],))
+            if not fio:
+                continue
+            params = {k: fio['params'][k] for k in ('base', 'empresa') if k in fio['params']}
+        r = db.exe(db.PLATAFORMA, 'INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING RETURNING 1', (o['id'], fonte, Jsonb(params), ativo))
         nf += 1 if r else 0
     return novos, nf
 

@@ -17,6 +17,8 @@ def br(d):
     if isinstance(d, str):
         d = date.fromisoformat(d[:10])
     if isinstance(d, datetime):
+        if d.tzinfo:  # horário de Brasília (TZ do container), qualquer que seja o fuso da sessão do banco
+            d = d.astimezone()
         return d.strftime('%d/%m/%Y %H:%M')
     return d.strftime('%d/%m/%Y')
 

@@ -26,14 +26,15 @@ def _com_dados(o):
     return [i for i in P.catalogo(o['banco']) if db.um(o['banco'], 'SELECT 1 FROM indicador_valores WHERE indicador_id=%s LIMIT 1', (i['id'],))]
 
 @r.get('/painel')
-def painel(request: Request, aba: str = 'tudo'):
+def painel(request: Request, tema: str = '', aba: str = ''):
     ctx = _ctx(request); o = ctx['orgao']
-    aba = aba if aba in dict(ABAS) else 'tudo'
-    itens = P.painel(o['banco'], None if aba == 'tudo' else aba)
-    grupos = [(t, nome, [i for i in itens if i['tema'] == t]) for t, nome in P.TEMAS if aba in ('tudo', t)]
-    for i in itens:
-        i['link'] = P.link_fonte(i, o, i['ult'])
-    return templates.TemplateResponse(request, 'portal/painel.html', dict(ctx, abas=ABAS, aba=aba, grupos=grupos, total=len(itens), legal_txt=P.BASE_LEGAL))
+    if aba and not tema:  # endereço antigo (?aba=) → ?tema=
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse('/painel' + (f'?tema={aba}' if aba in dict(ABAS) and aba != 'tudo' else ''), status_code=301)
+    tema = tema if tema in dict(ABAS) else 'tudo'
+    from . import painel_blocos as PB
+    d = PB.montar(o, tema)
+    return templates.TemplateResponse(request, 'portal/painel.html', dict(ctx, abas=ABAS, aba=tema, d=d, legal_txt=P.BASE_LEGAL))
 
 def _resposta(o, inds, nome, formato, titulo):
     linhas = P.linhas_export(o, inds)

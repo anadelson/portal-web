@@ -51,9 +51,16 @@ def lista(request: Request):
         aviso_cert = aviso_certificado()
     except Exception as e:
         aviso_cert = f'Não foi possível ler o certificado intermediário do INEP ({type(e).__name__}).'
-    return T('indicadores', request, u, itens=itens, fontes=fontes, coletas=coletas, hist=hist, max_dest=P.MAX_DESTAQUES, aviso_cert=aviso_cert, origem_iegm=_origem_iegm())
+    from . import config
+    ano = config.hoje().year
+    areas = db.todos(b, """SELECT a.*, d.empenhado FROM areas_unidades a LEFT JOIN despesas_unidade d ON d.codigo=a.codigo AND d.ano=%s ORDER BY a.codigo""", (ano,))
+    opcoes = sorted({r['f'] for r in db.todos(b, "SELECT DISTINCT funcao f FROM empenhos WHERE funcao<>''")} | {a['area'] for a in areas} | set(AREAS_TEMA))
+    return T('indicadores', request, u, itens=itens, fontes=fontes, coletas=coletas, hist=hist, max_dest=P.MAX_DESTAQUES, aviso_cert=aviso_cert, origem_iegm=_origem_iegm(),
+             areas=areas, opcoes_area=opcoes, areas_tema=AREAS_TEMA)
 
-FONTES_PAINEL = ('ibge', 'cnes', 'inep', 'iegm', 'mds', 'pni', 'painel')
+FONTES_PAINEL = ('ibge', 'cnes', 'inep', 'iegm', 'mds', 'pni', 'painel', 'financas')
+# nomes de área usados pelas seções temáticas do painel (nomes das funções de governo, Portaria MOG 42/1999)
+AREAS_TEMA = ('Saúde', 'Educação', 'Assistência Social')
 
 def coletar_agora(o, so=None):
     """Roda as fontes ativas do painel deste órgão (mesma rotina do worker, com registro em `coletas`)."""
@@ -69,6 +76,22 @@ async def lista_post(request: Request):
     u = exige(request, 'config'); _mods(request, u)
     f = await ler_form(request)
     o = request.state.orgao
+    if f.get('acao') == 'areas':
+        b = o['banco']
+        mud = []
+        for a in db.todos(b, 'SELECT * FROM areas_unidades'):
+            nova = re.sub(r'\s+', ' ', f.get(f"area_{a['codigo']}", a['area'])).strip()[:60]
+            volta = f.get(f"sugestao_{a['codigo']}") == '1'
+            if volta and a['origem'] == 'admin':
+                db.exe(b, "UPDATE areas_unidades SET origem='sugestao', usuario=%s, atualizado_em=now() WHERE codigo=%s", (u['nome'], a['codigo']))
+                mud.append(f"{a['unidade']}: volta à sugestão")
+            elif nova and nova != a['area']:
+                db.exe(b, "UPDATE areas_unidades SET area=%s, origem='admin', usuario=%s, atualizado_em=now() WHERE codigo=%s", (nova, u['nome'], a['codigo']))
+                mud.append(f"{a['unidade']}: {a['area']} → {nova}")
+        if mud:
+            P.historico(b, None, u['nome'], 'Agrupamento das unidades por área: ' + '; '.join(mud)[:280])
+            auditar(request, 'Painel de indicadores: agrupamento das unidades por área alterado (' + '; '.join(mud)[:200] + ')')
+        return ir('/admin/indicadores', f'{len(mud)} unidade(s) alterada(s) no agrupamento por área. A sugestão automática volta na próxima coleta para as marcadas.' if mud else 'Nada mudou.', request)
     if f.get('acao') == 'coletar':
         res = await run_in_threadpool(coletar_agora, o)
         ok = sum(1 for x in res if x[1]); falhas = [x for x in res if not x[1]]

@@ -92,8 +92,8 @@ desc = re.search(r'<desc id="[^"]+">([^<]+)</desc>', t).group(1)
 if '2019: não divulgado pelo INEP' not in desc or 'Metas projetadas pelo INEP' not in desc: falha(f'descrição do gráfico: {desc[:200]}')
 if re.search(r'2019</th><td class="num">0', t): falha('ND exibido como zero')
 if 'Mínimo' in t or 'Meta: ' in t: falha('meta projetada do INEP tratada como meta atual')
-t = ok(pm.get('/painel?aba=edu'), nome='aba educação').text
-for x in ('IDEB — anos iniciais do ensino fundamental (rede pública)', 'rede municipal (responsabilidade da Prefeitura)', 'rede estadual (responsabilidade do Governo do Estado)', 'Saeb — Matemática'):
+t = ok(pm.get('/painel?tema=edu'), nome='aba educação').text
+for x in ('IDEB — anos iniciais do ensino fundamental (rede pública)', 'IDEB — anos finais do ensino fundamental (rede pública)', 'rede municipal (responsabilidade da Prefeitura)', 'Saeb — Matemática'):
     if x not in t: falha(f'aba educação: falta "{x}"')
 if 'Indicador de rendimento' in t: falha('rendimento não deveria ter cartão próprio')
 rows = list(csv.DictReader(io.StringIO(ok(pm.get('/painel/baixar/edu_ideb_ai.csv'), nome='csv IDEB').content.decode('utf-8-sig'))))
@@ -208,7 +208,8 @@ eds = [r['nota'] for r in db.todos(PM, "SELECT v.nota FROM indicador_valores v J
 if len(eds) != len(set(eds)): falha(f'edições repetidas: {eds}')
 if val('gestao_iegm', '2014')['origem'] != 'manual': falha('coleta sobrescreveu o lançamento manual')
 if not db.um(db.PLATAFORMA, "SELECT 1 FROM indicadores_publicos WHERE ibge='3507209' AND fonte='iegm' AND indicador='gestao_iegm_ti' AND periodo='2024' AND texto='A'"): falha('IEG-M não gravou por código IBGE')
-ok(pm.get('/painel?aba=mun'), txt='IEG-M — governança de TI', nome='IEG-M no painel')
+ok(pm.get('/painel?tema=mun'), txt='Governança de TI (i-Gov TI)', nome='IEG-M no painel')
+ok(pm.get('/painel/edu_ideb_af'), txt='rede estadual (responsabilidade do Governo do Estado)', nome='rede responsável dos anos finais')
 # falha da consulta: mantém o último valor, aviso no painel e coleta com falha registrada
 def quebra(*a, **k): raise comum.httpx.ConnectError('fonte fora do ar (teste)')
 X.buscar = quebra

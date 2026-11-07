@@ -676,3 +676,64 @@ Depois, o usuário cadastra a credencial pela tela. Em seguida vêm: modo autom�
 
 ### Onde parou
 Fontes da Fase 7 concluídas: INEP e IEG-M no ar, credencial pelo console. Próximo passo: ETAPA 1 do `Docs/PEDIDO-FASE7-LAYOUT.md` (avaliação só leitura), numa branch própria.
+
+## Fase 7 — layout do /painel (branch `fase-7-layout`)
+### ETAPA 1 — Avaliação (07/11/2026, só leitura)
+- **Capturas:** feitas com o Playwright 1.49, num container descartável da imagem `mcr.microsoft.com/playwright:v1.49.0-jammy`, que já existia na VPS. O `playwright-core` foi instalado só dentro desse container, que foi removido; nada foi instalado na VPS.
+  - 14 capturas de página inteira (7 abas × 1280 px e 390 px) e 2 do foco das abas, em `Docs/avaliacao-painel/`, com as medidas em `medidas.json`.
+- **Tabela comparativa:** está em `Docs/avaliacao-painel/AVALIACAO.md`.
+  - **O que está igual:** fonte e cores, nenhuma rolagem horizontal em 390 px, aba guardada na URL.
+  - **Divergências principais:**
+    - abas em caixas em vez de pílulas, e sem o selo da data das finanças;
+    - faltam os gráficos de finanças (mês a mês, para onde vai, de onde vem, execução);
+    - as seções por tema estão em cartões genéricos;
+    - o IEG-M está sem o bloco próprio e sem a distribuição dos municípios;
+    - falta a lista "Ainda não disponíveis";
+    - o foco amarelo tem contraste baixo sobre fundo branco.
+- **Parado aguardando aprovação das correções** e de 5 decisões: cálculo por habitante, coletor mensal da Fiorilli, semântica das abas, comparação do IDEB com SP e Brasil, e novos dados agregados do CNES e do IEG-M.
+
+### ETAPA 2 — Correção (07/11/2026, aprovada com as 5 decisões do usuário)
+- **Abas e selo:** links com `aria-current`, em pílula (44 px, raio 999 px), `?tema=` (o `?aba=` antigo redireciona com 301). Selo "Finanças lidas do sistema contábil em <data/hora>" com a última coleta Fiorilli ok; o ponto pulsante desliga com `prefers-reduced-motion`.
+- **Dinheiro público:**
+  - KPIs no padrão do protótipo. Os valores por habitante mostram o ano da estimativa do IBGE e "cálculo do portal: valor oficial ÷ população estimada".
+  - "Receita e despesa paga, mês a mês" (SVG + tabela) vem da nova fonte `financas` (Fiorilli por mês, diária de madrugada, tabela `fin_mensal`, migrações 013/014). A API devolve o movimento do período; janeiro + fevereiro = acumulado, conferido.
+  - "Para onde vai o dinheiro" usa o agrupamento editável das unidades por área (`areas_unidades`): a sugestão é a função de governo predominante nos empenhos, e o administrador troca em /admin/indicadores, com auditoria.
+  - "De onde vem o dinheiro": repasses 1700 + 2400 sobre a receita bruta, e as 5 maiores origens.
+  - "Execução do orçamento": 3 barras e a linha do ritmo do ano.
+  - Sem dado do ano, cada bloco não aparece.
+- **Contratações:** barras por modalidade.
+- **Saúde, Educação e Assistência social:** KPIs; mínimos legais com linha tracejada; CNES com nome, tipo e endereço (dado institucional, tabela compartilhada `dados_publicos/cnes_lista`); nascimentos e óbitos, com "menos de 5"; orçamento da área por unidade; benefícios com o aviso do MDS.
+- **IDEB:** comparação com SP e Brasil só na mesma etapa e na rede pública, pelas planilhas `divulgacao_regioes_ufs_ideb_{ANO}` e `divulgacao_brasil_ideb_{ANO}` do INEP; sem linha equivalente, não aparece. Em 2025 a planilha de SP não tem rede pública no ensino médio, então essa comparação fica fora.
+- **IEG-M:** faixa em destaque, dimensões, "Como os municípios paulistas ficaram" (contagem agregada por faixa em `dados_publicos/iegm_distribuicao`) e evolução em `details`.
+- **Demais blocos:** "O município"; "Acesso à informação"; "Ainda não disponíveis", gerado do catálogo (indicadores visíveis sem dado, com o motivo).
+- **Acessibilidade e datas:**
+  - Foco em anel duplo (amarelo + escuro) no portal, no admin e no console; ESPEC-VISUAL.md atualizado.
+  - O filtro de datas passa a converter para o horário local.
+- **Testes:** `tests/teste_painel_layout.py` (dados fictícios) e as 6 suítes anteriores: todas com ERROS: 0.
+- **Capturas "depois":**
+  - Feitas numa prévia descartável: PostgreSQL de teste com cópia dos bancos atuais (`pg_dump`, só leitura), app com o código novo e as coletas novas rodando contra a cópia. A prévia foi desligada e a cópia apagada.
+  - Arquivos em `Docs/avaliacao-painel/depois/` e, lado a lado com as atuais, em `Docs/avaliacao-painel/lado-a-lado/`.
+  - Sem rolagem horizontal em 390 px; pílulas com 44 px.
+  - O brasão quebrado aparece só na prévia: as imagens `.webp` são geradas no build.
+- **Onde parou:** aguardando aprovação para implantar (build, testes, backup, `up -d`, `provision atualizar`, primeiras coletas `financas`, `cnes`, `inep` e `iegm`), merge e tag.
+
+### Implantação do layout (07/11/2026, aprovada: "Aprovo os 6 passos")
+- Build; as 7 suítes com a imagem nova deram ERROS: 0. Backup; `up -d` de app e worker (saudáveis). `provision atualizar` aplicou as migrações 013 e 014 e cadastrou a fonte `financas`, que herda `base` e `empresa` da `fiorilli`.
+- **Primeiras coletas:**
+  - `financas`: 11 meses de 2026 e 22 unidades no agrupamento por área.
+  - `cnes`: lista com 2 estabelecimentos.
+  - `iegm`: distribuição dos 644 municípios.
+  - `inep`: comparação com UF e Brasil, ok.
+- **Conferência no domínio:**
+  - Todos os blocos presentes; o selo mostra "07/11/2026 19:05" (horário local).
+  - `?aba=saude` redireciona com 301 para `?tema=saude`.
+  - A **soma dos meses é igual ao acumulado**: receita R$ 22.565.789,79 e despesa paga R$ 19.999.531,48.
+  - Comparação do IDEB: SP 6,5 e Brasil 6,1 (rede pública, anos iniciais, 2025). IEG-M: C+, a mesma faixa de 261 dos 644 municípios.
+  - Capturas da página no ar em `Docs/avaliacao-painel/implantado/`: nenhuma rolagem horizontal em 390 px, pílulas com 44 px e selo em todas as abas.
+- `fase-7-layout` mesclada em `main` com a tag `fase-7-layout`.
+
+### Onde parou
+Fase 7 (painel, fontes e layout) concluída e no ar. Pendências fora do código:
+- PNCP instável: os anos anteriores entram quando uma coleta conseguir ler mais páginas.
+- MDS fora do ar.
+- Vacinação aguardando uma fonte estável.
