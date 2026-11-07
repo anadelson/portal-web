@@ -430,5 +430,38 @@ Registros sorteados do portal público (`/dados/<base>.json`) comparados com nov
 - Migrações `007_orgao_diario_seguranca.sql` e `008_plataforma_seguranca.sql`.
 - Testes: suítes anteriores adaptadas ao 2º fator (`tests/apoio.py`) e nova `tests/teste_diario_seguranca.py`.
 
+## Implantação (aprovada em 2026-11-07)
+- Build (pyHanko 0.37.0, pyhanko-certvalidator 0.32.1, qrcode 8.2, requests 2.32.3, Ghostscript 10.05.1).
+- Testes em bancos descartáveis: **4 suítes ERROS: 0** (`teste_diario_seguranca`, `teste_fluxos`, `teste_transparencia`, `teste_legislativo`). Falhas reais encontradas e corrigidas antes: (1) assinatura chamada dentro do laço de eventos (pyHanko usa `asyncio.run`) → movida para thread; (2) `no-store` dos painéis não saía (caminho reescrito pelo roteador) → corrigido; (3) arquivos da cadeia de teste saíam 644 → 600 e teste passou a verificar.
+- `segredos/` criada (700, dono 1001; `a1/`, `icp/`, `act/`, `teste/`), cadeia de TESTE gerada (arquivos 600), montada **só leitura** nos containers (conferido: escrita recusada).
+- `.env` (600): acrescentadas sem exibir valores `DIARIO_MODO=teste`, `TOTP_CHAVE`, `CPF_HMAC_CHAVE` (gerados) e, em branco para o órgão, `ACT_URL`, `ACT_USUARIO`, `ACT_SENHA`, `GOVBR_CLIENT_ID`, `GOVBR_CLIENT_SECRET`, `GOVBR_AMBIENTE=staging`.
+- Backup → `up -d` → `provision atualizar`: migrações 007/008 e 1 integração Câmara → Prefeitura (token no banco de controle).
+- Conferência em produção: domínios 200; `/admin/2fa` sem login → volta ao login; `/admin/govbr` 404 (sem credenciais, correto); CSP com `frame-ancestors 'none'`, X-Frame-Options DENY, `no-store` no painel; cadeia de teste carregando; logs sem erro; demais sites 200; **0 edições do Diário em produção**.
+- ⚠️ Achado na conferência: em modo teste, o worker geraria a edição “sem atos” a partir de segunda (16h) e gastaria a numeração oficial com edições de teste. **Corrigido no código** (`DIARIO_AUTOMATICO_TESTE=0` por padrão + comando `limpar-teste`), **aguardando reimplantação** (precisa ser antes de segunda, 09/11, 16h).
+
+## Variáveis do .env que o órgão (você) preenche
+- `A1_SENHA_<NOME>` — senha de cada certificado A1 (uma variável por signatário; o nome é informado na designação).
+- `ACT_URL`, `ACT_USUARIO`, `ACT_SENHA` — dados do contrato com a ACT.
+- `GOVBR_CLIENT_ID`, `GOVBR_CLIENT_SECRET`, `GOVBR_AMBIENTE` (staging → producao), opcional `GOVBR_NIVEL_MINIMO` (prata|ouro).
+- `DIARIO_MODO=oficial` — só depois de certificado, AC Raiz e ACT prontos.
+- Já preenchidas (não alterar): `TOTP_CHAVE`, `CPF_HMAC_CHAVE`.
+Comando para editar na VPS: `nano /opt/portal_web/.env` (depois `docker compose up -d app worker`).
+
+## O que o órgão precisa providenciar para sair do modo teste
+1. Certificado ICP-Brasil **A1** do responsável pela edição (assinatura final automática) e certificados dos signatários dos cadernos (A1, em nuvem ou A3/token).
+2. **Contrato com uma ACT credenciada** (ex.: Serpro, Prodesp) com URL RFC 3161 e credenciais.
+3. **Atos de designação** dos signatários (Prefeito e Presidente da Câmara, ou servidores designados) e do setor responsável pela edição.
+4. **Solicitação de integração ao Login Único gov.br** com as 3 URLs de retorno (README, Fase 6).
+5. AC Raiz ICP-Brasil em `segredos/icp/` (download no ITI) e, se usar certificado em nuvem, a API e as credenciais do provedor.
+
+## Pendências da Fase 6
+- Reimplantar a correção da rotina automática em modo teste (antes de 09/11, 16h).
+- Login: na próxima entrada, os administradores da Prefeitura, da Câmara e o gestor cadastram o autenticador e guardam os códigos de recuperação.
+- Conformidade PDF/A-2b não validada com veraPDF (não instalado); a conversão é feita pelo Ghostscript com perfil sRGB e metadados PDF/A.
+- Integração real com ACT, certificado em nuvem e gov.br só testável com os contratos (o fluxo gov.br foi testado com servidor simulado).
+
+## Como desfazer a Fase 6
+`git checkout fase-5 -- . && docker compose build app worker && docker compose up -d app worker` (tabelas das migrações 007/008 ficam sem uso; `segredos/` pode ser mantida). Dumps de antes: `backups/*-2026-11-07.dump`.
+
 ## Onde parou
-Código pronto. Aguardando aprovação de: build → 4 suítes de teste → criação de `segredos/` + cadeia de teste + chaves no .env → implantação.
+Fase 6 implantada em MODO TESTE; aguardando aprovação para reimplantar a correção da rotina automática; depois merge + tag `fase-6`.

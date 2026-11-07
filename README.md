@@ -92,8 +92,30 @@ Na VPS o HTTPS fica no nginx existente (não no Caddy): ver `Docs/PROGRESSO.md`.
 - **Importação** (`app/importar.py`, modelos em `Docs/modelos/`): `docker compose exec app python -m app.importar MODELO arquivo.csv --orgao cm-bora` (simula) e `--gravar`. Nada de raspagem do portal antigo.
 - **Transmissões** para a Prefeitura: módulo opcional `audiencias` (ligar no console).
 
+## Diário assinado, remessa da Câmara e acesso seguro (Fase 6)
+Hoje em **MODO TESTE** (`DIARIO_MODO=teste`): certificados e ACT de teste, marca “SEM VALOR OFICIAL — TESTE”, nada publicado como oficial e rotina automática desligada (`DIARIO_AUTOMATICO_TESTE=0`).
+
+**Segredos** ficam em `/opt/portal_web/segredos/` (pasta 700, arquivos 600, dono uid 1001 = usuário do container), montada **só leitura** em `/srv/segredos`; nunca no git (`.gitignore`) nem no chat. Senhas ficam só no `.env` (600).
+```
+segredos/a1/      certificados A1 (.p12/.pfx) dos signatários com assinatura no servidor
+segredos/icp/     AC Raiz ICP-Brasil (.crt) baixadas do site do ITI (cadeia de confiança da validação)
+segredos/act/     certificado de cliente da ACT, se o contrato exigir
+segredos/teste/   cadeia de TESTE (python -m app.assinatura gerar-teste)
+```
+
+### Sair do modo teste — passo a passo
+1. **Certificado A1 do responsável** (e de quem mais assinar no servidor): copiar o `.p12` para `segredos/a1/` (`chown 1001:1001`, `chmod 600`) e pôr a senha no `.env` numa variável própria (ex.: `A1_SENHA_RESPONSAVEL=`). Em **Painel → Diário → Signatários e calendário**, designar cada etapa (Executivo, Legislativo, final) com o **ato de designação**, o provedor (A1, nuvem ou A3/token), o nome do arquivo e o **nome** da variável da senha. Signatários com token (A3) assinam baixando o PDF e enviando de volta pelo painel.
+2. **AC Raiz ICP-Brasil**: baixar do ITI os certificados das AC Raiz em uso e salvar em `segredos/icp/`.
+3. **ACT (carimbo do tempo)**: com o contrato (Serpro, Prodesp ou outra ACT credenciada), preencher `ACT_URL` e, se houver, `ACT_USUARIO`/`ACT_SENHA` no `.env`. Se a ACT exigir certificado de cliente, a integração precisa ser concluída com a documentação dela.
+4. **Certificado em nuvem** (opcional): quando o provedor fornecer API (ex.: CSC), credenciais e fluxo de autorização, implementar o adaptador em `app/assinatura.py` (`ProvedorNuvem`).
+5. Trocar `DIARIO_MODO=oficial` no `.env`, apagar as edições de teste (`docker compose exec app python -m app.diario_servico limpar-teste`), reiniciar (`docker compose up -d app worker`) e assinar uma edição real; conferir em https://validar.iti.gov.br/.
+6. **Login gov.br**: o órgão solicita a integração ao Login Único informando as URLs de retorno `https://pmbora.conectatech.tech/admin/govbr/retorno`, `https://cmbora.conectatech.tech/admin/govbr/retorno` e `https://gestao.conectatech.tech/govbr/retorno`. Com o `client_id`/`client_secret` recebidos, preencher `GOVBR_CLIENT_ID`, `GOVBR_CLIENT_SECRET`, `GOVBR_AMBIENTE` (staging → producao) e reiniciar. Cada usuário tem o CPF vinculado em **Usuários e perfis** (guardado só como HMAC + 2 últimos dígitos). Nível mínimo: `GOVBR_NIVEL_MINIMO=prata`.
+
+### Acesso
+Senha + **segundo fator (aplicativo autenticador)** obrigatório nos painéis e no console, com 10 códigos de recuperação de uso único; 5 erros bloqueiam a conta por 15 min (e a origem, se insistir); sessão expira após 30 min sem uso; o administrador do órgão pode “Refazer 2º fator” e “Desbloquear” em Usuários e perfis. **Não troque `TOTP_CHAVE` depois que as pessoas cadastrarem o autenticador** (os segredos ficam ilegíveis e todos teriam de refazer o cadastro).
+
 ## Testes (só em banco de teste)
-`tests/teste_fluxos.py` (fluxos e identidade visual), `tests/teste_legislativo.py` (processo legislativo com legislatura e pessoas fictícias, `DATA_SIMULADA=2029-03-10`) e `tests/teste_transparencia.py` (coletores com as amostras, sem internet; LGPD; filtros; CSV/JSON; falha de fonte) recusam rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
+`tests/teste_fluxos.py` (fluxos e identidade visual), `tests/teste_diario_seguranca.py` (Diário assinado em modo teste, remessa, 2º fator, bloqueio, gov.br simulado; `DATA_SIMULADA=2026-11-06T10:00`, `SEGREDOS_DIR` temporário), `tests/teste_legislativo.py` (processo legislativo com legislatura e pessoas fictícias, `DATA_SIMULADA=2029-03-10`) e `tests/teste_transparencia.py` (coletores com as amostras, sem internet; LGPD; filtros; CSV/JSON; falha de fonte) recusam rodar sem `TESTE=1` e com `PG_HOST=db`. Rode num PostgreSQL descartável (comando completo em `Docs/PROGRESSO.md`, Fase 3).
 
 ## O que é real e o que é exemplo
 - **Real**: vereadores, partidos, votos e Mesas da 13ª à 15ª legislatura; 29 emendas impositivas com a execução de 3 delas; indicações de 2026 e parte de 2025; sessões com data; RGF/despesa com pessoal da Câmara; endereços e contatos.
