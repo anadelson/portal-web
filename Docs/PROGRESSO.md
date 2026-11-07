@@ -546,3 +546,14 @@ Código pronto e testado na branch `fase-7` (sem build nem implantação). **Agu
 
 ### Onde parou
 Fase 7 concluída (07/11/2026): implantada, conferida, `fase-7` mesclada em `main` com tag `fase-7` (aprovado: "Aprovo o merge"). Pendências fora do código: PNCP instável (anos anteriores entram quando uma coleta ler mais páginas), MDS fora do ar (ligar a fonte `mds` quando voltar), IEG-M e Saeb por lançamento manual, `Docs/fase7.tgz` nunca chegou à VPS.
+
+## Fase 7 — fontes IEG-M e Saeb/IDEB (branch `fase-7-fontes`)
+
+### Revisão (07/11/2026, só leitura)
+- IEG-M (Pentaho do TCESP): 401 `Basic realm="Pentaho Realm"` nos anos-base 2021 a 2024, também com User-Agent de navegador + Referer. O endereço público `iegm.tce.sp.gov.br` redireciona para o painel com credencial anônima publicada pelo próprio Tribunal; não foi usada.
+- INEP: planilhas oficiais `https://download.inep.gov.br/ideb/resultados/divulgacao_{anos_iniciais|anos_finais|ensino_medio}_municipios_{ANO}.zip` (edição 2025 publicada em 05/08/2026). O servidor não envia o certificado intermediário "RNP ICPEdu GR46 OV TLS CA 2025" (GlobalSign); com ele (obtido do endereço oficial AIA do próprio certificado e conferido contra a raiz GlobalSign R46), a verificação TLS passa normalmente. Linhas de Borá conferidas (IDEB igual ao do IBGE).
+
+### Decisões do usuário (07/11/2026)
+- **IEG-M: o usuário (DTIC da Prefeitura de Borá) AUTORIZOU, por decisão própria em 07/11/2026, o uso do usuário/senha anônimos publicados pelo TCESP no redirecionamento de iegm.tce.sp.gov.br.** O Claude não lê, não copia e não mostra essa credencial: variáveis `IEGM_USUARIO` e `IEGM_SENHA` no `.env.example` (vazias); o próprio usuário preenche no `.env` da VPS. Sem elas, a coleta fica desligada sem erro.
+- IEG-M com modo de atualização automático (acesso anônimo do TCESP) ou manual em /admin/indicadores, com auditoria; lançamento manual como reserva.
+- Saeb/IDEB pelas planilhas do INEP: 3 etapas; cartão pela rede Pública com o nome da rede responsável; Matemática e Língua Portuguesa como indicadores; rendimento na página do indicador; metas projetadas (até 2021) só como referência histórica no gráfico; ND = "não divulgado pelo INEP", nunca zero; certificado intermediário em `deploy/certs/` com aviso 60 dias antes do vencimento.
