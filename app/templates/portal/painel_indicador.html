@@ -1,0 +1,47 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ i.nome }} — Painel de indicadores — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/painel">Painel de indicadores</a><span aria-hidden="true">›</span><a href="/painel?aba={{ i.tema }}">{{ i.tema_nome }}</a><span aria-hidden="true">›</span><span aria-current="page">{{ i.nome }}</span></nav>
+<h1>{{ i.nome }}</h1>
+<p class="intro" style="margin-bottom:6px">{{ i.descricao }}</p>
+<p class="legal"><strong>Base legal:</strong> {{ i.base_legal or legal_txt }}{% if i.meta_base_legal %} Meta: {{ i.meta_base_legal }}{% endif %}</p>
+
+<div class="ind-topo">
+<div class="ind-cartao grande">
+<p class="ind-valor"><span class="v">{{ i.valor_txt }}</span>{% if i.unidade and i.formato not in ('moeda', 'pct') %} <span class="u">{{ i.unidade }}</span>{% endif %}</p>
+<p class="ind-per">Referência: <strong>{{ i.ult.periodo }}</strong>{% if i.ult.nota %} · {{ i.ult.nota }}{% endif %}</p>
+{% if i.variacao %}<p class="ind-var">{{ i.variacao }}</p>{% endif %}
+{% if i.meta_txt %}<p class="ind-meta">{{ i.meta_txt }}</p>{% endif %}
+{% if i.aviso %}<p class="nota" role="note">{{ i.aviso }}</p>{% endif %}
+</div>
+<dl class="campos ind-ficha">
+<div><dt>Fonte</dt><dd>{% if link %}<a href="{{ link }}">{{ i.fonte }}</a>{% else %}{{ i.fonte }}{% endif %}</dd></div>
+<div><dt>Periodicidade</dt><dd>{{ i.periodicidade }}</dd></div>
+<div><dt>Data de referência</dt><dd>{{ i.ult.periodo }} (até {{ i.ult.data_ref|br }})</dd></div>
+<div><dt>Última atualização</dt><dd>{{ i.ult.coletado_em|br }}</dd></div>
+<div><dt>Forma de atualização</dt><dd>{{ 'Lançamento manual com registro' if i.ult.origem == 'manual' else 'Coleta automática' }}</dd></div>
+<div><dt>Unidade</dt><dd>{{ i.unidade }}</dd></div>
+</dl>
+</div>
+
+{% if grafico %}
+<figure class="ind-grafico">
+{{ grafico }}
+<figcaption>Série histórica (até 12 períodos). Barras em azul-claro marcam o período em andamento{% if i.meta is not none %}; a linha tracejada é {{ 'o mínimo legal' if i.meta_base_legal else 'a meta' }}{% endif %}{% if i.suprimir %}; barras tracejadas sem número indicam “menos de 5”{% endif %}. A mesma informação está na tabela abaixo.</figcaption>
+</figure>
+{% endif %}
+
+<div class="tabela"><table><caption>{{ i.nome }}: todos os valores ({{ i.unidade }})</caption>
+<thead><tr><th scope="col">Período</th><th scope="col" class="num">Valor</th><th scope="col">Observação</th><th scope="col">Origem</th><th scope="col">Atualizado em</th></tr></thead>
+<tbody>{% for x in serie %}<tr><th scope="row">{{ x.periodo }}</th><td class="num">{{ exibir(i, x) }}</td><td>{{ x.nota }}{% if x.parcial %}{{ ' · ' if x.nota }}período em andamento{% endif %}{% if x.origem == 'manual' and x.motivo %}{{ ' · ' if x.nota or x.parcial }}motivo do lançamento: {{ x.motivo }}{% endif %}</td><td>{{ 'Lançamento manual' if x.origem == 'manual' else 'Coleta automática' }}</td><td>{{ x.coletado_em|br }}</td></tr>{% endfor %}</tbody></table></div>
+
+{% if detalhe %}
+<section class="caixa" style="margin-top:20px" aria-labelledby="h-det"><h2 id="h-det">Composição em {{ i.ult.periodo }}</h2>
+<div class="tabela"><table><caption class="sr">Composição de {{ i.nome }} em {{ i.ult.periodo }}</caption><thead><tr><th scope="col">Item</th><th scope="col" class="num">{{ 'Valor' if i.formato == 'moeda' else 'Quantidade' }}</th></tr></thead>
+<tbody>{% for d in detalhe %}<tr><th scope="row">{{ d[0] }}</th><td class="num">{% if i.formato == 'moeda' %}{{ d[1]|moeda }}{% else %}{{ '{:,.0f}'.format(d[1]).replace(',', '.') }}{% endif %}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endif %}
+
+<div class="cab" style="margin-top:20px"><p style="margin:0">Baixar os dados deste indicador, com fonte e datas:</p>
+<span class="botoes"><a class="btn sec" href="/painel/baixar/{{ i.chave }}.csv" download>CSV</a><a class="btn sec" href="/painel/baixar/{{ i.chave }}.ods" download>ODS</a><a class="btn sec" href="/painel/baixar/{{ i.chave }}.json">JSON</a><a class="btn sec" href="/painel/api/{{ i.chave }}.json">API</a></span></div>
+<p><a class="link-forte" href="/painel?aba={{ i.tema }}">Voltar para {{ i.tema_nome }}</a></p>
+{% endblock %}

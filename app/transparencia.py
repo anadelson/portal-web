@@ -218,4 +218,6 @@ def pagina(request: Request, nome: str, pagina: int = 1):
 def dados_abertos(request: Request):
     ctx = ctx_orgao(request); o = ctx['orgao']
     bs = [dict(chave=k, **b, **situacao(o, b)) for k, b in bases_do(o).items()]
-    return templates.TemplateResponse(request, 'portal/dados_abertos.html', dict(ctx, bases=bs, legal_txt=f'{LAI}, art. 8º, § 3º, II e III; Decreto 8.777/2016 (Política de Dados Abertos).'))
+    from .portal_painel import blocos_dados_abertos
+    inds = blocos_dados_abertos(o) if ctx['mods'].get('bi') else []
+    return templates.TemplateResponse(request, 'portal/dados_abertos.html', dict(ctx, bases=bs, inds=inds, legal_txt=f'{LAI}, art. 8º, § 3º, II e III; Decreto 8.777/2016 (Política de Dados Abertos).'))
