@@ -515,20 +515,37 @@ async def transmissoes_post(request: Request):
 
 # ---------- participação: Tribuna Livre, opiniões e avaliação ----------
 @r.get('/participacao')
-def participacao(request: Request):
+def participacao(request: Request, aba: str = 'pagina'):
     u = exige(request); o = request.state.orgao; b = o['banco']
     op = db.todos(b, "SELECT op.*, p.tipo, p.numero, p.ano FROM opinioes op JOIN proposicoes p ON p.id=op.proposicao_id ORDER BY (op.situacao='pendente') DESC, op.id DESC LIMIT 200")
     for x in op:
         x['avisos'] = L.problemas_texto(x['texto'])
     trib = db.todos(b, 'SELECT t.*, s.nome sessao, s.data FROM tribuna_inscricoes t JOIN sessoes s ON s.id=t.sessao_id ORDER BY (t.situacao=%s) DESC, s.data DESC, t.id', ('pendente',)) if o['tipo'] == 'legislativo' else []
     aval = db.todos(b, "SELECT pagina, count(*) n, count(*) FILTER (WHERE util) sim, count(*) FILTER (WHERE NOT util) nao, max(criado_em) ultima FROM avaliacoes GROUP BY pagina ORDER BY count(*) DESC LIMIT 100")
-    coment = db.todos(b, "SELECT * FROM avaliacoes WHERE comentario<>'' ORDER BY id DESC LIMIT 50")
-    return T('participacao', request, u, op=op, trib=trib, aval=aval, coment=coment)
+    coment = db.todos(b, "SELECT id, pagina, util, comentario, moderacao, criado_em FROM avaliacoes WHERE comentario<>'' AND moderacao<>'removido' ORDER BY (moderacao='pendente') DESC, id DESC LIMIT 100")
+    mensal = db.todos(b, "SELECT to_char(criado_em AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM') mes, count(*) n, count(*) FILTER (WHERE util) sim FROM avaliacoes GROUP BY 1 ORDER BY 1 DESC LIMIT 24")
+    from . import avaliacao as AV
+    return T('participacao', request, u, op=op, trib=trib, aval=aval, coment=coment, mensal=mensal, aba=aba if aba in ('pagina', 'mes', 'comentarios', 'regras') else 'pagina',
+             pend_coment=sum(1 for c in coment if c['moderacao'] == 'pendente'), prazo=AV.prazo(b))
 
 @r.post('/participacao')
 async def participacao_post(request: Request):
     u = exige(request, 'publicar'); b = request.state.orgao['banco']; f = await ler_form(request)
     acao, i = f.get('acao'), int(f.get('id') or 0)
+    if acao == 'aval_regras':
+        exige(request, 'config')
+        d = f.get('dias', '')
+        if not d.isdigit() or not 1 <= int(d) <= 365:
+            return ir('/admin/participacao?aba=regras', 'Informe um prazo entre 1 e 365 dias.', request)
+        db.set_cfg(b, 'avaliacao', {'dias': int(d)}); auditar(request, f'Avaliação do portal: prazo para nova avaliação = {d} dias')
+        return ir('/admin/participacao?aba=regras', 'Regra salva.', request)
+    if acao in ('coment_lido', 'coment_remover'):
+        if acao == 'coment_lido':
+            db.exe(b, "UPDATE avaliacoes SET moderacao='lido' WHERE id=%s", (i,))
+        else:
+            db.exe(b, "UPDATE avaliacoes SET moderacao='removido', comentario='[comentário removido pela moderação]' WHERE id=%s", (i,))
+        auditar(request, f'Avaliação do portal: comentário {i} ' + ('marcado como lido' if acao == 'coment_lido' else 'removido'))
+        return ir('/admin/participacao?aba=comentarios', 'Comentário ' + ('marcado como lido.' if acao == 'coment_lido' else 'removido.'), request)
     if acao == 'publicar':
         op = db.um(b, 'SELECT * FROM opinioes WHERE id=%s', (i,))
         if L.problemas_texto(op['texto']):

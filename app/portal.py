@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import FileResponse
 from . import config, db, eleicao
+from . import avaliacao as AVAL
 from .catalogo import BLOCOS, VEDADAS, LARGURA
 from .web import templates, ctx_orgao, ler_form, ir
 
@@ -84,6 +85,12 @@ def home(request: Request):
     dados['servicos_top'] = F8.servicos_mais_acessados(b) if ctx['mods'].get('carta') else []
     dados['noticias8'] = F8.noticias_home(b) if ctx['mods'].get('noticias') else None
     dados['perfis'] = F8.perfis(b, destaque=True)[:3]
+    dados['redes_feed'] = (db.cfg(b, 'redes_feed', {}) or {}).get('itens', [])
+    from . import municipio
+    try:
+        dados['mun_numeros'] = municipio.numeros(o, b)
+    except Exception:
+        dados['mun_numeros'] = []
     dados['quando'] = F8.quando
     if ctx['mods'].get('transm') or ctx['mods'].get('audiencias'):
         dados['gravacoes'] = db.todos(b, "SELECT * FROM transmissoes WHERE NOT ao_vivo AND video<>'' AND (encerrada_em IS NOT NULL OR previsto_para < now()) ORDER BY coalesce(encerrada_em, previsto_para) DESC NULLS LAST LIMIT 3")
@@ -242,8 +249,8 @@ def diario_verificar(request: Request, codigo: str = ''):
     return templates.TemplateResponse(request, 'portal/diario_verificar.html', dict(ctx, e=e, codigo=codigo, sigs=sigs, etapas=A.ETAPAS, legal='diario'))
 
 # ---------- Páginas institucionais e mídia ----------
-MIDIA_OK = re.compile(r'^[0-9a-f]{32}\.(png|jpg|webp)$')
-TIPOS = {'png': 'image/png', 'jpg': 'image/jpeg', 'webp': 'image/webp'}
+MIDIA_OK = re.compile(r'^([0-9a-f]{32}|favicon-[0-9a-f]{16}(-\d{2,3})?)\.(png|jpg|webp|svg)$')
+TIPOS = {'png': 'image/png', 'jpg': 'image/jpeg', 'webp': 'image/webp', 'svg': 'image/svg+xml'}
 
 @r.get('/midia/{arquivo}')
 def midia(request: Request, arquivo: str):
@@ -253,11 +260,14 @@ def midia(request: Request, arquivo: str):
     f = Path(config.DADOS_DIR) / request.state.orgao['slug'] / 'midia' / arquivo
     if not f.is_file():
         raise HTTPException(404)
-    return FileResponse(f, media_type=TIPOS[arquivo.rsplit('.', 1)[1]], headers={'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff'})
+    h = {'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff'}
+    if arquivo.endswith('.svg'):  # SVG (favicon) já filtrado no envio; aqui nunca executa script
+        h['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'"
+    return FileResponse(f, media_type=TIPOS[arquivo.rsplit('.', 1)[1]], headers=h)
 
 @r.get('/privacidade')
 def privacidade(request: Request):
-    return templates.TemplateResponse(request, 'portal/pagina.html', dict(ctx_orgao(request), pagina='privacidade', titulo='Política de privacidade', legal='acesso'))
+    return templates.TemplateResponse(request, 'portal/pagina.html', dict(ctx_orgao(request), pagina='privacidade', titulo='Política de privacidade', legal='acesso', prazo_aval=AVAL.prazo(request.state.orgao['banco'])))
 
 @r.get('/acessibilidade')
 def acessibilidade(request: Request):
