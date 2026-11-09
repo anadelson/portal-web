@@ -1,4 +1,4 @@
-{% extends 'admin/base.html' %}{% block h1 %}{{ c.titulo if c else 'Novo conteúdo' }}{% endblock %}
+{% extends 'admin/base.html' %}{% from 'partials/editor.html' import editor %}{% block h1 %}{{ c.titulo if c else 'Novo conteúdo' }}{% endblock %}
 {% block conteudo %}{% set editavel = pode('editar') and (not c or c.situacao in ('rascunho','devolvido','revisao')) %}
 {% if c and c.situacao == 'devolvido' and c.comentario %}<p class="msg" style="background:#FCEFD9">Comentário do publicador: {{ c.comentario }}</p>{% endif %}
 <form class="campos" method="post" action="/admin/conteudos/salvar" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="id" value="{{ c.id if c else '' }}">
@@ -7,6 +7,7 @@
 <label>Seção do portal<select name="secao">{% for t in ['Notícias','Serviços','Transparência','Página inicial'] %}<option {{ 'selected' if c and c.secao == t }}>{{ t }}</option>{% endfor %}</select></label>
 <fieldset style="border:1px solid #DCE1E6;border-radius:12px;padding:12px"><legend><strong>Notícia: capa e destaque</strong></legend>
 {% if c and (c.imagem or '').startswith('/') %}<div class="capa-previa" style="max-width:420px"><img src="{{ c.imagem }}" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:{{ c.foco_x }}% {{ c.foco_y }}%;border-radius:8px"><small>Prévia do recorte 16:9 com o ponto focal atual.</small></div>
+<div class="previa-not" aria-label="Prévia no bloco de notícias"><p class="legal">Como fica no bloco de notícias:</p><div class="pn"><img src="{{ c.imagem }}" alt="" style="object-position:{{ c.foco_x }}% {{ c.foco_y }}%"><strong>{{ c.titulo }}</strong><small>{{ c.publicado_em.astimezone().strftime('%d/%m/%Y, %Hh%M') if c.publicado_em else 'data da publicação' }}</small></div></div>
 <label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="remover_capa" value="1"> Remover a imagem de capa</label>{% endif %}
 <label>Imagem de capa (PNG, JPG ou WEBP, até 3 MB; exibida em 16:9)<input type="file" name="capa" accept="image/png,image/jpeg,image/webp"></label>
 <label>Texto alternativo da capa (obrigatório com imagem: descreva o que ela mostra)<input name="imagem_alt" value="{{ c.imagem_alt if c else '' }}" maxlength="300"></label>
@@ -17,7 +18,7 @@
 <label>Foto do cartão (serviços)<select name="imagem"><option value="">Sem foto (cartão só com ícone)</option>{% for k, t in TEMAS.items() %}<option value="{{ k }}" {{ 'selected' if c and c.imagem == k }}>{{ t }}</option>{% endfor %}</select><small style="font-weight:400;color:#4B5563">Fotos de tema (CC0) usadas nos cartões de “Serviços mais procurados”. A foto é decorativa: o título do cartão descreve o serviço.</small></label>
 <label>Título<input name="titulo" value="{{ c.titulo if c else '' }}" required></label>
 <label>Resumo<textarea name="resumo" rows="2">{{ c.resumo if c else '' }}</textarea></label>
-<label>Texto<textarea name="texto" rows="8">{{ c.texto if c else '' }}</textarea></label>
+{{ editor('Texto', c.html if c else '', c.texto if c else '') }}
 <fieldset style="border:1px solid #DCE1E6;border-radius:12px;padding:12px"><legend><strong>Classificação para o período eleitoral (obrigatória)</strong></legend>
 {% for k, v in CLASSES.items() %}<label style="flex-direction:row;gap:8px;font-weight:400"><input type="radio" name="classe" value="{{ k }}" {{ 'checked' if c and c.classe == k }} required> <span><strong>{{ v[0] }}</strong> — no defeso: {{ v[1] }}</span></label>{% endfor %}</fieldset>
 <label>Publicar em (vazio = ao aprovar)<input type="date" name="publicar_em" value="{{ c.publicar_em or '' if c else '' }}"></label>
@@ -28,5 +29,6 @@
 {% if c and c.situacao == 'revisao' and pode('publicar') %}<button class="btn" name="acao" value="aprovar">Aprovar e publicar</button><button class="btn sec" name="acao" value="devolver">Devolver ao autor</button>{% endif %}
 {% if c and c.situacao in ('publicado','agendado') and pode('publicar') %}<button class="btn perigo" name="acao" value="arquivar">Tirar do ar e arquivar</button>{% endif %}
 </div></form>
-{% if versoes %}<section class="cx" style="margin-top:18px"><h2>Histórico</h2><ul>{% for v in versoes %}<li>{{ v.quando|br }} · {{ v.quem }} · {{ v.obs }}</li>{% endfor %}</ul></section>{% endif %}
+<script src="/static/admin.js?v=2" defer></script>
+{% if versoes %}<section class="cx" style="margin-top:18px"><h2>Histórico de versões</h2><ul>{% for v in versoes %}<li>{{ v.quando|br }} · {{ v.quem }} · {{ v.obs }}{% if v.dados and not loop.first %} · <a href="/admin/conteudos/{{ c.id }}/versao/{{ v.id }}">comparar com o atual e restaurar</a>{% endif %}</li>{% endfor %}</ul></section>{% endif %}
 <p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.noticias }}</p>{% endblock %}
