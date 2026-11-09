@@ -58,7 +58,17 @@ H) Acessibilidade: VLibras, eMAG, DOSVOX e MOTRIX
 23f. DOSVOX e MOTRIX são programas instalados no computador da pessoa (leitor/sintetizador de tela e controle por voz), não componentes do site. O portal deve funcionar bem com eles e com leitores de tela (NVDA): HTML semântico, ordem de foco correta, links e botões com nome claro. A página "Acessibilidade" do portal explica os recursos e traz links oficiais para baixar DOSVOX, MOTRIX, NVDA e VLibras.
 23g. Teste com leitor de tela (NVDA em navegação por teclado) as páginas inicial, painel, serviço, ouvidoria e transmissões; registre os achados.
 
-I) Testes e implantação
+I) Página Legislação (faltava no pedido; referência: tela "Legislação municipal" do protótipo Main.dc.html)
+24a. /legislacao lista as leis, leis complementares, decretos, portarias e resoluções publicados no Diário Oficial, montada AUTOMATICAMENTE a partir dos atos do Diário (ato publicado entra sozinho na lista).
+24b. Filtros: tipo, situação (vigente, alterada, revogada), ano e busca por número ou assunto; contador de resultados; colunas: ato (tipo, nº e ano), ementa, data, situação, publicação (Diário nº e página, com link).
+24c. Página de cada ato: texto integral, PDF assinado da edição, publicação no Diário, e "Relação com outros atos" (altera / é alterado por / revoga / é revogado por / regulamenta), já previsto na tela de ato do protótipo.
+24d. Situação calculada pelas relações: no painel, ao cadastrar um ato no Diário, o servidor indica quais atos ele altera ou revoga; a situação do ato antigo muda sozinha.
+24e. Acervo antigo: botão "Acervo anterior ao Diário eletrônico" que leva à página de legislação do site atual da Prefeitura (confirme o endereço comigo antes de fixar). Importação opcional dos atos antigos por planilha (tipo, número, data, ementa, link do PDF), com modelo em Docs/modelos/legislacao.csv; nada de raspagem automática do site antigo sem minha aprovação.
+24f. Dados abertos: lista exportável em CSV/JSON. Base legal no rodapé da página (LAI, art. 8º).
+24g. O portal da Câmara exibe a legislação municipal lendo esta lista pela API pública da Prefeitura (nunca pelo banco); leis de iniciativa da Câmara mostram o vínculo com a proposição da Fase 5, quando houver.
+24h. Teste: ato publicado no Diário aparece na lista; ato que revoga outro muda a situação do revogado; filtros e busca.
+
+J) Testes e implantação
 23. Testes (banco de TESTE): nenhuma duplicidade entre as barras; menu do celular com teclado; ⓘ abre/fecha com teclado e Esc; cartões com mesma altura; comunicados não aceitam tipo notícia; perfil sem autorização de imagem não publica foto; ordem do bloco de notícias (destaque, 3, lista); defeso esconde notícias e eventos.
 24. Capturas "depois" lado a lado com as "antes" em Docs/avaliacao-fase8/, implantação com aprovação, merge + tag fase-8, PROGRESSO.md e ESPEC-VISUAL.md atualizados.
 

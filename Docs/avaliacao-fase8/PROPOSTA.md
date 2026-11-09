@@ -143,3 +143,14 @@ No defeso, as notícias somem e o bloco se recolhe sem deixar espaço vazio.
 2. **Publicações oficiais:** aprova o bloco como no protótipo, com 4 cartões (Diário, Contas públicas, Licitações, Legislação)? "Concursos" só entra quando existir a seção de concursos.
 3. **Transmissões:** aprova a integração com o YouTube como proposta? E a contratação do módulo "Transmissão de audiências" para a Prefeitura (feita por você no console, ou por mim com aprovação)?
 4. **VLibras:** aprova liberar `vlibras.gov.br` na CSP para o widget oficial?
+
+**Atualização (09/11, 15h55):** o item que faltava é o **I) Página Legislação** (o J virou Testes e implantação).
+- `/legislacao` é montada automaticamente a partir dos atos do Diário.
+- Filtros por tipo, situação, ano e texto.
+- Página de cada ato com a relação com outros atos; a situação muda sozinha quando um ato altera ou revoga outro.
+- Exportação em CSV/JSON e base legal.
+- A Câmara lê a lista pela API pública.
+- Importação opcional do acervo antigo por planilha (`Docs/modelos/legislacao.csv`).
+- **Sem raspagem do site antigo.**
+
+**Ainda depende de você:** o **endereço da página de legislação do site atual da Prefeitura**, para o botão "Acervo anterior ao Diário eletrônico" (item 24e pede confirmação antes de fixar).
