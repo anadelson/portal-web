@@ -890,3 +890,40 @@ Depois: credenciais opcionais no console (token "meta" para Instagram/Facebook) 
 - Capturas "antes" do portal real em `Docs/avaliacao-fase10/antes/`. Diagnóstico: os serviços são conteúdos genéricos sem os campos do art. 7º (2, ambos exemplo; um do tipo "Aviso"); `/servicos` sem "Base legal:"; busca por "iptu" sem resultado; sem secretarias nem fluxo de validação.
 - Proposta (modelo de dados, fluxo com publicação impossível sem autorização da versão atual, telas, ficha padronizada, documentos) em `Docs/avaliacao-fase10/PROPOSTA.md`; esboço em `Docs/avaliacao-fase10/esboco/` (6 telas, 1280 e 390 px).
 - **Parado aguardando** aprovação e 5 decisões: lista oficial de secretarias e responsáveis; avaliação 1–5 ou sim/não; Carta também na Câmara; destino dos 2 conteúdos-exemplo de Serviços; prazo de revisão.
+- **Decisões (09/11/2026):** proposta aprovada.
+  - Secretarias e responsáveis cadastrados pelo administrador no painel.
+  - Avaliação com nota 1–5 + "conseguiu?".
+  - Carta na Prefeitura e na Câmara.
+  - Conteúdos-exemplo fora de `/servicos`.
+  - Revisão a cada 12 meses.
+
+### Implementação (09/11/2026, branch `fase-10`, nada aplicado na VPS)
+- **Migração `019_orgao_carta.sql`:** secretarias; designações (ato tipo/número/data/vigência); fichas; versões; avaliações; acessos; manifestação ↔ serviço (`esic.servico_id`); perfis `redator` e `validador` incluídos na lista fechada de perfis.
+- **Regras (`app/carta.py`):**
+  - envio para validação só com os campos do art. 7º preenchidos;
+  - avisos de linguagem (frase > 30 palavras, sigla sem explicação, termos difíceis) que não bloqueiam;
+  - só o responsável ou o designado com ato vigente autoriza; devolver exige comentário;
+  - **publicar exige autorização da versão atual** (hash do conteúdo); mudança depois da autorização volta a rascunho;
+  - o DTIC só ajusta categoria, sinônimos e ordem;
+  - o portal lê uma **cópia congelada** do que foi publicado, então editar a ficha não muda o público até nova validação;
+  - ficha vencida ganha o aviso "em revisão" e alerta no painel.
+- **Painel:**
+  - Fichas em abas: Rascunhos/devolvidas, Em validação, Autorizadas, Publicadas, A revisar, Todas.
+  - Ficha em seções, com a situação em etapas.
+  - Secretarias e responsáveis: designação por ato, vínculo de redatores.
+  - Monitoramento: totais por situação e secretaria, vencidas, notas, manifestações da Ouvidoria por serviço, moderação de comentários, prazo de revisão e categorias.
+  - Importação do inventário por planilha: vira rascunho, com simulação; redator só importa para a própria secretaria.
+- **Portal:**
+  - `/servicos` com busca por sinônimos (sem acento), públicos, filtros por categoria/público/secretaria, mais acessados, A–Z e "Base legal".
+  - `/servicos/<slug>` com a ficha em seções, "Solicitar online", data de atualização e próxima revisão, e "Avalie este serviço" (nota 1–5, conseguiu?, comentário; cookie e limite por hash de IP da Fase 9).
+  - Exportação da Carta inteira em PDF, CSV e JSON, com data e base legal.
+  - Ouvidoria com "Sobre qual serviço?".
+  - Bloco "Serviços mais acessados" e busca do cabeçalho usando as fichas; Câmara com "Serviços" na barra institucional.
+- **Documentos:** `Docs/modelos/carta-servicos.csv` + instruções; `Docs/MINUTA-DECRETO-CARTA-SERVICOS.md` (minuta para a Procuradoria, com pontos a decidir); manual curto no `README.md`.
+- **Testes:** `tests/teste_fase10.py` deu tudo ok. Cobre o fluxo completo (rascunho → validação → devolução → nova validação → autorização → publicação), publicação bloqueada sem autorização, escopo por secretaria, administrador que não é responsável não autoriza, designado com ato, revisão vencida, busca por sinônimo, avaliação, manifestação vinculada, exportações, importação e Câmara.
+- **Suítes:** as 10 dão ERROS: 0 / tudo ok. Na `teste_fluxos`, só mudou a expectativa de "Serviços mais acessados", que agora vem das fichas da Carta (os conteúdos-exemplo saíram, por decisão).
+- **Verificação "depois"** (ambiente de teste com 2 fichas marcadas "exemplo"; `Docs/avaliacao-fase10/depois/` e `comparacao.html`): axe sem violações em 12 telas (portal, painel e Câmara); sem rolagem horizontal em 390 px. Corrigido durante a verificação: lista de colunas da importação e asterisco de obrigatório no rótulo.
+
+### Onde parou (Fase 10)
+Código pronto e testado no branch `fase-10`. **Nada aplicado na VPS.** Aguardando aprovação do deploy: snapshot, backup, build, 10 suítes, `up -d`, `provision atualizar` (migração 019; item "Serviços" na barra da Câmara), conferência, merge e tag `fase-10`.
+Depois do deploy: o administrador cadastra as secretarias e os responsáveis; as secretarias fazem o inventário. A minuta do decreto vai para a Procuradoria.

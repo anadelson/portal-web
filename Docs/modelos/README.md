@@ -38,3 +38,28 @@ Acervo de leis, decretos e demais atos **anteriores ao Diário Oficial eletrôni
 | relacoes | ex.: `revoga:Lei 3/2001\|altera:Lei 5/2002` — o ato citado precisa estar em linha anterior ou já na lista |
 
 A situação (vigente, alterada, revogada) é calculada pelas relações; não há coluna de situação. Fonte: os livros e arquivos oficiais da Prefeitura — **não raspar** o site atual.
+
+## carta-servicos.csv (Carta de Serviços, Fase 10)
+
+Inventário dos serviços de cada secretaria (etapa 1 do fluxo). Painel → Carta de Serviços → Importar inventário. Simule antes de gravar.
+- Cada linha vira um **rascunho**. Nada é publicado pela importação: a ficha ainda é completada, enviada para validação, autorizada pelo responsável da secretaria e publicada pelo DTIC.
+- Redator e validador só importam serviços da própria secretaria.
+
+| coluna | conteúdo |
+|---|---|
+| secretaria | nome oficial **ou** sigla de uma secretaria já cadastrada no painel |
+| nome | nome do serviço, como o cidadão procura (ex.: “Emitir 2ª via do IPTU”) |
+| descricao | o que é, em linguagem simples |
+| categoria | uma das categorias configuradas (ex.: Tributos e taxas) |
+| publicos | cidadao, empresa, servidor, orgaos — separados por vírgula |
+| requisitos, documentos | quem pode pedir; o que levar (pode usar quebras de linha) |
+| etapas | uma etapa por linha |
+| prazo | prazo máximo (ex.: “na hora”, “até 10 dias úteis”) |
+| formas | online, presencial, telefone, whatsapp — separados por vírgula |
+| locais | endereço, horário e forma de acesso |
+| custo / custo_base_legal | “Gratuito” ou o valor; se houver custo, a lei que autoriza a cobrança |
+| prioridades, tempo_espera, comunicacao, manifestacoes, acompanhamento | art. 7º, § 3º, da Lei 13.460/2017 |
+| link_online | https:// (opcional) |
+| legislacao, sinonimos | opcionais; sinônimos separados por vírgula ajudam a busca |
+
+Não use CPF nem dados pessoais. Linhas com formato de CPF são recusadas.

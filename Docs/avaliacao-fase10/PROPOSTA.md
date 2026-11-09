@@ -63,3 +63,10 @@ Opcionais: sinônimos, link "Solicitar online", legislação relacionada, setor.
 3. **Câmara:** ligar a Carta de Serviços também para a Câmara (a Lei 13.460 vale para os três Poderes; ex.: certidões, Tribuna Livre, protocolo), ou só a Prefeitura nesta fase?
 4. **Conteúdos antigos de "Serviços"** (2 exemplos): retirar da lista `/servicos` (continuam em `/conteudo/<id>`), recomendado, ou converter em fichas-exemplo?
 5. **Prazo de revisão padrão:** 12 meses (recomendado) ou outro?
+
+## Decisões do usuário (09/11/2026)
+1. Secretarias: estrutura vazia; o administrador de cada órgão cadastra secretarias, responsáveis e designações pelo painel.
+2. Avaliação por serviço: nota de 1 a 5 + "conseguiu o que precisava?" + comentário moderado.
+3. Carta ligada para a Prefeitura e para a Câmara.
+4. Os 2 conteúdos-exemplo saem da lista `/servicos` (continuam em `/conteudo/<id>`).
+5. Revisão padrão a cada 12 meses (configurável).

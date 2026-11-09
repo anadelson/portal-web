@@ -153,3 +153,17 @@ Senha + **segundo fator (aplicativo autenticador)** obrigatório nos painéis e 
 - Remessa de atos da Câmara para o caderno Legislativo do Diário via API entre órgãos.
 - Coletores ainda não feitos: CNES, IBGE SIDRA/Cidades, IEG-M, MDS, vacinação, YouTube (ao vivo).
 - Tema próprio (nível 3) sob demanda; editor de layout com arrastar e soltar.
+
+
+## Carta de Serviços — manual curto para as secretarias (Fase 10)
+
+1. **Quem faz o quê**
+   - **Redator** da secretaria: cadastra e corrige as fichas.
+   - **Responsável** (ou servidor designado por portaria): autoriza ou devolve.
+   - **DTIC**: organiza (categoria e palavras de busca) e publica.
+   - **Administrador**: cadastra secretarias, responsáveis, designações e redatores em *Carta de Serviços → Secretarias e responsáveis*.
+2. **Cadastrar:** *Carta de Serviços → Nova ficha* (ou *Importar inventário* com a planilha `Docs/modelos/carta-servicos.csv`). Preencha todos os campos com \*: o botão “Enviar para validação” só funciona com a ficha completa. As sugestões de linguagem simples (frases longas, siglas, termos difíceis) não bloqueiam, mas ajudam o cidadão.
+3. **Validar:** o responsável abre a aba *Em validação* e clica em **Autorizar esta versão** ou **Devolver ao redator** (com comentário).
+4. **Publicar:** o DTIC abre a aba *Autorizadas*, confere categoria e sinônimos e clica em **Publicar na Carta**. Sem autorização, o sistema não publica. Se o conteúdo mudar depois de autorizado, a ficha volta para validação; a versão anterior continua no ar até a nova ser publicada.
+5. **Revisar:** cada ficha tem data de revisão (padrão: 12 meses). Vencida, aparece em *A revisar* e no portal com o aviso “em revisão”.
+6. **Acompanhar:** *Monitoramento* mostra as fichas por situação e por secretaria, as notas dos usuários (1 a 5 e “conseguiu o que precisava?”) e as manifestações da Ouvidoria ligadas a cada serviço.
