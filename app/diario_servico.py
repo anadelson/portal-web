@@ -121,6 +121,11 @@ def publicar(o, e, quem):
         raise ValueError('A edição só pode ser publicada depois de assinada em todas as etapas (Lei 910/2026, art. 7º).')
     db.exe(b, "UPDATE diario_edicoes SET situacao='publicada', publicada_em=now() WHERE id=%s", (e['id'],))
     db.exe(b, "UPDATE diario_atos SET situacao='publicado' WHERE edicao_id=%s", (e['id'],))
+    try:  # Fase 8: leis, decretos etc. entram sozinhos na página Legislação
+        from . import fase8
+        fase8.sincronizar(b)
+    except Exception:
+        pass  # a página Legislação sincroniza de novo ao ser aberta
     return e['modo_teste']
 
 def invalidar(o, e, ato, comunicado, prorrogacao, quem):

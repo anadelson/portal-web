@@ -22,3 +22,19 @@ Como importar:
 - Linha de comando na VPS: `docker compose exec app python -m app.importar MODELO /caminho/arquivo.csv --orgao cm-bora` (simulação) e o mesmo com `--gravar`.
 
 LGPD: linhas com número no formato de CPF são recusadas. Votos, presenças e atas só entram quando vêm de registro oficial.
+
+## legislacao.csv (Prefeitura, Fase 8 — opcional)
+
+Acervo de leis, decretos e demais atos **anteriores ao Diário Oficial eletrônico**. Os atos publicados no Diário entram sozinhos na página Legislação; esta planilha só serve para o que veio antes. Painel → Legislação → Importar legislação antiga (simule antes de gravar).
+
+| coluna | conteúdo |
+|---|---|
+| tipo | Lei, Lei Complementar, Decreto, Decreto Legislativo, Portaria ou Resolução |
+| numero | só o número (ex.: 1234) |
+| ano | ano do ato (4 dígitos) |
+| data | dd/mm/aaaa (pode ficar vazia) |
+| ementa | ementa oficial |
+| link | endereço https:// do texto oficial (pode ficar vazio) |
+| relacoes | ex.: `revoga:Lei 3/2001\|altera:Lei 5/2002` — o ato citado precisa estar em linha anterior ou já na lista |
+
+A situação (vigente, alterada, revogada) é calculada pelas relações; não há coluna de situação. Fonte: os livros e arquivos oficiais da Prefeitura — **não raspar** o site atual.
