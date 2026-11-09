@@ -927,3 +927,21 @@ Depois: credenciais opcionais no console (token "meta" para Instagram/Facebook) 
 ### Onde parou (Fase 10)
 Código pronto e testado no branch `fase-10`. **Nada aplicado na VPS.** Aguardando aprovação do deploy: snapshot, backup, build, 10 suítes, `up -d`, `provision atualizar` (migração 019; item "Serviços" na barra da Câmara), conferência, merge e tag `fase-10`.
 Depois do deploy: o administrador cadastra as secretarias e os responsáveis; as secretarias fazem o inventário. A minuta do decreto vai para a Procuradoria.
+
+### Implantação da Fase 10 (09/11/2026, aprovada: "Aprovo os 6 passos" + "Snapshot ok")
+- Snapshot confirmado pelo usuário. Backup com `deploy/backup.sh` às 23h47 (substituiu o das 22h17; ficam os de 07 e 08/11).
+- **Build:** as **10 suítes** com a imagem nova deram ERROS: 0 / tudo ok.
+- **Subida:** `up -d` de app e worker, app saudável. `provision atualizar` aplicou a migração 019 nos dois órgãos e criou o item "Serviços" na barra institucional da Câmara.
+- **Conferência no domínio** (`Docs/avaliacao-fase10/implantado/`):
+  - axe sem violações, sem violação de CSP, sem rolagem horizontal e sem destino repetido;
+  - `/servicos` (Prefeitura e Câmara) mostra "A Carta de Serviços está sendo organizada pelas secretarias" e a base legal;
+  - exportações JSON e PDF respondem;
+  - `/admin/carta` exige login;
+  - logs sem erro.
+  - Nenhum dado foi gravado no portal real.
+- `fase-10` mesclada em `main` com a tag `fase-10`.
+
+### Onde parou (fases 8, 9 e 10 concluídas e no ar)
+Próximos passos dependem das pessoas:
+- **Carta de Serviços:** o administrador de cada órgão cadastra secretarias, responsáveis, designações e redatores; as secretarias fazem o inventário; a minuta do decreto vai para a Procuradoria.
+- **Pendências anteriores:** módulo de audiências (Prefeitura), endereço do acervo de legislação, chave do YouTube e canais, token da Meta (opcional) e teste com NVDA.
