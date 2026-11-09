@@ -737,3 +737,13 @@ Fase 7 (painel, fontes e layout) concluída e no ar. Pendências fora do código
 - PNCP instável: os anos anteriores entram quando uma coleta conseguir ler mais páginas.
 - MDS fora do ar.
 - Vacinação aguardando uma fonte estável.
+
+## Fase 8 — ajustes do portal da Prefeitura (branch `fase-8`)
+### Antes de implementar (09/11/2026, só leitura)
+- Pedidos das Fases 8, 9 e 10 versionados.
+- **`Docs/referencia/prototipos/Main.dc.html` não foi atualizado na VPS:** data 07/11 e conteúdo idêntico ao da Fase 2.
+- **Capturas atuais:** em `Docs/avaliacao-fase8/antes/` (início, /painel, receitas e Diário; 1280 e 390 px).
+- **Esboço da nova página inicial:** protótipo HTML local, com capturas em `Docs/avaliacao-fase8/esboco/`.
+- **Inventário e proposta:** em `Docs/avaliacao-fase8/PROPOSTA.md`.
+  - Destinos repetidos hoje no cabeçalho: `/transparencia`, `/diario` e `/acesso` (e-SIC = Fale conosco).
+- **Parado aguardando aprovação** do esboço e de 7 decisões.

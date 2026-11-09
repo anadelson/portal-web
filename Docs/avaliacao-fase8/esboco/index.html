@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Esboço — Fase 8 — Página inicial da Prefeitura</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../../../app/static/portal.css">
+<style>
+:root{--cor:#0E4D64;--cor-escura:#0A3646;--cor-clara:#E7F0F3;--destaque:#F0B429}
+.esboco-aviso{background:#FFF4D6;color:#5C3D00;font-size:13px;padding:6px 16px;text-align:center;border-bottom:1px solid #E8C877}
+.ex{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:999px;background:#FCEFD9;color:#7A4A00;vertical-align:middle}
+/* ---- barras ---- */
+.b-serv{background:#F4F7F9;border-bottom:1px solid #DCE1E6}
+.b-serv .int,.b-portal .int,.b-inst .int{max-width:1200px;margin:0 auto;padding:0 40px;display:flex;align-items:center;gap:6px 18px;flex-wrap:wrap}
+.b-serv .int{min-height:44px}.b-serv strong{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#4B5563;margin-right:6px}
+.b-serv a{display:inline-flex;align-items:center;gap:6px;min-height:44px;color:#17212B;text-decoration:none;font-size:15px;font-weight:500}
+.b-serv a:hover{color:var(--cor);text-decoration:underline}.b-serv a.todos{margin-left:auto;font-weight:700;color:var(--cor)}
+.b-portal{background:#fff;border-bottom:1px solid #DCE1E6}.b-portal .int{min-height:84px;justify-content:space-between}
+.b-portal nav{display:flex;align-items:center;gap:4px}.b-portal nav a{min-height:44px;display:inline-flex;align-items:center;padding:0 14px;color:#17212B;text-decoration:none;font-weight:600;font-size:17px;border-radius:10px}
+.b-portal nav a[aria-current=page]{color:var(--cor);box-shadow:inset 0 -3px 0 var(--cor)}
+.b-portal .busca{display:flex;align-items:center;border:1px solid #9AA5B1;border-radius:999px;padding:0 6px 0 16px;min-height:44px}.b-portal .busca input{border:0;font:inherit;width:150px}
+.b-inst{background:var(--cor-escura)}.b-inst .int{min-height:46px;gap:0 2px}
+.b-inst a{color:#fff;text-decoration:none;font-size:15px;font-weight:500;min-height:46px;display:inline-flex;align-items:center;padding:0 10px;border-radius:8px}.b-inst a:hover{background:rgba(255,255,255,.12)}
+.b-inst small{color:#C9D9E1;font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-right:8px}
+.bt.btn-menu{display:none}
+/* ---- botões padrão ---- */
+.bt{min-height:44px;padding:0 20px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;font:inherit;font-weight:700;text-decoration:none;cursor:pointer;border:1px solid var(--cor)}
+.bt.p{background:var(--cor);color:#fff}.bt.s{background:#fff;color:var(--cor)}.bt svg{width:18px;height:18px}
+.acoes{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+/* ---- faixas ---- */
+.pg{max-width:1200px;margin:0 auto;padding:0 40px}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:40px 0}
+.caixa h2{font-size:22px;margin:0 0 12px}
+.com li{list-style:none;padding:12px 0;border-bottom:1px solid #EEF1F4;display:grid;grid-template-columns:auto 1fr;gap:2px 10px}.com ul{margin:0;padding:0}
+.etq{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--cor-clara);color:var(--cor);align-self:start}
+.com a{color:#17212B;font-weight:600;text-decoration:none}.com small{grid-column:2;color:#4B5563;font-size:13px}
+.serv-g{display:grid;grid-template-columns:1fr 1fr;gap:10px}.serv-g a{display:flex;gap:10px;align-items:center;padding:12px;border-radius:12px;background:#F4F7F9;color:#17212B;text-decoration:none;font-weight:600;min-height:56px}
+/* ---- indicadores ---- */
+.ind4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.ic{min-width:0;grid-template-columns:minmax(0,1fr);padding:14px 16px;border-radius:14px;background:#F4F7F9;border-top:4px solid var(--cor);display:grid;grid-template-rows:auto auto auto;gap:4px;position:relative}
+.ic .lin1{display:flex;justify-content:space-between;align-items:center;gap:6px;min-height:28px}
+.ic .lin1 a{min-width:0;font-size:15px;font-weight:600;color:#17212B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ic .v{font-size:clamp(22px,6vw,28px);white-space:nowrap;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}.ic .v small{font-size:15px;font-weight:600;color:#4B5563}
+.ic .ctx{font-size:13px;color:#4B5563;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.info{width:28px;height:28px;border-radius:50%;border:1px solid #9AA5B1;background:#fff;color:#17212B;font:700 14px/1 'Public Sans',sans-serif;cursor:pointer;flex:0 0 auto}
+.balao{position:absolute;z-index:5;top:44px;left:8px;width:min(300px,calc(100vw - 48px));background:#fff;border:1px solid #DCE1E6;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:14px;font-size:13px}
+.balao dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px}.balao dt{color:#4B5563}.balao dd{margin:0}
+/* ---- notícias ---- */
+.not{display:grid;grid-template-columns:1.25fr 1fr;gap:20px}
+.not .dest img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px}.not .dest h3{font-size:24px;margin:10px 0 4px}.meta{font-size:13px;color:#4B5563}
+.sec3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.sec3 img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px}.sec3 h4{font-size:15px;margin:6px 0 2px}
+.tit{margin:14px 0 0;padding:0;list-style:none}.tit li{padding:8px 0;border-bottom:1px solid #EEF1F4}.tit a{color:#17212B;font-weight:600}
+/* ---- conheça ---- */
+.con-c{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.con-c a{position:relative;display:block;border-radius:14px;overflow:hidden;color:#fff;text-decoration:none}
+.con-c img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}.con-c span{position:absolute;left:0;right:0;bottom:0;padding:28px 12px 10px;background:linear-gradient(transparent,rgba(0,0,0,.75));font-weight:700}
+.secao{margin:40px 0}.secao>h2{font-size:26px;margin:0 0 4px}
+@media (max-width:760px){
+ .b-serv,.b-inst,.b-portal nav,.b-portal .busca{display:none}.bt.btn-menu{display:inline-flex}
+ .b-portal .int,.pg{padding:0 16px}
+ .duas,.not,.sec3,.con-c{grid-template-columns:1fr}.ind4{grid-template-columns:1fr 1fr}.serv-g{grid-template-columns:1fr}
+ .barra-acess .int{gap:4px}.barra-acess a:not(.ac-min),.barra-acess button:not(.ac-min){display:none}
+}
+.menu-cel{position:fixed;inset:0;background:#fff;z-index:20;overflow-y:auto;padding:16px}.menu-cel h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:#4B5563;margin:18px 0 6px}
+.menu-cel ul{list-style:none;margin:0;padding:0}.menu-cel li a{display:flex;min-height:48px;align-items:center;border-bottom:1px solid #EEF1F4;color:#17212B;text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="esboco-aviso" role="note">ESBOÇO da Fase 8 (protótipo local, não é o portal). Itens marcados <span class="ex">exemplo</span> são ilustrativos; os números dos indicadores são os reais de 09/11/2026.</div>
+<div class="barra-acess"><div class="int"><span><a href="#conteudo" class="ac-min">Ir para o conteúdo</a> <a href="#menu">Menu</a> <a href="#busca">Busca</a></span><span style="margin-left:auto"><button>Alto contraste</button><button>A+</button><button>A−</button><a href="#" class="ac-min">Acessibilidade</a></span></div></div>
+
+<!-- 1) Barra de SERVIÇOS (acima do brasão) -->
+<nav class="b-serv" aria-label="Serviços ao cidadão"><div class="int"><strong>Serviços</strong>
+<a href="#">IPTU 2ª via</a><a href="#">Nota fiscal</a><a href="#">Saúde</a><a href="#">Educação</a><a href="#">Assistência social</a><a href="#">Empresas</a><a class="todos" href="#">Todos os serviços →</a></div></nav>
+
+<!-- 2) Barra do BRASÃO (só links do próprio portal) -->
+<header class="b-portal"><div class="int">
+<a href="#" style="display:flex;gap:12px;align-items:center;text-decoration:none;color:#17212B"><img src="../../../app/static/img/brasao.png" alt="Brasão do Município de Borá" width="56" height="49"><span style="display:flex;flex-direction:column;line-height:1.15"><small style="color:#4B5563">Prefeitura Municipal de</small><strong style="font-size:26px">Borá</strong><small style="font-size:11px;letter-spacing:.06em;color:#4B5563">ESTADO DE SÃO PAULO</small></span></a>
+<nav aria-label="Portal"><a href="#" aria-current="page">Início</a><a href="#">Notícias</a><a href="#">Fale conosco</a><a href="#">Links úteis</a></nav>
+<form class="busca" role="search"><input placeholder="Buscar no portal" aria-label="Buscar no portal"><button class="info" style="border:0" aria-label="Buscar">⌕</button></form>
+<button class="bt s btn-menu" aria-expanded="false" aria-controls="menu-cel" id="abre-menu">☰ Menu</button>
+</div></header>
+
+<!-- 3) Barra INSTITUCIONAL / TRANSPARÊNCIA (abaixo do brasão) -->
+<nav class="b-inst" aria-label="Transparência e governo"><div class="int"><small>Transparência e governo</small>
+<a href="#">Transparência</a><a href="#">Painel de indicadores</a><a href="#">Ouvidoria</a><a href="#">e-SIC</a><a href="#">Diário Oficial</a><a href="#">Licitações e contratos</a><a href="#">Legislação</a><a href="#">Dados abertos</a><a href="#">Proteção de dados (LGPD)</a></div></nav>
+
+<main id="conteudo">
+<section class="hero" style="min-height:300px"><div class="foto" style="background-image:url(../../../app/static/img/vista-aerea.jpg)"></div><div class="int"><div class="txt"><p class="rot">Portal oficial da Prefeitura de Borá</p><h1>O que você precisa hoje?</h1>
+<form role="search"><input placeholder="Ex.: IPTU, creche, edital, diário oficial" aria-label="Buscar"><button>Buscar</button></form></div></div></section>
+
+<div class="pg">
+<!-- E) Comunicados | Serviços mais acessados -->
+<div class="duas">
+<section class="caixa com" aria-labelledby="h-com"><h2 id="h-com">Comunicados</h2><ul>
+<li><span class="etq">Aviso</span><a href="#">Interrupção no abastecimento de água na Rua [exemplo]</a><small>09/11/2026 · válido até 12/11 <span class="ex">exemplo</span></small></li>
+<li><span class="etq">Convocação</span><a href="#">Convocação dos aprovados no processo seletivo [exemplo]</a><small>07/11/2026 <span class="ex">exemplo</span></small></li>
+<li><span class="etq">Edital de chamamento</span><a href="#">Chamamento público para o conselho municipal [exemplo]</a><small>05/11/2026 <span class="ex">exemplo</span></small></li>
+</ul><div class="acoes"><a class="bt s" href="#">Todos os comunicados →</a></div></section>
+<section class="caixa" aria-labelledby="h-serv"><h2 id="h-serv">Serviços mais acessados</h2><div class="serv-g">
+<a href="#">IPTU — 2ª via da guia <span class="ex">exemplo</span></a><a href="#">Nota fiscal eletrônica <span class="ex">exemplo</span></a><a href="#">Vacinação nas unidades de saúde</a><a href="#">Matrícula na creche <span class="ex">exemplo</span></a></div>
+<div class="acoes"><a class="bt s" href="#">Todos os serviços →</a></div></section>
+</div>
+
+<!-- B) Indicadores em números: título curto, valor, contexto; fonte só no ⓘ -->
+<section class="secao painel" aria-labelledby="h-num"><p class="rotulo">Painel de indicadores</p><h2 id="h-num">Borá em números</h2>
+<div class="ind4">
+<article class="ic" aria-label="Receita arrecadada no ano: R$ 22,7 milhões, 2026 até 09/11"><div class="lin1"><a href="#">Receita arrecadada</a><button class="info" aria-label="Sobre este indicador: Receita arrecadada" aria-expanded="true" aria-controls="b1">i</button></div><div class="v">R$ 22,7 mi</div><div class="ctx">2026, acumulado até 09/11</div>
+<div class="balao" id="b1" role="dialog" aria-label="Sobre: Receita arrecadada no ano"><strong>Receita arrecadada no ano</strong><dl style="margin-top:8px"><dt>Fonte</dt><dd><a href="#">Sistema contábil da Prefeitura</a>; anos anteriores: TCESP</dd><dt>Período</dt><dd>2026, de 1º/01 a 09/11</dd><dt>Atualizado</dt><dd>09/11/2026, 12h03</dd><dt>Método</dt><dd>Soma das receitas, já descontado o FUNDEB</dd><dt>Base legal</dt><dd>LRF, art. 48-A, II</dd></dl></div></article>
+<article class="ic" aria-label="Aplicação em ações e serviços públicos de saúde: 16,95%"><div class="lin1"><a href="#">Saúde: mínimo legal</a><button class="info" aria-label="Sobre este indicador: Saúde: mínimo legal" aria-expanded="false">i</button></div><div class="v">16,95<small>%</small></div><div class="ctx">mínimo 15% · atingido até agora</div></article>
+<article class="ic" aria-label="Aplicação na manutenção e desenvolvimento do ensino: 32,81%"><div class="lin1"><a href="#">Educação: mínimo legal</a><button class="info" aria-label="Sobre este indicador: Educação: mínimo legal" aria-expanded="false">i</button></div><div class="v">32,81<small>%</small></div><div class="ctx">mínimo 25% · atingido até agora</div></article>
+<article class="ic" aria-label="População estimada: 935 habitantes, 2026"><div class="lin1"><a href="#">População estimada</a><button class="info" aria-label="Sobre este indicador: População estimada" aria-expanded="false">i</button></div><div class="v">935 <small>habitantes</small></div><div class="ctx">+0,3% em relação a 2025</div></article>
+</div><div class="acoes"><a class="bt p" href="#">Painel de indicadores →</a><a class="bt s" href="#">Dados abertos</a></div></section>
+
+<!-- C) Diário Oficial com botões -->
+<section class="secao caixa" aria-labelledby="h-dia"><h2 id="h-dia">Diário Oficial</h2><p style="margin:0;color:#4B5563">Lei Municipal 910/2026 · Nenhuma edição publicada ainda.</p>
+<div class="acoes"><a class="bt p" href="#">Todas as edições →</a><a class="bt s" href="#">Verificar autenticidade</a></div></section>
+
+<!-- D) Conheça Borá: cartões que abrem perfis -->
+<section class="secao" aria-labelledby="h-con"><p class="rotulo">Conheça Borá</p><h2 id="h-con">Pequena, tranquila e acolhedora</h2>
+<p style="color:#4B5563;max-width:70ch">O segundo menor município do Brasil em população (IBGE, Censo 2022), com praça arborizada no centro, a Igreja Matriz como cartão-postal e a agroindústria da cana-de-açúcar movimentando a economia.</p>
+<div class="con-c"><a href="#"><img src="../../../app/static/img/praca-aerea.jpg" alt="Vista aérea da praça central com a Igreja Matriz"><span>Praça e Igreja Matriz, vistas do alto</span></a>
+<a href="#"><img src="../../../app/static/img/igreja-matriz.jpg" alt="Igreja Matriz branca de torre pontiaguda"><span>Igreja Matriz</span></a>
+<a href="#"><img src="../../../app/static/img/usina.jpg" alt="Portaria de uma usina de açúcar e etanol"><span>Agroindústria da cana-de-açúcar</span></a></div>
+<div class="acoes"><a class="bt p" href="#">Conheça mais →</a><a class="bt s" href="#">Borá em números</a></div></section>
+
+<!-- F) Notícias (onde ficavam os comunicados) -->
+<section class="secao" aria-labelledby="h-not"><h2 id="h-not">Notícias</h2>
+<div class="not"><article class="dest"><img src="../../../app/static/img/serv-cidade.jpg" alt="[exemplo] foto da notícia"><h3><a href="#" style="color:#17212B">Título da notícia em destaque [exemplo]</a></h3><p class="meta">08/11/2026, 09h44 <span class="ex">exemplo</span></p><p style="margin:4px 0 0;color:#4B5563">Resumo opcional da notícia, em uma ou duas linhas. [exemplo]</p></article>
+<div><div class="sec3">
+<article><img src="../../../app/static/img/serv-educacao.jpg" alt="[exemplo]"><h4><a href="#" style="color:#17212B">Notícia secundária [exemplo]</a></h4><p class="meta">07/11/2026, 16h10</p></article>
+<article><img src="../../../app/static/img/serv-saude.jpg" alt="[exemplo]"><h4><a href="#" style="color:#17212B">Notícia secundária [exemplo]</a></h4><p class="meta">06/11/2026, 11h02</p></article>
+<article><img src="../../../app/static/img/serv-social.jpg" alt="[exemplo]"><h4><a href="#" style="color:#17212B">Notícia secundária [exemplo]</a></h4><p class="meta">05/11/2026, 08h30</p></article></div>
+<ul class="tit"><li><a href="#">Título de notícia anterior 1 [exemplo]</a></li><li><a href="#">Título de notícia anterior 2 [exemplo]</a></li><li><a href="#">Título de notícia anterior 3 [exemplo]</a></li><li><a href="#">Título de notícia anterior 4 [exemplo]</a></li><li><a href="#">Título de notícia anterior 5 [exemplo]</a></li></ul>
+<div class="acoes"><a class="bt s" href="#">Todas as notícias →</a></div></div></div></section>
+
+<section class="secao sede" aria-labelledby="h-sede"><img src="../../../app/static/img/paco-municipal.jpg" alt="Fachada do Paço Municipal"><div class="txt"><h2 id="h-sede" style="font-size:22px;margin:0">Paço Municipal</h2><p>Atendimento ao público: segunda a sexta, 8h às 17h.</p><p style="color:var(--sub)">Praça Santo Antonio, 10 · Borá (SP) · (18) 3367-1103</p><div class="acoes"><a class="bt s" href="#">Fale conosco →</a></div></div></section>
+</div>
+</main>
+
+<div class="menu-cel" id="menu-cel" hidden role="dialog" aria-modal="true" aria-label="Menu">
+<div style="display:flex;justify-content:space-between;align-items:center"><strong>Menu</strong><button class="bt s" id="fecha-menu">Fechar ✕</button></div>
+<h2>Serviços</h2><ul><li><a href="#">IPTU 2ª via</a></li><li><a href="#">Nota fiscal</a></li><li><a href="#">Saúde</a></li><li><a href="#">Educação</a></li><li><a href="#">Assistência social</a></li><li><a href="#">Empresas</a></li><li><a href="#">Todos os serviços</a></li></ul>
+<h2>Portal</h2><ul><li><a href="#">Início</a></li><li><a href="#">Notícias</a></li><li><a href="#">Fale conosco</a></li><li><a href="#">Links úteis</a></li></ul>
+<h2>Transparência e governo</h2><ul><li><a href="#">Transparência</a></li><li><a href="#">Painel de indicadores</a></li><li><a href="#">Ouvidoria</a></li><li><a href="#">e-SIC</a></li><li><a href="#">Diário Oficial</a></li><li><a href="#">Licitações e contratos</a></li><li><a href="#">Legislação</a></li><li><a href="#">Dados abertos</a></li><li><a href="#">Proteção de dados (LGPD)</a></li></ul>
+</div>
+<script>
+const m = document.getElementById('menu-cel'), a = document.getElementById('abre-menu');
+a.onclick = () => { m.hidden = false; a.setAttribute('aria-expanded', 'true'); m.querySelector('button').focus(); };
+document.getElementById('fecha-menu').onclick = () => { m.hidden = true; a.setAttribute('aria-expanded', 'false'); a.focus(); };
+if (location.hash === '#menu-aberto') a.click();
+if (location.hash === '#sem-balao') document.getElementById('b1').hidden = true;
+</script>
+</body>
+</html>
