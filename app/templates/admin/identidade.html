@@ -1,38 +1,54 @@
-{% extends 'admin/base.html' %}{% block h1 %}Identidade do órgão{% endblock %}
-{% block conteudo %}
-{% set pode_cfg = pode('config') %}
-<section class="cx"><h2>Dados e textos do portal</h2>
-<form class="campos" method="post" action="/admin/identidade"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
-<div class="grade2">{% for k, t in campos %}<label>{{ t }}{% if k in ('hero_texto', 'creditos') %}<textarea name="{{ k }}" rows="2" {{ 'disabled' if not pode_cfg }}>{{ ident.get(k, '') }}</textarea>{% else %}<input name="{{ k }}" value="{{ ident.get(k, '') }}" {{ 'disabled' if not pode_cfg }}{% if k in ('cor', 'cor_destaque') %} pattern="#[0-9A-Fa-f]{6}"{% endif %}>{% endif %}</label>{% endfor %}</div>
-<label>Redes sociais (uma por linha: Nome | https://endereço)<textarea name="redes" rows="3" {{ 'disabled' if not pode_cfg }} placeholder="Instagram | https://www.instagram.com/perfil-oficial">{{ redes_txt }}</textarea></label>
-{% if orgao.tipo == 'executivo' %}
-<fieldset><legend>Bloco “Conheça a cidade”</legend>
-<label>Rótulo<input name="conheca_rotulo" value="{{ cx.rotulo or '' }}" {{ 'disabled' if not pode_cfg }}></label>
-<label>Título<input name="conheca_titulo" value="{{ cx.titulo or '' }}" {{ 'disabled' if not pode_cfg }}></label>
-<label>Texto<textarea name="conheca_texto" rows="3" {{ 'disabled' if not pode_cfg }}>{{ cx.texto or '' }}</textarea></label>
-<label>Números (um por linha: Rótulo | valor)<textarea name="conheca_numeros" rows="4" {{ 'disabled' if not pode_cfg }}>{{ numeros_txt }}</textarea></label>
-<label>Fonte dos números<input name="conheca_fonte" value="{{ cx.fonte or '' }}" {{ 'disabled' if not pode_cfg }}></label>
-</fieldset>{% endif %}
-<label>Título do bloco da sede<input name="sede_titulo" value="{{ (ident.sede or {}).titulo or '' }}" {{ 'disabled' if not pode_cfg }}></label>
-{% if pode_cfg %}<button class="btn">Salvar dados e textos</button>{% endif %}
-</form></section>
-
-<section class="cx" id="imagens"><h2>Imagens</h2>
-<p class="legal">PNG, JPG ou WEBP, até 3 MB. O texto alternativo é obrigatório: descreva o que a imagem mostra para quem usa leitor de tela. Informe também o crédito e a licença da foto.</p>
+{% extends 'admin/base.html' %}{% block h1 %}Identidade e imagens{% endblock %}
+{% block conteudo %}{% set pode_cfg = pode('config') %}{% set C = csrf_token(request) %}
+<nav class="abas" aria-label="Identidade">{% for k, n in abas %}<a href="/admin/identidade?aba={{ k }}"{% if aba == k %} aria-current="page"{% endif %}>{{ n }}</a>{% endfor %}</nav>
 {% macro form_midia(uso, titulo, atual, indice=None, legenda=False) %}
 <form class="midia" method="post" action="/admin/identidade/midia" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="uso" value="{{ uso }}">{% if indice is not none %}<input type="hidden" name="indice" value="{{ indice }}">{% endif %}
 <div class="prev">{% if atual and atual.url %}<img src="{{ atual.url }}" alt="{{ atual.alt }}">{% else %}<span>sem imagem</span>{% endif %}</div>
 <div class="campos-m"><strong>{{ titulo }}</strong>
 <label>Arquivo<input type="file" name="arquivo" accept="image/png,image/jpeg,image/webp" {{ 'disabled' if not pode('config') }}></label>
 <label>Texto alternativo (obrigatório)<input name="alt" value="{{ atual.alt if atual else '' }}" required minlength="5" {{ 'disabled' if not pode('config') }}></label>
+{% if uso in ('hero', 'login', 'sede') %}<div class="grade2"><label>Ponto focal horizontal (0–100)<input type="number" name="foco_x" min="0" max="100" value="{{ atual.foco_x if atual and atual.foco_x is defined else 50 }}" {{ 'disabled' if not pode('config') }}></label><label>Ponto focal vertical (0–100)<input type="number" name="foco_y" min="0" max="100" value="{{ atual.foco_y if atual and atual.foco_y is defined else 50 }}" {{ 'disabled' if not pode('config') }}></label></div>
+{% if atual and atual.url %}<div class="recortes" aria-label="Prévia dos recortes">{% for r, n in [('16/9', 'computador'), ('4/5', 'celular'), ('1/1', 'quadrado')] %}<figure><img src="{{ atual.url }}" alt="" style="aspect-ratio:{{ r }};object-position:{{ atual.foco_x|default(50) }}% {{ atual.foco_y|default(50) }}%"><figcaption>{{ n }}</figcaption></figure>{% endfor %}</div>{% endif %}{% endif %}
 {% if legenda %}<label>Legenda<input name="legenda" value="{{ atual.legenda if atual else '' }}" {{ 'disabled' if not pode('config') }}></label>{% endif %}
 <label>Crédito e licença<input name="credito" value="{{ atual.credito if atual else '' }}" placeholder="Ex.: Foto: Fulano / Prefeitura · uso institucional" {{ 'disabled' if not pode('config') }}></label>
 {% if pode('config') %}<span class="acoes"><button class="btn" name="acao" value="salvar">Salvar</button>{% if indice is not none and atual %}<button class="btn perigo" name="acao" value="remover" formnovalidate>Remover</button>{% endif %}</span>{% endif %}
 </div></form>
 {% endmacro %}
+{% if aba == 'dados' %}<section class="cx"><h2>Dados e textos do portal</h2>
+<form class="campos" method="post" action="/admin/identidade"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<div class="grade2">{% for k, t in campos %}<label>{{ t }}{% if k in ('hero_texto', 'creditos') %}<textarea name="{{ k }}" rows="2" {{ 'disabled' if not pode_cfg }}>{{ ident.get(k, '') }}</textarea>{% else %}<input name="{{ k }}" value="{{ ident.get(k, '') }}" {{ 'disabled' if not pode_cfg }}{% if k in ('cor', 'cor_destaque') %} pattern="#[0-9A-Fa-f]{6}"{% endif %}>{% endif %}</label>{% endfor %}</div>
+{% if orgao.tipo == 'executivo' %}
+<fieldset><legend>Bloco “Conheça a cidade”</legend>
+<label>Rótulo<input name="conheca_rotulo" value="{{ cx.rotulo or '' }}" {{ 'disabled' if not pode_cfg }}></label>
+<label>Título<input name="conheca_titulo" value="{{ cx.titulo or '' }}" {{ 'disabled' if not pode_cfg }}></label>
+<label>Texto<textarea name="conheca_texto" rows="3" {{ 'disabled' if not pode_cfg }}>{{ cx.texto or '' }}</textarea></label>
+<p class="legal">Os números do bloco vêm da aba “Dados do município” (IBGE automático + campos manuais).</p>
+</fieldset>{% endif %}
+<label>Título do bloco da sede<input name="sede_titulo" value="{{ (ident.sede or {}).titulo or '' }}" {{ 'disabled' if not pode_cfg }}></label>
+{% if pode_cfg %}<button class="btn">Salvar dados e textos</button>{% endif %}
+</form></section>
+
+{% elif aba == 'tema' %}
+<section class="cx"><h2>Tema e cores</h2>
+<p>O portal usa o tema base com personalização nível 2 (blocos da página inicial, menus, cores e imagens). As cores precisam ter contraste AA (4,5:1): texto branco sobre a cor principal e texto escuro sobre a cor de destaque. Cor que não atende é recusada.</p>
+<div class="cores-grade"><form class="campos" method="post" action="/admin/identidade/cores" id="form-cores"><input type="hidden" name="csrf" value="{{ C }}">
+{% for nome, rot, v, alvo in [('cor', 'Cor principal', cor, '#FFFFFF'), ('cor_destaque', 'Cor de destaque', dest, '#17212B')] %}
+<fieldset class="cor-campo" data-alvo="{{ alvo }}"><legend>{{ rot }}</legend><div class="cor-linha"><input type="color" value="{{ v }}" aria-label="{{ rot }}: seletor" {{ 'disabled' if not pode_cfg }}><input name="{{ nome }}" value="{{ v }}" pattern="#[0-9A-Fa-f]{6}" aria-label="{{ rot }}: código hexadecimal" {{ 'disabled' if not pode_cfg }}>
+<span class="aa" aria-live="polite">{% set c = c_cor if nome == 'cor' else c_dest %}contraste {{ '%.1f'|format(c) }}:1 <span class="chip {{ 'ok' if c >= 4.5 else 'erro' }}">{{ 'AA' if c >= 4.5 else 'abaixo de 4,5:1' }}</span></span></div></fieldset>{% endfor %}
+{% if erros_cor %}<p class="chip erro">{{ erros_cor|join(' ') }}</p>{% endif %}
+{% if pode_cfg %}<button class="btn">Salvar cores</button>{% endif %}</form>
+<div class="previa-tema" id="previa-tema" style="--p-cor:{{ cor }};--p-dest:{{ dest }}"><p class="legal">Prévia ao vivo</p><div class="pv-cab">Transparência · Diário Oficial · Legislação</div>
+<div class="pv-corpo"><span class="pv-btn">Botão primário</span><span class="pv-btn sec">Secundário</span><span class="pv-dest">Destaque</span></div><div class="pv-cartao">Cartão de indicador <strong>R$ 22,7 mi</strong></div></div></div></section>
+<script src="/static/admin.js?v=2" defer></script>
+
+{% elif aba == 'imagens' %}
+<section class="cx" id="imagens"><h2>Brasão, mascote e imagens de fundo</h2>
+<p class="legal">PNG, JPG ou WEBP, até 3 MB. Texto alternativo obrigatório. Para as imagens de fundo, o ponto focal define o recorte em cada formato de tela (prévias abaixo de cada imagem).</p>
 <div class="midias">
 {{ form_midia('brasao', 'Brasão', ident.brasao) }}
-{{ form_midia('hero', 'Foto do destaque (página inicial)', ident.hero) }}
+{{ form_midia('mascote', 'Mascote (aparece no rodapé, ao lado do nome)', ident.mascote) }}
+{{ form_midia('hero', 'Imagem de fundo do destaque (página inicial)', ident.hero) }}
+{{ form_midia('login', 'Imagem de fundo da tela de login', ident.login) }}
 {{ form_midia('sede', 'Foto da sede', (ident.sede or {}).foto) }}
 {% if orgao.tipo == 'executivo' %}
 {% set fotos = cx.fotos or [] %}
@@ -40,5 +56,65 @@
 {% if fotos|length < max_conheca %}{{ form_midia('conheca', 'Conheça a cidade · nova foto', None, fotos|length, True) }}{% endif %}
 {% endif %}
 </div></section>
-<p class="legal"><strong>Base legal:</strong> LAI, art. 8º, § 1º, I; LGPD, art. 41; eMAG 3.1 (texto alternativo em imagens).</p>
+
+{% elif aba == 'favicon' %}
+<section class="cx"><h2>Favicon (ícone da aba do navegador)</h2>
+<div class="fav-grade"><form class="campos" method="post" action="/admin/identidade/favicon" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}">
+<label>PNG quadrado, pelo menos 180×180 (ideal 512×512)<input type="file" name="png" accept="image/png" required {{ 'disabled' if not pode_cfg }}></label>
+<label>SVG (opcional; sem scripts nem links externos)<input type="file" name="svg" accept="image/svg+xml" {{ 'disabled' if not pode_cfg }}></label>
+{% if pode_cfg %}<div class="acoes"><button class="btn" name="acao" value="enviar">Gerar favicon</button>{% if ident.favicon %}<button class="btn perigo" name="acao" value="remover" formnovalidate>Remover</button>{% endif %}</div>{% endif %}
+<p class="legal">Gera 16, 32 (abas), 180 (iPhone) e 512 px (Android e atalhos).</p></form>
+<div>{% if ident.favicon %}<div class="aba-nav" aria-label="Prévia na aba do navegador"><span class="aba-x"><img src="{{ ident.favicon['32'] }}" alt="" width="16" height="16">{{ ident.nome or orgao.nome }}</span></div>
+<p>{% for t in ['16', '32', '180', '512'] %}<img src="{{ ident.favicon[t] }}" alt="Favicon {{ t }} px" width="{{ [t|int, 96]|min }}" height="{{ [t|int, 96]|min }}" style="margin-right:10px;vertical-align:bottom">{% endfor %}</p>{% else %}<p>Sem favicon próprio: o navegador mostra o ícone padrão.</p>{% endif %}</div></div></section>
+
+{% elif aba == 'redes' %}
+<section class="cx"><h2>Redes sociais</h2>
+<p>O ícone de cada rede aparece sozinho no rodapé. <strong>Sincronizar</strong> mostra as últimas publicações no portal só quando a rede oferece API oficial e há credencial no console: YouTube (chave da YouTube Data API) e Instagram/Facebook (token da Meta). Sem credencial, fica só o link. No período eleitoral o feed é suspenso.</p>
+<form method="post" action="/admin/identidade/redes"><input type="hidden" name="csrf" value="{{ C }}">
+<div class="tabela"><table><caption class="sr">Redes sociais</caption><thead><tr><th scope="col">Rede</th><th scope="col">Endereço (https)</th><th scope="col">Conta para sincronizar (opcional)</th><th scope="col">Ordem</th></tr></thead><tbody>
+{% for x in redes + [{'tipo': 'instagram', 'url': '', 'ordem': 100, 'conta': ''}, {'tipo': 'facebook', 'url': '', 'ordem': 110, 'conta': ''}] %}<tr>
+<td><label class="sr" for="rt{{ loop.index }}">Rede</label><select id="rt{{ loop.index }}" name="tipo" {{ 'disabled' if not pode_cfg }}>{% for k, n in tipos_rede.items() %}<option value="{{ k }}" {{ 'selected' if x.tipo == k }}>{{ n }}</option>{% endfor %}</select></td>
+<td><label class="sr" for="ru{{ loop.index }}">Endereço</label><input id="ru{{ loop.index }}" name="url" value="{{ x.url }}" placeholder="https://" {{ 'disabled' if not pode_cfg }}></td>
+<td><label class="sr" for="rc{{ loop.index }}">Conta</label><input id="rc{{ loop.index }}" name="conta" value="{{ x.conta or '' }}" placeholder="YouTube: ID do canal (UC…) · Instagram: ID da conta comercial" {{ 'disabled' if not pode_cfg }}></td>
+<td><label class="sr" for="ro{{ loop.index }}">Ordem</label><input id="ro{{ loop.index }}" name="ordem" type="number" value="{{ x.ordem }}" style="width:5em" {{ 'disabled' if not pode_cfg }}></td></tr>{% endfor %}
+</tbody></table></div>{% if pode_cfg %}<button class="btn">Salvar redes</button>{% endif %}<p class="legal">Linha com endereço vazio é ignorada. Para remover uma rede, apague o endereço.</p></form></section>
+
+{% elif aba == 'municipio' %}
+<section class="cx"><h2>Dados do município</h2>
+<p>Vêm automaticamente da API do IBGE (servicodados.ibge.gov.br) pelo código IBGE do órgão (<code>{{ ibge }}</code>), verificados toda semana pela fonte “IBGE” (veja em Integrações). O que o IBGE não fornece é digitado aqui e aparece no portal marcado como informado pelo órgão.</p>
+<div class="tabela"><table><caption>Automáticos (IBGE)</caption><thead><tr><th scope="col">Dado</th><th scope="col">Valor</th><th scope="col">Referência</th><th scope="col">Atualizado em</th></tr></thead><tbody>
+{% for a in auto %}<tr><td>{{ a.rotulo }}</td><td>{{ a.valor }}</td><td>{{ a.periodo }}</td><td>{{ a.coletado_em|br }}</td></tr>{% else %}<tr><td colspan="4">Aguardando a primeira coleta da fonte IBGE.</td></tr>{% endfor %}</tbody></table></div>
+<form class="campos" method="post" action="/admin/identidade/municipio"><input type="hidden" name="csrf" value="{{ C }}"><h3>Manuais (o IBGE não fornece)</h3>
+<div class="grade2">{% for m in manuais %}<label>{{ m.rotulo }} <span class="chip alerta">manual</span><input name="{{ m.chave }}" value="{{ m.valor }}" maxlength="60" {{ 'disabled' if not pode_cfg }}></label>{% endfor %}</div>
+<p class="legal">IDHM: o IBGE não publica o IDHM por município na API; use o valor do Atlas do Desenvolvimento Humano (PNUD), citando o ano.</p>
+{% if pode_cfg %}<button class="btn">Salvar</button>{% endif %}</form></section>
+
+{% elif aba == 'fotos' %}
+<section class="cx"><h2>Fotos e álbuns</h2>
+<p>Álbuns publicados aparecem em <a href="/fotos">/fotos</a> no portal. Cada foto tem título, descrição, crédito, licença e texto alternativo obrigatório. Foto com pessoas identificáveis só aparece com a autorização de uso de imagem registrada. Categorias marcadas como “suspender no período eleitoral” saem do ar sozinhas no defeso.</p>
+<div class="grade2"><form class="campos" method="post" action="/admin/identidade/fotos"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="categoria"><h3>Categorias</h3>
+<ul>{% for c in categorias %}<li>{{ c.nome }}{% if c.suspender_defeso %} <span class="chip alerta">suspensa no período eleitoral</span>{% endif %}</li>{% else %}<li>Nenhuma categoria.</li>{% endfor %}</ul>
+<label>Nome<input name="nome" maxlength="60"></label><label class="opc" style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="suspender" value="1"> Suspender no período eleitoral (ex.: eventos da gestão)</label><button class="btn sec">Salvar categoria</button></form>
+<form class="campos" method="post" action="/admin/identidade/fotos"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="album">{% if album %}<input type="hidden" name="album_id" value="{{ album.id }}">{% endif %}<h3>{{ 'Editar álbum' if album else 'Novo álbum' }}</h3>
+<label>Título<input name="titulo" value="{{ album.titulo if album else '' }}" maxlength="160" required></label><label>Descrição<textarea name="descricao" rows="2">{{ album.descricao if album else '' }}</textarea></label>
+<label>Categoria<select name="categoria_id"><option value="">—</option>{% for c in categorias %}<option value="{{ c.id }}" {{ 'selected' if album and album.categoria_id == c.id }}>{{ c.nome }}</option>{% endfor %}</select></label>
+<label class="opc" style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="publicado" value="1" {{ 'checked' if album and album.publicado }}> Publicado</label><button class="btn">Salvar álbum</button></form></div>
+<div class="tabela"><table><caption>Álbuns</caption><thead><tr><th scope="col">Álbum</th><th scope="col">Categoria</th><th scope="col">Fotos</th><th scope="col">Situação</th></tr></thead><tbody>
+{% for a in albuns %}<tr><td><a href="/admin/identidade?aba=fotos&amp;album={{ a.id }}">{{ a.titulo }}</a></td><td>{{ a.categoria or '—' }}</td><td>{{ a.n }}</td><td>{{ 'publicado' if a.publicado else 'não publicado' }}</td></tr>{% else %}<tr><td colspan="4">Nenhum álbum.</td></tr>{% endfor %}</tbody></table></div>
+{% if album %}<h3>Fotos de “{{ album.titulo }}”</h3>
+{% for x in fotos %}<form class="campos linha-foto" method="post" action="/admin/identidade/fotos"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="album_id" value="{{ album.id }}"><input type="hidden" name="foto_id" value="{{ x.id }}">
+<img src="{{ x.url }}" alt="" width="160" style="border-radius:8px"><div style="flex:1;display:flex;flex-direction:column;gap:6px">{% if x.principal %}<span class="chip ok">principal do álbum</span>{% endif %}{% if x.tem_pessoas and not x.autorizacao_imagem %}<span class="chip erro">Não publica: falta a autorização de uso de imagem.</span>{% endif %}
+<div class="grade2"><label>Título<input name="titulo" value="{{ x.titulo }}"></label><label>Crédito<input name="credito" value="{{ x.credito }}"></label></div>
+<label>Texto alternativo (obrigatório)<input name="alt" value="{{ x.alt }}" required minlength="5"></label><label>Descrição<input name="descricao" value="{{ x.descricao }}"></label>
+<div class="grade2"><label>Licença<select name="licenca">{% for l in licencas %}<option {{ 'selected' if x.licenca == l }}>{{ l }}</option>{% endfor %}</select></label><label>Categoria da foto<select name="categoria_id"><option value="">a do álbum</option>{% for c in categorias %}<option value="{{ c.id }}" {{ 'selected' if x.categoria_id == c.id }}>{{ c.nome }}</option>{% endfor %}</select></label></div>
+<div style="display:flex;gap:14px;flex-wrap:wrap"><label class="opc" style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="tem_pessoas" value="1" {{ 'checked' if x.tem_pessoas }}> Há pessoas identificáveis</label><label class="opc" style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="autorizacao" value="1" {{ 'checked' if x.autorizacao_imagem }}> Autorização de uso de imagem registrada</label></div>
+<div class="acoes"><button class="btn sec" name="acao" value="foto_editar">Salvar</button><button class="btn sec" name="acao" value="principal">Principal do álbum</button>{% if pode_cfg %}<button class="btn sec" name="acao" value="destaque_portal">Usar como destaque do portal</button>{% endif %}<button class="btn perigo" name="acao" value="foto_excluir" formnovalidate>Excluir</button></div></div></form>{% endfor %}
+<form class="campos" method="post" action="/admin/identidade/fotos" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="album_id" value="{{ album.id }}"><input type="hidden" name="acao" value="foto"><h3>Nova foto</h3>
+<label>Arquivo (PNG, JPG ou WEBP, até 3 MB)<input type="file" name="arquivo" accept="image/png,image/jpeg,image/webp" required></label>
+<div class="grade2"><label>Título<input name="titulo"></label><label>Crédito / autor<input name="credito"></label></div><label>Texto alternativo (obrigatório)<input name="alt" required minlength="5"></label><label>Descrição<input name="descricao"></label>
+<div class="grade2"><label>Licença<select name="licenca" required><option value="">Escolha</option>{% for l in licencas %}<option>{{ l }}</option>{% endfor %}</select></label><label>Categoria da foto<select name="categoria_id"><option value="">a do álbum</option>{% for c in categorias %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}</select></label></div>
+<div style="display:flex;gap:14px;flex-wrap:wrap"><label class="opc" style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="tem_pessoas" value="1"> Há pessoas identificáveis</label><label class="opc" style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="autorizacao" value="1"> Autorização de uso de imagem registrada</label></div>
+<button class="btn">Enviar foto</button></form>{% endif %}</section>
+{% endif %}
+<p class="legal"><strong>Base legal:</strong> LAI, art. 8º, § 1º, I; LGPD, art. 41; eMAG 3.1 (texto alternativo em imagens); Lei 9.610/1998 (direitos autorais e créditos).</p>
 {% endblock %}

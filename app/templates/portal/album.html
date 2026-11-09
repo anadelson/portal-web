@@ -1,0 +1,12 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ a.titulo }} — Fotos — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/fotos">Fotos</a><span aria-hidden="true">›</span><span aria-current="page">{{ a.titulo }}</span></nav>
+<h1>{{ a.titulo }}</h1>{% if a.descricao %}<p class="intro">{{ a.descricao }}</p>{% endif %}
+<section aria-labelledby="h-gal" class="secao"><h2 id="h-gal" class="sr">Fotos do álbum</h2>
+<ul class="galeria">{% for f in fotos %}<li><a href="{{ f.url }}" data-galeria="{{ loop.index0 }}" aria-label="Ampliar foto {{ loop.index }} de {{ fotos|length }}: {{ f.alt }}"><img src="{{ f.url }}" alt="{{ f.alt }}" loading="lazy"></a>
+<small>{% if f.titulo %}<strong>{{ f.titulo }}</strong> · {% endif %}{{ f.credito }}<span class="lic">Licença: {{ f.licenca }}</span>{% if f.descricao %}{{ f.descricao }}{% endif %}</small></li>{% endfor %}</ul>
+<dialog class="ampliada" aria-labelledby="amp-leg"><figure><img alt=""><figcaption id="amp-leg"></figcaption></figure><div class="botoes"><button class="btn sec" type="button" data-amp="-1">‹ Anterior</button><span role="status" data-amp-pos></span><button class="btn sec" type="button" data-amp="1">Próxima ›</button><button class="btn" type="button" data-amp-fechar>Fechar</button></div></dialog>
+<script type="application/json" id="fotos-dados">{{ fotos|map(attribute='url')|list|tojson }}</script>
+<script type="application/json" id="fotos-leg">{{ fotos|map(attribute='alt')|list|tojson }}</script></section>
+{% endblock %}
