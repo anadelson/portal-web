@@ -7,7 +7,7 @@ MODULOS = [
     ('ouv', 'Ouvidoria', 'Manifestações com protocolo', 'obr', 'ambos', None),
     ('dados', 'Dados abertos', 'CSV, JSON e API', 'obr', 'ambos', None),
     ('licit', 'Licitações e contratos (PNCP)', 'Editais, atas, contratos', 'obr', 'ambos', None),
-    ('carta', 'Carta de Serviços', 'Serviços, prazos e canais', 'obr', 'executivo', None),
+    ('carta', 'Carta de Serviços', 'Fichas dos serviços com validação por secretaria (Lei 13.460/2017)', 'obr', 'ambos', None),
     ('ver', 'Vereadores e Mesa Diretora', 'Perfis, Mesas, galeria de legislaturas', 'obr', 'legislativo', None),
     ('sess', 'Sessões e votações', 'Pauta, ata, presença, votação nominal', 'obr', 'legislativo', None),
     ('prop', 'Proposições', 'Tramitação com autor e relator', 'obr', 'legislativo', None),
@@ -92,7 +92,8 @@ CLASSES = {
 }
 VEDADAS = ('pub', 'agente', 'slogan')
 SITUACOES = {'rascunho': 'Rascunho', 'revisao': 'Em revisão', 'devolvido': 'Devolvido', 'agendado': 'Agendado', 'publicado': 'Publicado', 'arquivado': 'Arquivado'}
-PERFIS = {'admin': 'Administrador do órgão', 'editor': 'Editor de conteúdo', 'publicador': 'Publicador', 'procuradoria': 'Procuradoria / Controle', 'remetente': 'Remetente do Diário'}
+PERFIS = {'admin': 'Administrador do órgão', 'editor': 'Editor de conteúdo', 'publicador': 'Publicador (DTIC)', 'procuradoria': 'Procuradoria / Controle', 'remetente': 'Remetente do Diário',
+          'redator': 'Redator da Carta (secretaria)', 'validador': 'Responsável/validador da Carta (secretaria)'}
 # Permissões por perfil
 PODE = {
     'editar': {'admin', 'editor', 'publicador'},
@@ -104,6 +105,11 @@ PODE = {
     'diario_revisar': {'admin', 'publicador'},
     'diario_fechar': {'admin'},
     'atendimento': {'admin', 'publicador', 'editor'},
+    # Carta de Serviços (Fase 10): redator e validador só na própria secretaria; DTIC (publicador) organiza e publica
+    'carta_ver': {'admin', 'publicador', 'editor', 'redator', 'validador'},
+    'carta_redigir': {'admin', 'publicador', 'editor', 'redator', 'validador'},
+    'carta_validar': {'validador', 'admin'},
+    'carta_publicar': {'publicador', 'admin'},
 }
 
 BASE_LEGAL = {
@@ -119,6 +125,7 @@ BASE_LEGAL = {
     'acesso': 'LAI, arts. 9º a 11, 15 e 30; Lei 13.460/2017; LGPD, art. 41.',
     'diario': 'Lei Municipal 910/2026 e decreto de 25/03/2026; MP 2.200-2/2001 (ICP-Brasil); Lei 14.063/2020.',
     'noticias': 'Constituição, art. 37, § 1º (vedada promoção pessoal); Lei 9.504/1997, art. 73, VI, b.',
+    'carta': 'Lei 13.460/2017 (Código de Defesa do Usuário do Serviço Público), arts. 7º, 23 e 24; LAI (Lei 12.527/2011), art. 8º.',
     'comunicados': 'Constituição, art. 37, caput e § 1º (publicidade de caráter informativo); Lei 9.504/1997, art. 73, VI, b (período eleitoral).',
     'conheca': 'Constituição, art. 37, § 1º; Código Civil, art. 20, e LGPD (Lei 13.709/2018), art. 7º (uso de imagem só com autorização); Lei 9.610/1998, art. 24 (crédito do autor).',
 }
