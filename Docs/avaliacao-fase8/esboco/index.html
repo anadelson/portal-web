@@ -16,10 +16,10 @@
 .b-serv a{display:inline-flex;align-items:center;gap:6px;min-height:44px;color:#17212B;text-decoration:none;font-size:15px;font-weight:500}
 .b-serv a:hover{color:var(--cor);text-decoration:underline}.b-serv a.todos{margin-left:auto;font-weight:700;color:var(--cor)}
 .b-portal{background:#fff;border-bottom:1px solid #DCE1E6}.b-portal .int{min-height:84px;justify-content:space-between}
-.b-portal nav{display:flex;align-items:center;gap:4px}.b-portal nav a{min-height:44px;display:inline-flex;align-items:center;padding:0 14px;color:#17212B;text-decoration:none;font-weight:600;font-size:17px;border-radius:10px}
+.b-portal nav{flex:1;justify-content:flex-end;display:flex;align-items:center;gap:4px}.b-portal nav a{min-height:44px;display:inline-flex;align-items:center;padding:0 14px;color:#17212B;text-decoration:none;font-weight:600;font-size:17px;border-radius:10px}
 .b-portal nav a[aria-current=page]{color:var(--cor);box-shadow:inset 0 -3px 0 var(--cor)}
 .b-portal .busca{display:flex;align-items:center;border:1px solid #9AA5B1;border-radius:999px;padding:0 6px 0 16px;min-height:44px}.b-portal .busca input{border:0;font:inherit;width:150px}
-.b-inst{background:var(--cor-escura)}.b-inst .int{min-height:46px;gap:0 2px}
+.b-inst{background:var(--cor)}.b-inst .int{min-height:46px;gap:0 2px}
 .b-inst a{color:#fff;text-decoration:none;font-size:15px;font-weight:500;min-height:46px;display:inline-flex;align-items:center;padding:0 10px;border-radius:8px}.b-inst a:hover{background:rgba(255,255,255,.12)}
 .b-inst small{color:#C9D9E1;font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-right:8px}
 .bt.btn-menu{display:none}
@@ -55,54 +55,62 @@
 .con-c img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}.con-c span{position:absolute;left:0;right:0;bottom:0;padding:28px 12px 10px;background:linear-gradient(transparent,rgba(0,0,0,.75));font-weight:700}
 .secao{margin:40px 0}.secao>h2{font-size:26px;margin:0 0 4px}
 @media (max-width:760px){
- .b-serv,.b-inst,.b-portal nav,.b-portal .busca{display:none}.bt.btn-menu{display:inline-flex}
+ .b-inst,.b-portal nav,.b-portal .busca{display:none}.bt.btn-menu{display:inline-flex}
  .b-portal .int,.pg{padding:0 16px}
  .duas,.not,.sec3,.con-c{grid-template-columns:1fr}.ind4{grid-template-columns:1fr 1fr}.serv-g{grid-template-columns:1fr}
  .barra-acess .int{gap:4px}.barra-acess a:not(.ac-min),.barra-acess button:not(.ac-min){display:none}
 }
 .menu-cel{position:fixed;inset:0;background:#fff;z-index:20;overflow-y:auto;padding:16px}.menu-cel h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:#4B5563;margin:18px 0 6px}
 .menu-cel ul{list-style:none;margin:0;padding:0}.menu-cel li a{display:flex;min-height:48px;align-items:center;border-bottom:1px solid #EEF1F4;color:#17212B;text-decoration:none;font-weight:600}
+.faixa-aviso{background:#FFF7E0;border-bottom:1px solid #F0D58C}.faixa-aviso .int{max-width:1200px;margin:0 auto;padding:8px 40px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:15px}
+.faixa-aviso strong{color:#7A4A00}.bt.mini{min-height:36px;padding:0 14px;font-size:14px}
+.vlibras{position:fixed;right:16px;bottom:16px;width:56px;height:56px;border-radius:50%;background:#1D4E89;color:#fff;border:0;font-size:24px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.pub{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.pub form{min-width:0;border:1px solid #DCE1E6;border-radius:14px;padding:16px;background:#fff;display:flex;flex-direction:column;gap:10px}
+.pub h3{margin:0;font-size:17px}.pub small{color:#4B5563}.pub select{min-width:0;width:100%;min-height:44px;border:1px solid #9AA5B1;border-radius:10px;padding:0 10px;font:inherit}
+.atos{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.atos div{background:#F4F7F9;border-radius:12px;padding:12px}.atos dt{font-size:13px;color:#4B5563}.atos dd{margin:2px 0 0;font-weight:700}
+.tv{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.tv a{color:#17212B;text-decoration:none}.tv .th{aspect-ratio:16/9;border-radius:12px;background:#0B1620;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px}
+.con-num{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}.con-num div{background:#F4F7F9;border-radius:12px;padding:8px 12px}.con-num dt{font-size:12px;color:#4B5563}.con-num dd{margin:0;font-size:20px;font-weight:700;color:var(--cor)}
+.con-c a b{display:inline-block;margin-top:4px;font-size:13px;font-weight:600;background:#fff;color:#17212B;border-radius:999px;padding:2px 10px}
+@media (max-width:760px){.pub,.atos,.tv{grid-template-columns:1fr}.con-num{grid-template-columns:1fr 1fr}.b-portal .btn-busca{display:none}.faixa-aviso .int{padding:8px 16px}}
 </style>
 </head>
 <body>
-<div class="esboco-aviso" role="note">ESBOÇO da Fase 8 (protótipo local, não é o portal). Itens marcados <span class="ex">exemplo</span> são ilustrativos; os números dos indicadores são os reais de 09/11/2026.</div>
-<div class="barra-acess"><div class="int"><span><a href="#conteudo" class="ac-min">Ir para o conteúdo</a> <a href="#menu">Menu</a> <a href="#busca">Busca</a></span><span style="margin-left:auto"><button>Alto contraste</button><button>A+</button><button>A−</button><a href="#" class="ac-min">Acessibilidade</a></span></div></div>
+<div class="esboco-aviso" role="note">ESBOÇO v2 da Fase 8, conforme o protótipo de 09/11/2026 (protótipo local, não é o portal). Itens marcados <span class="ex">exemplo</span> são ilustrativos; os números dos indicadores são os reais de 09/11/2026.</div>
+<div class="barra-acess"><div class="int"><span><a href="#conteudo" class="ac-min">Ir para o conteúdo [1]</a> <a href="#menu">Menu [2]</a> <a href="#busca">Busca [3]</a> <span aria-hidden="true">|</span> <a href="#" class="ac-min"><strong>Câmara Municipal</strong></a> <a href="#" class="ac-min">Área restrita</a></span><span style="margin-left:auto"><button>A−</button><button>A</button><button>A+</button><button>Alto contraste</button><button class="ac-min" aria-pressed="false">✋ Libras</button><a href="#" class="ac-min">Acessibilidade</a></span></div></div>
 
-<!-- 1) Barra de SERVIÇOS (acima do brasão) -->
-<nav class="b-serv" aria-label="Serviços ao cidadão"><div class="int"><strong>Serviços</strong>
-<a href="#">IPTU 2ª via</a><a href="#">Nota fiscal</a><a href="#">Saúde</a><a href="#">Educação</a><a href="#">Assistência social</a><a href="#">Empresas</a><a class="todos" href="#">Todos os serviços →</a></div></nav>
+<!-- Barra INSTITUCIONAL (cor principal), logo abaixo da acessibilidade -->
+<nav class="b-inst" aria-label="Transparência e governo"><div class="int">
+<a href="#">Transparência</a><a href="#">Painel de indicadores</a><a href="#">Diário Oficial</a><a href="#">Licitações</a><a href="#">Legislação</a><a href="#">Serviços</a><a href="#">Ouvidoria</a><a href="#">e-SIC</a><a href="#">Dados abertos</a></div></nav>
 
-<!-- 2) Barra do BRASÃO (só links do próprio portal) -->
+<!-- Barra do BRASÃO (portal) -->
 <header class="b-portal"><div class="int">
 <a href="#" style="display:flex;gap:12px;align-items:center;text-decoration:none;color:#17212B"><img src="../../../app/static/img/brasao.png" alt="Brasão do Município de Borá" width="56" height="49"><span style="display:flex;flex-direction:column;line-height:1.15"><small style="color:#4B5563">Prefeitura Municipal de</small><strong style="font-size:26px">Borá</strong><small style="font-size:11px;letter-spacing:.06em;color:#4B5563">ESTADO DE SÃO PAULO</small></span></a>
-<nav aria-label="Portal"><a href="#" aria-current="page">Início</a><a href="#">Notícias</a><a href="#">Fale conosco</a><a href="#">Links úteis</a></nav>
-<form class="busca" role="search"><input placeholder="Buscar no portal" aria-label="Buscar no portal"><button class="info" style="border:0" aria-label="Buscar">⌕</button></form>
+<nav aria-label="Portal"><a href="#" aria-current="page">Início</a><a href="#">Notícias</a><a href="#">Comunicados</a><a href="#">Conheça Borá</a><a href="#">Fale conosco</a><a href="#">Transmissões</a></nav>
+<button class="bt s btn-busca">⌕ Buscar</button>
 <button class="bt s btn-menu" aria-expanded="false" aria-controls="menu-cel" id="abre-menu">☰ Menu</button>
 </div></header>
-
-<!-- 3) Barra INSTITUCIONAL / TRANSPARÊNCIA (abaixo do brasão) -->
-<nav class="b-inst" aria-label="Transparência e governo"><div class="int"><small>Transparência e governo</small>
-<a href="#">Transparência</a><a href="#">Painel de indicadores</a><a href="#">Ouvidoria</a><a href="#">e-SIC</a><a href="#">Diário Oficial</a><a href="#">Licitações e contratos</a><a href="#">Legislação</a><a href="#">Dados abertos</a><a href="#">Proteção de dados (LGPD)</a></div></nav>
-
+<div class="faixa-aviso" role="region" aria-label="Aviso"><div class="int"><strong>Aviso</strong> <span>Texto do aviso em vigor, quando houver. <span class="ex">exemplo</span></span> <a class="bt s mini" href="#">Ver detalhes</a></div></div>
 <main id="conteudo">
 <section class="hero" style="min-height:300px"><div class="foto" style="background-image:url(../../../app/static/img/vista-aerea.jpg)"></div><div class="int"><div class="txt"><p class="rot">Portal oficial da Prefeitura de Borá</p><h1>O que você precisa hoje?</h1>
 <form role="search"><input placeholder="Ex.: IPTU, creche, edital, diário oficial" aria-label="Buscar"><button>Buscar</button></form></div></div></section>
 
 <div class="pg">
+<nav class="atalhos" aria-label="Acesso direto (personalizável no painel)" style="margin-top:-40px;position:relative"><a href="#"><span class="ico">⌂</span><span><strong>Serviços online</strong><span class="d">Peça e acompanhe sem sair de casa</span></span></a><a href="#"><span class="ico">▤</span><span><strong>Portal da Transparência</strong><span class="d">Receitas, despesas e contratos</span></span></a><a href="#"><span class="ico">▦</span><span><strong>Diário Oficial</strong><span class="d">Edições e acervo</span></span></a><a href="#"><span class="ico">✉</span><span><strong>Ouvidoria e e-SIC</strong><span class="d">Reclame, sugira ou peça informação</span></span></a></nav>
 <!-- E) Comunicados | Serviços mais acessados -->
 <div class="duas">
-<section class="caixa com" aria-labelledby="h-com"><h2 id="h-com">Comunicados</h2><ul>
+<section class="caixa com" aria-labelledby="h-com"><h2 id="h-com">Comunicados</h2><p style="margin:-6px 0 8px;color:#4B5563">Avisos, convocações, convites e notas oficiais da Prefeitura.</p><ul>
 <li><span class="etq">Aviso</span><a href="#">Interrupção no abastecimento de água na Rua [exemplo]</a><small>09/11/2026 · válido até 12/11 <span class="ex">exemplo</span></small></li>
 <li><span class="etq">Convocação</span><a href="#">Convocação dos aprovados no processo seletivo [exemplo]</a><small>07/11/2026 <span class="ex">exemplo</span></small></li>
 <li><span class="etq">Edital de chamamento</span><a href="#">Chamamento público para o conselho municipal [exemplo]</a><small>05/11/2026 <span class="ex">exemplo</span></small></li>
 </ul><div class="acoes"><a class="bt s" href="#">Todos os comunicados →</a></div></section>
-<section class="caixa" aria-labelledby="h-serv"><h2 id="h-serv">Serviços mais acessados</h2><div class="serv-g">
+<section class="caixa" aria-labelledby="h-serv"><h2 id="h-serv">Serviços mais acessados</h2><p style="margin:-6px 0 8px;color:#4B5563">Os pedidos mais feitos no portal neste mês.</p><div class="serv-g">
 <a href="#">IPTU — 2ª via da guia <span class="ex">exemplo</span></a><a href="#">Nota fiscal eletrônica <span class="ex">exemplo</span></a><a href="#">Vacinação nas unidades de saúde</a><a href="#">Matrícula na creche <span class="ex">exemplo</span></a></div>
 <div class="acoes"><a class="bt s" href="#">Todos os serviços →</a></div></section>
 </div>
 
+<section class="secao caixa" aria-labelledby="h-ped"><h2 id="h-ped" style="font-size:18px">Acompanhe seu pedido</h2><form style="display:flex;gap:10px;flex-wrap:wrap"><input aria-label="Número do protocolo" placeholder="Número do protocolo, ex.: OUV-2026-ABC123" style="flex:1 1 260px;min-height:44px;border:1px solid #9AA5B1;border-radius:10px;padding:0 12px;font:inherit"><button class="bt p">Consultar</button></form></section>
 <!-- B) Indicadores em números: título curto, valor, contexto; fonte só no ⓘ -->
-<section class="secao painel" aria-labelledby="h-num"><p class="rotulo">Painel de indicadores</p><h2 id="h-num">Borá em números</h2>
+<section class="secao painel" aria-labelledby="h-num"><p class="rotulo">Prestação de contas</p><h2 id="h-num">Acompanhe a gestão</h2><p style="margin:0 0 12px;color:#4B5563">Quanto a Prefeitura arrecada, gasta e contrata em 2026. <small>Atualizado em 09/11/2026 · fonte de cada número no ⓘ</small></p>
 <div class="ind4">
 <article class="ic" aria-label="Receita arrecadada no ano: R$ 22,7 milhões, 2026 até 09/11"><div class="lin1"><a href="#">Receita arrecadada</a><button class="info" aria-label="Sobre este indicador: Receita arrecadada" aria-expanded="true" aria-controls="b1">i</button></div><div class="v">R$ 22,7 mi</div><div class="ctx">2026, acumulado até 09/11</div>
 <div class="balao" id="b1" role="dialog" aria-label="Sobre: Receita arrecadada no ano"><strong>Receita arrecadada no ano</strong><dl style="margin-top:8px"><dt>Fonte</dt><dd><a href="#">Sistema contábil da Prefeitura</a>; anos anteriores: TCESP</dd><dt>Período</dt><dd>2026, de 1º/01 a 09/11</dd><dt>Atualizado</dt><dd>09/11/2026, 12h03</dd><dt>Método</dt><dd>Soma das receitas, já descontado o FUNDEB</dd><dt>Base legal</dt><dd>LRF, art. 48-A, II</dd></dl></div></article>
@@ -111,16 +119,30 @@
 <article class="ic" aria-label="População estimada: 935 habitantes, 2026"><div class="lin1"><a href="#">População estimada</a><button class="info" aria-label="Sobre este indicador: População estimada" aria-expanded="false">i</button></div><div class="v">935 <small>habitantes</small></div><div class="ctx">+0,3% em relação a 2025</div></article>
 </div><div class="acoes"><a class="bt p" href="#">Painel de indicadores →</a><a class="bt s" href="#">Dados abertos</a></div></section>
 
-<!-- C) Diário Oficial com botões -->
-<section class="secao caixa" aria-labelledby="h-dia"><h2 id="h-dia">Diário Oficial</h2><p style="margin:0;color:#4B5563">Lei Municipal 910/2026 · Nenhuma edição publicada ainda.</p>
-<div class="acoes"><a class="bt p" href="#">Todas as edições →</a><a class="bt s" href="#">Verificar autenticidade</a></div></section>
 
+<!-- Publicações oficiais (protótipo): cartões com seletor + Ver -->
+<section class="secao" aria-labelledby="h-pub"><h2 id="h-pub">Publicações oficiais</h2><p style="margin:0 0 12px;color:#4B5563">Escolha o que procura e clique em Ver.</p><div class="pub">
+<form><h3>Diário Oficial</h3><small>Nenhuma edição publicada ainda</small><select aria-label="Edição"><option>Todas as edições</option></select><button class="bt s">Ver edição →</button></form>
+<form><h3>Contas públicas</h3><small>Receitas, despesas e relatórios</small><select aria-label="Categoria"><option>Despesas</option><option>Receitas</option></select><button class="bt s">Ver contas →</button></form>
+<form><h3>Licitações</h3><small>Publicações no PNCP</small><select aria-label="Modalidade"><option>Todas as modalidades</option></select><button class="bt s">Ver licitações →</button></form>
+<form><h3>Legislação</h3><small>Leis e decretos do Diário Oficial</small><select aria-label="Tipo de ato"><option>Todos os tipos</option></select><button class="bt s">Ver legislação →</button></form>
+</div><p class="ex" style="margin-top:8px">“Concursos” do protótipo só entra quando houver a seção de concursos</p></section>
+
+<!-- Atos oficiais e oportunidades (Diário com botões) -->
+<section class="secao caixa" aria-labelledby="h-dia"><h2 id="h-dia">Atos oficiais e oportunidades</h2>
+<dl class="atos"><div><dt>Diário Oficial</dt><dd>Nenhuma edição publicada ainda</dd></div><div><dt>Licitações publicadas em 2026</dt><dd>466 (PNCP)</dd></div><div><dt>Leis e decretos no Diário</dt><dd>—</dd></div></dl>
+<div class="acoes"><a class="bt p" href="#">Todas as edições do Diário →</a><a class="bt s" href="#">Verificar autenticidade</a></div></section>
+
+<!-- Transmissões: 3 últimas gravações (some se não houver canal) -->
+<section class="secao" aria-labelledby="h-tv"><div style="display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:8px"><h2 id="h-tv">Transmissões</h2><a class="bt s" href="#">Todas as transmissões →</a></div>
+<p style="color:#4B5563;margin:4px 0 12px">Próxima: [audiência agendada] · [data] <span class="ex">exemplo</span></p><div class="tv">
+<a href="#"><div class="th" aria-hidden="true">▶</div><small>Audiência pública</small><br><strong>Gravação [exemplo]</strong></a><a href="#"><div class="th" aria-hidden="true">▶</div><small>Audiência pública</small><br><strong>Gravação [exemplo]</strong></a><a href="#"><div class="th" aria-hidden="true">▶</div><small>Evento oficial</small><br><strong>Gravação [exemplo]</strong></a></div></section>
 <!-- D) Conheça Borá: cartões que abrem perfis -->
 <section class="secao" aria-labelledby="h-con"><p class="rotulo">Conheça Borá</p><h2 id="h-con">Pequena, tranquila e acolhedora</h2>
 <p style="color:#4B5563;max-width:70ch">O segundo menor município do Brasil em população (IBGE, Censo 2022), com praça arborizada no centro, a Igreja Matriz como cartão-postal e a agroindústria da cana-de-açúcar movimentando a economia.</p>
-<div class="con-c"><a href="#"><img src="../../../app/static/img/praca-aerea.jpg" alt="Vista aérea da praça central com a Igreja Matriz"><span>Praça e Igreja Matriz, vistas do alto</span></a>
-<a href="#"><img src="../../../app/static/img/igreja-matriz.jpg" alt="Igreja Matriz branca de torre pontiaguda"><span>Igreja Matriz</span></a>
-<a href="#"><img src="../../../app/static/img/usina.jpg" alt="Portaria de uma usina de açúcar e etanol"><span>Agroindústria da cana-de-açúcar</span></a></div>
+<dl class="con-num"><div><dt>Habitantes (Censo 2022)</dt><dd>907</dd></div><div><dt>Área territorial</dt><dd>119 km²</dd></div><div><dt>Distância da capital</dt><dd>~500 km</dd></div><div><dt>IDHM (2010)</dt><dd>0,746</dd></div></dl><div class="con-c"><a href="#"><img src="../../../app/static/img/praca-aerea.jpg" alt="Vista aérea da praça central com a Igreja Matriz"><span>Praça e Igreja Matriz, vistas do alto<br><b>Ver perfil</b></span></a>
+<a href="#"><img src="../../../app/static/img/igreja-matriz.jpg" alt="Igreja Matriz branca de torre pontiaguda"><span>Igreja Matriz<br><b>Ver perfil</b></span></a>
+<a href="#"><img src="../../../app/static/img/usina.jpg" alt="Portaria de uma usina de açúcar e etanol"><span>Agroindústria da cana-de-açúcar<br><b>Ver perfil</b></span></a></div>
 <div class="acoes"><a class="bt p" href="#">Conheça mais →</a><a class="bt s" href="#">Borá em números</a></div></section>
 
 <!-- F) Notícias (onde ficavam os comunicados) -->
@@ -133,15 +155,15 @@
 <ul class="tit"><li><a href="#">Título de notícia anterior 1 [exemplo]</a></li><li><a href="#">Título de notícia anterior 2 [exemplo]</a></li><li><a href="#">Título de notícia anterior 3 [exemplo]</a></li><li><a href="#">Título de notícia anterior 4 [exemplo]</a></li><li><a href="#">Título de notícia anterior 5 [exemplo]</a></li></ul>
 <div class="acoes"><a class="bt s" href="#">Todas as notícias →</a></div></div></div></section>
 
-<section class="secao sede" aria-labelledby="h-sede"><img src="../../../app/static/img/paco-municipal.jpg" alt="Fachada do Paço Municipal"><div class="txt"><h2 id="h-sede" style="font-size:22px;margin:0">Paço Municipal</h2><p>Atendimento ao público: segunda a sexta, 8h às 17h.</p><p style="color:var(--sub)">Praça Santo Antonio, 10 · Borá (SP) · (18) 3367-1103</p><div class="acoes"><a class="bt s" href="#">Fale conosco →</a></div></div></section>
+<section class="secao sede" aria-labelledby="h-sede"><img src="../../../app/static/img/paco-municipal.jpg" alt="Fachada do Paço Municipal"><div class="txt"><h2 id="h-sede" style="font-size:22px;margin:0">Paço Municipal</h2><p>Atendimento ao público: segunda a sexta, 8h às 17h.</p><p style="color:var(--sub)">Praça Santo Antonio, 10 · Borá (SP) · (18) 3367-1103</p><div class="acoes"><a class="bt p" href="#">Unidades e horários →</a><a class="bt s" href="#">Fale conosco</a></div></div></section>
 </div>
 </main>
+<button class="vlibras" aria-label="Abrir o VLibras (tradução para Libras)">✋</button>
 
 <div class="menu-cel" id="menu-cel" hidden role="dialog" aria-modal="true" aria-label="Menu">
 <div style="display:flex;justify-content:space-between;align-items:center"><strong>Menu</strong><button class="bt s" id="fecha-menu">Fechar ✕</button></div>
-<h2>Serviços</h2><ul><li><a href="#">IPTU 2ª via</a></li><li><a href="#">Nota fiscal</a></li><li><a href="#">Saúde</a></li><li><a href="#">Educação</a></li><li><a href="#">Assistência social</a></li><li><a href="#">Empresas</a></li><li><a href="#">Todos os serviços</a></li></ul>
-<h2>Portal</h2><ul><li><a href="#">Início</a></li><li><a href="#">Notícias</a></li><li><a href="#">Fale conosco</a></li><li><a href="#">Links úteis</a></li></ul>
-<h2>Transparência e governo</h2><ul><li><a href="#">Transparência</a></li><li><a href="#">Painel de indicadores</a></li><li><a href="#">Ouvidoria</a></li><li><a href="#">e-SIC</a></li><li><a href="#">Diário Oficial</a></li><li><a href="#">Licitações e contratos</a></li><li><a href="#">Legislação</a></li><li><a href="#">Dados abertos</a></li><li><a href="#">Proteção de dados (LGPD)</a></li></ul>
+<h2>Portal</h2><ul><li><a href="#">Início</a></li><li><a href="#">Notícias</a></li><li><a href="#">Comunicados</a></li><li><a href="#">Conheça Borá</a></li><li><a href="#">Fale conosco</a></li><li><a href="#">Transmissões</a></li></ul>
+<h2>Transparência e governo</h2><ul><li><a href="#">Transparência</a></li><li><a href="#">Painel de indicadores</a></li><li><a href="#">Diário Oficial</a></li><li><a href="#">Licitações</a></li><li><a href="#">Legislação</a></li><li><a href="#">Serviços</a></li><li><a href="#">Ouvidoria</a></li><li><a href="#">e-SIC</a></li><li><a href="#">Dados abertos</a></li></ul>
 </div>
 <script>
 const m = document.getElementById('menu-cel'), a = document.getElementById('abre-menu');

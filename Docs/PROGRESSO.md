@@ -747,3 +747,7 @@ Fase 7 (painel, fontes e layout) concluída e no ar. Pendências fora do código
 - **Inventário e proposta:** em `Docs/avaliacao-fase8/PROPOSTA.md`.
   - Destinos repetidos hoje no cabeçalho: `/transparencia`, `/diario` e `/acesso` (e-SIC = Fale conosco).
 - **Parado aguardando aprovação** do esboço e de 7 decisões.
+- **Revisão v2 (09/11/2026):**
+  - **Recebido:** `Main.dc.html` atualizado e `PEDIDO-FASE8.md` revisado, com o cabeçalho novo e os itens G (Transmissões), H (VLibras, eMAG, DOSVOX, MOTRIX) e I. O item J citado pelo usuário **não está no arquivo**.
+  - **Feito:** esboço refeito na ordem do protótipo, com as capturas da v1 guardadas. Diagnóstico das Transmissões: na Prefeitura falta o módulo contratado e o canal; na Câmara não há canal nem vídeos; não existe integração com a API do YouTube.
+  - **Parado aguardando:** o item J e mais 3 decisões (Publicações oficiais, YouTube e módulo, VLibras na CSP).

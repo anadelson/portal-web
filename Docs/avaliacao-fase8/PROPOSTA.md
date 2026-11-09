@@ -85,3 +85,61 @@ No defeso, as notícias somem e o bloco se recolhe sem deixar espaço vazio.
 5. **Barra de Serviços:** os endereços reais (IPTU 2ª via, nota fiscal…) devem ser informados pela Prefeitura na tela "Menus". Até lá, cada item aponta para a busca interna de serviços. Concorda?
 6. **Acesso direto** (4 cartões sob o destaque): manter ou remover? Eles repetem destinos das barras, o que o pedido permite fora do cabeçalho.
 7. **Vídeos do Conheça Borá:** recomendo só links do YouTube (exibidos com youtube-nocookie), sem envio de arquivo de vídeo, por causa do espaço e da memória da VPS. Concorda?
+
+---
+# Revisão v2 (09/11/2026): protótipo atualizado e PEDIDO-FASE8 revisado
+
+**Respostas do usuário às 7 decisões:**
+1. O `Main.dc.html` atualizado foi enviado.
+2. Ok.
+3. Ok.
+4. "Página acrescentada ao PEDIDO-FASE8.md como item J" (**ver observação abaixo**).
+5. Ok.
+6. Manter, com opção de personalizar os botões no painel.
+7. Ok.
+
+**Esboço v2** (`esboco/esboco-*.png`; a versão anterior ficou em `esboco/v1-*.png`):
+
+- **Cabeçalho**, conforme o protótipo de 09/11 e o item A revisado:
+  - barra de acessibilidade com "Câmara Municipal" e "Área restrita" ao final dos atalhos e o botão "Libras";
+  - **barra institucional na cor principal**: Transparência, Painel de indicadores, Diário Oficial, Licitações, Legislação, Serviços, Ouvidoria, e-SIC, Dados abertos;
+  - barra do brasão com Início, Notícias, Comunicados, Conheça Borá, Fale conosco, Transmissões e o botão Buscar;
+  - faixas "AO VIVO" (só durante transmissão) e de aviso;
+  - a barra de serviços deixa de existir.
+  - Não há destino repetido entre as barras.
+- **Página inicial, na ordem do protótipo:**
+  1. Destaque e busca, com o Acesso direto (4 botões personalizáveis no painel).
+  2. **Comunicados | Serviços mais acessados.**
+  3. Acompanhe seu pedido.
+  4. **Acompanhe a gestão**: cartões de indicadores com título curto e ⓘ, e a linha "Atualizado em … · fonte de cada número no ⓘ".
+  5. **Publicações oficiais**: cartões com seletor e botão "Ver".
+  6. **Atos oficiais e oportunidades**: botões "Todas as edições do Diário" e "Verificar autenticidade".
+  7. **Transmissões**: 3 últimas gravações; some sem canal configurado.
+  8. **Conheça Borá**: números, 3 cartões "Ver perfil" e os botões "Conheça mais" e "Borá em números".
+  9. **Notícias**: destaque, 3 secundárias, lista de títulos e "Todas as notícias".
+  10. **Paço Municipal**: botões "Unidades e horários" e "Fale conosco".
+- **Botão flutuante do VLibras** no canto inferior direito.
+- **Menu do celular** com as seções Portal e Transparência e governo; sem rolagem horizontal em 390 px.
+
+**Item G — diagnóstico das Transmissões** (só leitura):
+- **Prefeitura:** `/transmissoes` responde **404**. O módulo opcional "Transmissão de audiências" não está contratado no console (o módulo "transm" é só do Legislativo), e não há canal configurado.
+- **Câmara:** a página responde 200, mas não há canal configurado, nenhuma transmissão cadastrada e nenhuma sessão com vídeo, então não há nada para mostrar.
+- **Código:** **não existe integração com a API do YouTube**. As transmissões são cadastradas à mão, com o ID do vídeo, e não há chave do YouTube em Credenciais de fontes.
+- **Proposta:**
+  - credencial `youtube` (chave da YouTube Data API) cadastrada no console, igual à do IEG-M;
+  - ID do canal por órgão em /admin/transmissoes;
+  - coletor que, a cada 2 minutos e só nos horários da agenda, verifica se há transmissão ao vivo (cada busca gasta 100 unidades de uma cota diária de 10.000);
+  - uma vez por dia, lê as últimas gravações pela playlist de envios do canal (1 unidade por consulta);
+  - botão "Iniciar transmissão" no painel como alternativa.
+  - Para a Prefeitura, o módulo "Transmissão de audiências" precisa ser contratado no console.
+
+**Observações:**
+- **O item J não está no `PEDIDO-FASE8.md`** salvo na VPS (09/11, 15h45). O arquivo vai de A até I (Testes e implantação). Pela sua resposta, seria a página de "Links úteis" ou "Legislação"; preciso do texto.
+- Os **critérios de aceite** no fim do pedido ainda dizem "serviços acima do brasão". Sigo o item A revisado, que tira a barra de serviços.
+- **VLibras:** o widget oficial carrega um script de `vlibras.gov.br` (Governo Federal). Isso exige liberar esse domínio na política de segurança de conteúdo (CSP), que hoje só aceita o próprio portal. O widget pode ser ligado e desligado pelo painel.
+
+**Decisões pendentes:**
+1. **Item J:** pode salvar ou reenviar o texto?
+2. **Publicações oficiais:** aprova o bloco como no protótipo, com 4 cartões (Diário, Contas públicas, Licitações, Legislação)? "Concursos" só entra quando existir a seção de concursos.
+3. **Transmissões:** aprova a integração com o YouTube como proposta? E a contratação do módulo "Transmissão de audiências" para a Prefeitura (feita por você no console, ou por mim com aprovação)?
+4. **VLibras:** aprova liberar `vlibras.gov.br` na CSP para o widget oficial?

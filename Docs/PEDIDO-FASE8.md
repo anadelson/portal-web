@@ -5,15 +5,15 @@ Base: Fase 7 e fase-7-layout. Se a fase-7-layout ainda não foi implantada, apli
 REGRAS: as mesmas das fases anteriores (um código para todos os órgãos; branch fase-8 com commits pequenos e tag ao final; migrações idempotentes via "python -m app.provision atualizar"; aprovação antes de cada comando que altere a VPS; testes só em banco de TESTE; nunca mostrar senhas/.env; acessibilidade AA; LGPD; nada inventado: textos e descrições que não existem ficam vazios e o bloco se adapta, sem "lorem ipsum" no portal; registrar tudo em Docs/PROGRESSO.md).
 Antes de implementar: tire capturas atuais (1280 px e 390 px) da página inicial, do /painel e de uma página interna em Docs/avaliacao-fase8/antes/, me mostre um esboço da nova página inicial (pode ser captura de um protótipo HTML local) e PARE para aprovação.
 
-A) Navegação: três barras, sem repetição
+A) Navegação: cabeçalho conforme o protótipo atualizado (Main.dc.html, 09/11/2026)
 1. Ordem de cima para baixo:
-   - Barra de acessibilidade (como está).
-   - Barra de SERVIÇOS (acima do brasão): atalhos de serviços ao cidadão (ex.: IPTU 2ª via, nota fiscal, saúde, educação, assistência social, empresas) + "Todos os serviços" (Carta de Serviços).
-   - Barra do BRASÃO: brasão e título do portal à esquerda; à direita, só links do próprio portal: Início, Notícias, Fale conosco, Links úteis (e Busca).
-   - Barra INSTITUCIONAL / TRANSPARÊNCIA (abaixo do brasão): Transparência, Painel de indicadores, Ouvidoria, e-SIC, Diário Oficial, Licitações e contratos, Legislação, Dados abertos, Proteção de dados (LGPD).
-2. Regra: cada destino aparece em uma única barra. Crie um teste automatizado que falha se um mesmo link (mesmo destino) aparecer em duas barras do cabeçalho. O rodapé pode repetir links (é mapa do site).
-3. Os itens de cada barra são editáveis no painel administrativo (tela "Menus"), com o campo "barra" (serviços / portal / institucional), ordem, ícone e ativo; o painel recusa salvar um destino que já está em outra barra.
-4. Celular (390 px): barra de acessibilidade compacta; um botão "Menu" abre um painel com as três seções nomeadas (Serviços, Portal, Transparência e governo), sem rolagem horizontal; foco preso no menu aberto e Esc fecha.
+   - Barra de acessibilidade (como está), com "Câmara Municipal" e "Área restrita" ao final dos atalhos.
+   - Barra INSTITUCIONAL na cor principal: Transparência, Painel de indicadores, Diário Oficial, Licitações, Legislação, Serviços, Ouvidoria, e-SIC, Dados abertos. A barra escura antiga de atalhos de serviços DEIXA DE EXISTIR.
+   - Barra do BRASÃO: brasão e título à esquerda; à direita: Início, Notícias, Comunicados, Conheça Borá, Fale conosco, Transmissões (vira "● Ao vivo" durante transmissão) e o botão Buscar.
+   - Faixa "AO VIVO" e faixa de aviso logo abaixo, quando houver.
+2. Regra: cada destino aparece em uma única barra. Crie um teste automatizado que falha se um mesmo link (mesmo destino) aparecer em duas barras do cabeçalho. O rodapé pode repetir links (é mapa do site; Governo e Links úteis ficam no rodapé).
+3. Os itens de cada barra são editáveis no painel administrativo (tela "Menus"), com o campo "barra" (institucional / portal), ordem, ícone e ativo; o painel recusa salvar um destino que já está em outra barra.
+4. Celular (390 px): barra de acessibilidade compacta; um botão "Menu" abre um painel com as seções nomeadas (Portal, Transparência e governo), sem rolagem horizontal; foco preso no menu aberto e Esc fecha.
 5. Respeite o período eleitoral: itens de classe vedada continuam sumindo como hoje.
 
 B) Cartões de indicadores (/painel e bloco "Indicadores em números" da página inicial)
@@ -47,7 +47,18 @@ F) Notícias no lugar onde ficavam os comunicados
 21. Painel: marcar "destaque" (se nenhuma estiver marcada, a mais recente é o destaque); imagem de capa com texto alternativo obrigatório e recorte 16:9 com ponto focal; data e hora de publicação (agendamento opcional).
 22. Período eleitoral: notícias são classe publicidade e somem no defeso, como já definido; o bloco se recolhe sem deixar espaço vazio.
 
-G) Testes e implantação
+G) Transmissões (YouTube) visíveis no portal
+23a. Verifique por que a página e o bloco de Transmissões não mostram o YouTube: canal/ID configurado no painel? chave da YouTube Data API no console (Credenciais de fontes)? Me mostre o diagnóstico antes de mudar.
+23b. A página Transmissões mostra: player embutido (youtube-nocookie) da transmissão ao vivo ou da última gravação, agenda das próximas, gravações com filtro por tipo, e indicação de legendas e Libras. O bloco da página inicial mostra as 3 últimas gravações com miniatura. Sem canal configurado, o bloco não aparece e o painel avisa "configure o canal".
+23c. Detecção de "ao vivo" pela API do YouTube (a cada 2 minutos só nos horários da agenda) ou pelo botão "Iniciar transmissão" do painel.
+
+H) Acessibilidade: VLibras, eMAG, DOSVOX e MOTRIX
+23d. VLibras: instale o widget oficial do VLibras (script do governo federal, vlibras.gov.br) em todas as páginas dos portais da Prefeitura e da Câmara, com o botão de Libras visível na barra de acessibilidade, que abre/fecha o avatar. Ligar/desligar pelo painel.
+23e. eMAG 3.1: faça a checagem do portal contra as recomendações do eMAG (atalhos Alt+1/2/3/4, página de acessibilidade, alto contraste, estrutura de títulos, formulários com rótulos, textos alternativos, sem dependência de cor) e registre o resultado em Docs/avaliacao-fase8/EMAG.md com o que foi corrigido.
+23f. DOSVOX e MOTRIX são programas instalados no computador da pessoa (leitor/sintetizador de tela e controle por voz), não componentes do site. O portal deve funcionar bem com eles e com leitores de tela (NVDA): HTML semântico, ordem de foco correta, links e botões com nome claro. A página "Acessibilidade" do portal explica os recursos e traz links oficiais para baixar DOSVOX, MOTRIX, NVDA e VLibras.
+23g. Teste com leitor de tela (NVDA em navegação por teclado) as páginas inicial, painel, serviço, ouvidoria e transmissões; registre os achados.
+
+I) Testes e implantação
 23. Testes (banco de TESTE): nenhuma duplicidade entre as barras; menu do celular com teclado; ⓘ abre/fecha com teclado e Esc; cartões com mesma altura; comunicados não aceitam tipo notícia; perfil sem autorização de imagem não publica foto; ordem do bloco de notícias (destaque, 3, lista); defeso esconde notícias e eventos.
 24. Capturas "depois" lado a lado com as "antes" em Docs/avaliacao-fase8/, implantação com aprovação, merge + tag fase-8, PROGRESSO.md e ESPEC-VISUAL.md atualizados.
 
