@@ -865,3 +865,22 @@ Código pronto e testado no branch `fase-8`. **Nada foi aplicado na VPS de produ
 ### Onde parou (Fase 9)
 Código pronto e testado no branch `fase-9`. **Nada aplicado na VPS.** Aguardando aprovação do deploy: snapshot, backup, build (instala `nh3`), 10 suítes com a imagem nova, `up -d`, `provision atualizar` (migrações 017 e 018, fonte `redes`, layout com "Nas redes"), conferência no domínio, merge e tag `fase-9`.
 Depois: credenciais opcionais no console (token "meta" para Instagram/Facebook) e conta de cada rede em Identidade → Redes sociais.
+
+### Implantação da Fase 9 (09/11/2026, aprovada: "Aprovo os 6 passos" + "Snapshot ok")
+- Snapshot confirmado pelo usuário. Backup com `deploy/backup.sh` (substituiu o backup das 17h18 de hoje; ficam os de 07 e 08/11).
+- **Build:** instalou o `nh3` 0.2.18. Como o `requirements.txt` mudou, as dependências indiretas sem versão fixada foram atualizadas (ex.: cryptography 50, pydantic 2.14). As **9 suítes** com a imagem nova deram ERROS: 0 / tudo ok; o traceback do `teste_painel` é a falha simulada de propósito. Correção: antes eu tinha escrito "10 suítes", mas são 9.
+- **Subida:** `up -d` de app e worker, app saudável. `provision atualizar` aplicou as migrações 017 e 018; cadastrou a fonte `redes` nos dois órgãos; o layout, que estava no padrão da Fase 8, recebeu o padrão com "Nas redes" (o bloco só aparece com credencial e conta); os números manuais de distância e IDHM foram para "Dados do município".
+- **Conferência no domínio** (`Docs/avaliacao-fase9/implantado/`):
+  - axe sem violações e sem violação de CSP;
+  - sem rolagem horizontal e sem destino repetido;
+  - login com etapas e "Esqueci minha senha" (órgão e console);
+  - `/fotos` e `/privacidade` (cookie `aval`) respondem;
+  - formulário de avaliação novo na página inicial;
+  - logs sem erro.
+  - Nada foi enviado ao portal real (nenhuma avaliação nem formulário).
+- **Bloco do município:** IBGE automático (população 935, estimativa de 2026; PIB per capita; salário médio) + distância e IDHM marcados como informados pela Prefeitura. A área territorial entra na próxima coleta semanal do IBGE (2h–6h).
+- `fase-9` mesclada em `main` com a tag `fase-9`.
+
+### Pendências (dependem do usuário)
+- Token da Meta (console → Credenciais → "Meta Graph API") e IDs das contas em Identidade → Redes sociais, se quiser as publicações no portal.
+- Continuam da Fase 8: módulo de audiências, endereço do acervo de legislação, chave do YouTube e canais, teste com NVDA.
