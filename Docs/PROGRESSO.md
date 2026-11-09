@@ -884,3 +884,9 @@ Depois: credenciais opcionais no console (token "meta" para Instagram/Facebook) 
 ### Pendências (dependem do usuário)
 - Token da Meta (console → Credenciais → "Meta Graph API") e IDs das contas em Identidade → Redes sociais, se quiser as publicações no portal.
 - Continuam da Fase 8: módulo de audiências, endereço do acervo de legislação, chave do YouTube e canais, teste com NVDA.
+
+## Fase 10 — Carta de Serviços (branch `fase-10`)
+### ETAPA 0 (09/11/2026, só leitura na VPS)
+- Capturas "antes" do portal real em `Docs/avaliacao-fase10/antes/`. Diagnóstico: os serviços são conteúdos genéricos sem os campos do art. 7º (2, ambos exemplo; um do tipo "Aviso"); `/servicos` sem "Base legal:"; busca por "iptu" sem resultado; sem secretarias nem fluxo de validação.
+- Proposta (modelo de dados, fluxo com publicação impossível sem autorização da versão atual, telas, ficha padronizada, documentos) em `Docs/avaliacao-fase10/PROPOSTA.md`; esboço em `Docs/avaliacao-fase10/esboco/` (6 telas, 1280 e 390 px).
+- **Parado aguardando** aprovação e 5 decisões: lista oficial de secretarias e responsáveis; avaliação 1–5 ou sim/não; Carta também na Câmara; destino dos 2 conteúdos-exemplo de Serviços; prazo de revisão.
