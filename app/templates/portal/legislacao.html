@@ -3,7 +3,7 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Legislação</span></nav>
 <h1>Legislação municipal</h1>
-<p class="intro" style="margin-bottom:6px">{% if externo %}Leis, decretos e demais atos publicados no Diário Oficial de {{ externo.nome }}, lidos pela API pública da Prefeitura.{% else %}Leis, leis complementares, decretos, portarias e resoluções publicados no Diário Oficial. Cada ato publicado entra sozinho nesta lista.{% endif %}</p>
+<p class="intro" style="margin-bottom:6px">{% if externo %}Leis, decretos e demais atos publicados no Diário Oficial da {{ externo.nome }}, lidos pela API pública da Prefeitura.{% else %}Leis, leis complementares, decretos, portarias e resoluções publicados no Diário Oficial. Cada ato publicado entra sozinho nesta lista.{% endif %}</p>
 <p class="legal"><strong>Base legal:</strong> {{ legal_txt }}</p>
 {% if falhou %}<p class="nota" role="note">Não foi possível consultar a legislação da Prefeitura agora. Tente de novo em alguns minutos.</p>{% endif %}
 <form class="filtros" method="get" action="/legislacao" role="search" aria-label="Filtrar legislação">

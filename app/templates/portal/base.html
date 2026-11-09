@@ -5,7 +5,7 @@
 <title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/portal.css?v=8">
+<link rel="stylesheet" href="/static/portal.css?v=13">
 <style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
 <script>document.documentElement.classList.add('js');try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
 </head>
@@ -35,7 +35,7 @@
 {% for m in barras.institucional %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}>{{ m.rotulo }}</a></li>{% endfor %}
 </ul></nav>
 
-<header class="topo"><div class="int">
+<header class="topo{{ ' cheio' if barras and (barras.portal|length) >= 6 }}"><div class="int">
 <a class="marca" href="/" aria-label="Página inicial — {{ ident.nome or orgao.nome }}">
 {% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="" width="64" height="56">{% else %}<span class="selo" aria-hidden="true">{{ (ident.nome or orgao.nome)|iniciais }}</span>{% endif %}
 <span class="nome">{% if ident.prefixo and not leg %}<span class="pre">{{ ident.prefixo }}</span><strong>{{ ident.nome_curto or ident.nome }}</strong>{% else %}<span class="pre">{{ ident.prefixo or '' }}</span><strong>{{ ident.nome or orgao.nome }}</strong>{% endif %}<span class="sub">{{ ident.subtitulo or orgao.municipio }}</span></span>
@@ -111,7 +111,7 @@
 var p=ler();document.querySelectorAll('[data-acess]').forEach(function(b){var k=b.getAttribute('data-acess');b.setAttribute('aria-pressed',p[k]?'true':'false');b.addEventListener('click',function(){p[k]=!p[k];h.classList.toggle(k,!!p[k]);b.setAttribute('aria-pressed',p[k]?'true':'false');gravar(p)})});
 document.querySelectorAll('[data-fonte]').forEach(function(b){b.addEventListener('click',function(){var d=parseInt(b.getAttribute('data-fonte'),10);p.fonte=d===0?0:Math.min(150,Math.max(80,(p.fonte||100)+d));h.style.fontSize=p.fonte?p.fonte+'%':'';gravar(p)})});})();
 </script>
-<script src="/static/portal.js?v=2" defer></script>
+<script src="/static/portal.js?v=4" defer></script>
 {% if vlibras %}<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>
 <script src="https://vlibras.gov.br/app/vlibras-plugin.js" defer></script><script src="/static/vlibras-iniciar.js" defer></script>{% endif %}
 </body>

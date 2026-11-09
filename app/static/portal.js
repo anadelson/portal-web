@@ -23,7 +23,7 @@
   function fecharBalao(volta) { if (!aberto) return; var b = aberto; aberto = null; b.setAttribute('aria-expanded', 'false'); document.getElementById(b.getAttribute('aria-controls')).hidden = true; if (volta) b.focus(); }
   document.querySelectorAll('[data-info]').forEach(function (a) {
     var b = document.createElement('button');
-    b.type = 'button'; b.className = 'info'; b.textContent = 'i';
+    b.type = 'button'; b.className = 'ic-info'; b.textContent = 'i';
     b.setAttribute('aria-label', a.getAttribute('aria-label')); b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-controls', a.getAttribute('data-info'));
     a.replaceWith(b);
     b.addEventListener('click', function (e) {
@@ -78,4 +78,14 @@
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener('close', function () { if (origem) origem.focus(); });
   if (urls.length < 2) dlg.querySelectorAll('[data-amp]').forEach(function (b) { b.hidden = true; });
+})();
+
+/* Busca compacta (cabeçalho cheio): botão "Buscar" com o campo vazio só abre o campo */
+(function () {
+  var f = document.getElementById('form-busca');
+  if (!f) return;
+  f.addEventListener('submit', function (e) {
+    var i = f.querySelector('input[name=q]');
+    if (i && !i.value.trim() && f.closest('.topo.cheio')) { e.preventDefault(); i.focus(); }
+  });
 })();
