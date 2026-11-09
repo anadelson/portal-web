@@ -1,0 +1,26 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ x.nome }} — Carta de Serviços — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/servicos">Carta de Serviços</a><span aria-hidden="true">›</span><span aria-current="page">{{ x.nome }}</span></nav>
+<div class="ficha-serv"><article>
+<p class="rotulo">{{ x.categoria }}{% if x.secretaria %} · {{ x.secretaria }}{% endif %}{% if x.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</p>
+<h1>{{ x.nome }}</h1>{% if x.em_revisao %}<p class="chip alerta" role="note">Esta ficha está em revisão pela secretaria; as informações podem mudar.</p>{% endif %}
+<p class="intro">{{ x.descricao }}</p>
+<p class="sub">Para: {% for p in x.publicos or [] %}{{ publicos.get(p, p) }}{{ ', ' if not loop.last }}{% endfor %} · Atendimento: {% for p in x.formas or [] %}{{ formas.get(p, p) }}{{ ', ' if not loop.last }}{% endfor %}</p>
+{% for titulo, k, v in secoes %}<section class="ficha-sec" aria-labelledby="s-{{ k }}"><h2 id="s-{{ k }}">{{ titulo }}</h2>
+{% if k == 'etapas' %}<ol>{% for l in v.splitlines() if l.strip() %}<li>{{ l }}</li>{% endfor %}</ol>
+{% elif k in ('documentos', 'requisitos') and '\n' in v %}<ul>{% for l in v.splitlines() if l.strip() %}<li>{{ l }}</li>{% endfor %}</ul>
+{% else %}<p style="white-space:pre-line">{{ v }}</p>{% endif %}
+{% if k == 'custo' and x.custo_base_legal %}<p class="legal">Base legal da cobrança: {{ x.custo_base_legal }}</p>{% endif %}
+{% if k == 'manifestacoes' %}<p><a href="/ouvidoria?servico={{ x.slug }}">Fazer uma manifestação na Ouvidoria sobre este serviço</a></p>{% endif %}{% if k == 'acompanhamento' %}<p><a href="/acesso?protocolo=">Acompanhar pelo protocolo</a></p>{% endif %}</section>{% endfor %}
+</article>
+<aside class="ficha-lado">{% if x.link_online %}<a class="btn largo" href="{{ x.link_online }}">Solicitar online</a>{% endif %}
+<p class="legal">Atualizado em {{ x.atualizado_em.strftime('%d/%m/%Y') if x.atualizado_em else '—' }}{% if x.revisar_em %} · próxima revisão em {{ x.revisar_em.strftime('%d/%m/%Y') }}{% endif %}</p>
+<section class="aval-serv" id="avaliar-servico" aria-labelledby="h-aval-serv"><h2 id="h-aval-serv">Avalie este serviço</h2>
+<p class="aval-msg" role="status" aria-live="polite"{% if not msg_aval and not ja_avaliou %} hidden{% endif %}>{{ msg_aval or ('Você já avaliou este serviço. Obrigado!' if ja_avaliou else '') }}</p>
+{% if not msg_aval and not ja_avaliou %}<form method="post" action="/servicos/{{ x.slug }}/avaliar" class="aval-serv-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<fieldset><legend>Nota de 1 (muito ruim) a 5 (muito bom)</legend><div class="notas">{% for n in range(1, 6) %}<label><input type="radio" name="nota" value="{{ n }}" required> {{ n }}</label>{% endfor %}</div></fieldset>
+<fieldset><legend>Conseguiu o que precisava?</legend><div class="notas"><label><input type="radio" name="conseguiu" value="sim"> Sim</label><label><input type="radio" name="conseguiu" value="nao"> Não</label></div></fieldset>
+<label>Comentário (opcional, sem dados pessoais)<textarea name="comentario" rows="2" maxlength="600"></textarea></label><label class="sr">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label>
+<button class="btn">Enviar avaliação</button></form>{% endif %}</section></aside></div>
+{% endblock %}

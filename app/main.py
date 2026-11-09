@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from . import config, portal, admin, console, transparencia, admin_leg, portal_leg, remessa, portal_painel, admin_painel, portal_fase8, admin_fase8, admin_fase9, portal_fase9
+from . import config, portal, admin, console, transparencia, admin_leg, portal_leg, remessa, portal_painel, admin_painel, portal_fase8, admin_fase8, admin_fase9, portal_fase9, admin_carta, portal_carta
 from .web import RoteadorPorDominio, templates
 
 app = FastAPI(title='Portais de Borá — piloto', docs_url=None, redoc_url=None, openapi_url=None)
@@ -18,6 +18,8 @@ app.include_router(admin_painel.r)
 app.include_router(admin_fase8.r)
 app.include_router(admin_fase9.r)
 app.include_router(portal_fase9.r)
+app.include_router(admin_carta.r)
+app.include_router(portal_carta.r)
 app.include_router(admin_leg.r)
 app.include_router(portal_leg.r)
 app.include_router(remessa.r)

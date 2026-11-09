@@ -112,7 +112,12 @@ def fale_conosco(request: Request):
 def _acesso(request, tipo):
     from .portal import acesso
     ctx = ctx_orgao(request)
-    return templates.TemplateResponse(request, 'portal/acesso.html', dict(ctx, consulta=None, protocolo='', legal='acesso', tipo_fixo=tipo))
+    from . import carta as CT
+    try:
+        sc = CT.publicados(ctx['orgao']['banco']) if tipo == 'manifestacao' and ctx['mods'].get('carta') else []
+    except Exception:
+        sc = []
+    return templates.TemplateResponse(request, 'portal/acesso.html', dict(ctx, consulta=None, protocolo='', legal='acesso', tipo_fixo=tipo, servicos_carta=sc, servico_sel=request.query_params.get('servico', '')))
 
 @r.get('/ouvidoria')
 def ouvidoria(request: Request):

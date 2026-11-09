@@ -1,0 +1,114 @@
+{
+ "medidas": {
+  "servicos-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "servicos-busca-boleto-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "servico-ficha-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "ouvidoria-servico-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "camara-servicos-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "inicio-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-carta-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-carta-ficha-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-carta-nova-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-carta-secretarias-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-carta-monitoramento-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-carta-importar-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "servicos-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "servicos-busca-boleto-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "servico-ficha-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "ouvidoria-servico-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "camara-servicos-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "inicio-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-carta-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-carta-ficha-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-carta-nova-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-carta-secretarias-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-carta-monitoramento-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-carta-importar-390": {
+   "http": 200,
+   "scrollW": 390
+  }
+ },
+ "axe": {
+  "servicos": [],
+  "servicos-busca-boleto": [],
+  "servico-ficha": [],
+  "ouvidoria-servico": [],
+  "camara-servicos": [],
+  "inicio": [],
+  "admin-carta": [],
+  "admin-carta-ficha": [],
+  "admin-carta-nova": [],
+  "admin-carta-secretarias": [],
+  "admin-carta-monitoramento": [],
+  "admin-carta-importar": []
+ }
+}

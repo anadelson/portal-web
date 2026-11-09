@@ -86,7 +86,7 @@
 </ul></section>
 <nav class="fcol" aria-labelledby="f-ai"><h2 id="f-ai">Acesso à informação</h2><ul>
 <li><a href="/transparencia">Portal da Transparência</a></li>{% if mods.bi %}<li><a href="/painel">Painel de indicadores</a></li>{% endif %}<li><a href="/e-sic">Acesso à Informação (e-SIC)</a></li><li><a href="/ouvidoria">Ouvidoria</a></li>
-{% if leg %}<li><a href="/sessoes">Sessões e votações</a></li>{% else %}<li><a href="/servicos">Carta de Serviços</a></li>{% endif %}
+{% if leg %}<li><a href="/sessoes">Sessões e votações</a></li>{% endif %}{% if mods.carta %}<li><a href="/servicos">Carta de Serviços</a></li>{% endif %}
 <li><a href="/legislacao">Legislação</a></li><li><a href="/dados-abertos">Dados abertos</a></li></ul></nav>
 <nav class="fcol" aria-labelledby="f-inst"><h2 id="f-inst">Institucional</h2><ul>
 {% if leg %}<li><a href="/vereadores">Vereadores e Mesa Diretora</a></li><li><a href="/proposicoes">Projetos e proposições</a></li><li><a href="/comissoes">Comissões</a></li><li><a href="/contas">Contas do Prefeito</a></li>{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}

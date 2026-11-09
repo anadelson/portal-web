@@ -143,7 +143,7 @@ ok(pm.get('/admin/vereadores'), 404, nome='prefeitura sem vereadores no admin')
 t = token(pm, '/admin/conteudos/1')
 ok(pm.post('/admin/conteudos/salvar', data={'csrf': t, 'id': 1, 'tipo': 'Aviso', 'secao': 'Serviços', 'titulo': 'Vacinação contra a gripe nas unidades de saúde', 'resumo': 'r', 'texto': 't', 'classe': 'util', 'imagem': 'saude', 'acao': 'rascunho'}, follow_redirects=True), txt='Salvou rascunho', nome='conteudo imagem')
 t = token(pm, '/admin/conteudos/1'); pm.post('/admin/conteudos/salvar', data={'csrf': t, 'id': 1, 'titulo': 'Vacinação contra a gripe nas unidades de saúde', 'classe': 'util', 'acao': 'aprovar'})
-ok(pm.get('/'), txt='href="/conteudo/1"', nome='serviço publicado nos mais acessados')
+ok(pm.get('/'), txt='Nenhum serviço publicado na Carta de Serviços ainda.', nome='mais acessados vem só das fichas da Carta (conteúdo-exemplo fora)')
 ok(g.get('/layout/1'), txt='Conheça a cidade', nome='console editor de regiões')
 ok(g.get('/'), txt='Órgãos e licenças', nome='console menu')
 # provision atualizar: idempotente e migra layout padrão antigo

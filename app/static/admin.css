@@ -106,3 +106,9 @@ body.acesso{margin:0;background:#0B1620}.acesso-fundo{min-height:100vh;display:g
 @media (max-width:980px){.consulta .cons-grade{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:640px){.grade2{grid-template-columns:minmax(0,1fr)!important}.linha-menu input{max-width:100%}}
 .lista-blocos .t .chip{align-self:flex-start}body.acesso{font-family:'Public Sans',system-ui,sans-serif}
+/* Fase 10 — Carta de Serviços */
+.fluxo-carta{list-style:none;margin:0 0 14px;padding:0;display:flex;gap:6px;flex-wrap:wrap}.fluxo-carta li{padding:4px 12px;border-radius:999px;background:#EEF1F4;font-weight:600;font-size:14px}.fluxo-carta li[aria-current]{background:var(--cor);color:#fff}
+.ficha-carta fieldset{border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin:0 0 12px;display:flex;flex-direction:column;gap:10px}.ficha-carta legend{font-weight:700;padding:0 6px}
+fieldset.opcoes{flex-direction:row!important;flex-wrap:wrap;gap:6px 14px!important}fieldset.opcoes label{flex-direction:row;align-items:center;gap:6px;font-weight:400}.obr{color:#9B1C1C}
+.avisos-ling{background:#FFF7E0;border:1px solid #E8C97A;border-radius:12px;padding:10px 14px;margin:0 0 12px}.avisos-ling ul{margin:6px 0 0}
+.kpis-carta{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:10px;margin:0 0 16px}.kpis-carta div{background:#fff;border:1px solid var(--bd);border-top:4px solid var(--cor);border-radius:12px;padding:12px}.kpis-carta dt{font-size:14px;color:#4B5563}.kpis-carta dd{margin:4px 0 0;font-size:28px;font-weight:800}

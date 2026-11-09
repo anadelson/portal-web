@@ -82,7 +82,8 @@ def home(request: Request):
     from . import fase8 as F8, menus as MN
     dados['atalhos'] = MN.atalhos(b)
     dados['comunicados'] = F8.comunicados(b, 5)
-    dados['servicos_top'] = F8.servicos_mais_acessados(b) if ctx['mods'].get('carta') else []
+    from . import carta as CT
+    dados['servicos_top'] = CT.mais_acessados(b, 6) if ctx['mods'].get('carta') else []
     dados['noticias8'] = F8.noticias_home(b) if ctx['mods'].get('noticias') else None
     dados['perfis'] = F8.perfis(b, destaque=True)[:3]
     dados['redes_feed'] = (db.cfg(b, 'redes_feed', {}) or {}).get('itens', [])
@@ -113,14 +114,7 @@ def noticias(request: Request):
     ctx = ctx_orgao(request); precisa(ctx, 'noticias')
     return templates.TemplateResponse(request, 'portal/lista.html', dict(ctx, titulo='Notícias e avisos', itens=conteudos_publicos(ctx['orgao']['banco'], None), legal='noticias'))
 
-@r.get('/servicos')
-def servicos(request: Request, q: str = ''):
-    ctx = ctx_orgao(request)
-    itens = conteudos_publicos(ctx['orgao']['banco'], None if q else 'Serviços', 200)
-    if q:
-        t = q.lower()
-        itens = [c for c in itens if t in (c['titulo'] + ' ' + c['resumo'] + ' ' + c['texto']).lower()]
-    return templates.TemplateResponse(request, 'portal/lista.html', dict(ctx, titulo=f'Resultados para “{q}”' if q else 'Serviços ao cidadão', itens=itens, legal=None))
+# /servicos (Carta de Serviços) fica em portal_carta.py (Fase 10)
 
 @r.get('/conteudo/{cid}')
 def conteudo(request: Request, cid: int):
@@ -296,6 +290,10 @@ async def acesso_enviar(request: Request):
         return ir('/e-sic' if tipo == 'pedido' else '/ouvidoria', 'Preencha assunto, texto, nome e e-mail.', request)
     prefixo = 'SIC' if tipo == 'pedido' else 'OUV'
     prot = f"{prefixo}-{config.hoje().year}-{secrets.token_hex(3).upper()}"
-    db.exe(ctx['orgao']['banco'], 'INSERT INTO esic (protocolo, tipo, categoria, assunto, texto, nome, email) VALUES (%s,%s,%s,%s,%s,%s,%s)',
-           (prot, tipo, f.get('categoria', ''), f['assunto'][:200], f['texto'][:5000], f['nome'][:120], f['email'][:120]))
+    sid = None
+    if tipo == 'manifestacao' and str(f.get('servico_id', '')).isdigit():  # Fase 10: manifestação ligada a um serviço da Carta
+        r_ = db.um(ctx['orgao']['banco'], "SELECT id FROM servicos WHERE id=%s AND publicado_dados IS NOT NULL", (int(f['servico_id']),))
+        sid = r_['id'] if r_ else None
+    db.exe(ctx['orgao']['banco'], 'INSERT INTO esic (protocolo, tipo, categoria, assunto, texto, nome, email, servico_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
+           (prot, tipo, f.get('categoria', ''), f['assunto'][:200], f['texto'][:5000], f['nome'][:120], f['email'][:120], sid))
     return ir(f'/acesso?protocolo={prot}', f'Recebido. Guarde o protocolo {prot}.', request)

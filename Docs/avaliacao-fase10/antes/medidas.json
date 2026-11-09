@@ -1,0 +1,34 @@
+{
+ "servicos-1280": {
+  "http": 200,
+  "itens": 0
+ },
+ "servicos-busca-iptu-1280": {
+  "http": 200,
+  "itens": 0
+ },
+ "servico-exemplo-1280": {
+  "http": 200,
+  "itens": 1
+ },
+ "inicio-1280": {
+  "http": 200,
+  "itens": 9
+ },
+ "servicos-390": {
+  "http": 200,
+  "itens": 0
+ },
+ "servicos-busca-iptu-390": {
+  "http": 200,
+  "itens": 0
+ },
+ "servico-exemplo-390": {
+  "http": 200,
+  "itens": 1
+ },
+ "inicio-390": {
+  "http": 200,
+  "itens": 9
+ }
+}
