@@ -764,3 +764,37 @@ Fase 7 (painel, fontes e layout) concluída e no ar. Pendências fora do código
 - **G) Transmissões:** coletor `coletores/youtube.py` (2 unidades de cota por consulta; só dentro da janela da agenda ou com transmissão ao vivo; varredura diária registra só vídeos que foram transmissões — vídeo comum do canal não entra). Erros só com código HTTP: a chave nunca vai para log. Chave cadastrada no console (campo único "Chave da API"). ID do canal validado (UC…) e aviso "Configure o canal" no painel.
 - **H) Acessibilidade:** VLibras em todas as páginas (liga/desliga no painel). Achado: `vlibras.gov.br/app` redireciona para a pasta oficial no jsDelivr (`cdn.jsdelivr.net/gh/spbgovbr-vlibras/…`), então a CSP libera **só esse caminho**, além de `*.vlibras.gov.br`. Página Acessibilidade com VLibras, NVDA, DOSVOX e MOTRIX (endereços conferidos: respondem 200).
 - **I) Legislação:** `/legislacao` montada sozinha com os atos (Lei, Lei Complementar, Decreto, Decreto Legislativo, Portaria, Resolução) das edições **oficiais** publicadas do Diário — edição de teste não entra. Relações (altera/revoga/regulamenta) informadas no envio do ato definem a situação. Página do ato, CSV/JSON com base legal. Importação opcional do acervo antigo por planilha (`Docs/modelos/legislacao.csv`, com simulação, tudo ou nada). A Câmara lê pela API pública da Prefeitura. **Limitação:** a proposição da Câmara não tem campo "norma gerada", então o vínculo lei ↔ proposição não é feito (nada inventado); fica para quando houver o campo.
+- **J) Testes:** `tests/teste_fase8.py` novo, tudo ok. Cobre:
+  - barras sem destino repetido e recusa no painel;
+  - `/acesso` → 301;
+  - comunicado recusa notícia, e conteúdo recusa tipo de comunicado;
+  - foto com pessoas sem autorização não publica;
+  - ordem do bloco de notícias e defeso;
+  - legislação (Diário oficial × teste, relações, filtros, CSV/JSON, importação, Câmara pela API);
+  - YouTube com dados simulados;
+  - VLibras e CSP.
+  - Suítes existentes atualizadas onde a Fase 8 mudou o esperado (bloco de serviços, título curto obrigatório, canal UC…) e **todas passam**: fluxos, painel, painel_layout, painel_fontes, diario_seguranca, transparencia e legislativo.
+- **Prévia (cópia dos bancos, nada na produção):** a migração rodou limpa sobre os dados reais. Itens criados na cópia:
+  - Prefeitura: 15 itens de menu; as 3 fotos atuais viraram perfis.
+  - Câmara: 14 itens de menu.
+  - Nas duas: fonte `youtube`.
+- **Verificações no navegador (`Docs/avaliacao-fase8/depois/verificacoes.json`):**
+  - axe sem violações em 12 páginas;
+  - teclado ok (menu do celular, ⓘ);
+  - CSP sem violação com o VLibras carregado e aberto;
+  - sem rolagem horizontal;
+  - cartões com a mesma altura.
+  - Relatório em `Docs/avaliacao-fase8/EMAG.md`. **Teste com NVDA real não feito:** o NVDA só roda no Windows; o roteiro está no arquivo.
+- **Corrigido durante a verificação:**
+  - `.ic`/`.info` dos cartões colidiam com o ícone SVG e o cartão de vereador; renomeados para `.icard`/`.ic-info`.
+  - Listas dentro de `role="img"` no painel (herança da Fase 7).
+  - Na Câmara (6 itens + nome longo), a busca caía para a 2ª linha; agora vira o item "Buscar", como no protótipo.
+  - Relações da legislação: coluna `tipo` sobrescrita no JOIN.
+- **Capturas antes × depois:** `Docs/avaliacao-fase8/comparacao.html`, com as páginas novas e os estados (menu aberto, ⓘ, VLibras, busca aberta).
+
+### Onde parou (Fase 8)
+Código pronto e testado no branch `fase-8`. **Nada foi aplicado na VPS de produção.** Aguardando:
+1. Aprovação do deploy (backup, build, testes, up -d, `provision atualizar`).
+2. Quem contrata o módulo "audiencias" para a Prefeitura.
+3. O endereço do acervo antigo de legislação.
+4. A chave da YouTube Data API cadastrada no console e os IDs dos canais.

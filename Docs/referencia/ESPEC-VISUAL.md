@@ -37,3 +37,22 @@ Imagens reais em `imagens/` (brasão e fotos enviadas pela Prefeitura; serviços
 ## Painel (Backend.dc.html) e console (Console.dc.html)
 - Menu lateral com **ícones** por função e grupos recolhíveis; badges de pendência; cartão do usuário no rodapé do menu.
 - Ícones: traço 24×24 (caminhos SVG estão em `const ICON` no Backend.dc.html).
+
+## Fase 8 (protótipo Main.dc.html de 09/11/2026)
+- **Cabeçalho em 3 faixas.**
+  - Barra de acessibilidade: atalhos [1–4], Câmara/Prefeitura, Área restrita | A− A A+, contraste, sublinhar, Libras, Acessibilidade.
+  - Barra institucional na cor primária.
+  - Barra do brasão com os itens do portal e a busca.
+  - **Cada destino aparece em uma só barra.** Itens vêm de Painel → Menus e atalhos.
+- **Barra do portal cheia (6+ itens):** a busca vira o botão "Buscar" e o campo abre por cima ao receber foco (Alt+3 também abre).
+- **Celular (≤ 760 px):** botão "Menu" abre um painel com as seções "Portal" e "Transparência e governo". Foco preso; Esc fecha e devolve o foco.
+- **Componente de botão `.btn`:** pílula (raio 999), mínimo 44 px, primário (cheio) ou secundário (`.btn.sec`, contorno) e seta à direita. Todo "ver mais / todas as…" usa esse componente; não usar link solto.
+- **Cartão de indicador `.icard`**, em grade `.ics` de cartões com a mesma altura:
+  - Linha 1: título curto (até 32 caracteres, reticências) + botão ⓘ (`.ic-info`, 28 px).
+  - Linha 2: valor + unidade (28 px, números tabulares).
+  - Linha 3: contexto (13 px).
+  - Fonte, período, atualização, método e base legal ficam no balão do ⓘ; no celular, o balão vira painel inferior.
+  - **Não usar** as classes `.ic` (é do ícone SVG) e `.info` (é dos cartões de vereador).
+- **Notícias:** destaque 16:9 com ponto focal + data "dd/mm/aaaa, HHhMM" + resumo; 3 secundárias; lista de 5 títulos; botão "Todas as notícias".
+- **Comunicados | Serviços mais acessados:** lado a lado no computador, empilhados no celular. O comunicado tem etiqueta de tipo e nunca é "notícia".
+- **Conheça:** grade de perfis com foto de capa; página do perfil com galeria (ampliação em `<dialog>`) e vídeos youtube-nocookie.
