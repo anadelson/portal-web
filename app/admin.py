@@ -29,7 +29,14 @@ templates.env.globals['TIPOS_CONTEUDO'] = TIPOS_CONTEUDO
 
 @r.get('/login')
 def login(request: Request):
-    return templates.TemplateResponse(request, 'admin/login.html', ctx_orgao(request, govbr=AC.govbr_ativo()))
+    from .web import tela_acesso
+    return templates.TemplateResponse(request, 'admin/login.html', ctx_orgao(request, govbr=AC.govbr_ativo(), tela=tela_acesso(request, 1)))
+
+@r.get('/esqueci')
+def esqueci(request: Request):
+    from .web import tela_acesso
+    t = tela_acesso(request); t['titulo'] = 'Esqueci minha senha'
+    return templates.TemplateResponse(request, 'acesso/esqueci.html', ctx_orgao(request, tela=t))
 
 @r.post('/login')
 async def login_post(request: Request):
@@ -48,7 +55,8 @@ def segundo_fator(request: Request):
     if not conta:
         return ir('/admin/login', 'Entre com e-mail e senha.', request)
     cad = None if conta['totp_ativo'] else AC.preparar_cadastro(request, c, conta)
-    return templates.TemplateResponse(request, 'acesso/2fa.html', ctx_orgao(request, acao='/admin/2fa', cadastro=cad, titulo='Painel administrativo', codigos=None, sair='/admin/login'))
+    from .web import tela_acesso
+    return templates.TemplateResponse(request, 'acesso/2fa.html', ctx_orgao(request, acao='/admin/2fa', cadastro=cad, titulo='Painel administrativo', codigos=None, sair='/admin/login', tela=tela_acesso(request, 2)))
 
 @r.post('/2fa')
 async def segundo_fator_post(request: Request):
@@ -62,7 +70,8 @@ async def segundo_fator_post(request: Request):
             return ir('/admin/2fa', 'Código não confere. Confira o horário do celular e digite o código atual do aplicativo.', request)
         AC.concluir_login(request, c, c.por_id(conta['id']), 'senha+totp')
         auditar(request, 'Cadastrou o segundo fator (autenticador) e entrou no painel')
-        return templates.TemplateResponse(request, 'acesso/2fa.html', ctx_orgao(request, acao='', cadastro=None, titulo='Painel administrativo', codigos=cods, continuar='/admin/senha' if conta['trocar_senha'] else '/admin/'))
+        from .web import tela_acesso
+        return templates.TemplateResponse(request, 'acesso/2fa.html', ctx_orgao(request, acao='', cadastro=None, titulo='Painel administrativo', codigos=cods, continuar='/admin/senha' if conta['trocar_senha'] else '/admin/', tela=tela_acesso(request, 2)))
     ok, msg = AC.conferir_segundo_fator(request, c, conta, f.get('codigo', ''), f.get('recuperacao', ''))
     if not ok:
         ate = AC.registrar_tentativa(request, c, conta, False)
@@ -195,11 +204,18 @@ async def conteudo_salvar(request: Request):
         if pub_em and pub_em.tzinfo is None:
             pub_em = pub_em.astimezone()  # hora local do servidor (TZ do contêiner)
         destaque = f.get('destaque') == '1' and tipo == 'Notícia'
-        vals = (tipo, f.get('secao', 'Notícias'), f['titulo'], f.get('resumo', ''), f.get('texto', ''), f['classe'], acao, pub, tirar, img, alt[:300], foco('foco_x'), foco('foco_y'), destaque, pub_em)
+        from . import editor as ED
+        html, texto = '', f.get('texto', '')
+        if (f.get('html') or '').strip():
+            html, probs = ED.limpar(f['html'])
+            if probs:
+                return ir(volta, ' '.join(probs), request)
+            texto = ED.texto(html)
+        vals = (tipo, f.get('secao', 'Notícias'), f['titulo'], f.get('resumo', ''), texto, html, f['classe'], acao, pub, tirar, img, alt[:300], foco('foco_x'), foco('foco_y'), destaque, pub_em)
         if c:
-            db.exe(b, 'UPDATE conteudos SET tipo=%s, secao=%s, titulo=%s, resumo=%s, texto=%s, classe=%s, situacao=%s, publicar_em=%s, tirar_em=%s, imagem=%s, imagem_alt=%s, foco_x=%s, foco_y=%s, destaque=%s, publicado_em=%s, atualizado_em=now() WHERE id=%s', vals + (cid,))
+            db.exe(b, 'UPDATE conteudos SET tipo=%s, secao=%s, titulo=%s, resumo=%s, texto=%s, html=%s, classe=%s, situacao=%s, publicar_em=%s, tirar_em=%s, imagem=%s, imagem_alt=%s, foco_x=%s, foco_y=%s, destaque=%s, publicado_em=%s, atualizado_em=now() WHERE id=%s', vals + (cid,))
         else:
-            cid = db.exe(b, 'INSERT INTO conteudos (tipo, secao, titulo, resumo, texto, classe, situacao, publicar_em, tirar_em, imagem, imagem_alt, foco_x, foco_y, destaque, publicado_em, autor) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
+            cid = db.exe(b, 'INSERT INTO conteudos (tipo, secao, titulo, resumo, texto, html, classe, situacao, publicar_em, tirar_em, imagem, imagem_alt, foco_x, foco_y, destaque, publicado_em, autor) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
         if destaque:  # uma notícia em destaque por vez
             db.exe(b, 'UPDATE conteudos SET destaque=FALSE WHERE destaque AND id<>%s', (cid,))
         obs = 'Salvou rascunho' if acao == 'rascunho' else 'Enviou para revisão'
@@ -223,7 +239,8 @@ async def conteudo_salvar(request: Request):
             obs = 'Arquivou (tirou do ar)'
     else:
         raise HTTPException(400)
-    db.exe(b, 'INSERT INTO conteudo_versoes (conteudo_id, quem, obs) VALUES (%s,%s,%s)', (cid, u['nome'], obs))
+    snap = db.um(b, 'SELECT titulo, resumo, texto, html, imagem, imagem_alt, classe FROM conteudos WHERE id=%s', (cid,))
+    db.exe(b, 'INSERT INTO conteudo_versoes (conteudo_id, quem, obs, dados) VALUES (%s,%s,%s,%s)', (cid, u['nome'], obs, Jsonb(snap) if snap else None))
     auditar(request, f"{obs}: {f.get('titulo') or (c and c['titulo'])}")
     return ir('/admin/conteudos', obs + '.', request)
 
@@ -234,18 +251,41 @@ def pagina_inicial(request: Request):
     b = request.state.orgao['banco']
     mods = modulos_do_orgao(request.state.orgao)
     bl = [dict(x, info=BLOCOS.get(x['chave'])) for x in db.todos(b, "SELECT * FROM blocos WHERE pagina='home' ORDER BY ordem")]
-    return T('pagina_inicial', request, u, blocos=[x for x in bl if x['info']], mods=mods)
+    from .catalogo import LARGURA, REGIOES
+    return T('pagina_inicial', request, u, blocos=[x for x in bl if x['info']], mods=mods, largura=LARGURA, regioes=dict(REGIOES))
 
 @r.post('/pagina-inicial')
 async def pagina_inicial_post(request: Request):
-    u = exige(request, 'config'); f = await ler_form(request)
+    """Sem JS: cada botão (subir:ID, descer:ID, visivel:ID) salva na hora. Com JS: "salvar" grava a ordem e a exibição de uma vez."""
+    u = exige(request, 'config')
+    form = await request.form()
+    if form.get('csrf') != request.session.get('csrf'):
+        raise HTTPException(400, 'Formulário expirado. Volte e tente de novo.')
     b = request.state.orgao['banco']
-    bid = int(f['id']); acao = f['acao']
     bl = db.todos(b, "SELECT * FROM blocos WHERE pagina='home' ORDER BY ordem")
-    i = next(k for k, x in enumerate(bl) if x['id'] == bid)
+    por_id = {x['id']: x for x in bl}
+    acao, _, alvo = (form.get('acao') or '').partition(':')
+    if acao == 'salvar':
+        ids = [int(x) for x in form.getlist('ordem') if x.isdigit() and int(x) in por_id]
+        if sorted(ids) != sorted(por_id):
+            return ir('/admin/pagina-inicial', 'A lista mudou enquanto você editava. Confira e salve de novo.', request)
+        regioes = [por_id[i]['regiao'] for i in ids]
+        if regioes != [x['regiao'] for x in bl]:  # só se reordena dentro da mesma região
+            return ir('/admin/pagina-inicial', 'Os blocos só mudam de posição dentro da mesma região.', request)
+        vis = {int(x) for x in form.getlist('visivel') if x.isdigit()}
+        mudou = []
+        for k, i in enumerate(ids):
+            v = True if BLOCOS[por_id[i]['chave']][3] else (i in vis)
+            if por_id[i]['ordem'] != k + 1 or por_id[i]['visivel'] != v:
+                db.exe(b, 'UPDATE blocos SET ordem=%s, visivel=%s WHERE id=%s', (k + 1, v, i)); mudou.append(BLOCOS[por_id[i]['chave']][0])
+        auditar(request, 'Alterou a página inicial (ordem e exibição): ' + (', '.join(mudou) or 'sem mudança'))
+        return ir('/admin/pagina-inicial', 'Página inicial salva.' if mudou else 'Nada mudou.', request)
+    if not alvo.isdigit() or int(alvo) not in por_id:
+        raise HTTPException(400)
+    i = next(k for k, x in enumerate(bl) if x['id'] == int(alvo))
     info = BLOCOS[bl[i]['chave']]
     if acao == 'visivel' and not info[3]:
-        db.exe(b, 'UPDATE blocos SET visivel = NOT visivel WHERE id=%s', (bid,))
+        db.exe(b, 'UPDATE blocos SET visivel = NOT visivel WHERE id=%s', (bl[i]['id'],))
     elif acao in ('subir', 'descer'):
         j = i - 1 if acao == 'subir' else i + 1
         if 0 <= j < len(bl) and bl[j]['regiao'] == bl[i]['regiao']:
@@ -402,6 +442,10 @@ async def usuarios_post(request: Request):
         db.exe(b, "UPDATE usuarios SET totp_ativo=FALSE, totp_segredo='', recuperacao='[]' WHERE id=%s", (uid,))
     elif acao == 'desbloquear':
         db.exe(b, 'UPDATE usuarios SET falhas=0, bloqueado_ate=NULL WHERE id=%s', (uid,))
+    elif acao == 'senha_provisoria':
+        if len(f.get('senha', '')) < 10:
+            return ir('/admin/usuarios', 'A senha provisória precisa ter 10 caracteres ou mais.', request)
+        db.exe(b, 'UPDATE usuarios SET senha_hash=%s, trocar_senha=TRUE, falhas=0, bloqueado_ate=NULL WHERE id=%s', (hash_senha(f['senha']), uid))
     elif acao == 'cpf':
         try:
             d = ''.join(ch for ch in f.get('cpf', '') if ch.isdigit())
@@ -422,10 +466,10 @@ def auditoria(request: Request):
 CAMPOS_ID = [('nome', 'Nome do órgão'), ('prefixo', 'Linha acima do nome no cabeçalho (ex.: Prefeitura Municipal de)'), ('nome_curto', 'Nome curto no cabeçalho (ex.: Borá)'),
              ('subtitulo', 'Linha abaixo do nome (ex.: Estado de São Paulo)'), ('cnpj', 'CNPJ'), ('endereco', 'Endereço'), ('telefone', 'Telefone'), ('whatsapp', 'WhatsApp'),
              ('email', 'E-mail de atendimento'), ('horario', 'Horário'), ('encarregado', 'Encarregado de dados (LGPD)'), ('encarregado_email', 'E-mail do encarregado'),
-             ('cor', 'Cor principal (#RRGGBB)'), ('cor_destaque', 'Cor de destaque (#RRGGBB)'), ('hero_rotulo', 'Destaque: rótulo'), ('hero_titulo', 'Destaque: título'),
+             ('login_titulo', 'Título da tela de login (ex.: Área restrita da Prefeitura de Borá)'), ('hero_rotulo', 'Destaque: rótulo'), ('hero_titulo', 'Destaque: título'),
              ('hero_texto', 'Destaque: texto'), ('busca_dica', 'Destaque: exemplo na busca'), ('creditos', 'Créditos das fotos (rodapé)')]
 COR = re.compile(r'^#[0-9A-Fa-f]{6}$')
-USOS = {'brasao': 'Brasão', 'hero': 'Foto do destaque (página inicial)', 'sede': 'Foto da sede', 'conheca': 'Foto do “Conheça a cidade”'}
+USOS = {'brasao': 'Brasão', 'mascote': 'Mascote', 'hero': 'Imagem de fundo do destaque (página inicial)', 'login': 'Imagem de fundo da tela de login', 'sede': 'Foto da sede', 'conheca': 'Foto do “Conheça a cidade”'}
 MAX_CONHECA = 4
 
 async def salvar_midia(request, u, arquivo, uso, alt, credito):
@@ -443,12 +487,33 @@ async def salvar_midia(request, u, arquivo, uso, alt, credito):
     db.exe(o['banco'], 'INSERT INTO midias (arquivo, uso, alt, credito, bytes, enviado_por) VALUES (%s,%s,%s,%s,%s,%s)', (nome, uso, alt[:300], credito[:300], len(dados), u['nome']))
     return f'/midia/{nome}'
 
+ABAS_ID = [('dados', 'Dados e textos'), ('tema', 'Tema e cores'), ('imagens', 'Brasão, mascote e fundos'), ('favicon', 'Favicon'), ('redes', 'Redes sociais'),
+           ('municipio', 'Dados do município'), ('fotos', 'Fotos e álbuns')]
+
 @r.get('/identidade')
-def identidade(request: Request):
+def identidade(request: Request, aba: str = 'dados', album: int = 0):
     u = exige(request)
-    ident = db.cfg(request.state.orgao['banco'], 'identidade', {}) or {}
+    o = request.state.orgao; b = o['banco']
+    ident = db.cfg(b, 'identidade', {}) or {}
     cx = ident.get('conheca') or {}
-    return T('identidade', request, u, campos=CAMPOS_ID, usos=USOS, cx=cx, max_conheca=MAX_CONHECA,
+    from . import admin_fase9 as F9, municipio
+    aba = aba if aba in dict(ABAS_ID) else 'dados'
+    extra = {}
+    if aba == 'tema':
+        cor, dest = ident.get('cor') or o['cor'], ident.get('cor_destaque') or '#F0B429'
+        extra = dict(cor=cor, dest=dest, c_cor=F9.contraste(cor, '#FFFFFF'), c_dest=F9.contraste(dest, F9.TEXTO_ESCURO), erros_cor=F9.checar_cores(cor.upper(), dest.upper()))
+    elif aba == 'redes':
+        redes = ident.get('redes_v2') or [{'tipo': next((k for k, v in F9.REDES.items() if v.lower() == n.lower()), 'outra'), 'url': url, 'ordem': (i + 1) * 10, 'conta': ''} for i, (n, url) in enumerate(ident.get('redes', []))]
+        extra = dict(redes=redes, tipos_rede=F9.REDES)
+    elif aba == 'municipio':
+        extra = dict(auto=municipio.automaticos(o['ibge']), manuais=municipio.manuais(b), ibge=o['ibge'])
+    elif aba == 'fotos':
+        cats = db.todos(b, 'SELECT * FROM foto_categorias ORDER BY nome')
+        albs = db.todos(b, 'SELECT a.*, (SELECT count(*) FROM album_fotos WHERE album_id=a.id) n, c.nome categoria FROM albuns a LEFT JOIN foto_categorias c ON c.id=a.categoria_id ORDER BY a.ordem, a.id DESC')
+        al = db.um(b, 'SELECT * FROM albuns WHERE id=%s', (album,)) if album else None
+        extra = dict(categorias=cats, albuns=albs, album=al, licencas=F9.LICENCAS,
+                     fotos=db.todos(b, 'SELECT * FROM album_fotos WHERE album_id=%s ORDER BY principal DESC, ordem, id', (album,)) if al else [])
+    return T('identidade', request, u, aba=aba, abas=ABAS_ID, campos=CAMPOS_ID, usos=USOS, cx=cx, max_conheca=MAX_CONHECA, **extra,
              redes_txt='\n'.join(f'{a} | {b}' for a, b in ident.get('redes', [])),
              numeros_txt='\n'.join(f'{a} | {b}' for a, b in cx.get('numeros', [])))
 
@@ -483,7 +548,7 @@ async def identidade_post(request: Request):
     ident['revisado_em'] = config.hoje().isoformat()
     db.set_cfg(b, 'identidade', ident)
     auditar(request, 'Atualizou a identidade do órgão')
-    return ir('/admin/identidade', 'Identidade salva.', request)
+    return ir('/admin/identidade?aba=dados', 'Identidade salva.', request)
 
 @r.post('/identidade/midia')
 async def identidade_midia(request: Request):
@@ -504,7 +569,7 @@ async def identidade_midia(request: Request):
                 fotos.pop(i)
             db.set_cfg(b, 'identidade', ident)
             auditar(request, 'Removeu foto do “Conheça a cidade”')
-            return ir('/admin/identidade#imagens', 'Foto removida.', request)
+            return ir('/admin/identidade?aba=imagens', 'Foto removida.', request)
         atual = fotos[i] if 0 <= i < len(fotos) else None
     else:
         atual = (ident.get('sede') or {}).get('foto') if uso == 'sede' else ident.get(uso)
@@ -518,8 +583,12 @@ async def identidade_midia(request: Request):
         else:
             raise ValueError('Escolha o arquivo da imagem.')
     except ValueError as e:
-        return ir('/admin/identidade#imagens', str(e), request)
+        return ir('/admin/identidade?aba=imagens', str(e), request)
     item = {'url': url, 'alt': alt[:300], 'credito': credito[:300]}
+    if uso in ('hero', 'login', 'sede'):  # ponto focal: define o recorte da imagem em cada formato de tela
+        fx, fy = f.get('foco_x', '50'), f.get('foco_y', '50')
+        item['foco_x'] = max(0, min(100, int(fx))) if str(fx).isdigit() else 50
+        item['foco_y'] = max(0, min(100, int(fy))) if str(fy).isdigit() else 50
     if uso == 'conheca':
         item['legenda'] = f.get('legenda', '')[:120]
         if atual is not None:
@@ -527,7 +596,7 @@ async def identidade_midia(request: Request):
         elif len(fotos) < MAX_CONHECA:
             fotos.append(item)
         else:
-            return ir('/admin/identidade#imagens', f'O mosaico aceita até {MAX_CONHECA} fotos.', request)
+            return ir('/admin/identidade?aba=imagens', f'O mosaico aceita até {MAX_CONHECA} fotos.', request)
     elif uso == 'sede':
         ident.setdefault('sede', {})['foto'] = item
     else:
@@ -535,7 +604,7 @@ async def identidade_midia(request: Request):
     ident['revisado_em'] = config.hoje().isoformat()
     db.set_cfg(b, 'identidade', ident)
     auditar(request, f'Atualizou a imagem: {USOS[uso]}')
-    return ir('/admin/identidade#imagens', f'{USOS[uso]} atualizada.', request)
+    return ir('/admin/identidade?aba=imagens', f'{USOS[uso]} atualizada.', request)
 
 # ---------- Câmara: vereadores ----------
 @r.get('/vereadores')

@@ -49,12 +49,19 @@ BLOCOS = {
     'transmissoes': ('Transmissões (3 últimas gravações; some sem vídeos)', ['principal'], None, False, 'ambos'),
     'conheca': ('Conheça a cidade (mosaico de fotos)', ['principal'], None, False, 'executivo'),
     'sede': ('Sede e atendimento', ['principal', 'lateral'], None, False, 'ambos'),
+    'redes': ('Nas redes (últimas publicações; some sem credencial no console e no período eleitoral)', ['principal'], None, False, 'ambos'),
     'rodape': ('Rodapé com links obrigatórios', ['rodape'], None, True, 'ambos'),
 }
 # Largura do bloco na página inicial: blocos "meio" lado a lado; contas × emendas na proporção 55/45
 LARGURA = {'contas': 'l55', 'emendas': 'l45', 'sessoes': 'meio', 'projetos': 'meio'}
 REGIOES = [('topo', 'Cabeçalho'), ('avisos', 'Faixa de avisos'), ('destaque', 'Destaque'), ('principal', 'Área principal'), ('lateral', 'Coluna lateral'), ('rodape', 'Rodapé')]
-LAYOUT_PADRAO = {  # Fase 8: ordem do protótipo de 09/11/2026
+LAYOUT_PADRAO = {  # Fase 9: + "Nas redes" depois das notícias
+    'executivo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('comunicados', 'principal'), ('protocolo', 'principal'), ('numeros', 'principal'),
+                  ('publicacoes', 'principal'), ('diario', 'principal'), ('transmissoes', 'principal'), ('conheca', 'principal'), ('noticias', 'principal'), ('redes', 'principal'), ('sede', 'principal'), ('rodape', 'rodape')],
+    'legislativo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('ver', 'principal'), ('comunicados', 'principal'), ('contas', 'principal'), ('emendas', 'principal'),
+                    ('sessoes', 'principal'), ('projetos', 'principal'), ('transmissoes', 'principal'), ('noticias', 'principal'), ('redes', 'principal'), ('rodape', 'rodape')],
+}
+LAYOUT_PADRAO_V3 = {  # padrão da Fase 8 (quem estiver exatamente nele recebe o padrão da Fase 9)
     'executivo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('comunicados', 'principal'), ('protocolo', 'principal'), ('numeros', 'principal'),
                   ('publicacoes', 'principal'), ('diario', 'principal'), ('transmissoes', 'principal'), ('conheca', 'principal'), ('noticias', 'principal'), ('sede', 'principal'), ('rodape', 'rodape')],
     'legislativo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('ver', 'principal'), ('comunicados', 'principal'), ('contas', 'principal'), ('emendas', 'principal'),

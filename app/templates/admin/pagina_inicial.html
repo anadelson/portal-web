@@ -1,6 +1,26 @@
 {% extends 'admin/base.html' %}{% block h1 %}Página inicial (blocos){% endblock %}
-{% block conteudo %}<p>Personalização nível 2: ligue, desligue e ordene os blocos de cada região. Blocos travados são exigidos por lei ou pelo tema. A região de cada bloco é definida no console do gestor.</p>
-<div class="tabela"><table><thead><tr><th>Ordem</th><th>Bloco</th><th>Região</th><th>Situação</th><th>Ações</th></tr></thead><tbody>
-{% for b in blocos %}{% set disp = not b.info[2] or mods.get(b.info[2]) %}<tr><td>{{ loop.index }}</td><td>{{ b.info[0] }}{% if b.info[3] %} <span class="chip">travado</span>{% endif %}{% if not disp %} <span class="chip alerta">módulo desligado</span>{% endif %}</td><td>{{ b.regiao }}</td><td><span class="chip {{ 'ok' if b.visivel else '' }}">{{ 'Exibido' if b.visivel else 'Oculto' }}</span></td>
-<td>{% if pode('config') %}<form class="inline" method="post" action="/admin/pagina-inicial"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="id" value="{{ b.id }}"><button class="btn sec" name="acao" value="subir" aria-label="Subir {{ b.info[0] }}">▲</button><button class="btn sec" name="acao" value="descer" aria-label="Descer {{ b.info[0] }}">▼</button>{% if not b.info[3] %}<button class="btn sec" name="acao" value="visivel">{{ 'Ocultar' if b.visivel else 'Exibir' }}</button>{% endif %}</form>{% endif %}</td></tr>{% endfor %}
-</tbody></table></div>{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<p>Personalização nível 2: ligue, desligue e ordene os blocos de cada região. Blocos travados são exigidos por lei ou pelo tema. A região de cada bloco é definida no console do gestor.</p>
+<div class="blocos-mapa">
+<form method="post" action="/admin/pagina-inicial" id="form-blocos"><input type="hidden" name="csrf" value="{{ C }}">
+<ol class="lista-blocos" id="lista-blocos">
+{% for b in blocos %}{% set disp = not b.info[2] or mods.get(b.info[2]) %}
+<li data-id="{{ b.id }}" data-chave="{{ b.chave }}" data-regiao="{{ b.regiao }}" data-largura="{{ largura.get(b.chave, '') }}" data-nome="{{ b.info[0] }}" data-travado="{{ 1 if b.info[3] else 0 }}" data-visivel="{{ 1 if b.visivel else 0 }}" tabindex="0" aria-describedby="mapa-ajuda">
+<input type="hidden" name="ordem" value="{{ b.id }}">
+<span class="n">{{ loop.index }}</span><span class="t">{{ b.info[0] }}{% if b.info[3] %} <span class="chip">travado</span>{% endif %}{% if not disp %} <span class="chip alerta">módulo desligado</span>{% endif %}<small>{{ regioes.get(b.regiao, b.regiao) }}</small></span>
+{% if pode('config') %}<span class="ctl"><button class="btn sec" name="acao" value="subir:{{ b.id }}" aria-label="Subir {{ b.info[0] }}">▲</button><button class="btn sec" name="acao" value="descer:{{ b.id }}" aria-label="Descer {{ b.info[0] }}">▼</button>
+{% if not b.info[3] %}<label class="exibir"><input type="checkbox" name="visivel" value="{{ b.id }}" {{ 'checked' if b.visivel }}> exibir</label><button class="btn sec sem-js" name="acao" value="visivel:{{ b.id }}">{{ 'Ocultar' if b.visivel else 'Exibir' }}</button>{% else %}<input type="hidden" name="visivel" value="{{ b.id }}">{% endif %}</span>{% endif %}
+</li>{% endfor %}
+</ol>
+{% if pode('config') %}<p class="acoes so-js" hidden><button class="btn" name="acao" value="salvar">Salvar ordem e exibição</button> <span class="chip alerta" id="pendentes" hidden></span></p>{% endif %}
+</form>
+<details class="mapa-layout" id="mapa" open><summary class="btn sec">Ver mapa do layout</summary>
+<section aria-labelledby="h-mapa"><h2 id="h-mapa">Onde fica no portal</h2>
+<p class="legal" id="mapa-ajuda">Passe o mouse ou o foco num bloco para destacá-lo no desenho; clique num retângulo para selecionar o bloco na lista. Tracejado = desligado.</p>
+<div class="pg-mapa" id="pg-mapa" aria-hidden="true">
+<div class="r cab">Cabeçalho (barras de acessibilidade, institucional e do portal)</div>
+{% for b in blocos if b.regiao != 'topo' %}<div class="r {{ largura.get(b.chave, '') }}{{ ' off' if not b.visivel }}{{ ' rod' if b.regiao == 'rodape' }}{{ ' hero' if b.chave == 'hero' }}" data-id="{{ b.id }}">{{ b.info[0] }}</div>{% endfor %}
+</div></section></details>
+</div>
+<script src="/static/admin.js?v=2" defer></script>
+{% endblock %}

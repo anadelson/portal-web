@@ -14,7 +14,7 @@ from pathlib import Path
 import psycopg
 from psycopg.types.json import Jsonb
 from . import config, db
-from .catalogo import MODULOS, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, LAYOUT_PADRAO_V2, serve
+from .catalogo import MODULOS, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, LAYOUT_PADRAO_V2, LAYOUT_PADRAO_V3, serve
 from .security import hash_senha
 
 AQUI = Path(__file__).parent
@@ -116,8 +116,11 @@ def configurar_painel(o):
 
 def configurar_youtube(o):
     """Fonte "youtube" para todo órgão (Fase 8). Sem módulo de transmissão, canal ou chave, o coletor não faz nada."""
-    r = db.exe(db.PLATAFORMA, "INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,'youtube','{}',TRUE) ON CONFLICT DO NOTHING RETURNING 1", (o['id'],))
-    return 1 if r else 0
+    n = 0
+    for fonte in ('youtube', 'redes'):  # Fase 9: redes sociais (últimas publicações) — sem conta/credencial não faz nada
+        r = db.exe(db.PLATAFORMA, "INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,%s,'{}',TRUE) ON CONFLICT DO NOTHING RETURNING 1", (o['id'], fonte))
+        n += 1 if r else 0
+    return n
 
 def completar_identidade(banco, slug, tipo):
     """Acrescenta à identidade do órgão as chaves visuais que ainda não existem (nunca sobrescreve o que o órgão definiu)."""
@@ -143,7 +146,7 @@ def atualizar_layout(banco, tipo):
     (ainda igual ao padrão da Fase 2), aplica o novo padrão inteiro."""
     atual = [(b['chave'], b['regiao']) for b in db.todos(banco, "SELECT chave, regiao FROM blocos WHERE pagina='home' ORDER BY ordem, id")]
     alvo = LAYOUT_PADRAO[tipo]
-    if atual in (LAYOUT_PADRAO_V1.get(tipo), LAYOUT_PADRAO_V2.get(tipo)):
+    if atual in (LAYOUT_PADRAO_V1.get(tipo), LAYOUT_PADRAO_V2.get(tipo), LAYOUT_PADRAO_V3.get(tipo)):
         db.exe(banco, "DELETE FROM blocos WHERE pagina='home' AND chave <> ALL(%s)", ([k for k, _ in alvo],))
         for i, (k, reg) in enumerate(alvo):
             db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES ('home',%s,%s,%s) ON CONFLICT (pagina, chave) DO UPDATE SET regiao=EXCLUDED.regiao, ordem=EXCLUDED.ordem", (k, reg, i))
@@ -281,6 +284,8 @@ def atualizar():
         from . import menus as MN, fase8 as F8
         nm = MN.semear(o['banco'], o['tipo'], (db.cfg(o['banco'], 'identidade', {}) or {}).get('nome_curto', ''))
         npf = F8.migrar_conheca(o['banco'], db.cfg(o['banco'], 'identidade', {}))
+        from . import municipio
+        municipio.migrar(o['banco'], db.cfg(o['banco'], 'identidade', {}))
         if nm or npf:
             print(f"  fase 8: {nm} item(ns) de menu e {npf} perfil(is) do Conheça criados")
         ni, nfp = configurar_painel(o)
