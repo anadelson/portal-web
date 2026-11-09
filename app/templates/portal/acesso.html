@@ -6,7 +6,8 @@
 <p>Pedido de informação (e-SIC): resposta em até 20 dias, prorrogáveis por mais 10; não é preciso justificar. Ouvidoria: resposta em até 30 dias.</p>
 <form class="campos" method="post" action="/acesso"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
 {% if tipo_fixo %}<input type="hidden" name="tipo" value="{{ tipo_fixo }}">{% else %}<label>Tipo<select name="tipo"><option value="pedido">Pedido de informação (e-SIC)</option><option value="manifestacao">Ouvidoria</option></select></label>{% endif %}
-{% if tipo_fixo != 'pedido' %}<label id="ouvidoria">Categoria (Ouvidoria)<select name="categoria"><option value="">—</option><option>Reclamação</option><option>Sugestão</option><option>Elogio</option><option>Denúncia</option><option>Solicitação</option></select></label>{% endif %}
+{% if tipo_fixo != 'pedido' %}<label id="ouvidoria">Categoria (Ouvidoria)<select name="categoria"><option value="">—</option><option>Reclamação</option><option>Sugestão</option><option>Elogio</option><option>Denúncia</option><option>Solicitação</option></select></label>
+{% if servicos_carta %}<label>Sobre qual serviço? (opcional)<select name="servico_id"><option value="">— nenhum / não sei —</option>{% for x in servicos_carta %}<option value="{{ x.id }}" {{ 'selected' if servico_sel == x.slug }}>{{ x.nome }}</option>{% endfor %}</select></label>{% endif %}{% endif %}
 <label>Assunto<input name="assunto" maxlength="200" required></label>
 <label>Texto<textarea name="texto" rows="6" required></textarea></label>
 <label>Seu nome<input name="nome" maxlength="120" required autocomplete="name"></label>

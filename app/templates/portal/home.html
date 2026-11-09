@@ -17,8 +17,8 @@
 {% else %}<p class="vazio">Nenhum comunicado em vigor.</p>{% endif %}
 <div class="acoes"><a class="btn sec" href="/comunicados">Todos os comunicados {{ icone('seta', 18, 'seta') }}</a></div></section>
 {% if mods.carta %}<section class="caixa" aria-labelledby="h-serv"><h2 id="h-serv">Serviços mais acessados</h2><p class="sub">Os serviços mais consultados no portal neste mês.</p>
-{% if d.servicos_top %}<ul class="serv-top">{% for c in d.servicos_top %}<li><a href="/conteudo/{{ c.id }}"><span class="ico">{{ icone(c.imagem if c.imagem in TEMAS else 'lista', 22) }}</span><span>{{ c.titulo }}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</span></a></li>{% endfor %}</ul>
-{% else %}<p class="vazio">Nenhum serviço publicado ainda.</p>{% endif %}
+{% if d.servicos_top %}<ul class="serv-top">{% for c in d.servicos_top %}<li><a href="/servicos/{{ c.slug }}"><span class="ico">{{ icone('lista', 22) }}</span><span>{{ c.nome }}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</span></a></li>{% endfor %}</ul>
+{% else %}<p class="vazio">Nenhum serviço publicado na Carta de Serviços ainda.</p>{% endif %}
 <div class="acoes"><a class="btn sec" href="/servicos">Todos os serviços {{ icone('seta', 18, 'seta') }}</a></div></section>{% endif %}
 </div>
 
