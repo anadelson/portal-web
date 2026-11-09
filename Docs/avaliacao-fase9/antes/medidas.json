@@ -1,0 +1,109 @@
+{
+ "admin-blocos-1280": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/pagina-inicial",
+  "scrollW": 1280
+ },
+ "admin-avaliacao-1280": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/participacao",
+  "scrollW": 1280
+ },
+ "admin-indicadores-1280": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/indicadores",
+  "scrollW": 1280
+ },
+ "admin-identidade-1280": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/identidade",
+  "scrollW": 1280
+ },
+ "admin-conteudo-novo-1280": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/conteudos/novo",
+  "scrollW": 1280
+ },
+ "admin-comunicados-1280": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/comunicados",
+  "scrollW": 1280
+ },
+ "admin-conheca-1280": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/conheca",
+  "scrollW": 1280
+ },
+ "admin-menus-1280": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/menus",
+  "scrollW": 1280
+ },
+ "console-orgao-1280": {
+  "http": 200,
+  "url": "http://gestao.localhost:8000/orgao/1",
+  "scrollW": 1280
+ },
+ "console-credenciais-1280": {
+  "http": 200,
+  "url": "http://gestao.localhost:8000/credenciais",
+  "scrollW": 1280
+ },
+ "avaliar": {
+  "url": "http://pmbora.localhost:8000/transparencia#avaliar",
+  "mensagem": "Obrigado pela avaliação!",
+  "mensagem_visivel": false,
+  "mensagem_top": 218,
+  "rolagem": 1454
+ },
+ "admin-blocos-390": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/pagina-inicial",
+  "scrollW": 390
+ },
+ "admin-avaliacao-390": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/participacao",
+  "scrollW": 390
+ },
+ "admin-indicadores-390": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/indicadores",
+  "scrollW": 390
+ },
+ "admin-identidade-390": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/identidade",
+  "scrollW": 390
+ },
+ "admin-conteudo-novo-390": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/conteudos/novo",
+  "scrollW": 390
+ },
+ "admin-comunicados-390": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/comunicados",
+  "scrollW": 505
+ },
+ "admin-conheca-390": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/conheca",
+  "scrollW": 505
+ },
+ "admin-menus-390": {
+  "http": 200,
+  "url": "http://pmbora.localhost:8000/admin/menus",
+  "scrollW": 390
+ },
+ "console-orgao-390": {
+  "http": 200,
+  "url": "http://gestao.localhost:8000/orgao/1",
+  "scrollW": 390
+ },
+ "console-credenciais-390": {
+  "http": 200,
+  "url": "http://gestao.localhost:8000/credenciais",
+  "scrollW": 390
+ }
+}

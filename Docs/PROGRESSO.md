@@ -820,3 +820,10 @@ Código pronto e testado no branch `fase-8`. **Nada foi aplicado na VPS de produ
 - O endereço do acervo antigo de legislação (Painel → Menus e atalhos → Legislação).
 - A chave da YouTube Data API (console → Credenciais de fontes) e os IDs dos canais (Painel → Transmissões).
 - O teste com NVDA real (roteiro em `Docs/avaliacao-fase8/EMAG.md`).
+
+## Fase 9 — painel administrativo (branch `fase-9`)
+### Antes de implementar (09/11/2026)
+- Capturas "antes" em `Docs/avaliacao-fase9/antes/`, feitas em ambiente de teste descartável (removido depois).
+- Esboço em `Docs/avaliacao-fase9/esboco/` e proposta em `Docs/avaliacao-fase9/PROPOSTA.md`.
+- **Diagnóstico da avaliação:** o envio é gravado; a mensagem de agradecimento fica fora de vista (topo × âncora no rodapé).
+- **Parado aguardando** aprovação do esboço e 5 decisões.
