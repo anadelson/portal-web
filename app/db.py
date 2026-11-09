@@ -1,4 +1,5 @@
 """Acesso ao PostgreSQL: um banco de controle (plataforma) e um banco por órgão."""
+import contextvars, re
 from contextlib import contextmanager
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
@@ -13,20 +14,49 @@ def pool(banco: str) -> ConnectionPool:
         _pools[banco] = p
     return p
 
+# Modo ENSAIO ("Testar consulta"): o coletor roda de verdade, mas nada é gravado.
+# Escritas por exe/um/todos são puladas e anotadas; qualquer outra conexão abre em modo somente leitura (rede de segurança).
+ENSAIO = contextvars.ContextVar('ensaio', default=None)
+_ESCRITA = re.compile(r'^\s*(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|MERGE)\b', re.I)
+
+def _pular(sql):
+    e = ENSAIO.get()
+    if e is not None and _ESCRITA.match(sql or ''):
+        m = re.match(r'^\s*(\w+)\s+(?:INTO\s+|FROM\s+)?(\w+)', sql, re.I)
+        e.setdefault('escritas_evitadas', []).append(f'{m.group(1).upper()} {m.group(2)}' if m else 'escrita')
+        return True
+    return False
+
 @contextmanager
 def conn(banco: str):
     with pool(banco).connection() as c:
-        yield c
+        if ENSAIO.get() is None:
+            yield c
+            return
+        c.execute('SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY')
+        try:
+            yield c
+        finally:
+            try:
+                c.execute('SET SESSION CHARACTERISTICS AS TRANSACTION READ WRITE')
+            except Exception:
+                pass
 
 def todos(banco, sql, params=()):
+    if _pular(sql):
+        return []
     with conn(banco) as c:
         return c.execute(sql, params).fetchall()
 
 def um(banco, sql, params=()):
+    if _pular(sql):
+        return None
     with conn(banco) as c:
         return c.execute(sql, params).fetchone()
 
 def exe(banco, sql, params=()):
+    if _pular(sql):
+        return None
     with conn(banco) as c:
         cur = c.execute(sql, params)
         try:

@@ -36,7 +36,7 @@ def _num(s):
     return float(s)
 
 @r.get('/indicadores')
-def lista(request: Request):
+def lista(request: Request, area: str = 'fin', sub: str = ''):
     u = exige(request, 'config'); _mods(request, u)
     b = request.state.orgao['banco']
     itens = []
@@ -55,8 +55,26 @@ def lista(request: Request):
     ano = config.hoje().year
     areas = db.todos(b, """SELECT a.*, d.empenhado FROM areas_unidades a LEFT JOIN despesas_unidade d ON d.codigo=a.codigo AND d.ano=%s ORDER BY a.codigo""", (ano,))
     opcoes = sorted({r['f'] for r in db.todos(b, "SELECT DISTINCT funcao f FROM empenhos WHERE funcao<>''")} | {a['area'] for a in areas} | set(AREAS_TEMA))
+    from . import consultas as CS
+    from .admin_fase9 import painel_completo
+    for i in itens:
+        i['origem'] = CS.origem(i)
+    area = area if area in dict(P.TEMAS) or area == 'geral' else 'fin'
+    subs = []
+    for i in itens:
+        if i['tema'] == area and i['origem'] not in subs:
+            subs.append(i['origem'])
+    if 'manual' not in subs and area != 'geral':
+        subs.append('manual')
+    sub = sub if sub in subs else (subs[0] if subs else '')
+    cp = painel_completo(request.state.orgao, sub) if sub in CS.ESQUEMA else None
     return T('indicadores', request, u, itens=itens, fontes=fontes, coletas=coletas, hist=hist, max_dest=P.MAX_DESTAQUES, aviso_cert=aviso_cert, origem_iegm=_origem_iegm(),
-             areas=areas, opcoes_area=opcoes, areas_tema=AREAS_TEMA)
+             areas=areas, opcoes_area=opcoes, areas_tema=AREAS_TEMA, temas=P.TEMAS, area=area, subs=[(k, CS.NOMES.get(k, k)) for k in subs], sub=sub, cp=cp,
+             da_aba=[i for i in itens if i['tema'] == area and (i['origem'] == sub or (sub == 'manual' and i['modo'] == 'manual'))])
+
+def coleta_falhou(ind):
+    """A última tentativa de coleta automática falhou (ou nunca deu certo): libera o lançamento manual de reserva."""
+    return ind['modo'] == 'automatico' and bool(ind['ultima_tentativa']) and (not ind['ultima_ok'] or ind['ultima_ok'] < ind['ultima_tentativa'])
 
 FONTES_PAINEL = ('ibge', 'cnes', 'inep', 'iegm', 'mds', 'pni', 'painel', 'financas')
 # nomes de área usados pelas seções temáticas do painel (nomes das funções de governo, Portaria MOG 42/1999)
@@ -113,7 +131,7 @@ def editar(request: Request, iid: int):
     from . import config
     ult_coleta = db.um(db.PLATAFORMA, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1)=%s ORDER BY id DESC LIMIT 1", (request.state.orgao['slug'], ind['coletor'])) if ind['coletor'] else None
     return T('indicador', request, u, i=ind, serie=serie, hist=hist, exibir=P.exibir, faixas=P.FAIXAS_IEGM, tema_nome=P.TEMA_NOME[ind['tema']],
-             link=P.link_fonte(ind, request.state.orgao), aviso=P.aviso_antigo(ind), alternavel=cat.get('alternavel'), reserva=cat.get('reserva'),
+             link=P.link_fonte(ind, request.state.orgao), aviso=P.aviso_antigo(ind), alternavel=cat.get('alternavel'), reserva=cat.get('reserva') or coleta_falhou(ind),
              credencial=_origem_iegm() if ind['coletor'] == 'iegm' else None, ult_coleta=ult_coleta)
 
 @r.post('/indicadores/{iid}')
@@ -176,11 +194,15 @@ async def editar_post(request: Request, iid: int):
             return ir(volta, 'Nada a coletar: a fonte está desligada, sem credencial ou o indicador está em modo manual.', request)
         return ir(volta, ' '.join(('OK: ' if x[1] else 'FALHA: ') + x[3][:160] for x in res), request)
     if acao == 'lancar':
-        if ind['modo'] != 'manual' and not cat.get('reserva'):
-            return ir(volta, 'Este indicador tem fonte automática: o valor vem do coletor.', request)
+        if ind['modo'] != 'manual' and not cat.get('reserva') and not coleta_falhou(ind):
+            return ir(volta, 'Este indicador tem fonte automática que está funcionando: o valor vem do coletor. O lançamento manual fica disponível quando a consulta falhar.', request)
+        fonte_inf = re.sub(r'\s+', ' ', f.get('fonte_informada', '')).strip()[:200]
+        if len(fonte_inf) < 3:
+            return ir(volta, 'Informe a fonte do valor lançado (documento, órgão ou sistema de onde ele veio).', request)
         periodo = f.get('periodo', '').strip()[:40]
         motivo = f.get('motivo', '').strip()
-        nota = f.get('nota', '').strip()[:300]
+        n0 = f.get('nota', '').strip()
+        nota = (f'Fonte: {fonte_inf}' + (f' · {n0}' if n0 else ''))[:300]
         try:
             data_ref = date.fromisoformat(f.get('data_ref', ''))
         except ValueError:

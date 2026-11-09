@@ -1,0 +1,39 @@
+{# Painel "Como a consulta é montada" — o mesmo em indicadores e em Integrações. cp = consultas.painel(o, fonte) #}
+{% macro consulta(cp, volta, C, pode_config) %}
+<section class="cx consulta" aria-labelledby="h-cons-{{ cp.fonte }}"><h2 id="h-cons-{{ cp.fonte }}">Como a consulta é montada — {{ cp.nome }}</h2>
+{% if not cp.cadastrada %}<p class="chip alerta">Fonte não cadastrada para este órgão.</p>{% else %}
+<p><span class="chip {{ 'ok' if cp.ativa else 'alerta' }}">{{ 'ligada' if cp.ativa else 'desligada' }}</span> · Formato: {{ cp.formato }} · Periodicidade: {{ cp.periodicidade }} · Credencial: {{ cp.credencial }} · Cabeçalho <code>User-Agent: PortaisBora-coletor/1.0</code></p>
+<div class="cons-grade"><div>
+{% for nome, met, url, q, base in cp.endpoints %}<details{% if loop.first %} open{% endif %}><summary><strong>{{ nome }}</strong></summary>
+<p><span class="chip">{{ met }}</span> <code class="url">{{ url }}</code></p>
+{% if q %}<div class="tabela"><table><caption class="sr">Parâmetros de {{ nome }}</caption><thead><tr><th scope="col">Parâmetro</th><th scope="col">Valor</th></tr></thead><tbody>{% for k, v in q.items() %}<tr><td><code>{{ k }}</code></td><td><code>{{ v }}</code></td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% if pode_config and base %}<form class="inline" method="post" action="/admin/integracoes/{{ cp.fonte }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="volta" value="{{ volta }}"><input type="hidden" name="base" value="{{ base }}">{% for n, r, t, de, v in cp.esquema %}{% if t == 'bases' %}{% for b in (v or []) %}<input type="hidden" name="p_{{ n }}" value="{{ b }}">{% endfor %}{% elif t == 'sn' %}{% if v %}<input type="hidden" name="p_{{ n }}" value="1">{% endif %}{% else %}<input type="hidden" name="p_{{ n }}" value="{{ v|join(', ') if v is iterable and v is not string else (v if v is not none else '') }}">{% endif %}{% endfor %}<button class="btn sec" name="acao" value="testar">Testar só esta base</button></form>{% endif %}
+</details>{% endfor %}
+{% if cp.mapeamento %}<h3>Campos da fonte → onde vão</h3><ul class="mapeamento">{% for a, b in cp.mapeamento %}<li><code>{{ a }}</code> → {{ b }}</li>{% endfor %}</ul>{% endif %}
+</div><div>
+{% if cp.esquema %}<form class="campos" method="post" action="/admin/integracoes/{{ cp.fonte }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="volta" value="{{ volta }}">
+<h3>Parâmetros{% if cp.em_teste %} <span class="chip alerta">valores do último teste, ainda não salvos</span>{% endif %}</h3>
+{% for n, r, t, de, v in cp.esquema %}{% set v = cp.form.get(n, v) %}
+{% if t == 'bases' %}<fieldset><legend>{{ r }} <small>({{ de }})</small></legend>{% for k, rot in cp.bases_opcoes.items() %}<label class="opc"><input type="checkbox" name="p_{{ n }}" value="{{ k }}" {{ 'checked' if v and k in v }} {{ '' if pode_config else 'disabled' }}> {{ rot }}</label>{% endfor %}</fieldset>
+{% elif t == 'sn' %}<label class="opc"><input type="checkbox" name="p_{{ n }}" value="1" {{ 'checked' if v }} {{ '' if pode_config else 'disabled' }}> {{ r }} <small>({{ de }})</small></label>
+{% else %}<label>{{ r }} <small>(de onde vem: {{ de }})</small><input name="p_{{ n }}" value="{{ v|join(', ') if v is iterable and v is not string else (v if v is not none else '') }}" {{ '' if pode_config else 'readonly' }}></label>{% endif %}{% endfor %}
+{% if pode_config %}<label class="opc"><input type="checkbox" name="confirmo" value="1"> Confirmo a mudança de endereço/parâmetros (fica registrada no histórico e na auditoria)</label>
+<div class="acoes"><button class="btn sec" name="acao" value="testar">Testar consulta (não grava)</button><button class="btn" name="acao" value="salvar"{% if not cp.pode_salvar %} disabled aria-describedby="nota-salvar-{{ cp.fonte }}"{% endif %}>Salvar e coletar agora</button></div>
+<p class="legal" id="nota-salvar-{{ cp.fonte }}">“Salvar e coletar agora” só é liberado depois de um teste bem-sucedido com exatamente estes parâmetros (válido por 30 minutos).</p>{% endif %}</form>
+{% else %}<p class="legal">Esta fonte não tem parâmetros editáveis aqui.{% if cp.fonte == 'youtube' %} O canal é informado em Transmissões.{% endif %}</p>
+{% if pode_config %}<form class="inline" method="post" action="/admin/integracoes/{{ cp.fonte }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="volta" value="{{ volta }}"><button class="btn sec" name="acao" value="testar">Testar consulta (não grava)</button></form>{% endif %}{% endif %}
+</div></div>
+
+{% if cp.teste %}{% set t = cp.teste.relatorio %}<section class="cons-teste" aria-labelledby="h-teste-{{ cp.fonte }}"><h3 id="h-teste-{{ cp.fonte }}">Último teste: {{ cp.teste.em|br }} por {{ cp.teste.quem }} — <span class="chip {{ 'ok' if cp.teste.ok else 'erro' }}">{{ 'sem erro' if cp.teste.ok else 'com erro' }}</span> <small>({{ t.segundos }} s, nada gravado)</small></h3>
+{% if t.aviso %}<p class="chip alerta">{{ t.aviso }}</p>{% endif %}
+{% for x in t.resultado %}<p><strong>{{ x.base }}</strong>: <span class="chip {{ 'ok' if x.ok else 'erro' }}">{{ 'ok' if x.ok else 'falhou' }}</span> {{ x.mensagem }}</p>{% endfor %}
+{% for q in (t.requisicoes or [])[:12] %}<details><summary><span class="chip">{{ q.metodo }}</span> <span class="chip {{ 'ok' if q.status and q.status < 400 else 'erro' }}">{{ 'HTTP ' ~ q.status if q.status else q.erro }}</span> {{ q.ms }} ms · {{ q.registros }} registro(s)</summary><p><code class="url">{{ q.url }}</code></p>{% if q.trecho %}<pre class="trecho">{{ q.trecho }}</pre>{% endif %}</details>{% endfor %}
+{% if (t.requisicoes or [])|length > 12 %}<p class="legal">… e mais {{ t.requisicoes|length - 12 }} requisição(ões).</p>{% endif %}
+{% if t.escritas_evitadas %}<p class="legal">Escritas evitadas no teste: {{ t.escritas_evitadas[:8]|join('; ') }}{% if t.escritas_evitadas|length > 8 %}…{% endif %}</p>{% endif %}</section>{% endif %}
+
+<section aria-labelledby="h-exec-{{ cp.fonte }}"><h3 id="h-exec-{{ cp.fonte }}">Última execução</h3>
+{% if cp.coletas %}<div class="tabela"><table><caption class="sr">Últimas coletas</caption><thead><tr><th scope="col">Quando</th><th scope="col">Base</th><th scope="col">Resultado</th><th scope="col">Registros</th><th scope="col">Mensagem</th></tr></thead><tbody>
+{% for c in cp.coletas %}<tr><td>{{ c.inicio|br }}</td><td>{{ c.fonte.split(':')[1] if ':' in c.fonte else c.fonte }}</td><td><span class="chip {{ 'ok' if c.ok else 'erro' }}">{{ 'ok' if c.ok else 'falhou' }}</span></td><td>{{ c.registros or 0 }}</td><td>{{ c.mensagem }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p>Nenhuma execução registrada.</p>{% endif %}
+{% if cp.amostras %}<h4>Trecho da última resposta de cada consulta</h4>{% for a in cp.amostras[:6] %}<details><summary><span class="chip {{ 'ok' if a.status and a.status < 400 else 'erro' }}">{{ 'HTTP ' ~ a.status if a.status else a.erro }}</span> {{ a.ms }} ms · {{ a.registros }} registro(s) · {{ a.em|br }}</summary><p><code class="url">{{ a.url }}</code></p>{% if a.trecho %}<pre class="trecho">{{ a.trecho }}</pre>{% endif %}</details>{% endfor %}{% endif %}</section>
+{% if cp.historico %}<h3>Histórico de parâmetros</h3><ul>{% for h in cp.historico %}<li>{{ h.em|br }} · {{ h.quem }}: {% for k, v in h.depois.items() if h.antes.get(k) != v %}<code>{{ k }}</code>: {{ h.antes.get(k) }} → {{ v }}{{ '; ' if not loop.last }}{% endfor %}</li>{% endfor %}</ul>{% endif %}
+{% endif %}</section>{% endmacro %}

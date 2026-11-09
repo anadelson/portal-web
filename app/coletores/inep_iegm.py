@@ -11,13 +11,13 @@ IEG-M (fonte 'iegm', anual): consulta do painel público do TCESP (Pentaho CDA, 
 sem aviso), com o acesso anônimo publicado pelo próprio Tribunal (uso autorizado pelo órgão em 07/11/2026). Credencial: a cadastrada no console do gestor (Credenciais de fontes, cifrada); reserva: IEGM_USUARIO/IEGM_SENHA do .env.
 Sem credencial ou com o IEG-M em modo manual, não coleta (sem erro).
 Colunas mapeadas por metadata[].colName; o mapeamento pode ser fixado no parâmetro 'colunas' da fonte."""
-import re, ssl, tempfile, unicodedata
+import re, ssl, tempfile, time, unicodedata
 from datetime import date, timedelta
 from pathlib import Path
 import httpx
 from .. import config, db
 from .. import painel as P
-from .comum import buscar, num, guardar_publico
+from .comum import buscar, num, guardar_publico, anotar
 from . import planilha
 
 # ---------- INEP ----------
@@ -69,9 +69,12 @@ def _tentar(f, tentativas=4):
 def cabecalho(url):
     """HEAD do arquivo: (status, last-modified, tamanho)."""
     def f():
+        t0 = time.monotonic()
         with httpx.Client(timeout=60, verify=contexto_tls(), headers={'User-Agent': 'PortaisBora-coletor/1.0'}) as c:
             r = c.head(url)
-        return r.status_code, r.headers.get('last-modified', ''), int(r.headers.get('content-length') or 0)
+        res = r.status_code, r.headers.get('last-modified', ''), int(r.headers.get('content-length') or 0)
+        anotar('inep', url, None, res[0], int((time.monotonic() - t0) * 1000), {'last-modified': res[1], 'tamanho_bytes': res[2]}, metodo='HEAD')
+        return res
     return _tentar(f)
 
 def baixar(url, destino):
@@ -87,6 +90,7 @@ def baixar(url, destino):
                         if n > LIMITE_ARQUIVO:
                             raise ValueError('arquivo maior que o limite')
                         fx.write(parte)
+        anotar('inep', url, None, 200, 0, {'arquivo_baixado_bytes': n})
         return n
     return _tentar(f)
 

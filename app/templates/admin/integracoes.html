@@ -1,0 +1,7 @@
+{% extends 'admin/base.html' %}{% block h1 %}Integrações{% endblock %}
+{% from 'partials/consulta.html' import consulta %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<p>Todas as fontes de dados que o portal consulta sozinho: como cada consulta é montada, os parâmetros (editáveis pelo administrador, com teste antes de salvar), a última execução e um trecho da última resposta. Credenciais nunca aparecem aqui: só “configurada no console”.</p>
+<nav class="subabas" aria-label="Fontes deste órgão">{% for f in fontes %}<a href="/admin/integracoes?fonte={{ f.fonte }}"{% if f.fonte == sel %} aria-current="page"{% endif %}>{{ f.nome }}{% if not f.ativo %} (desligada){% elif ult.get(f.fonte) and not ult[f.fonte].ok %} ⚠{% endif %}</a>{% endfor %}</nav>
+{% if cp %}{{ consulta(cp, '/admin/integracoes?fonte=' ~ sel, C, pode('config')) }}{% else %}<p>Nenhuma fonte cadastrada para este órgão.</p>{% endif %}
+{% endblock %}

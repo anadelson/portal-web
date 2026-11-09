@@ -9,6 +9,52 @@ from .. import db
 _ultimo: dict[str, float] = {}
 INTERVALO = 1.0
 
+SEGREDO = re.compile(r'(key|token|senha|password|secret|apikey|api_key)', re.I)
+CPF_RE = re.compile(r'\b(\d{3})\.?(\d{3})\.?(\d{3})-?(\d{2})\b')
+
+def url_exibivel(url, params=None):
+    """Endereço completo para mostrar no painel, sem segredo (parâmetros de chave/token viram "***")."""
+    q = {k: ('***' if SEGREDO.search(str(k)) else v) for k, v in (params or {}).items()}
+    return str(httpx.URL(url, params=q)) if q else url
+
+def _trecho(d, n=1200):
+    try:
+        t = json.dumps(d[:2] if isinstance(d, list) else d, ensure_ascii=False, default=str)
+    except Exception:
+        t = str(d)
+    t = CPF_RE.sub(lambda m: f'***.{m.group(2)}.{m.group(3)[:1]}**-**', t)  # LGPD: CPF nunca completo
+    return t[:n] + ('…' if len(t) > n else '')
+
+def _registros(d):
+    if isinstance(d, list):
+        return len(d)
+    if isinstance(d, dict):
+        for k in ('items', 'itens', 'resultset', 'data', 'registros', 'estabelecimentos', 'tipos_unidade'):
+            if isinstance(d.get(k), list):
+                return len(d[k])
+        return 1
+    return 0
+
+def anotar(fonte, url, params, status, ms, d=None, erro='', metodo='GET'):
+    """Registra a requisição: no ensaio vai para o relatório do teste; fora dele guarda a última resposta (amostra) da consulta."""
+    item = {'fonte': fonte, 'metodo': metodo, 'url': url_exibivel(url, params), 'status': status, 'ms': ms,
+            'registros': _registros(d) if d is not None else 0, 'trecho': _trecho(d) if d is not None else '', 'erro': erro[:200]}
+    e = db.ENSAIO.get()
+    if e is not None:
+        e.setdefault('requisicoes', []).append(item)
+        return
+    o = ORGAO.get()
+    try:
+        chave = f"{o or ''}|{httpx.URL(url).path}|{(params or {}).get('Listagem', '')}"
+        db.exe(db.PLATAFORMA, """INSERT INTO consulta_amostras (chave, orgao_slug, fonte, url, status, ms, registros, trecho, erro, em) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,now())
+                                 ON CONFLICT (chave) DO UPDATE SET url=EXCLUDED.url, status=EXCLUDED.status, ms=EXCLUDED.ms, registros=EXCLUDED.registros,
+                                 trecho=EXCLUDED.trecho, erro=EXCLUDED.erro, em=now()""", (chave, o or '', fonte, item['url'], status, ms, item['registros'], item['trecho'], item['erro']))
+    except Exception:
+        pass  # a amostra é informativa: nunca derruba a coleta (ex.: banco ainda sem a migração 018)
+
+import contextvars
+ORGAO = contextvars.ContextVar('orgao_coleta', default=None)
+
 def buscar(fonte: str, url: str, params=None, headers=None, tentativas=3, timeout=120, auth=None, verify=True):
     """GET com intervalo mínimo por fonte. Devolve o JSON (ou levanta a última exceção)."""
     erro = None
@@ -17,13 +63,21 @@ def buscar(fonte: str, url: str, params=None, headers=None, tentativas=3, timeou
         if espera > 0:
             time.sleep(espera)
         _ultimo[fonte] = time.monotonic()
+        t0 = time.monotonic(); st = 0
         try:
             with httpx.Client(timeout=timeout, follow_redirects=True, auth=auth, verify=verify, headers={'User-Agent': 'PortaisBora-coletor/1.0', 'Accept': 'application/json', **(headers or {})}) as c:
                 r = c.get(url, params=params)
+            st = r.status_code
             r.raise_for_status()
-            return r.json()
+            d = r.json()
+            anotar(fonte, url, params, st, int((time.monotonic() - t0) * 1000), d)
+            return d
         except (httpx.HTTPError, ValueError) as e:
             erro = e
+            if i == tentativas - 1 or db.ENSAIO.get() is not None:
+                anotar(fonte, url, params, st, int((time.monotonic() - t0) * 1000), erro=type(e).__name__ + (f' HTTP {st}' if st else ''))
+            if db.ENSAIO.get() is not None:
+                break  # no ensaio, uma tentativa basta
             time.sleep(3 * (i + 1))
     raise erro
 
@@ -97,6 +151,9 @@ def gravar(banco: str, tabela: str, linhas: list[dict], substituir: dict | None 
     apaga as linhas antigas desse recorte que não vieram nesta coleta (anulações e correções na fonte)."""
     if not linhas:
         return 0
+    if db.ENSAIO.get() is not None:  # ensaio: conta o que seria gravado, sem gravar
+        db.ENSAIO.get().setdefault('escritas_evitadas', []).append(f'{len(linhas)} linha(s) em {tabela}')
+        return len(linhas)
     chaves_unicas(linhas)
     cols = list(linhas[0].keys())
     sets = ', '.join(f'{c}=EXCLUDED.{c}' for c in cols if c != 'chave')
