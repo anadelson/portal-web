@@ -233,18 +233,19 @@ if 'a última consulta à fonte falhou' in pm.get('/painel/mun_populacao').text:
 
 # ---------- painel administrativo ----------
 entrar(pm, 'admin@pmbora.localhost', os.environ.get('SENHA_INICIAL_ADMIN', 'admin123'), 'adminforte12345')
-r = ok(pm.get('/admin/indicadores'), txt='Catálogo de indicadores', nome='admin lista')
-for x in ('aguardando primeira coleta', 'Coletar agora', 'Pendente de fonte estável', 'Histórico de alterações', 'href="/admin/indicadores"'):
-    if x not in r.text: falha(f'admin: falta "{x}"')
+r = ok(pm.get('/admin/indicadores?area=saude&sub=pni'), txt='Indicadores — Saúde', nome='admin lista (aba Saúde, fonte PNI)')
+rg = ok(pm.get('/admin/indicadores?area=geral'), txt='Coletar agora', nome='admin aba coleta')
+for x, txt in (('aguardando primeira coleta', r.text), ('Pendente de fonte estável', r.text), ('Coletar agora', rg.text), ('Histórico de alterações', rg.text), ('href="/admin/indicadores', r.text)):
+    if x not in txt: falha(f'admin: falta "{x}"')
 iegm = db.um(PM, "SELECT id FROM indicadores WHERE chave='gestao_iegm'")['id']
 url = f'/admin/indicadores/{iegm}'
 ok(pm.get(url), txt='Lançamento manual', nome='admin indicador manual')
-r = pm.post(url, data={'csrf': tok(pm, url), 'acao': 'lancar', 'periodo': '2024', 'data_ref': '2024-12-31', 'texto': 'B', 'nota': 'resultado publicado pelo TCESP',
+r = pm.post(url, data={'csrf': tok(pm, url), 'acao': 'lancar', 'fonte_informada': 'documento de teste', 'periodo': '2024', 'data_ref': '2024-12-31', 'texto': 'B', 'nota': 'resultado publicado pelo TCESP',
                        'motivo': 'abc'}, follow_redirects=True)
 if val('gestao_iegm', '2024'): falha('lançamento sem motivo aceito')
-r = pm.post(url, data={'csrf': tok(pm, url), 'acao': 'lancar', 'periodo': '2024', 'data_ref': '2024-12-31', 'texto': 'Z', 'motivo': 'Resultado publicado pelo Tribunal (teste)'}, follow_redirects=True)
+r = pm.post(url, data={'csrf': tok(pm, url), 'acao': 'lancar', 'fonte_informada': 'documento de teste', 'periodo': '2024', 'data_ref': '2024-12-31', 'texto': 'Z', 'motivo': 'Resultado publicado pelo Tribunal (teste)'}, follow_redirects=True)
 if val('gestao_iegm', '2024'): falha('faixa inválida aceita')
-r = pm.post(url, data={'csrf': tok(pm, url), 'acao': 'lancar', 'periodo': '2024', 'data_ref': '2024-12-31', 'texto': 'B', 'nota': 'documento de teste',
+r = pm.post(url, data={'csrf': tok(pm, url), 'acao': 'lancar', 'fonte_informada': 'documento de teste', 'periodo': '2024', 'data_ref': '2024-12-31', 'texto': 'B', 'nota': 'documento de teste',
                        'motivo': 'Valor de TESTE para conferir o fluxo de lançamento'}, follow_redirects=True)
 v = val('gestao_iegm', '2024')
 if not v or v['texto'] != 'B' or v['origem'] != 'manual' or not v['usuario'] or 'TESTE' not in v['motivo']: falha(f'lançamento manual: {v}')
@@ -253,7 +254,7 @@ if not db.um(PM, "SELECT 1 FROM indicador_historico WHERE indicador_id=%s AND ac
 ok(pm.get('/painel?tema=mun'), txt='Nota da gestão municipal pelo Tribunal de Contas', nome='IEG-M lançado aparece')
 ok(pm.get('/painel/gestao_iegm'), txt='Lançamento manual', nome='origem manual na tabela')
 auto = db.um(PM, "SELECT id FROM indicadores WHERE chave='mun_populacao'")['id']
-pm.post(f'/admin/indicadores/{auto}', data={'csrf': tok(pm, f'/admin/indicadores/{auto}'), 'acao': 'lancar', 'periodo': '2027', 'data_ref': '2027-12-31', 'valor': '999', 'motivo': 'tentativa indevida de teste'})
+pm.post(f'/admin/indicadores/{auto}', data={'csrf': tok(pm, f'/admin/indicadores/{auto}'), 'acao': 'lancar', 'fonte_informada': 'documento de teste', 'periodo': '2027', 'data_ref': '2027-12-31', 'valor': '999', 'motivo': 'tentativa indevida de teste'})
 if val('mun_populacao', '2027'): falha('lançamento manual aceito em indicador automático')
 # configuração: meta com base legal, texto neutro, destaque limitado
 sm = db.um(PM, "SELECT id FROM indicadores WHERE chave='mun_salario_medio'")['id']

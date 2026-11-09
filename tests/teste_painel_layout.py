@@ -113,7 +113,7 @@ if 'São Paulo (rede pública)' in t or 'Brasil (rede pública) 6,1' not in t: f
 
 # ---------- admin: agrupamento editável ----------
 entrar(pm, 'admin@pmbora.localhost', os.environ.get('SENHA_INICIAL_ADMIN', 'admin123'), 'adminforte12345')
-t = ok(pm.get('/admin/indicadores'), txt='Agrupamento das unidades por área', nome='admin áreas').text
+t = ok(pm.get('/admin/indicadores?area=geral'), txt='Agrupamento das unidades por área', nome='admin áreas').text
 if 'GABINETE TESTE' not in t or 'sugestão automática' not in t: falha('tabela de áreas no admin')
 pm.post('/admin/indicadores', data={'csrf': tok(pm, '/admin/indicadores'), 'acao': 'areas', 'area_04': 'Educação'})
 a = db.um(PM, "SELECT * FROM areas_unidades WHERE codigo='04'")

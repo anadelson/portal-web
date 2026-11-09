@@ -29,3 +29,11 @@ Capturas "antes" em `antes/`. O painel foi fotografado em ambiente de TESTE (ban
 3. **Redes sociais "sincronizar":** Instagram e Facebook exigem app e token da Meta, o X é pago e os embeds trazem rastreadores (LGPD). Proponho: links com ícone para todas; últimas publicações só do YouTube (chave já prevista) e da Meta, quando houver token no console.
 4. **Fotos e álbuns × Conheça (Fase 8):** a biblioteca de álbuns vira a fonte única de fotos e os perfis do Conheça passam a escolher fotos dela, ou ficam separados?
 5. **Painel do órgão no celular:** as tabelas de Comunicados e Conheça (Fase 8) passam da largura em 390 px. Corrijo nesta fase?
+
+## Decisões do usuário (09/11/2026)
+- Esboço aprovado.
+- Editor: pacote `nh3` na imagem.
+- "Esqueci minha senha": por ora orienta a pedir a redefinição ao administrador do órgão (no console, ao gestor); e-mail quando houver SMTP.
+- Redes sociais: links com ícone para todas; últimas publicações só do YouTube e da Meta, com credencial no console; feed suspenso no defeso.
+- Fotos e álbuns: **separados** do Conheça (o Conheça mantém fotos próprias).
+- Item 5 (tabelas do painel no celular): corrigido nesta fase.

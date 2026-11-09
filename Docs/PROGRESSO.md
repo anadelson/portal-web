@@ -827,3 +827,28 @@ Código pronto e testado no branch `fase-8`. **Nada foi aplicado na VPS de produ
 - Esboço em `Docs/avaliacao-fase9/esboco/` e proposta em `Docs/avaliacao-fase9/PROPOSTA.md`.
 - **Diagnóstico da avaliação:** o envio é gravado; a mensagem de agradecimento fica fora de vista (topo × âncora no rodapé).
 - **Parado aguardando** aprovação do esboço e 5 decisões.
+
+### Implementação (09/11/2026, branch `fase-9`, nada aplicado na VPS)
+- Aprovado: o esboço e as decisões (registradas em `avaliacao-fase9/PROPOSTA.md`): `nh3`; "esqueci a senha" via administrador; redes: links + YouTube/Meta com credencial; álbuns separados do Conheça; tabelas do painel no celular.
+- **Migrações:** `017_orgao_fase9.sql` (avaliação com hash de IP e moderação; álbuns, fotos e categorias; HTML do editor em conteúdos, comunicados e perfis; cópia do texto nas versões) e `018_plataforma_consultas.sql` (amostras das respostas, testes de consulta, histórico de parâmetros, configuração do console). Fonte `redes` acrescentada à lista completa de fontes (009/011/014/016).
+- **1) Mapa do layout:** cartão "Onde fica no portal" fixo ao lado da lista. Destaque nos dois sentidos, bloco desligado tracejado. Ordem e liga/desliga mudam o mapa antes de salvar, com um botão "Salvar". No celular vira o botão "Ver mapa do layout". Sem JS, cada botão salva na hora. A reordenação entre regiões é recusada no servidor.
+- **2) Avaliação:** causa corrigida (a resposta aparece no próprio bloco; com JS, sem recarregar).
+  - Cookie próprio `aval` (código da página + dia) com prazo configurável (padrão 30 dias).
+  - Limite de 5 avaliações por hora por conexão, com IP guardado só como hash com sal diário e apagado em 2 dias.
+  - Abas Por página, Por mês, Comentários (moderação) e Regras. Política de privacidade atualizada.
+- **3) Consultas:**
+  - **Modo ensaio na camada de dados:** o coletor real roda, mas escritas são puladas e a conexão fica somente leitura. Cada requisição é anotada (método, URL sem segredo, HTTP, tempo, registros, trecho com CPF mascarado). Fora do ensaio, guarda a última resposta de cada consulta.
+  - **Tela Integrações:** todas as fontes do órgão, inclusive os 11 endpoints do Fiorilli com o GET montado. Mostra parâmetros com a origem de cada valor, credencial ("configurada no console"), formato, periodicidade e mapeamento campo → destino.
+  - **Teste e salvamento:** "Testar consulta" não grava. "Salvar e coletar agora" só com teste ok dos mesmos parâmetros nos últimos 30 minutos; a mudança exige confirmação e vai para o histórico e a auditoria.
+  - **Indicadores:** abas por área e sub-abas por fonte, com a mesma tela de consulta. O lançamento manual agora fica liberado quando a coleta automática falha e exige a fonte informada.
+- **4) Identidade em 7 abas:**
+  - **Dados e textos:** inclui o título da tela de login.
+  - **Tema e cores:** seletor visual + hexadecimal, contraste calculado na hora e prévia ao vivo; o servidor recusa cor abaixo de 4,5:1.
+  - **Brasão, mascote e fundos:** destaque, login e sede com ponto focal e prévia dos recortes. O recorte é feito pelo ponto focal, não com ferramenta de corte livre.
+  - **Favicon:** PNG gerando 16/32/180/512; SVG opcional, filtrado e servido com CSP própria.
+  - **Redes sociais:** ícones, ordem, validação do domínio de cada rede. A sincronização (fonte `redes`, a cada 6 h) usa só YouTube (chave do console) e Meta (token "meta" no console); as miniaturas são servidas pelo portal e o bloco "Nas redes" some no defeso.
+  - **Dados do município:** IBGE automático (população, área — pesquisa 33 —, PIB per capita, salário médio). Distância e IDHM ficam manuais e marcados (a API do IBGE não traz IDHM por município).
+  - **Fotos e álbuns:** licença obrigatória e autorização de uso de imagem; categoria "suspender no período eleitoral"; foto principal do álbum e destaque do portal; páginas `/fotos` e `/fotos/<id>`.
+- **5) Editor:** próprio, com formatação limitada (títulos, negrito, itálico, listas, links, citação, tabela, imagem). Ao colar do Word, os estilos são limpos no navegador e de novo no servidor (`nh3`, lista fechada). Imagem no corpo do texto só do próprio portal e com texto alternativo obrigatório. Prévia no bloco de notícias. Versões com cópia do texto, para comparar (diferenças marcadas em texto, não só por cor) e restaurar como rascunho. Vale para conteúdos, comunicados e perfis.
+- **6) Login:** moldura comum (órgão e console) com brasão, título configurável, fundo com camada de contraste e etapas "1 · E-mail e senha / 2 · Código". "Esqueci minha senha" orienta a pedir a redefinição; o administrador ganhou "senha provisória" na tela de usuários. O console tem a tela "Aparência do login".
+- **Testes:** `tests/teste_fase9.py` (tudo ok). Usa APIs simuladas (PNCP, YouTube/Meta, IBGE), sem rede. Os testes rodam com `nh3` instalado só dentro do contêiner de teste; na imagem ele entra pelo `requirements.txt` no próximo build, que depende de aprovação.
