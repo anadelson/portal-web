@@ -6,9 +6,9 @@ A falha de uma fonte (ou de uma base) só é registrada em `coletas`; o portal c
 import sys, time, traceback
 from datetime import datetime
 from . import config, db
-from .coletores import fiorilli, pncp, siconfi, tcesp, numeros, comum, indicadores
+from .coletores import fiorilli, pncp, siconfi, tcesp, numeros, comum, indicadores, youtube
 
-MODULOS = {'fiorilli': fiorilli, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp, **indicadores.MODULOS}
+MODULOS = {'fiorilli': fiorilli, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp, 'youtube': youtube, **indicadores.MODULOS}
 # fontes do painel de indicadores: só rodam para órgão com o módulo "bi" contratado e ligado
 PAINEL = set(indicadores.MODULOS)
 # fonte -> (a cada N minutos, horas permitidas)
@@ -19,7 +19,9 @@ FREQ = {'fiorilli': (60, range(7, 20)), 'pncp': (360, range(0, 24)), 'siconfi': 
         # dados anuais/bienais: INEP (planilhas, só baixa se mudarem) e IEG-M do TCESP, verificados a cada 30 dias
         'inep': (30 * 24 * 60, range(2, 6)), 'iegm': (30 * 24 * 60, range(2, 6)),
         # série mensal das finanças (Fiorilli): uma vez por dia, de madrugada
-        'financas': (20 * 60, range(1, 5))}
+        'financas': (20 * 60, range(1, 5)),
+        # YouTube: tique de 2 min; o coletor só consulta dentro das janelas da agenda (ou com transmissão ao vivo) e na varredura diária
+        'youtube': (2, range(0, 24))}
 
 def fontes_ativas():
     return db.todos(db.PLATAFORMA, 'SELECT o.*, f.fonte, f.params FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE f.ativo AND o.ativo ORDER BY o.id, f.fonte')

@@ -50,6 +50,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <a href="#conteudo" style="color: #3D4752; padding: 6px 0; text-decoration: none;">Ir para o conteúdo <span aria-hidden="true" style="color: #6B7684;">[1]</span></a>
 <a href="#menu" style="color: #3D4752; padding: 6px 0; text-decoration: none;">Menu <span aria-hidden="true" style="color: #6B7684;">[2]</span></a>
 <a href="#busca-topo" style="color: #3D4752; padding: 6px 0; text-decoration: none;">Busca <span aria-hidden="true" style="color: #6B7684;">[3]</span></a>
+<span aria-hidden="true" style="width: 1px; height: 14px; background: #C9D1D9; align-self: center;"></span>
+<a href="Camara.dc.html" style="color: #3D4752; padding: 6px 0; text-decoration: none; font-weight: 600;">Câmara Municipal</a>
+<a href="Backend.dc.html" onClick="{{marcaPainel}}" style="color: #3D4752; padding: 6px 0; text-decoration: none;">Área restrita</a>
 </span>
 <span style="margin-left: auto; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 4px;">
 <span role="group" aria-label="Tamanho do texto" style="display: inline-flex; align-items: center;">
@@ -68,13 +71,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </div>
 </div>
 
-<div style="background: #17212B; color: #FFFFFF;">
-<nav aria-label="Acesso rápido" style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; gap: 0 22px; font-size: 14px;">
-<sc-for list="{{util}}" as="u" hint-placeholder-count="7">
-<button type="button" onClick="{{u.go}}" style="background: none; border: 0; color: #FFFFFF; font: inherit; padding: 10px 0; min-height: 40px; cursor: pointer;">{{u.label}}</button>
+<div style="background: {{p}}; color: #FFFFFF;">
+<nav aria-label="Transparência e governo" style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; gap: 0 2px;">
+<sc-for list="{{govNav}}" as="g" hint-placeholder-count="9">
+<button type="button" onClick="{{g.go}}" aria-current="{{g.current}}" style="background: {{g.bg}}; border: 0; border-bottom: 3px solid {{g.line}}; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 600; padding: 10px 12px 7px; min-height: 44px; cursor: pointer;">{{g.label}}</button>
 </sc-for>
-<a href="Backend.dc.html" onClick="{{marcaPainel}}" style="display: inline-flex; align-items: center; color: #FFFFFF; padding: 10px 0; min-height: 40px; box-sizing: border-box; text-decoration: none;">Área restrita (servidores)</a>
-<a href="Camara.dc.html" style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: #FFFFFF; padding: 10px 0; min-height: 40px; box-sizing: border-box; text-decoration: none; font-weight: 600;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V10M19 21V10M9 21v-7h6v7M2 10l10-6 10 6"></path></svg>Câmara Municipal</a>
 </nav>
 </div>
 
@@ -84,14 +85,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <img src="/_blob/79fc486baceda13dd406893eb98e8d87" alt="" width="68" height="59" style="display: block; width: 68px; height: auto;">
 <span style="display: flex; flex-direction: column; line-height: 1.15;"><span style="font-size: 13px; color: #4B5563;">Prefeitura Municipal de</span><span style="font-size: 26px; font-weight: 700; letter-spacing: -0.01em;">Borá</span><span style="font-size: 12px; color: #4B5563; letter-spacing: 0.04em; text-transform: uppercase;">Estado de São Paulo</span></span>
 </button>
-<nav id="menu" tabindex="-1" aria-label="Menu principal" style="display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 520px;">
-<sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
+<nav id="menu" tabindex="-1" aria-label="Portal" style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; flex: 1 1 520px;">
+<sc-for list="{{portalNav}}" as="n" hint-placeholder-count="6">
 <button type="button" onClick="{{n.go}}" aria-current="{{n.current}}" style="background: none; border: 0; border-bottom: 3px solid {{n.line}}; color: {{n.fg}}; font: inherit; font-weight: 600; font-size: 16px; padding: 10px 12px; min-height: 44px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"><sc-if value="{{n.dot}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" class="pulso" style="width: 9px; height: 9px; border-radius: 50%; background: #C81E1E;"></span></sc-if>{{n.label}}<sc-if value="{{n.dot}}" hint-placeholder-val="{{false}}"><span class="sr">(ao vivo agora)</span></sc-if></button>
 </sc-for>
 </nav>
 <button id="busca-topo" type="button" onClick="{{goBusca}}" style="display: flex; align-items: center; gap: 8px; background: #F5F7F9; border: 1px solid #6B7684; border-radius: 999px; padding: 10px 18px; min-height: 44px; font: inherit; font-size: 15px; color: #17212B; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20 L16 16"></path></svg>Buscar</button>
 </div>
 </header>
+
 
 <sc-if value="{{showLiveBar}}" hint-placeholder-val="{{false}}">
 <section aria-label="Transmissão ao vivo" style="background: #7F1414; color: #FFFFFF;">
@@ -108,7 +110,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <div style="max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 15px;">
 <strong style="font-weight: 700; color: #7A4A00;">Aviso</strong>
 <span>Vacinação contra a gripe aberta para toda a população até 30/11, nas duas UBS.</span>
-<button type="button" onClick="{{goNoticia1}}" style="background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 600; color: #17212B; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Ver locais e horários</button>
+<button type="button" onClick="{{goNoticia1}}" style="min-height: 36px; padding: 0 14px; font: inherit; font-size: 14px; font-weight: 600; color: #7A4A00; background: #FFFFFF; border: 1px solid #7A4A00; border-radius: 999px; cursor: pointer;">Ver locais e horários</button>
 </div>
 </section>
 </sc-if>
@@ -195,21 +197,39 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </sc-if>
 
 <sc-if value="{{isHome}}" hint-placeholder-val="{{true}}">
-<section aria-labelledby="h-serv" style="margin-top: 8px;">
-<div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
-<h2 id="h-serv" style="margin: 0; font-size: 26px; letter-spacing: -0.01em;">Serviços mais procurados</h2>
-<button type="button" onClick="{{goServicos}}" style="background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 600; color: {{p}}; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Ver todos os serviços</button>
+<section aria-label="Comunicados e serviços" style="margin-top: 8px;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 24px; align-items: stretch;">
+<section aria-labelledby="h-com" style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 20px; padding: 24px; box-sizing: border-box; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+<div>
+<h2 id="h-com" style="margin: 0; font-size: 26px; letter-spacing: -0.01em;">Comunicados</h2>
+<p style="margin: 2px 0 0; font-size: 14px; color: #4B5563;">Avisos, convocações, convites e notas oficiais da Prefeitura.</p>
 </div>
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
-<sc-for list="{{homeServ}}" as="s" hint-placeholder-count="8">
-<button type="button" onClick="{{s.go}}" style="position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 14px; padding: 20px; min-height: 188px; font: inherit; color: #17212B; cursor: pointer;">
-<span aria-hidden="true" class="hc-hide" style="position: absolute; right: 0; bottom: 0; width: 66%; height: 84%; pointer-events: none; -webkit-mask-image: radial-gradient(ellipse 100% 100% at 100% 100%, #000 0%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 100%); mask-image: radial-gradient(ellipse 100% 100% at 100% 100%, #000 0%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 100%);"><img src="{{s.foto}}" alt="" style="display: block; width: 100%; height: 100%; object-fit: cover;"></span>
-<span style="position: relative; display: flex; align-items: center; gap: 12px;"><span style="width: 48px; height: 48px; border-radius: 12px; background: #E7F0F3; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;"><dc-import name="Icon" icon="{{s.icone}}" color="{{p}}" size="{{iconSize}}" hint-size="26px,26px"></dc-import></span><span style="font-size: 13px; font-weight: 600; color: #4B5563; text-transform: uppercase; letter-spacing: 0.06em;">{{s.tema}}</span></span>
-<span style="position: relative; font-size: 18px; font-weight: 600; line-height: 1.3; max-width: 92%;">{{s.nome}}</span>
-<span style="position: relative; font-size: 15px; color: #374151; max-width: 66%;">{{s.desc}}</span>
-<span style="position: relative; margin-top: auto; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: {{s.badgeBg}}; color: {{s.badgeFg}};">{{s.badge}}</span>
-</button>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column;">
+<sc-for list="{{homeCom}}" as="c" hint-placeholder-count="5">
+<li style="border-bottom: 1px solid #EEF0F3;"><button type="button" onClick="{{c.go}}" style="width: 100%; text-align: left; background: none; border: 0; padding: 12px 0; font: inherit; color: #17212B; cursor: pointer; display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 12px; align-items: start;">
+<span style="justify-self: start; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: {{c.bg}}; color: {{c.fg}};">{{c.tipo}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-weight: 600; line-height: 1.35;">{{c.titulo}}</span><span style="font-size: 13px; color: #4B5563;">{{c.quando}}</span></span>
+</button></li>
 </sc-for>
+</ul>
+<button type="button" onClick="{{goComunicados}}" style="margin-top: auto; align-self: flex-start; min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: {{p}}; background: #FFFFFF; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Todos os comunicados<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></button>
+</section>
+
+<section aria-labelledby="h-serv" style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 20px; padding: 24px; box-sizing: border-box; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+<div>
+<h2 id="h-serv" style="margin: 0; font-size: 26px; letter-spacing: -0.01em;">Serviços mais acessados</h2>
+<p style="margin: 2px 0 0; font-size: 14px; color: #4B5563;">Os pedidos mais feitos no portal neste mês.</p>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px;">
+<sc-for list="{{homeServ}}" as="s" hint-placeholder-count="6">
+<li style="display: flex;"><button type="button" onClick="{{s.go}}" style="width: 100%; min-height: 76px; display: flex; gap: 12px; align-items: center; text-align: left; background: #F7F9FA; border: 1px solid #DCE1E6; border-radius: 12px; padding: 12px 14px; font: inherit; color: #17212B; cursor: pointer;">
+<span style="width: 42px; height: 42px; border-radius: 10px; background: #E7F0F3; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;"><dc-import name="Icon" icon="{{s.icone}}" color="{{p}}" size="{{iconSize}}" hint-size="24px,24px"></dc-import></span>
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;"><span style="font-size: 15px; font-weight: 600; line-height: 1.3;">{{s.nome}}</span><span style="align-self: flex-start; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: {{s.badgeBg}}; color: {{s.badgeFg}};">{{s.badge}}</span></span>
+</button></li>
+</sc-for>
+</ul>
+<button type="button" onClick="{{goServicos}}" style="margin-top: auto; align-self: flex-start; min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: {{p}}; background: #FFFFFF; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Todos os serviços<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></button>
+</section>
 </div>
 <div style="margin-top: 16px; display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; justify-content: space-between; padding: 20px 24px; background: #FFFFFF; border: 1px solid #DCE1E6; border-left: 6px solid {{p}}; border-radius: 14px;">
 <form role="search" aria-label="Acompanhar pedido" onSubmit="{{doProt}}" style="display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; flex: 2 1 420px;">
@@ -231,14 +251,21 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <h2 id="h-gestao" style="margin: 0; font-size: 28px; letter-spacing: -0.01em;">Acompanhe a gestão</h2>
 <p style="margin: 4px 0 0; color: #4B5563;">Quanto a Prefeitura arrecada, gasta e contrata em 2026.</p>
 </div>
-<p style="margin: 0; font-size: 14px; color: #4B5563; display: inline-flex; align-items: center; gap: 8px;"><span aria-hidden="true" class="pulso" style="width: 8px; height: 8px; border-radius: 50%; background: #146C43;"></span>Dados do sistema contábil lidos hoje às 11h</p>
+<p style="margin: 0; font-size: 14px; color: #4B5563; display: inline-flex; align-items: center; gap: 8px;"><span aria-hidden="true" class="pulso" style="width: 8px; height: 8px; border-radius: 50%; background: #146C43;"></span>Atualizado hoje às 11h · fonte de cada número no ⓘ</p>
 </div>
 <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
 <sc-for list="{{gKpis}}" as="k" hint-placeholder-count="4">
-<div style="padding: 16px 18px; border-radius: 14px; background: #F4F7F9; border-top: 4px solid {{k.cor}}; display: flex; flex-direction: column; gap: 4px;">
-<dt style="font-size: 14px; color: #4B5563;">{{k.l}}</dt>
-<dd style="margin: 0; font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums;">{{k.v}}</dd>
-<dd style="margin: 0; font-size: 13px; color: #4B5563;">{{k.d}}</dd>
+<div style="position: relative; background: #F4F7F9; border-top: 4px solid {{k.cor}}; border-radius: 14px; padding: 12px 10px 16px 18px; display: grid; grid-template-rows: 32px auto auto; gap: 4px; min-width: 0;">
+<dt style="display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 14px; color: #4B5563;"><span title="{{k.l}}" style="flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{k.c}}</span><button type="button" onClick="{{k.info}}" aria-expanded="{{k.exp}}" aria-label="Sobre este indicador: {{k.l}}" style="flex: 0 0 auto; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background: {{k.infoBg}}; border: 0; border-radius: 50%; color: {{k.infoFg}}; cursor: pointer; padding: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg></button></dt>
+<dd style="margin: 0; padding-right: 8px; font-size: 28px; line-height: 1.2; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap;">{{k.v}}</dd>
+<dd style="margin: 0; padding-right: 8px; font-size: 13px; color: #4B5563;">{{k.d}}</dd>
+<sc-if value="{{k.open}}" hint-placeholder-val="{{false}}">
+<dd role="note" aria-label="Sobre este indicador" style="position: absolute; z-index: 6; left: 8px; right: 8px; top: 46px; margin: 0; padding: 14px 16px; background: #17212B; color: #FFFFFF; border-radius: 12px; box-shadow: 0 12px 28px rgba(11,22,32,0.28); font-size: 13px; line-height: 1.5; display: flex; flex-direction: column; gap: 6px;">
+<strong style="font-size: 14px;">{{k.l}}</strong>
+<span><strong style="color: #F7C948;">Fonte:</strong> {{k.f}}</span>
+<button type="button" onClick="{{k.info}}" style="align-self: flex-end; min-height: 32px; padding: 0 12px; font: inherit; font-size: 13px; font-weight: 600; color: #17212B; background: #FFFFFF; border: 0; border-radius: 999px; cursor: pointer;">Fechar</button>
+</dd>
+</sc-if>
 </div>
 </sc-for>
 </dl>
@@ -281,7 +308,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </section>
 
 <section aria-labelledby="h-atos" style="margin-top: 48px;">
-<h2 id="h-atos" style="margin: 0 0 16px; font-size: 26px; letter-spacing: -0.01em;">Atos oficiais e oportunidades</h2>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 16px; margin-bottom: 16px;">
+<h2 id="h-atos" style="margin: 0; font-size: 26px; letter-spacing: -0.01em;">Atos oficiais e oportunidades</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<button type="button" onClick="{{goDiarioPub}}" style="min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: #FFFFFF; background: {{p}}; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Todas as edições do Diário</button>
+<button type="button" onClick="{{goVerificar}}" style="min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: {{p}}; background: #FFFFFF; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Verificar autenticidade</button>
+</div>
+</div>
 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;">
 <sc-for list="{{atos}}" as="a" hint-placeholder-count="4">
 <button type="button" onClick="{{a.go}}" style="display: flex; flex-direction: column; gap: 4px; text-align: left; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 14px; padding: 20px; font: inherit; color: #17212B; cursor: pointer;">
@@ -297,7 +330,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <section aria-labelledby="h-transm-home" style="margin-top: 48px;">
 <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
 <h2 id="h-transm-home" style="margin: 0; font-size: 26px; letter-spacing: -0.01em;">Transmissões</h2>
-<button type="button" onClick="{{goTransm}}" style="background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 600; color: {{p}}; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Todas as transmissões</button>
+<button type="button" onClick="{{goTransm}}" style="min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: {{p}}; background: #FFFFFF; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Todas as transmissões<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></button>
 </div>
 <p style="margin: 0 0 16px; font-size: 15px; color: #4B5563;">Próxima: {{agenda0.titulo}} · {{agenda0.quando}}</p>
 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;">
@@ -329,43 +362,151 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </sc-for>
 </dl>
 <p style="margin: 0; font-size: 12px; color: #4B5563;">IBGE: Censo 2022, área territorial e IDHM 2010.</p>
-<button type="button" onClick="{{goPainel}}" style="align-self: flex-start; min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: {{p}}; background: #FFFFFF; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer;">Borá em números</button>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<button type="button" onClick="{{goConheca}}" style="min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: #FFFFFF; background: {{p}}; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Conheça mais<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></button>
+<button type="button" onClick="{{goPainel}}" style="min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: {{p}}; background: #FFFFFF; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Borá em números</button>
+</div>
 </div>
 <div style="display: grid; grid-template-columns: 1.1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; min-height: 440px; background: #FFFFFF;">
 <sc-for list="{{cidadeFotos}}" as="c" hint-placeholder-count="4">
-<figure style="position: relative; margin: 0; overflow: hidden; grid-row: {{c.row}}; min-height: 180px;">
+<button type="button" onClick="{{c.go}}" style="position: relative; margin: 0; padding: 0; border: 0; overflow: hidden; grid-row: {{c.row}}; min-height: 180px; background: #17212B; font: inherit; text-align: left; cursor: pointer;">
 <img src="{{c.src}}" alt="{{c.alt}}" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: {{c.pos}}; display: block;">
-<figcaption style="position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 12px 10px; background: linear-gradient(0deg, rgba(11,22,32,0.82), rgba(11,22,32,0)); color: #FFFFFF; font-size: 14px; font-weight: 600;">{{c.t}}</figcaption>
-</figure>
+<span style="position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 12px 10px; background: linear-gradient(0deg, rgba(11,22,32,0.85), rgba(11,22,32,0)); color: #FFFFFF; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px;"><span>{{c.t}}</span><span style="flex: 0 0 auto; font-size: 12px; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.7); border-radius: 999px;">Ver perfil</span></span>
+</button>
 </sc-for>
 </div>
 </section>
 
-<div style="margin-top: 32px; display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch;">
-<section aria-labelledby="h-paco" style="flex: 1 1 380px; min-width: 0; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 20px; overflow: hidden; display: flex; flex-wrap: wrap;">
-<img src="{{fotoPaco}}" alt="Fachada do Paço Municipal, prédio branco arredondado com jardim de roseiras na frente" style="flex: 1 1 200px; min-height: 200px; max-height: 280px; width: 100%; object-fit: cover; display: block;">
-<div style="flex: 1 1 220px; padding: 22px; display: flex; flex-direction: column; gap: 8px;">
-<h2 id="h-paco" style="margin: 0; font-size: 22px;">Paço Municipal</h2>
-<p style="margin: 0; font-size: 15px;">Atendimento ao público de segunda a sexta, das 8h às 17h.</p>
-<p style="margin: 0; font-size: 15px; color: #4B5563;">[Endereço do Paço Municipal] · [telefone]</p>
-<button type="button" onClick="{{goUnidades}}" style="margin-top: auto; align-self: flex-start; background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 600; color: {{p}}; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Endereços e horários de todas as unidades</button>
-</div>
-</section>
-<section aria-labelledby="h-not" style="flex: 1 1 320px; min-width: 0; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 20px; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column;">
-<h2 id="h-not" style="margin: 0 0 12px; font-size: 22px;">Comunicados</h2>
+<div style="margin-top: 48px; display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch;">
+<section aria-labelledby="h-not" style="flex: 2 1 520px; min-width: 0; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 20px; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;">
+<h2 id="h-not" style="margin: 0; font-size: 22px;">Notícias</h2>
 <sc-if value="{{eleitoral}}" hint-placeholder-val="{{false}}">
-<p style="margin: 0; padding: 16px; background: #EEF0F3; border-radius: 12px; font-size: 15px;">Publicidade institucional suspensa durante o período eleitoral (Lei 9.504/1997, art. 73, VI, b). Serviços, atos oficiais e transparência continuam disponíveis.</p>
+<p style="margin: 0; padding: 16px; background: #EEF0F3; border-radius: 12px; font-size: 15px;">Publicidade institucional suspensa durante o período eleitoral (Lei 9.504/1997, art. 73, VI, b). Comunicados de utilidade pública, serviços, atos oficiais e transparência continuam disponíveis.</p>
 </sc-if>
 <sc-if value="{{notEleitoral}}" hint-placeholder-val="{{true}}">
-<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column;">
-<sc-for list="{{homeNews}}" as="n" hint-placeholder-count="3">
-<li style="border-bottom: 1px solid #EEF0F3;"><button type="button" onClick="{{n.go}}" style="width: 100%; text-align: left; background: none; border: 0; padding: 12px 0; font: inherit; color: #17212B; cursor: pointer; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 13px; color: #4B5563;">{{n.data}} · {{n.sec}}</span><span style="font-weight: 600; line-height: 1.3;">{{n.titulo}}</span></button></li>
+<article aria-labelledby="h-nd" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px; align-items: center;">
+<button type="button" onClick="{{nDest.go}}" aria-labelledby="h-nd" style="display: block; width: 100%; padding: 0; border: 0; border-radius: 12px; overflow: hidden; background: none; cursor: pointer;"><dc-import name="Cena" kind="{{nDest.cena}}" color="{{p}}" ratio="16 / 9" hint-size="100%,190px" style="display: block; width: 100%;"></dc-import></button>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+<p style="margin: 0; font-size: 13px; color: #4B5563;"><span style="font-weight: 700; color: {{p}}; text-transform: uppercase; letter-spacing: 0.06em;">{{nDest.sec}}</span> · <time>{{nDest.quando}}</time></p>
+<h3 id="h-nd" style="margin: 0; font-size: 20px; line-height: 1.25;"><button type="button" onClick="{{nDest.go}}" style="background: none; border: 0; padding: 0; font: inherit; color: #17212B; text-align: left; cursor: pointer;">{{nDest.titulo}}</button></h3>
+<p style="margin: 0; font-size: 15px; color: #374151;">{{nDest.resumo}}</p>
+</div>
+</article>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px;">
+<sc-for list="{{nSec3}}" as="n" hint-placeholder-count="3">
+<button type="button" onClick="{{n.go}}" style="display: flex; flex-direction: column; gap: 6px; text-align: left; background: none; border: 0; padding: 0; font: inherit; color: #17212B; cursor: pointer; min-width: 0;">
+<span style="display: block; width: 100%; border-radius: 10px; overflow: hidden;"><dc-import name="Cena" kind="{{n.cena}}" color="{{p}}" ratio="16 / 9" hint-size="100%,96px" style="display: block; width: 100%;"></dc-import></span>
+<span style="font-size: 12px; color: #4B5563;">{{n.quando}}</span>
+<span style="font-size: 15px; font-weight: 600; line-height: 1.3;">{{n.titulo}}</span>
+</button>
+</sc-for>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; border-top: 1px solid #EEF0F3;">
+<sc-for list="{{nLista}}" as="n" hint-placeholder-count="2">
+<li style="border-bottom: 1px solid #EEF0F3;"><button type="button" onClick="{{n.go}}" style="width: 100%; text-align: left; background: none; border: 0; padding: 10px 0; font: inherit; font-size: 15px; font-weight: 600; line-height: 1.35; color: #17212B; cursor: pointer;">{{n.titulo}}</button></li>
 </sc-for>
 </ul>
 </sc-if>
-<button type="button" onClick="{{goNoticias}}" data-link style="margin-top: auto; padding-top: 12px; align-self: flex-start; background: none; border: 0; font: inherit; font-weight: 600; color: {{p}}; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;">Todos os comunicados</button>
+<button type="button" onClick="{{goNoticias}}" style="margin-top: auto; align-self: flex-start; min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: {{p}}; background: #FFFFFF; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Todas as notícias<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></button>
+</section>
+
+<section aria-labelledby="h-paco" style="flex: 1 1 300px; min-width: 0; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column;">
+<img src="{{fotoPaco}}" alt="Fachada do Paço Municipal, prédio branco arredondado com jardim de roseiras na frente" style="width: 100%; height: 220px; object-fit: cover; display: block;">
+<div style="padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 8px; flex: 1;">
+<h2 id="h-paco" style="margin: 0; font-size: 22px;">Paço Municipal</h2>
+<p style="margin: 0; font-size: 15px;">Atendimento ao público de segunda a sexta, das 8h às 17h.</p>
+<p style="margin: 0; font-size: 15px; color: #4B5563;">[Endereço do Paço Municipal] · [telefone]</p>
+<div style="margin-top: auto; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 10px;">
+<button type="button" onClick="{{goUnidades}}" style="min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: {{p}}; background: #FFFFFF; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Unidades e horários</button>
+<button type="button" onClick="{{goFale}}" style="min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: {{p}}; background: #FFFFFF; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Fale conosco</button>
+</div>
+</div>
 </section>
 </div>
+</sc-if>
+
+<sc-if value="{{isComunicados}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="Filtrar por tipo de comunicado" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+<sc-for list="{{comTabs}}" as="t" hint-placeholder-count="5">
+<button type="button" onClick="{{t.go}}" aria-pressed="{{t.pressed}}" style="min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.bd}}; background: {{t.bg}}; color: {{t.fg}}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;">{{t.label}}</button>
+</sc-for>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px;">
+<sc-for list="{{comLista}}" as="c" hint-placeholder-count="4">
+<li id="{{c.anc}}" style="background: #FFFFFF; border: 1px solid {{c.bd}}; border-radius: 16px; padding: 20px 24px; display: flex; flex-direction: column; gap: 6px;">
+<p style="margin: 0; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13px; color: #4B5563;"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: {{c.bg}}; color: {{c.fg}};">{{c.tipo}}</span>{{c.quando}}</p>
+<h2 style="margin: 0; font-size: 20px; line-height: 1.3;">{{c.titulo}}</h2>
+<p style="margin: 0; color: #374151;">{{c.texto}}</p>
+</li>
+</sc-for>
+</ul>
+<p style="margin: 16px 0 0; font-size: 13px; color: #4B5563;">Comunicados de exemplo, para o protótipo. Notícias ficam na página Notícias; comunicados aceitam só os tipos acima.</p>
+</sc-if>
+
+<sc-if value="{{isConheca}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="Filtrar por categoria" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+<sc-for list="{{cTabs}}" as="t" hint-placeholder-count="5">
+<button type="button" onClick="{{t.go}}" aria-pressed="{{t.pressed}}" style="min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.bd}}; background: {{t.bg}}; color: {{t.fg}}; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;">{{t.label}}</button>
+</sc-for>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;">
+<sc-for list="{{perfisLista}}" as="pf" hint-placeholder-count="5">
+<li style="display: flex;"><button type="button" onClick="{{pf.go}}" style="width: 100%; display: flex; flex-direction: column; text-align: left; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 16px; overflow: hidden; padding: 0; font: inherit; color: #17212B; cursor: pointer;">
+<img src="{{pf.capa}}" alt="" style="display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover;">
+<span style="padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 4px;">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: {{p}};">{{pf.cat}}</span>
+<span style="font-size: 18px; font-weight: 700; line-height: 1.3;">{{pf.t}}</span>
+<span style="font-size: 13px; color: #4B5563;">{{pf.resumo}}</span>
+</span>
+</button></li>
+</sc-for>
+</ul>
+<sc-if value="{{cVazio}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0; padding: 24px; background: #FFFFFF; border: 1px dashed #9AA5B1; border-radius: 16px; color: #4B5563;">Nenhum perfil nesta categoria ainda. A Prefeitura cadastra lugares, patrimônio, festas e eventos pelo painel administrativo, com fotos e vídeos.</p>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{isPerfil}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; align-items: start;">
+<figure style="margin: 0; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 20px; overflow: hidden;">
+<img src="{{pf.foto.src}}" alt="{{pf.foto.alt}}" style="display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover;">
+<figcaption style="padding: 12px 16px; font-size: 14px; color: #374151; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px;"><span>{{pf.foto.leg}}</span><span style="color: #4B5563;">Foto: {{pf.foto.cred}}</span></figcaption>
+</figure>
+<div style="display: flex; flex-direction: column; gap: 16px;">
+<div style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 10px;">
+<p style="margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: {{p}};">{{pf.cat}}</p>
+<sc-if value="{{pf.temDesc}}" hint-placeholder-val="{{false}}"><p style="margin: 0; color: #374151;">{{pf.desc}}</p></sc-if>
+<sc-if value="{{pf.semDesc}}" hint-placeholder-val="{{true}}"><p style="margin: 0; padding: 14px 16px; background: #F5F7F9; border-radius: 10px; color: #4B5563; font-size: 15px;">[Descrição a ser escrita pela Prefeitura no painel administrativo: história, o que ver, como chegar e horários.]</p></sc-if>
+<dl style="margin: 4px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;">
+<div style="padding: 10px 12px; border-radius: 12px; background: #F4F7F9;"><dt style="font-size: 12px; color: #4B5563;">Fotos</dt><dd style="margin: 2px 0 0; font-size: 20px; font-weight: 700;">{{pf.nFotos}}</dd></div>
+<div style="padding: 10px 12px; border-radius: 12px; background: #F4F7F9;"><dt style="font-size: 12px; color: #4B5563;">Vídeos</dt><dd style="margin: 2px 0 0; font-size: 20px; font-weight: 700;">{{pf.nVideos}}</dd></div>
+</dl>
+</div>
+<section aria-labelledby="h-pf-fotos" style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 20px; padding: 20px 24px;">
+<h2 id="h-pf-fotos" style="margin: 0 0 12px; font-size: 19px;">Galeria de fotos</h2>
+<div role="group" aria-label="Escolher foto" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px;">
+<sc-for list="{{pf.fotos}}" as="f" hint-placeholder-count="2">
+<button type="button" onClick="{{f.go}}" aria-pressed="{{f.pressed}}" aria-label="Ver foto: {{f.leg}}" style="padding: 0; border: 3px solid {{f.bd}}; border-radius: 10px; overflow: hidden; background: #FFFFFF; cursor: pointer;"><img src="{{f.src}}" alt="" style="display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover;"></button>
+</sc-for>
+</div>
+</section>
+<section aria-labelledby="h-pf-vid" style="background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 20px; padding: 20px 24px;">
+<h2 id="h-pf-vid" style="margin: 0 0 8px; font-size: 19px;">Vídeos</h2>
+<p style="margin: 0; color: #4B5563; font-size: 15px;">Nenhum vídeo cadastrado ainda. Vídeos entram pelo painel administrativo, por link do YouTube.</p>
+</section>
+</div>
+</div>
+<section aria-labelledby="h-pf-mais" style="margin-top: 32px;">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px;">
+<h2 id="h-pf-mais" style="margin: 0; font-size: 22px;">Outros perfis</h2>
+<button type="button" onClick="{{goConheca}}" style="min-height: 44px; padding: 0 18px; font: inherit; font-weight: 600; color: {{p}}; background: #FFFFFF; border: 1px solid {{p}}; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">Conheça mais<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></button>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px;">
+<sc-for list="{{pfOutros}}" as="o" hint-placeholder-count="3">
+<li style="display: flex;"><button type="button" onClick="{{o.go}}" style="width: 100%; display: flex; gap: 12px; align-items: center; text-align: left; background: #FFFFFF; border: 1px solid #DCE1E6; border-radius: 14px; padding: 10px; font: inherit; color: #17212B; cursor: pointer;"><img src="{{o.capa}}" alt="" style="width: 88px; height: 66px; object-fit: cover; border-radius: 8px; display: block; flex: 0 0 auto;"><span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: {{p}};">{{o.cat}}</span><span style="font-weight: 600; line-height: 1.3;">{{o.t}}</span></span></button></li>
+</sc-for>
+</ul>
+</section>
 </sc-if>
 
 <sc-if value="{{isTransm}}" hint-placeholder-val="{{false}}">
@@ -645,10 +786,17 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 <sc-if value="{{pShowFin}}" hint-placeholder-val="{{true}}">
 <dl style="margin: 0 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
 <sc-for list="{{pKpis}}" as="k" hint-placeholder-count="6">
-<div style="background: #FFFFFF; border: 1px solid #DCE1E6; border-top: 4px solid {{k.cor}}; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;">
-<dt style="font-size: 14px; color: #4B5563;">{{k.l}}</dt>
-<dd style="margin: 0; font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em;">{{k.v}}</dd>
-<dd style="margin: 0; font-size: 13px; color: #4B5563;">{{k.d}}</dd>
+<div style="position: relative; background: #FFFFFF; border: 1px solid #DCE1E6; border-top: 4px solid {{k.cor}}; border-radius: 14px; padding: 12px 10px 16px 18px; display: grid; grid-template-rows: 32px auto auto; gap: 4px; min-width: 0;">
+<dt style="display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 14px; color: #4B5563;"><span title="{{k.l}}" style="flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{k.c}}</span><button type="button" onClick="{{k.info}}" aria-expanded="{{k.exp}}" aria-label="Sobre este indicador: {{k.l}}" style="flex: 0 0 auto; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background: {{k.infoBg}}; border: 0; border-radius: 50%; color: {{k.infoFg}}; cursor: pointer; padding: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg></button></dt>
+<dd style="margin: 0; padding-right: 8px; font-size: 28px; line-height: 1.2; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap;">{{k.v}}</dd>
+<dd style="margin: 0; padding-right: 8px; font-size: 13px; color: #4B5563;">{{k.d}}</dd>
+<sc-if value="{{k.open}}" hint-placeholder-val="{{false}}">
+<dd role="note" aria-label="Sobre este indicador" style="position: absolute; z-index: 6; left: 8px; right: 8px; top: 46px; margin: 0; padding: 14px 16px; background: #17212B; color: #FFFFFF; border-radius: 12px; box-shadow: 0 12px 28px rgba(11,22,32,0.28); font-size: 13px; line-height: 1.5; display: flex; flex-direction: column; gap: 6px;">
+<strong style="font-size: 14px;">{{k.l}}</strong>
+<span><strong style="color: #F7C948;">Fonte:</strong> {{k.f}}</span>
+<button type="button" onClick="{{k.info}}" style="align-self: flex-end; min-height: 32px; padding: 0 12px; font: inherit; font-size: 13px; font-weight: 600; color: #17212B; background: #FFFFFF; border: 0; border-radius: 999px; cursor: pointer;">Fechar</button>
+</dd>
+</sc-if>
 </div>
 </sc-for>
 </dl>
@@ -758,10 +906,17 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </div>
 <dl style="margin: 0 0 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
 <sc-for list="{{t.kpis}}" as="k" hint-placeholder-count="4">
-<div style="background: #FFFFFF; border: 1px solid #DCE1E6; border-top: 4px solid {{k.cor}}; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;">
-<dt style="font-size: 14px; color: #4B5563;">{{k.l}}</dt>
-<dd style="margin: 0; font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em;">{{k.v}}</dd>
-<dd style="margin: 0; font-size: 13px; color: #4B5563;">{{k.d}}</dd>
+<div style="position: relative; background: #FFFFFF; border: 1px solid #DCE1E6; border-top: 4px solid {{k.cor}}; border-radius: 14px; padding: 12px 10px 16px 18px; display: grid; grid-template-rows: 32px auto auto; gap: 4px; min-width: 0;">
+<dt style="display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 14px; color: #4B5563;"><span title="{{k.l}}" style="flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{k.c}}</span><button type="button" onClick="{{k.info}}" aria-expanded="{{k.exp}}" aria-label="Sobre este indicador: {{k.l}}" style="flex: 0 0 auto; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background: {{k.infoBg}}; border: 0; border-radius: 50%; color: {{k.infoFg}}; cursor: pointer; padding: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5v.5"></path></svg></button></dt>
+<dd style="margin: 0; padding-right: 8px; font-size: 28px; line-height: 1.2; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap;">{{k.v}}</dd>
+<dd style="margin: 0; padding-right: 8px; font-size: 13px; color: #4B5563;">{{k.d}}</dd>
+<sc-if value="{{k.open}}" hint-placeholder-val="{{false}}">
+<dd role="note" aria-label="Sobre este indicador" style="position: absolute; z-index: 6; left: 8px; right: 8px; top: 46px; margin: 0; padding: 14px 16px; background: #17212B; color: #FFFFFF; border-radius: 12px; box-shadow: 0 12px 28px rgba(11,22,32,0.28); font-size: 13px; line-height: 1.5; display: flex; flex-direction: column; gap: 6px;">
+<strong style="font-size: 14px;">{{k.l}}</strong>
+<span><strong style="color: #F7C948;">Fonte:</strong> {{k.f}}</span>
+<button type="button" onClick="{{k.info}}" style="align-self: flex-end; min-height: 32px; padding: 0 12px; font: inherit; font-size: 13px; font-weight: 600; color: #17212B; background: #FFFFFF; border: 0; border-radius: 999px; cursor: pointer;">Fechar</button>
+</dd>
+</sc-if>
 </div>
 </sc-for>
 </dl>
@@ -2237,6 +2392,7 @@ const SECOES = {
     'Última avaliação: [data] · declaração de acessibilidade com as pendências conhecidas'
   ] },
   privacidade: { t: 'Política de privacidade', g: 'atendimento', i: 'Como o portal trata dados pessoais e cookies.', itens: ['Dados coletados e finalidade: só o necessário para cada serviço, com a base legal da LGPD', 'Cookies: somente os necessários ao funcionamento; nenhum de publicidade', 'Direitos do titular (LGPD, art. 18): acesso, correção, eliminação e informação sobre compartilhamento', 'Encarregado de dados: Controladoria Interna, encarregado@pmbora.sp.gov.br (exemplo), resposta em até 15 dias', 'Decreto municipal de proteção de dados nº 4.088/2023 (exemplo)', 'Relatório de impacto dos sistemas que tratam dados sensíveis'] },
+  links: { t: 'Links úteis', g: 'links', i: 'Sites de outros órgãos públicos que a população usa com frequência.', itens: ['Câmara Municipal de Borá', 'Governo do Estado de São Paulo', 'gov.br: serviços do Governo Federal', 'Tribunal de Contas do Estado de São Paulo', 'Poupatempo', 'Receita Federal'] },
   mapa: { t: 'Mapa do site', g: 'atendimento', i: 'Todas as seções do portal.', itens: ['Serviços', 'Transparência', 'Governo', 'Participação', 'Notícias', 'Atendimento'] }
 };
 
@@ -2443,10 +2599,20 @@ const ZOOMS = [0.9, 1, 1.15, 1.3, 1.5, 2];
 const hojeISO = () => { try { return new Date().toISOString().slice(0, 10); } catch (e) { return ''; } };
 
 const TEMA_ICON = { 'Tributos': 'tributos', 'Saúde': 'saude', 'Educação': 'educacao', 'Cidade': 'cidade', 'Empresas': 'empresas', 'Assistência': 'assistencia', 'Atendimento': 'atendimento' };
+const COMUNICADOS = [
+  { id: 'c1', tipo: 'Aviso', titulo: 'Vacinação contra a gripe aberta para toda a população até 30/11, nas duas UBS', data: '04/11/2026', ate: '30/11/2026', texto: 'A UBS Central atende das 7h às 19h e a UBS Jardim das Flores das 7h às 17h. Leve documento com foto e, se tiver, a carteira de vacinação.' },
+  { id: 'c2', tipo: 'Convite', titulo: 'Audiência pública da LOA 2027: 12/11, às 19h, na Câmara Municipal', data: '03/11/2026', ate: '12/11/2026', texto: 'A Prefeitura convida a população a apresentar sugestões à proposta de Lei Orçamentária Anual de 2027. O projeto e os anexos estão na seção Planejamento do Portal da Transparência.' },
+  { id: 'c3', tipo: 'Convocação', titulo: 'Processo seletivo 1/2026: convocação para entrega de documentos', data: '30/10/2026', ate: '14/11/2026', texto: 'Os classificados listados no edital de convocação devem comparecer ao Setor de Pessoal, no Paço Municipal, com os documentos indicados.' },
+  { id: 'c4', tipo: 'Aviso', titulo: 'Recapeamento da Rua das Palmeiras: desvios sinalizados até 20/11', data: '29/10/2026', ate: '20/11/2026', texto: 'O trânsito terá desvios sinalizados durante a obra. Contrato e medições estão no módulo Obras do Portal da Transparência.' },
+  { id: 'c5', tipo: 'Nota oficial', titulo: 'Expediente do Paço Municipal no feriado de 20 de novembro', data: '28/10/2026', ate: '', texto: 'Os serviços essenciais de saúde funcionam em regime de plantão. O atendimento ao público volta ao normal no dia útil seguinte.' }
+];
+const COM_TIPOS = ['Aviso', 'Convocação', 'Convite', 'Nota oficial', 'Edital de chamamento'];
+const COM_COR = { 'Aviso': { bg: '#FCEFD9', fg: '#7A4A00' }, 'Convocação': { bg: '#EDE3F0', fg: '#6B2D5C' }, 'Convite': { bg: '#E4ECF7', fg: '#1D4E89' }, 'Nota oficial': { bg: '#EEF0F3', fg: '#374151' }, 'Edital de chamamento': { bg: '#E3F2E9', fg: '#146C43' } };
+const NEWS_HORA = { n1: '10h30', n2: '16h15', n3: '09h00', n4: '14h40', n5: '11h20' };
 const NEWS_CENA = { n1: 'saude', n2: 'fazenda', n3: 'educacao', n4: 'obras', n5: 'administracao' };
 const HUB_ICON = { painel: 'grafico', contratos: 'diario', diarias: 'pessoas', ordem: 'despesa', restos: 'despesa', repasses: 'predio', despesas: 'despesa', receitas: 'receita', emendas: 'emenda', licitacoes: 'licitacao', pessoal: 'pessoas', obras: 'obra', planejamento: 'grafico', relatorios: 'diario', contas: 'predio', renuncia: 'tributos', acesso: 'info', dados: 'dados', convenios: 'predio', divida: 'tributos', compras: 'licitacao', fiscais: 'pessoas', cargos: 'pessoas', concursos: 'diario', saude: 'info', educacao: 'info', esperas: 'pessoas' };
 
-const SCREEN_GROUP = { home: 'home', servicos: 'servicos', servico: 'servicos', base: 'transparencia', painel: 'transparencia', edicao: 'governo', diario: 'governo', ato: 'governo', legislacao: 'governo', transmissoes: 'transmissoes', transparencia: 'transparencia', despesas: 'transparencia', receitas: 'transparencia', licitacoes: 'transparencia', licitacao: 'transparencia', governo: 'governo', secretaria: 'governo', ouvidoria: 'participacao', noticias: 'noticias', noticia: 'noticias', busca: 'busca' };
+const SCREEN_GROUP = { conheca: 'conheca', perfil: 'conheca', comunicados: 'comunicados', home: 'home', servicos: 'servicos', servico: 'servicos', base: 'transparencia', painel: 'transparencia', edicao: 'governo', diario: 'governo', ato: 'governo', legislacao: 'governo', transmissoes: 'transmissoes', transparencia: 'transparencia', despesas: 'transparencia', receitas: 'transparencia', licitacoes: 'transparencia', licitacao: 'transparencia', governo: 'governo', secretaria: 'governo', ouvidoria: 'participacao', noticias: 'noticias', noticia: 'noticias', busca: 'busca' };
 
 const BADGE_ON = { bg: '#E3F2E9', fg: '#146C43' };
 const BADGE_OFF = { bg: '#FCEFD9', fg: '#7A4A00' };
@@ -2456,7 +2622,7 @@ const FASE = { 'Pago': { bg: '#E3F2E9', fg: '#146C43' }, 'Liquidado': { bg: '#E4
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { screen: 'home', serv: 'iptu', tema: 'Todos', lic: 'dl475', not: 'n1', sec: 'saude', secao: 'receitas', q: '', qApplied: '', qTipo: 'Todos', dAno: '2026', dSec: 'Todas', dFase: 'Todas', dCred: '', expMsg: '', docMsg: '', lMod: 'Todas', lSit: 'Todas', nSec: 'Todas', oTab: 'ouv', oTipo: 'Reclamação', oAssunto: '', oDesc: '', oNome: '', oEmail: '', oAnon: false, oErr: '', oProt: '', solicitado: false, util: null, vSel: null, vFiltro: 'Todos', tMsg: '', modalOpen: true, hc: false, sub: false, pausa: false, fonte: 1, libras: false, fonteMsg: '', edSel: 'e1482', ato: 'a1', verOpen: false, dMsg: '', acQ: '', acQApplied: '', acTipo: 'Todos', lgTipo: 'Todos', lgSit: 'Todas', lgQ: '', pTab: 'tudo', pMsg: '', protQ: '', protMsg: '', ds: 'contratos', bQ: '', bF: 'Todos', bSort: 'padrao', bMsg: '' };
+    this.state = { screen: 'home', serv: 'iptu', tema: 'Todos', lic: 'dl475', not: 'n1', sec: 'saude', secao: 'receitas', q: '', qApplied: '', qTipo: 'Todos', dAno: '2026', dSec: 'Todas', dFase: 'Todas', dCred: '', expMsg: '', docMsg: '', lMod: 'Todas', lSit: 'Todas', nSec: 'Todas', oTab: 'ouv', oTipo: 'Reclamação', oAssunto: '', oDesc: '', oNome: '', oEmail: '', oAnon: false, oErr: '', oProt: '', solicitado: false, util: null, vSel: null, vFiltro: 'Todos', tMsg: '', modalOpen: true, hc: false, sub: false, pausa: false, fonte: 1, libras: false, fonteMsg: '', edSel: 'e1482', ato: 'a1', verOpen: false, dMsg: '', acQ: '', acQApplied: '', acTipo: 'Todos', lgTipo: 'Todos', lgSit: 'Todas', lgQ: '', pTab: 'tudo', kInfo: '', comTipo: 'Todos', cCat: 'Todos', perfil: 'praca', pfFoto: 0, pMsg: '', protQ: '', protMsg: '', ds: 'contratos', bQ: '', bF: 'Todos', bSort: 'padrao', bMsg: '' };
     try { if (window.localStorage.getItem('vs-aviso-live') === hojeISO()) this.state.modalOpen = false; } catch (e) { }
     try { const a = JSON.parse(window.localStorage.getItem('vs-a11y') || '{}'); ['hc', 'sub', 'pausa', 'fonte'].forEach((k) => { if (a[k] !== undefined) this.state[k] = a[k]; }); } catch (e) { }
   }
@@ -2479,6 +2645,11 @@ class Component extends DCLogic {
   servCard(x, p) {
     const b = x.online ? BADGE_ON : BADGE_OFF;
     return Object.assign({}, x, { foto: TEMA_FOTO[x.tema] || TEMA_FOTO['Atendimento'], cena: TEMA_CENA[x.tema] || 'administracao', icone: TEMA_ICON[x.tema] || 'info', badge: x.online ? 'Online' : 'Presencial', badgeBg: b.bg, badgeFg: b.fg, go: () => this.go('servico', { serv: x.id }) });
+  }
+
+  kcard(k, id) {
+    const open = this.state.kInfo === id;
+    return Object.assign({}, k, { c: k.c || k.l, f: k.f || 'Dados abertos do sistema contábil da Prefeitura, lidos em 05/11/2026 às 11h.', open: open, exp: open ? 'true' : 'false', infoBg: open ? '#17212B' : 'transparent', infoFg: open ? '#FFFFFF' : '#4B5563', info: () => this.setState({ kInfo: this.state.kInfo === id ? '' : id }) });
   }
 
   pill(active, p) {
@@ -2577,12 +2748,12 @@ class Component extends DCLogic {
     const pCont = contArr.map((c) => ({ l: c[0], nF: c[1].toLocaleString('pt-BR'), pctF: pc(c[1] / contTot), w: c[1] / contArr[0][1] * 100 }));
     const pContFrase = 'Das ' + contTot.toLocaleString('pt-BR') + ' contratações publicadas pelo município, ' + pc(1413 / contTot) + ' são dispensas de licitação.';
     const pKpis = [
-      { l: 'Receita arrecadada em 2026', v: miC(recT), d: 'até 05/11, ' + pc(recT / REC_PREV_2026, 0) + ' do previsto', cor: p },
-      { l: 'Despesa paga em 2026', v: miC(pagT), d: 'até 04/11, ' + pc(pagT / dotT, 0) + ' da dotação', cor: '#146C43' },
-      { l: 'Receita por habitante', v: brl0(recT / POP), d: '907 habitantes (Censo 2022)', cor: '#1D4E89' },
-      { l: 'Saúde por habitante', v: brl0(saudeV / POP), d: 'empenhado em 2026', cor: '#C8553D' },
-      { l: 'Educação por habitante', v: brl0(eduV / POP), d: 'empenhado em 2026', cor: '#6B2D5C' },
-      { l: 'Receita vinda de repasses', v: pRepF, d: 'União e Estado; o resto é arrecadação própria', cor: '#E8A33D' }
+      { l: 'Receita arrecadada em 2026', c: 'Receita arrecadada', v: miC(recT), d: pc(recT / REC_PREV_2026, 0) + ' do previsto para 2026', cor: p, f: 'Dados abertos do sistema contábil da Prefeitura, até 05/11/2026; receita já descontado o FUNDEB.' },
+      { l: 'Despesa paga em 2026', c: 'Despesa paga', v: miC(pagT), d: pc(pagT / dotT, 0) + ' da dotação de 2026', cor: '#146C43', f: 'Dados abertos do sistema contábil da Prefeitura, até 04/11/2026.' },
+      { l: 'Receita por habitante em 2026', c: 'Receita por habitante', v: brl0(recT / POP), d: 'arrecadado em 2026', cor: '#1D4E89', f: 'Cálculo do portal: receita arrecadada ÷ 907 habitantes (IBGE, Censo 2022).' },
+      { l: 'Saúde por habitante em 2026', c: 'Saúde por habitante', v: brl0(saudeV / POP), d: 'empenhado em 2026', cor: '#C8553D', f: 'Cálculo do portal: valor empenhado em saúde ÷ 907 habitantes (IBGE, Censo 2022). Sistema contábil, até 04/11/2026.' },
+      { l: 'Educação por habitante em 2026', c: 'Educação por habitante', v: brl0(eduV / POP), d: 'empenhado em 2026', cor: '#6B2D5C', f: 'Cálculo do portal: valor empenhado em educação ÷ 907 habitantes (IBGE, Censo 2022). Sistema contábil, até 04/11/2026.' },
+      { l: 'Receita vinda de repasses da União e do Estado', c: 'Receita de repasses', v: pRepF, d: 'o resto é arrecadação própria', cor: '#E8A33D', f: 'Dados abertos do sistema contábil: receita bruta de 2026 até 05/11, por origem.' }
     ];
     const pMun = MUNICIPIO.map((m) => ({ l: m[0], v: m[1], f: m[2] }));
     const pBreve = A_INTEGRAR.map((b) => ({ t: b[0], f: b[1] }));
@@ -2603,24 +2774,24 @@ class Component extends DCLogic {
     const temasDef = [
       { id: 'saude', titulo: 'Saúde', cor: '#C8553D', sub: 'Quanto o município aplica, onde atende e como executa o orçamento da saúde.',
         kpis: [
-          { l: 'Aplicado em saúde em 2025', v: '20,4%', d: 'da receita de impostos; mínimo legal 15%', cor: '#C8553D' },
-          { l: 'Recursos próprios em saúde, 2025', v: miC(5081213.45), d: brl0(5081213.45 / POP) + ' por habitante', cor: '#C8553D' },
-          { l: 'Fundo Municipal de Saúde, 2026', v: miC(fms[2]), d: 'empenhado até 04/11, ' + pc(fms[2] / fms[1], 0) + ' da dotação', cor: '#1D4E89' },
-          { l: 'Unidades de saúde no CNES', v: String(CNES_UNID.length), d: 'ambas municipais, atendimento SUS', cor: '#146C43' }
+          { l: 'Aplicado em saúde em 2025', c: 'Aplicado em saúde', v: '20,4%', d: 'em 2025; mínimo legal 15%', cor: '#C8553D', f: 'Siconfi (Tesouro Nacional), RREO do 6º bimestre de 2025, Anexo 14, declarado pela Prefeitura. Base legal: LC 141/2012.' },
+          { l: 'Recursos próprios em saúde, 2025', c: 'Recursos próprios', v: miC(5081213.45), d: brl0(5081213.45 / POP) + ' por habitante em 2025', cor: '#C8553D', f: 'Siconfi, RREO de 2025, Anexo 14. Valor por habitante: cálculo do portal com 907 habitantes (IBGE, Censo 2022).' },
+          { l: 'Fundo Municipal de Saúde, empenhado em 2026', c: 'Fundo de Saúde', v: miC(fms[2]), d: pc(fms[2] / fms[1], 0) + ' da dotação de 2026', cor: '#1D4E89', f: 'Dados abertos do sistema contábil da Prefeitura, até 04/11/2026.' },
+          { l: 'Unidades de saúde no CNES', c: 'Unidades de saúde', v: String(CNES_UNID.length), d: 'municipais, atendimento SUS', cor: '#146C43', f: 'CNES, API de dados abertos do Ministério da Saúde (cadastro atualizado em 03/09/2025).' }
         ] },
       { id: 'edu', titulo: 'Educação', cor: '#6B2D5C', sub: 'Mínimos constitucionais, qualidade do ensino medida pelo INEP e gasto por unidade.',
         kpis: [
-          { l: 'Aplicado em educação em 2025', v: '31,2%', d: 'manutenção do ensino; mínimo legal 25%', cor: '#6B2D5C' },
-          { l: 'FUNDEB com profissionais, 2025', v: '97,7%', d: 'mínimo legal 70%', cor: '#6B2D5C' },
-          { l: 'IDEB 2025, anos iniciais', v: '6,6', d: 'igual ao estado de SP (6,6); Brasil 6,3', cor: '#1D4E89' },
-          { l: 'Educação empenhada em 2026', v: miC(eduEmp), d: brl0(eduEmp / POP) + ' por habitante, até 04/11', cor: '#146C43' }
+          { l: 'Aplicado em educação em 2025', c: 'Aplicado em educação', v: '31,2%', d: 'em 2025; mínimo legal 25%', cor: '#6B2D5C', f: 'Siconfi, RREO do 6º bimestre de 2025, Anexo 14, declarado pela Prefeitura. Base legal: CF, art. 212.' },
+          { l: 'FUNDEB com profissionais da educação, 2025', c: 'FUNDEB com profissionais', v: '97,7%', d: 'em 2025; mínimo legal 70%', cor: '#6B2D5C', f: 'Siconfi, RREO de 2025, Anexo 14. Base legal: Lei 14.113/2020, art. 26.' },
+          { l: 'IDEB 2025, anos iniciais, rede municipal', c: 'IDEB anos iniciais', v: '6,6', d: 'SP 6,6 · Brasil 6,3', cor: '#1D4E89', f: 'INEP, resultados do IDEB 2025 por município, rede municipal.' },
+          { l: 'Educação empenhada em 2026', c: 'Educação empenhada', v: miC(eduEmp), d: brl0(eduEmp / POP) + ' por habitante', cor: '#146C43', f: 'Dados abertos do sistema contábil, até 04/11/2026. Por habitante: cálculo do portal com 907 habitantes (IBGE, Censo 2022).' }
         ] },
       { id: 'social', titulo: 'Assistência social', cor: '#146C43', sub: 'Execução dos fundos da área. Os indicadores federais de benefícios entram quando a API do MDS voltar.',
         kpis: [
-          { l: 'Assistência social empenhada, 2026', v: brl0(fmas[2]), d: 'Fundo Municipal de Assistência Social, ' + pc(fmas[2] / fmas[1], 0) + ' da dotação', cor: '#146C43' },
-          { l: 'Já pago pela área social', v: brl0(socPago), d: pc(socPago / socEmp, 0) + ' do empenhado, até 04/11', cor: '#1D4E89' },
-          { l: 'Área social por habitante', v: brl0(socEmp / POP), d: 'assistência, fundo social e conselho tutelar', cor: '#146C43' },
-          { l: 'Cadastro Único e Bolsa Família', v: 'A integrar', d: 'API do MDS em manutenção em 05/11/2026', cor: '#9AA5B1' }
+          { l: 'Fundo Municipal de Assistência Social, empenhado em 2026', c: 'Assistência empenhada', v: brl0(fmas[2]), d: pc(fmas[2] / fmas[1], 0) + ' da dotação de 2026', cor: '#146C43', f: 'Dados abertos do sistema contábil, até 04/11/2026.' },
+          { l: 'Já pago pela área social em 2026', c: 'Pago na área social', v: brl0(socPago), d: pc(socPago / socEmp, 0) + ' do empenhado', cor: '#1D4E89', f: 'Dados abertos do sistema contábil, até 04/11/2026.' },
+          { l: 'Área social por habitante em 2026', c: 'Social por habitante', v: brl0(socEmp / POP), d: 'empenhado em 2026', cor: '#146C43', f: 'Cálculo do portal: empenhado em assistência, fundo social e conselho tutelar ÷ 907 habitantes (IBGE, Censo 2022).' },
+          { l: 'Cadastro Único e Bolsa Família', c: 'CadÚnico e Bolsa Família', v: 'A integrar', d: 'fonte federal indisponível', cor: '#9AA5B1', f: 'MDS, MI Social: API em manutenção em 05/11/2026. O número entra quando a fonte voltar.' }
         ] }
     ];
     const pTemas = temasDef.filter((t) => s.pTab === 'tudo' || s.pTab === t.id).map((t) => {
@@ -2628,7 +2799,7 @@ class Component extends DCLogic {
       return Object.assign({}, t, {
         hid: 'h-p-' + t.id, hidX: 'h-p-' + t.id + '-x',
         mins: mins, temMin: mins.length > 0,
-        exec: mkExec(t.id),
+        exec: mkExec(t.id), kpis: t.kpis.map((k, i) => this.kcard(k, 't-' + t.id + '-' + i)),
         isSaude: t.id === 'saude', isEdu: t.id === 'edu', isSocial: t.id === 'social',
         lgpd: t.id === 'edu' ? 'Indicadores de educação são agregados por rede de ensino; nenhum dado de aluno é exibido.' : lgpdNota
       });
@@ -2880,6 +3051,37 @@ class Component extends DCLogic {
     ];
 
     const navDefs = [['home', 'Início', () => this.go('home')], ['servicos', 'Serviços', () => this.go('servicos')], ['transparencia', 'Transparência', () => this.go('transparencia')], ['governo', 'Governo', () => this.go('governo')], ['participacao', 'Participação', () => this.go('ouvidoria', { oTab: 'ouv', oProt: '', oErr: '' })], ['transmissoes', isLive ? 'Ao vivo' : 'Transmissões', goTransm], ['noticias', 'Notícias', () => this.go('noticias')], ['atendimento', 'Atendimento', this.goSecao('atendimento')]];
+    const portalDefs = [['home', 'Início', () => this.go('home')], ['noticias', 'Notícias', () => this.go('noticias')], ['comunicados', 'Comunicados', () => this.go('comunicados', { comTipo: 'Todos' })], ['conheca', 'Conheça Borá', () => this.go('conheca', { cCat: 'Todos' })], ['atendimento', 'Fale conosco', this.goSecao('atendimento')], ['transmissoes', isLive ? 'Ao vivo' : 'Transmissões', goTransm]];
+    const portalNav = portalDefs.map((d) => ({ label: d[1], go: d[2], dot: d[0] === 'transmissoes' && isLive, current: group === d[0] ? 'page' : undefined, line: group === d[0] ? p : 'transparent', fg: group === d[0] ? p : '#17212B' }));
+    const govKey = ({ transparencia: 'transparencia', despesas: 'transparencia', receitas: 'transparencia', base: 'transparencia', painel: 'painel', diario: 'diario', edicao: 'diario', ato: 'diario', licitacoes: 'licitacoes', licitacao: 'licitacoes', legislacao: 'legislacao', servicos: 'servicos', servico: 'servicos', ouvidoria: s.oTab === 'sic' ? 'sic' : 'ouv' })[screen] || (screen === 'secao' && s.secao === 'dados' ? 'dados' : (screen === 'secao' && (SECOES[s.secao] || {}).g === 'transparencia' ? 'transparencia' : ''));
+    const govDefs = [['transparencia', 'Transparência', () => this.go('transparencia')], ['painel', 'Painel de indicadores', () => this.go('painel')], ['diario', 'Diário Oficial', this.goSecao('diario')], ['licitacoes', 'Licitações', () => this.go('licitacoes')], ['legislacao', 'Legislação', () => this.go('legislacao')], ['servicos', 'Serviços', () => this.go('servicos', { tema: 'Todos' })], ['ouv', 'Ouvidoria', () => this.go('ouvidoria', { oTab: 'ouv', oProt: '', oErr: '' })], ['sic', 'e-SIC', () => this.go('ouvidoria', { oTab: 'sic', oProt: '', oErr: '' })], ['dados', 'Dados abertos', this.goSecao('dados')]];
+    const govNav = govDefs.map((d) => ({ label: d[1], go: d[2], current: govKey === d[0] ? 'page' : undefined, line: govKey === d[0] ? '#F7C948' : 'transparent', bg: govKey === d[0] ? 'rgba(255,255,255,0.14)' : 'transparent' }));
+    const servDefs = [['IPTU 2ª via', () => this.go('servico', { serv: 'iptu' }), 'iptu'], ['Nota fiscal', () => this.go('servico', { serv: 'nfse' }), 'nfse'], ['Saúde', () => this.go('servicos', { tema: 'Saúde' }), 'Saúde'], ['Educação', () => this.go('servicos', { tema: 'Educação' }), 'Educação'], ['Assistência social', () => this.go('servicos', { tema: 'Assistência' }), 'Assistência'], ['Empresas', () => this.go('servicos', { tema: 'Empresas' }), 'Empresas'], ['Cidade', () => this.go('servicos', { tema: 'Cidade' }), 'Cidade']];
+    const servCur = (k) => (screen === 'servico' && s.serv === k) || (screen === 'servicos' && s.tema === k);
+    const servBar = servDefs.map((d) => ({ label: d[0], go: d[1], current: servCur(d[2]) ? 'page' : undefined, line: servCur(d[2]) ? '#F7C948' : 'transparent' }));
+    // Comunicados, notícias e Conheça Borá
+    const comCard = (c) => { const k = COM_COR[c.tipo] || COM_COR['Nota oficial']; return Object.assign({}, c, { bg: k.bg, fg: k.fg, bd: '#DCE1E6', anc: 'com-' + c.id, quando: 'Publicado em ' + c.data + (c.ate ? ' · válido até ' + c.ate : ''), go: () => this.go('comunicados', { comTipo: 'Todos' }) }); };
+    const homeCom = COMUNICADOS.slice(0, 5).map(comCard);
+    const comTabs = ['Todos'].concat(COM_TIPOS).map((t) => Object.assign({ label: t, go: () => this.setState({ comTipo: t }) }, this.pill(s.comTipo === t, p)));
+    const comLista = COMUNICADOS.filter((c) => s.comTipo === 'Todos' || c.tipo === s.comTipo).map(comCard);
+    const nCard = (n) => Object.assign({}, n, { cena: NEWS_CENA[n.id] || 'administracao', quando: n.data + ', ' + (NEWS_HORA[n.id] || ''), go: () => this.go('noticia', { not: n.id }) });
+    const nDest = nCard(NOTICIAS[0]);
+    const nSec3 = NOTICIAS.slice(1, 4).map(nCard);
+    const nLista = NOTICIAS.slice(4, 9).map(nCard);
+    const PERFIS = [
+      { id: 'praca', cat: 'Lugares', t: 'Praça e Igreja Matriz, vistas do alto', fotos: [{ src: FOTOS.praca, alt: 'Vista aérea da praça central com a Igreja Matriz, o chafariz azul, o coreto e as ruas arborizadas', leg: 'A praça central vista do alto' }, { src: FOTOS.capa, alt: 'Vista aérea de Borá: o casario da cidade, com a área rural e a represa ao fundo', leg: 'O centro da cidade e a área rural' }] },
+      { id: 'igreja', cat: 'Patrimônio', t: 'Igreja Matriz', fotos: [{ src: FOTOS.igreja, alt: 'Igreja Matriz branca de torre pontiaguda, cercada de palmeiras e árvores', leg: 'Fachada da Igreja Matriz' }, { src: FOTOS.praca, alt: 'Vista aérea da praça central com a Igreja Matriz', leg: 'A Igreja Matriz na praça central' }] },
+      { id: 'usina', cat: 'Economia', t: 'Agroindústria da cana-de-açúcar', fotos: [{ src: FOTOS.usina, alt: 'Portaria de uma usina de açúcar e etanol, com caminhão na entrada', leg: 'Portaria da usina' }] },
+      { id: 'paco', cat: 'Patrimônio', t: 'Paço Municipal', fotos: [{ src: FOTOS.paco, alt: 'Fachada do Paço Municipal, prédio branco arredondado com jardim de roseiras na frente', leg: 'Fachada do Paço Municipal' }] },
+      { id: 'cidade', cat: 'Lugares', t: 'Borá vista do alto', fotos: [{ src: FOTOS.capa, alt: 'Vista aérea de Borá: o casario da cidade, com a área rural e a represa ao fundo', leg: 'A cidade, a área rural e a represa' }] }
+    ];
+    const pfCard = (x) => ({ id: x.id, cat: x.cat, t: x.t, capa: x.fotos[0].src, resumo: x.fotos.length + (x.fotos.length === 1 ? ' foto' : ' fotos') + ' · 0 vídeos', go: () => this.go('perfil', { perfil: x.id, pfFoto: 0 }) });
+    const cTabs = ['Todos', 'Lugares', 'Patrimônio', 'Economia', 'Eventos'].map((t) => Object.assign({ label: t, go: () => this.setState({ cCat: t }) }, this.pill(s.cCat === t, p)));
+    const perfisLista = PERFIS.filter((x) => s.cCat === 'Todos' || x.cat === s.cCat).map(pfCard);
+    const pfRaw = PERFIS.find((x) => x.id === s.perfil) || PERFIS[0];
+    const pfIdx = Math.min(s.pfFoto || 0, pfRaw.fotos.length - 1);
+    const pf = { cat: pfRaw.cat, t: pfRaw.t, desc: '', temDesc: false, semDesc: true, nFotos: String(pfRaw.fotos.length), nVideos: '0', foto: Object.assign({ cred: 'acervo da Prefeitura de Borá' }, pfRaw.fotos[pfIdx]), fotos: pfRaw.fotos.map((f, i) => Object.assign({}, f, { pressed: i === pfIdx ? 'true' : 'false', bd: i === pfIdx ? p : '#FFFFFF', go: () => this.setState({ pfFoto: i }) })) };
+    const pfOutros = PERFIS.filter((x) => x.id !== pfRaw.id).slice(0, 3).map(pfCard);
     const nav = navDefs.map((d) => ({ label: d[1], go: d[2], dot: d[0] === 'transmissoes' && isLive, current: group === d[0] ? 'page' : undefined, line: group === d[0] ? p : 'transparent', fg: group === d[0] ? p : '#17212B' }));
 
     const util = [
@@ -2894,7 +3096,7 @@ class Component extends DCLogic {
 
     const popular = [['IPTU', 'iptu'], ['Creche', 'creche'], ['Licitações', 'licitacao'], ['Vacinação', 'vacina']].map((t) => ({ label: t[0], go: () => this.go('busca', { q: t[1], qApplied: t[1], qTipo: 'Todos' }) }));
 
-    const homeServ = SERVICOS.slice(0, 8).map((x) => this.servCard(x, p));
+    const homeServ = SERVICOS.slice(0, 6).map((x) => this.servCard(x, p));
     const newsCard = (n) => Object.assign({}, n, { cena: NEWS_CENA[n.id] || 'administracao', go: () => this.go('noticia', { not: n.id }) });
     const hf = newsCard(NOTICIAS[0]);
     const homeRest = NOTICIAS.slice(1, 4).map(newsCard);
@@ -3020,7 +3222,10 @@ class Component extends DCLogic {
     if (screen === 'receitas') { pageTitle = 'Receitas'; pageIntro = 'Quanto o município arrecadou, mês a mês, e de onde vem o dinheiro.'; parentLabel = 'Transparência'; parentGo = () => this.go('transparencia'); }
     if (screen === 'licitacoes') { pageTitle = 'Licitações e contratações diretas'; pageIntro = 'Processos do município, do mais recente para o mais antigo, a partir dos dados abertos da Prefeitura e do PNCP.'; parentLabel = 'Transparência'; parentGo = () => this.go('transparencia'); }
     if (screen === 'licitacao') { pageTitle = lcRaw.num + ' — ' + lcRaw.obj; pageIntro = ''; parentLabel = 'Licitações'; parentGo = () => this.go('licitacoes'); }
-    if (screen === 'noticias') { pageTitle = 'Notícias'; pageIntro = 'Comunicados e notícias da Prefeitura.'; }
+    if (screen === 'noticias') { pageTitle = 'Notícias'; pageIntro = 'Notícias da Prefeitura. Avisos, convocações e convites ficam em Comunicados.'; }
+    if (screen === 'comunicados') { pageTitle = 'Comunicados'; pageIntro = 'Avisos, convocações, convites, notas oficiais e editais de chamamento da Prefeitura.'; }
+    if (screen === 'conheca') { pageTitle = 'Conheça Borá'; pageIntro = 'Lugares, patrimônio, economia, festas e eventos do município, com fotos e vídeos.'; }
+    if (screen === 'perfil') { pageTitle = pfRaw.t; pageIntro = ''; parentLabel = 'Conheça Borá'; parentGo = () => this.go('conheca', { cCat: 'Todos' }); }
     if (screen === 'noticia') { pageTitle = nt.titulo; pageIntro = ''; parentLabel = 'Notícias'; parentGo = () => this.go('noticias'); }
     if (screen === 'governo') { pageTitle = 'Governo'; pageIntro = 'Secretarias, estrutura administrativa e legislação.'; }
     if (screen === 'secretaria') { pageTitle = sc.nome; pageIntro = ''; parentLabel = 'Governo'; parentGo = () => this.go('governo'); }
@@ -3039,7 +3244,10 @@ class Component extends DCLogic {
     if (screen === 'transmissoes') { pageTitle = 'Transmissões'; pageIntro = 'Audiências públicas, sessões de licitação e o videocast da Prefeitura, ao vivo e gravados.'; }
 
     return {
-      p: p, util: util, nav: nav, popular: popular,
+      p: p, util: util, nav: nav, popular: popular, portalNav: portalNav, govNav: govNav, servBar: servBar, servAllCur: screen === 'servicos' && s.tema === 'Todos' ? 'page' : undefined,
+      homeCom: homeCom, comTabs: comTabs, comLista: comLista, isComunicados: screen === 'comunicados', goComunicados: () => this.go('comunicados', { comTipo: 'Todos' }),
+      nDest: nDest, nSec3: nSec3, nLista: nLista, goFale: this.goSecao('atendimento'),
+      isConheca: screen === 'conheca', isPerfil: screen === 'perfil', cTabs: cTabs, perfisLista: perfisLista, cVazio: perfisLista.length === 0, pf: pf, pfOutros: pfOutros, goConheca: () => this.go('conheca', { cCat: 'Todos' }),
       goHome: () => this.go('home'), goBusca: () => this.go('busca'), goServicos: () => this.go('servicos', { tema: 'Todos' }), goNoticias: () => this.go('noticias'), goTransp: () => this.go('transparencia'), goSic: () => this.go('ouvidoria', { oTab: 'sic', oProt: '', oErr: '' }), goOuv: () => this.go('ouvidoria', { oTab: 'ouv', oProt: '', oErr: '' }), goNoticia1: () => this.go('noticia', { not: 'n1' }), goEstat: this.goSecao('acesso'),
       rootClass: [s.hc ? 'hc' : '', s.sub ? 'ul' : '', s.pausa ? 'pa' : ''].join(' ').trim(), zoom: ZOOMS[s.fonte] ?? 1,
       fonteMais: () => { const f = Math.min(s.fonte + 1, ZOOMS.length - 1); this.setA11y({ fonte: f }); this.setState({ fonteMsg: 'Texto em ' + Math.round(ZOOMS[f] * 100) + '%' }); },
@@ -3095,13 +3303,13 @@ class Component extends DCLogic {
       isBase: screen === 'base', b: b, bTabs: bTabs, bGrupoNome: bGrupoNome, bQ: s.bQ, bF: s.bF, bSort: s.bSort,
       onBQ: (e) => this.setState({ bQ: e.target.value, bMsg: '' }), onBF: (e) => this.setState({ bF: e.target.value, bMsg: '' }), onBSort: (e) => this.setState({ bSort: e.target.value }),
       bExports: ['CSV', 'JSON', 'ODS'].map((f) => ({ label: f, go: () => this.setState({ bMsg: 'Arquivo ' + bId + '-2026.' + f.toLowerCase() + ' gerado com ' + b.count + ', sem CPF e sem dados pessoais restritos (simulação).' }) })), bMsg: s.bMsg, hasBMsg: !!s.bMsg,
-      gKpis: [pKpis[0], pKpis[1], pKpis[3], { l: 'Licitações em andamento', v: String(LICS.filter((l) => l.sit === 'Em andamento' || l.sit === 'Classificada').length), d: 'nenhuma recebendo propostas hoje', cor: '#7A4A00' }],
+      gKpis: [pKpis[0], pKpis[1], pKpis[3], { l: 'Licitações em andamento', c: 'Licitações em andamento', v: String(LICS.filter((l) => l.sit === 'Em andamento' || l.sit === 'Classificada').length), d: 'nenhuma recebendo propostas hoje', cor: '#7A4A00', f: 'Dados abertos do sistema contábil e PNCP, consulta em 05/11/2026.' }].map((k, i) => this.kcard(k, 'g-' + i)),
       gLinks: [{ label: 'Receitas', go: () => this.go('receitas') }, { label: 'Despesas', go: () => this.go('despesas') }, { label: 'Licitações', go: () => this.go('licitacoes') }, { label: 'Contratos', go: () => this.go('base', { ds: 'contratos', bQ: '', bF: 'Todos', bSort: 'padrao', bMsg: '' }) }, { label: 'Pessoal', go: () => this.go('base', { ds: 'pessoal', bQ: '', bF: 'Todos', bSort: 'padrao', bMsg: '' }) }, { label: 'Emendas', go: () => this.go('base', { ds: 'emendas', bQ: '', bF: 'Todos', bSort: 'padrao', bMsg: '' }) }, { label: 'Diário Oficial', go: this.goSecao('diario') }, { label: 'Pedir informação (e-SIC)', go: () => this.go('ouvidoria', { oTab: 'sic', oProt: '', oErr: '' }) }],
       homeNews: NOTICIAS.slice(0, 3).map(newsCard),
       protQ: s.protQ, onProt: (e) => this.setState({ protQ: e.target.value }), protMsg: s.protMsg, hasProtMsg: !!s.protMsg,
       doProt: (e) => { e.preventDefault(); const q = (this.state.protQ || '').trim().toUpperCase(); this.setState({ protMsg: q ? 'Protocolo ' + q + ': em análise na Secretaria responsável. Prazo de resposta: 20/11/2026. Você recebe aviso por e-mail a cada mudança (simulação).' : 'Digite o número do protocolo que você recebeu ao fazer o pedido.' }); },
       isPainel: screen === 'painel', pTabs: pTabs, pShowFin: s.pTab === 'tudo' || s.pTab === 'fin', pShowCont: s.pTab === 'tudo' || s.pTab === 'cont', pShowMun: s.pTab === 'tudo' || s.pTab === 'mun',
-      pKpis: pKpis, pMes: pMes, pMesFrase: pMesFrase, pMesAria: pMesAria, pAreas: pAreas, pAreaFrase: pAreaFrase,
+      pKpis: pKpis.map((k, i) => this.kcard(k, 'p-' + i)), pMes: pMes, pMesFrase: pMesFrase, pMesAria: pMesAria, pAreas: pAreas, pAreaFrase: pAreaFrase,
       pOrigFrase: pOrigFrase, pOrigAria: 'Repasses: ' + pRepF + ' da receita; arrecadação própria: ' + pPropF, pRepW: Math.round(pRep * 1000) / 10, pRepF: pRepF, pPropF: pPropF, pOrigens: pOrigens,
       pExec: pExec, pRitmoF: pRitmoF, pRitmoW: Math.round(pRitmo * 1000) / 10, pCont: pCont, pContFrase: pContFrase, pMun: pMun, pBreve: pBreve, pTemas: pTemas, pIdeb: pIdeb, pIdebComp: pIdebComp, pIdebAria: pIdebAria, pCnes: pCnes, pSaeb: pSaeb, pSocFed: pSocFed, pIegGeral: pIegGeral, pIegDims: pIegDims, pIegAnos: pIegAnos, pIegRows: pIegRows, pIegEstado: pIegEstado, pIegFrase: pIegFrase, pIegAria: pIegAria, pVitais: pVitais, pVitAria: pVitAria,
       pExports: ['CSV', 'JSON', 'ODS'].map((f) => ({ label: f, go: () => this.setState({ pMsg: 'Arquivo painel-indicadores.' + f.toLowerCase() + ' gerado com os dados e as fontes de cada número (simulação).' }) })), pMsg: s.pMsg, hasPMsg: !!s.pMsg,
@@ -3133,9 +3341,9 @@ class Component extends DCLogic {
       footA: footA, footB: footB, footC: footC,
       brasao: FOTOS.brasao, fotoPaco: FOTOS.paco, goUnidades: () => this.go('base', { ds: 'unidades', bQ: '', bF: 'Todos', bSort: 'padrao', bMsg: '' }),
       cidadeFotos: [
-        { src: FOTOS.praca, row: 'span 2', pos: 'center 60%', t: 'Praça e Igreja Matriz, vistas do alto', alt: 'Vista aérea da praça central com a Igreja Matriz, o chafariz azul, o coreto e as ruas arborizadas' },
-        { src: FOTOS.igreja, row: 'auto', pos: 'center 40%', t: 'Igreja Matriz', alt: 'Igreja Matriz branca de torre pontiaguda, cercada de palmeiras e árvores' },
-        { src: FOTOS.usina, row: 'auto', pos: 'center', t: 'Agroindústria da cana-de-açúcar', alt: 'Portaria de uma usina de açúcar e etanol, com caminhão na entrada' }
+        { go: () => this.go('perfil', { perfil: 'praca', pfFoto: 0 }), src: FOTOS.praca, row: 'span 2', pos: 'center 60%', t: 'Praça e Igreja Matriz, vistas do alto', alt: 'Vista aérea da praça central com a Igreja Matriz, o chafariz azul, o coreto e as ruas arborizadas' },
+        { go: () => this.go('perfil', { perfil: 'igreja', pfFoto: 0 }), src: FOTOS.igreja, row: 'auto', pos: 'center 40%', t: 'Igreja Matriz', alt: 'Igreja Matriz branca de torre pontiaguda, cercada de palmeiras e árvores' },
+        { go: () => this.go('perfil', { perfil: 'usina', pfFoto: 0 }), src: FOTOS.usina, row: 'auto', pos: 'center', t: 'Agroindústria da cana-de-açúcar', alt: 'Portaria de uma usina de açúcar e etanol, com caminhão na entrada' }
       ],
       atalhos: [
         { t: 'Serviços online', d: 'Peça e acompanhe sem sair de casa', icone: 'atendimento', bg: '#E7F0F3', cor: p, go: () => this.go('servicos', { tema: 'Todos' }) },

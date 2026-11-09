@@ -14,7 +14,7 @@ from pathlib import Path
 import psycopg
 from psycopg.types.json import Jsonb
 from . import config, db
-from .catalogo import MODULOS, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, serve
+from .catalogo import MODULOS, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, LAYOUT_PADRAO_V2, serve
 from .security import hash_senha
 
 AQUI = Path(__file__).parent
@@ -114,6 +114,11 @@ def configurar_painel(o):
         nf += 1 if r else 0
     return novos, nf
 
+def configurar_youtube(o):
+    """Fonte "youtube" para todo órgão (Fase 8). Sem módulo de transmissão, canal ou chave, o coletor não faz nada."""
+    r = db.exe(db.PLATAFORMA, "INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,'youtube','{}',TRUE) ON CONFLICT DO NOTHING RETURNING 1", (o['id'],))
+    return 1 if r else 0
+
 def completar_identidade(banco, slug, tipo):
     """Acrescenta à identidade do órgão as chaves visuais que ainda não existem (nunca sobrescreve o que o órgão definiu)."""
     ident = db.cfg(banco, 'identidade', {}) or {}
@@ -138,7 +143,8 @@ def atualizar_layout(banco, tipo):
     (ainda igual ao padrão da Fase 2), aplica o novo padrão inteiro."""
     atual = [(b['chave'], b['regiao']) for b in db.todos(banco, "SELECT chave, regiao FROM blocos WHERE pagina='home' ORDER BY ordem, id")]
     alvo = LAYOUT_PADRAO[tipo]
-    if atual == LAYOUT_PADRAO_V1.get(tipo):
+    if atual in (LAYOUT_PADRAO_V1.get(tipo), LAYOUT_PADRAO_V2.get(tipo)):
+        db.exe(banco, "DELETE FROM blocos WHERE pagina='home' AND chave <> ALL(%s)", ([k for k, _ in alvo],))
         for i, (k, reg) in enumerate(alvo):
             db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES ('home',%s,%s,%s) ON CONFLICT (pagina, chave) DO UPDATE SET regiao=EXCLUDED.regiao, ordem=EXCLUDED.ordem", (k, reg, i))
         return 'padrão novo aplicado'
@@ -172,6 +178,10 @@ def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, mun
     completar_identidade(banco, slug, tipo)
     configurar_fontes(oid, slug)
     configurar_painel(db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,)))
+    configurar_youtube(db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,)))
+    from . import menus as MN, fase8 as F8
+    MN.semear(banco, tipo, (db.cfg(banco, 'identidade', {}) or {}).get('nome_curto', ''))
+    F8.migrar_conheca(banco, db.cfg(banco, 'identidade', {}))
     if not db.um(banco, 'SELECT 1 FROM blocos LIMIT 1'):
         for i, (k, reg) in enumerate(LAYOUT_PADRAO[tipo]):
             db.exe(banco, 'INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING', ('home', k, reg, i))
@@ -268,8 +278,13 @@ def atualizar():
         aplicar(o['banco'], MIG_ORGAO)
         ident = 'identidade completada' if completar_identidade(o['banco'], o['slug'], o['tipo']) else 'identidade sem mudança'
         nf = configurar_fontes(o['id'], o['slug'])
+        from . import menus as MN, fase8 as F8
+        nm = MN.semear(o['banco'], o['tipo'], (db.cfg(o['banco'], 'identidade', {}) or {}).get('nome_curto', ''))
+        npf = F8.migrar_conheca(o['banco'], db.cfg(o['banco'], 'identidade', {}))
+        if nm or npf:
+            print(f"  fase 8: {nm} item(ns) de menu e {npf} perfil(is) do Conheça criados")
         ni, nfp = configurar_painel(o)
-        nf += nfp
+        nf += nfp + configurar_youtube(o)
         if ni:
             print(f"  painel de indicadores: {ni} indicador(es) novo(s) no catálogo")
         if o['tipo'] == 'legislativo':

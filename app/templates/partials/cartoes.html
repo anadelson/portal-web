@@ -1,0 +1,17 @@
+{# Cartão de indicador (Fase 8): título curto | valor + unidade | uma linha de contexto. Fonte, datas, método e base legal só no ⓘ.
+   Sem JavaScript, o ⓘ é um link para a página do indicador; com JavaScript vira botão (aria-expanded) que abre o balão. #}
+{% macro cartao(k, uid) %}
+<article class="icard" style="border-top-color:{{ k.cor or 'var(--cor)' }}" aria-label="{{ k.nome or k.l }}: {{ k.v }}{{ ' ' ~ k.u if k.u }}{{ ', ' ~ k.d if k.d }}">
+<div class="ic-l1">{% if k.href %}<a class="ic-t" href="{{ k.href }}" title="{{ k.nome or k.l }}">{{ k.l }}</a>{% else %}<span class="ic-t" title="{{ k.nome or k.l }}">{{ k.l }}</span>{% endif %}
+{% if k.info %}<a class="ic-info" href="{{ k.href or '#' }}" data-info="bal-{{ uid }}" aria-label="Sobre este indicador: {{ k.l }}">i</a>{% endif %}</div>
+<p class="ic-v">{{ k.v }}{% if k.u %} <small>{{ k.u }}</small>{% endif %}</p>
+<p class="ic-c">{{ k.d }}</p>
+{% if k.info %}<div class="balao" id="bal-{{ uid }}" role="region" aria-label="Sobre: {{ k.nome or k.l }}" hidden><p class="bt"><strong>{{ k.nome or k.l }}</strong></p><dl>
+{% if k.info.fonte %}<dt>Fonte</dt><dd>{% if k.info.link %}<a href="{{ k.info.link }}">{{ k.info.fonte }}</a>{% else %}{{ k.info.fonte }}{% endif %}</dd>{% endif %}
+{% if k.info.periodo %}<dt>Período</dt><dd>{{ k.info.periodo }}</dd>{% endif %}
+{% if k.info.atualizado %}<dt>Atualizado</dt><dd>{{ k.info.atualizado }}</dd>{% endif %}
+{% if k.info.metodo %}<dt>Método</dt><dd>{{ k.info.metodo }}</dd>{% endif %}
+{% if k.info.base %}<dt>Base legal</dt><dd>{{ k.info.base }}</dd>{% endif %}</dl>
+{% if k.href %}<p class="bt"><a href="{{ k.href }}">Série histórica e downloads</a></p>{% endif %}</div>{% endif %}
+</article>
+{% endmacro %}

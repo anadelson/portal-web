@@ -21,6 +21,12 @@ MODELOS = {
     'votos': ['sessao_data', 'tipo', 'numero', 'ano', 'vereador', 'voto'],
     'diarias': ['beneficiario', 'cargo', 'destino', 'motivo', 'inicio', 'fim', 'valor'],
 }
+# Prefeitura (Fase 8): acervo de legislação anterior ao Diário eletrônico — opcional, a partir de planilha (nada de raspagem)
+MODELOS_EXECUTIVO = {'legislacao': ['tipo', 'numero', 'ano', 'data', 'ementa', 'link', 'relacoes']}
+MODELOS_TODOS = {**MODELOS, **MODELOS_EXECUTIVO}
+
+def modelos_do(tipo):
+    return MODELOS_EXECUTIVO if tipo == 'executivo' else MODELOS
 DESCRICAO = {
     'legislaturas': 'numero inteiro; anos no formato 2021–2024 (ou 2021-2024)',
     'vereadores': 'legislatura já cadastrada; votos inteiro ou vazio',
@@ -31,6 +37,7 @@ DESCRICAO = {
     'presencas': 'sessão já cadastrada (data e nome); vereador da legislatura atual; situacao: presente, ausente ou justificada',
     'votos': 'sessão já cadastrada na data; proposição já cadastrada; voto: sim, nao, abstencao ou ausente',
     'diarias': 'valor com vírgula decimal; inicio e fim dd/mm/aaaa',
+    'legislacao': 'tipo: Lei, Lei Complementar, Decreto, Decreto Legislativo, Portaria ou Resolução; data dd/mm/aaaa (ou vazia); link https:// do texto oficial; relacoes: revoga:Lei 3/2001|altera:Lei 5/2002 (atos já importados ou de linhas anteriores)',
 }
 CPF = re.compile(r'\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b')
 
@@ -56,7 +63,7 @@ def ler_csv(dados: bytes):
     return list(csv.DictReader(io.StringIO(t), delimiter=';'))
 
 def importar(banco, modelo, dados: bytes, simular=True, quem='linha de comando', arquivo='arquivo.csv'):
-    cols = MODELOS[modelo]
+    cols = MODELOS_TODOS[modelo]
     erros, n_ok = [], 0
     try:
         linhas = ler_csv(dados)
@@ -112,7 +119,34 @@ def _sessao(c, data, nome=None):
         raise ValueError(f"há {len(rows)} sessões em {data.strftime('%d/%m/%Y')}: informe o nome da sessão")
     return rows[0]
 
+def _legislacao(c, l):
+    from .fase8 import TIPOS_LEGISLACAO, RELACOES
+    if l['tipo'] not in TIPOS_LEGISLACAO:
+        raise ValueError(f"tipo deve ser um de: {', '.join(TIPOS_LEGISLACAO)}")
+    num, ano = l['numero'].replace('.', ''), _int(l['ano'], 'ano')
+    if not num.isdigit():
+        raise ValueError('numero deve ser só o número do ato (ex.: 1234)')
+    if not l['ementa']:
+        raise ValueError('ementa é obrigatória')
+    if l.get('link') and not l['link'].startswith('https://'):
+        raise ValueError('link deve começar com https://')
+    data = _data(l['data']) if l.get('data') else None
+    if _um(c, 'SELECT 1 FROM legislacao WHERE lower(tipo)=lower(%s) AND numero=%s AND ano=%s', (l['tipo'], num, ano)):
+        raise ValueError(f"{l['tipo']} {num}/{ano} já está na lista (veio do Diário ou de importação anterior)")
+    novo = _um(c, "INSERT INTO legislacao (origem, tipo, numero, ano, data, ementa, pdf_url) VALUES ('importado',%s,%s,%s,%s,%s,%s) RETURNING id", (l['tipo'], num, ano, data, l['ementa'], l.get('link', '')))
+    for rel in [x.strip() for x in (l.get('relacoes') or '').split('|') if x.strip()]:
+        t, _, alvo = rel.partition(':')
+        m = re.match(r'^\s*(.+?)\s+([\d.]+)\s*/\s*(\d{4})\s*$', alvo)
+        if t.strip() not in RELACOES or not m:
+            raise ValueError(f'relação "{rel}" inválida (use revoga:Lei 3/2001)')
+        d = _um(c, 'SELECT id FROM legislacao WHERE lower(tipo)=lower(%s) AND numero=%s AND ano=%s', (m.group(1).strip(), m.group(2).replace('.', ''), int(m.group(3))))
+        if not d:
+            raise ValueError(f'ato citado "{alvo.strip()}" não está na lista (coloque-o em linha anterior)')
+        c.execute('INSERT INTO legislacao_relacoes (origem_id, destino_id, tipo) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING', (novo['id'], d['id'], t.strip()))
+
 def _linha(c, modelo, l):
+    if modelo == 'legislacao':
+        return _legislacao(c, l)
     if modelo == 'legislaturas':
         if not re.match(r'^\d{4}\s*[–-]\s*\d{4}$', l['anos']):
             raise ValueError('anos no formato 2021–2024')

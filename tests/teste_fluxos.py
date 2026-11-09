@@ -94,7 +94,7 @@ def png(w=40, h=30):
     b = io.BytesIO(); Image.new('RGB', (w, h), (14, 77, 100)).save(b, 'PNG'); return b.getvalue()
 def imgs_sem_alt(html):
     return [t for t in re.findall(r'<img\b[^>]*>', html) if not re.search(r'\salt="', t)]
-for txt in ['Serviços mais procurados', 'Conheça Borá', 'Paço Municipal', 'Radar da Transparência Pública', 'Avalie este portal', 'Voltar ao topo', 'Acesso direto', 'Câmara Municipal', 'brasao.webp', 'Public+Sans', 'Alto contraste']:
+for txt in ['Serviços mais acessados', 'Conheça Borá', 'Paço Municipal', 'Radar da Transparência Pública', 'Avalie este portal', 'Voltar ao topo', 'Acesso direto', 'Câmara Municipal', 'brasao.webp', 'Public+Sans', 'Alto contraste']:
     ok(pm.get('/'), txt=txt, nome='pm home: ' + txt)
 assert 'Prefeitura em números' not in pm.get('/').text and 'Borá em números</h2>' not in pm.get('/').text, 'bloco de números deveria estar oculto sem dados'
 for txt in ['Próxima sessão', 'Presidente da Câmara', 'Mesa Diretora da 15ª Legislatura', 'Quanto custa a Câmara', 'Emendas impositivas dos vereadores', 'Últimas sessões', 'Projetos e proposições', 'Prefeitura Municipal']:
@@ -143,7 +143,7 @@ ok(pm.get('/admin/vereadores'), 404, nome='prefeitura sem vereadores no admin')
 t = token(pm, '/admin/conteudos/1')
 ok(pm.post('/admin/conteudos/salvar', data={'csrf': t, 'id': 1, 'tipo': 'Aviso', 'secao': 'Serviços', 'titulo': 'Vacinação contra a gripe nas unidades de saúde', 'resumo': 'r', 'texto': 't', 'classe': 'util', 'imagem': 'saude', 'acao': 'rascunho'}, follow_redirects=True), txt='Salvou rascunho', nome='conteudo imagem')
 t = token(pm, '/admin/conteudos/1'); pm.post('/admin/conteudos/salvar', data={'csrf': t, 'id': 1, 'titulo': 'Vacinação contra a gripe nas unidades de saúde', 'classe': 'util', 'acao': 'aprovar'})
-ok(pm.get('/'), txt='serv-saude.webp', nome='cartão de serviço com foto')
+ok(pm.get('/'), txt='href="/conteudo/1"', nome='serviço publicado nos mais acessados')
 ok(g.get('/layout/1'), txt='Conheça a cidade', nome='console editor de regiões')
 ok(g.get('/'), txt='Órgãos e licenças', nome='console menu')
 # provision atualizar: idempotente e migra layout padrão antigo

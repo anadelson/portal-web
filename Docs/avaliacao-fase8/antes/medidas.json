@@ -1,0 +1,50 @@
+[
+ {
+  "largura": 1280,
+  "pagina": "inicio",
+  "scrollW": 1280,
+  "altura": 3692
+ },
+ {
+  "largura": 1280,
+  "pagina": "painel",
+  "scrollW": 1280,
+  "altura": 8220
+ },
+ {
+  "largura": 1280,
+  "pagina": "interna-receitas",
+  "scrollW": 1280,
+  "altura": 5405
+ },
+ {
+  "largura": 1280,
+  "pagina": "interna-diario",
+  "scrollW": 1280,
+  "altura": 1514
+ },
+ {
+  "largura": 390,
+  "pagina": "inicio",
+  "scrollW": 390,
+  "altura": 7296
+ },
+ {
+  "largura": 390,
+  "pagina": "painel",
+  "scrollW": 390,
+  "altura": 16872
+ },
+ {
+  "largura": 390,
+  "pagina": "interna-receitas",
+  "scrollW": 390,
+  "altura": 10024
+ },
+ {
+  "largura": 390,
+  "pagina": "interna-diario",
+  "scrollW": 390,
+  "altura": 2853
+ }
+]

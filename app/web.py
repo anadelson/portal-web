@@ -89,6 +89,8 @@ ICONES = {
     'cadeado': 'M5 11h14v10H5zM8 11V8a4 4 0 0 1 8 0v3',
     'seta': 'M5 12h14M13 6l6 6-6 6',
     'acess': 'M12 4a1.5 1.5 0 1 0 0 .01M6 8l6 1.2L18 8M12 9.2V14m0 0l-3 6m3-6l3 6',
+    'libras': 'M8 13V5a1.5 1.5 0 0 1 3 0v6M11 11V4a1.5 1.5 0 0 1 3 0v7M14 11V5.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-3l-2.5-4a1.5 1.5 0 0 1 2.5-1.6L8 13',
+    'play': 'M8 5v14l11-7z',
 }
 
 def icone(nome, tam=24, classe=''):
@@ -188,8 +190,16 @@ def ctx_orgao(request: Request, **extra):
     tokens = {'cor': cor, 'cor_escura': mistura(cor, '#000000', .3), 'cor_clara': mistura(cor, '#FFFFFF', .88),
               'destaque': ident.get('cor_destaque') or '#F0B429'}
     ao_vivo = db.um(o['banco'], 'SELECT id, titulo, tipo, iniciada_em FROM transmissoes WHERE ao_vivo ORDER BY iniciada_em DESC LIMIT 1') if (mods.get('transm') or mods.get('audiencias')) else None
+    defeso = mods.get('eleicao') and eleicao.em_defeso(o['banco'])
+    from . import menus
+    try:
+        barras = menus.barras(o['banco'], mods, defeso, bool(ao_vivo))
+    except Exception:  # banco ainda sem a migração da Fase 8
+        barras = {'institucional': [], 'portal': []}
+    acess = db.cfg(o['banco'], 'acessibilidade', {}) or {}
     d = dict(request=request, orgao=o, ident=ident, mods=mods, cor=cor, tokens=tokens, vizinhos=vizinhos(o), leg=o['tipo'] == 'legislativo', atual=request.url.path[3:] or '/', ao_vivo=ao_vivo,
-             defeso=mods.get('eleicao') and eleicao.em_defeso(o['banco']), eleicao=eleicao.conf(o['banco']), hoje=config.hoje())
+             defeso=defeso, eleicao=eleicao.conf(o['banco']), hoje=config.hoje(), barras=barras, vlibras=acess.get('vlibras', True),
+             aviso_faixa=db.cfg(o['banco'], 'aviso_faixa', {}) or {})
     d.update(extra)
     return d
 

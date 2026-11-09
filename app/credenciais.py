@@ -12,6 +12,9 @@ FONTES = {
     'iegm': {'nome': 'IEG-M do TCESP (painel público, Pentaho CDA)',
              'explica': 'Acesso anônimo publicado pelo próprio TCESP no redirecionamento de iegm.tce.sp.gov.br (uso autorizado pelo órgão em 07/11/2026). '
                         'Consulta sem documentação oficial: pode mudar sem aviso.'},
+    'youtube': {'nome': 'YouTube Data API v3 (transmissões)', 'so_chave': True,
+                'explica': 'Chave de API do Google Cloud com a YouTube Data API v3 ativada, usada para detectar a transmissão ao vivo e listar as gravações '
+                           'do canal oficial de cada órgão (o canal é informado no painel do órgão, em Transmissões). Restrinja a chave à YouTube Data API.'},
 }
 
 class SemChave(Exception):
@@ -56,8 +59,10 @@ def situacao(fonte):
 def salvar(fonte, usuario, senha, quem):
     if fonte not in FONTES:
         raise ValueError('fonte sem credencial prevista')
+    if FONTES[fonte].get('so_chave'):
+        usuario = 'chave'
     if not usuario or not senha:
-        raise ValueError('preencha usuário e senha')
+        raise ValueError('preencha usuário e senha' if not FONTES[fonte].get('so_chave') else 'preencha a chave')
     token = cifrar(usuario, senha)
     existia = bool(db.um(db.PLATAFORMA, 'SELECT 1 FROM credenciais_fontes WHERE fonte=%s', (fonte,)))
     db.exe(db.PLATAFORMA, """INSERT INTO credenciais_fontes (fonte, dados, configurada_em, configurada_por) VALUES (%s,%s,now(),%s)
@@ -86,6 +91,14 @@ def _http_teste(fonte, auth):
         except ValueError:
             valido = False
         return r.status_code, valido
+    if fonte == 'youtube':  # consulta mínima (lista de regiões): só confere se a chave é aceita pela API
+        from .coletores.youtube import _get
+        try:
+            d = _get('i18nRegions', {'part': 'snippet', 'hl': 'pt_BR'}, auth[1])
+            return 200, isinstance(d, dict) and 'items' in d
+        except RuntimeError as e:
+            st = str(e)
+            return (int(st[5:]) if st.startswith('HTTP ') else 0), False
     raise ValueError('fonte sem teste previsto')
 
 def testar(fonte, quem):

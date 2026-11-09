@@ -1,0 +1,15 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Fale conosco — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Fale conosco</span></nav>
+<h1>Fale conosco</h1>
+<div class="duas"><section class="caixa" aria-labelledby="h-canais"><h2 id="h-canais">Canais de atendimento</h2><ul class="f-ic contato">
+{% if ident.endereco %}<li>{{ icone('local', 18) }}<span>{{ ident.endereco }}</span></li>{% endif %}{% if ident.horario %}<li>{{ icone('relogio', 18) }}<span>{{ ident.horario }}</span></li>{% endif %}
+{% if ident.telefone %}<li>{{ icone('telefone', 18) }}<span>{{ ident.telefone }}</span></li>{% endif %}{% if ident.whatsapp %}<li>{{ icone('whatsapp', 18) }}<span>WhatsApp {{ ident.whatsapp }}</span></li>{% endif %}
+{% if ident.email %}<li>{{ icone('ouvidoria', 18) }}<span><a href="mailto:{{ ident.email }}">{{ ident.email }}</a></span></li>{% endif %}</ul></section>
+<section class="caixa" aria-labelledby="h-pedir"><h2 id="h-pedir">Pedidos e manifestações</h2><p>Reclamações, sugestões, elogios e denúncias vão para a Ouvidoria. Pedidos de informação pública, para o e-SIC. Os dois geram um protocolo para acompanhar.</p>
+<div class="acoes"><a class="btn" href="/ouvidoria">Ouvidoria</a><a class="btn sec" href="/e-sic">Pedido de informação (e-SIC)</a></div>
+<form class="campos" action="/acesso" style="margin-top:16px"><label>Acompanhe seu pedido<input name="protocolo" placeholder="Número do protocolo, ex.: OUV-2026-ABC123"></label><button class="btn sec" type="submit">Consultar</button></form></section></div>
+<section class="secao" id="unidades" aria-labelledby="h-un"><h2 id="h-un">Unidades e horários</h2>{% if ident.sede and ident.sede.titulo %}<p><strong>{{ ident.sede.titulo }}</strong> · {{ ident.endereco }}{% if ident.horario %} · {{ ident.horario }}{% endif %}</p>{% endif %}
+<p class="vazio">As demais unidades de atendimento, com endereço e horário, aparecem aqui quando forem cadastradas pela {{ 'Câmara' if leg else 'Prefeitura' }}.</p></section>
+{% endblock %}

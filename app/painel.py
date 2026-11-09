@@ -158,6 +158,20 @@ CATALOGO = [
          pendente=PEND_IEGM,
          base_legal='Constituição, art. 71 c/c art. 75; Lei Complementar estadual 709/1993.') for i, (k, n) in enumerate(_IEGM)]
 CAT = {c['chave']: c for c in CATALOGO}
+# Título curto do cartão (Fase 8, até 32 caracteres; editável no painel). O nome completo fica na página do indicador e no aria-label.
+TITULOS_CURTOS = {
+    'fin_receita': 'Receita arrecadada', 'fin_receita_prevista': 'Receita × previsão', 'fin_despesa_paga': 'Despesa paga', 'fin_empenhada_dotacao': 'Empenhado × dotação',
+    'cont_publicadas': 'Contratações no PNCP', 'cont_valor': 'Valor das contratações', 'cont_dispensa': 'Dispensas de licitação',
+    'saude_minimo': 'Saúde: mínimo legal', 'saude_estabelecimentos': 'Estabelecimentos de saúde', 'saude_nascidos': 'Nascidos vivos', 'saude_obitos': 'Óbitos', 'saude_vacinacao': 'Doses de vacina',
+    'edu_mde_minimo': 'Educação: mínimo legal', 'edu_fundeb_minimo': 'FUNDEB: profissionais', 'edu_ideb_ai': 'IDEB anos iniciais', 'edu_ideb_af': 'IDEB anos finais', 'edu_ideb_em': 'IDEB ensino médio',
+    'edu_saeb_mat_ai': 'Saeb Matemática (iniciais)', 'edu_saeb_lp_ai': 'Saeb Português (iniciais)', 'edu_saeb_mat_af': 'Saeb Matemática (finais)', 'edu_saeb_lp_af': 'Saeb Português (finais)',
+    'edu_saeb_mat_em': 'Saeb Matemática (médio)', 'edu_saeb_lp_em': 'Saeb Português (médio)', 'edu_alfabetizacao': 'Alfabetização (15+)',
+    'social_bf_familias': 'Famílias no Bolsa Família', 'social_bf_valor': 'Valor do Bolsa Família', 'social_cadunico_familias': 'Famílias no CadÚnico', 'social_bpc': 'Beneficiários do BPC',
+    'mun_populacao': 'População estimada', 'mun_pib_per_capita': 'PIB per capita', 'mun_pessoal_ocupado': 'Pessoal ocupado', 'mun_salario_medio': 'Salário médio formal', 'mun_esgoto': 'Esgoto por rede',
+    'gestao_sic_pedidos': 'Pedidos ao e-SIC', 'gestao_sic_no_prazo': 'e-SIC no prazo', 'gestao_sic_prazo_medio': 'Prazo médio do e-SIC', 'gestao_ouv_manifestacoes': 'Manifestações à Ouvidoria',
+    'gestao_iegm': 'IEG-M geral', 'gestao_iegm_educ': 'IEG-M educação', 'gestao_iegm_saude': 'IEG-M saúde', 'gestao_iegm_planej': 'IEG-M planejamento', 'gestao_iegm_fiscal': 'IEG-M gestão fiscal',
+    'gestao_iegm_amb': 'IEG-M meio ambiente', 'gestao_iegm_cidade': 'IEG-M cidades', 'gestao_iegm_ti': 'IEG-M governança de TI'}
+assert all(len(v) <= 32 for v in TITULOS_CURTOS.values())
 # indicadores retirados do catálogo (substituídos): ficam ocultos e sem coletor, com a série guardada
 RETIRADOS = {'edu_ideb_ai_mun': 'edu_ideb_ai', 'edu_ideb_ai_est': 'edu_ideb_ai', 'edu_ideb_af_mun': 'edu_ideb_af', 'edu_ideb_af_est': 'edu_ideb_af',
              'edu_ideb_em_est': 'edu_ideb_em', 'edu_saeb': 'edu_saeb_mat_ai'}
@@ -177,6 +191,8 @@ def semear(banco):
         r = db.exe(banco, f"INSERT INTO indicadores ({', '.join(cols)}) VALUES ({', '.join(['%s'] * len(cols))}) ON CONFLICT (chave) DO UPDATE SET "
                    + ', '.join(f'{k}=EXCLUDED.{k}' for k in atualiza) + ' RETURNING (xmax = 0) novo', vals)
         n += 1 if r and r['novo'] else 0
+    for chave, curto in TITULOS_CURTOS.items():
+        db.exe(banco, "UPDATE indicadores SET titulo_curto=%s WHERE chave=%s AND titulo_curto=''", (curto, chave))
     for velho, novo in RETIRADOS.items():
         r = db.um(banco, 'SELECT destaque FROM indicadores WHERE chave=%s AND (visivel OR coletor<>%s)', (velho, ''))
         if r:
@@ -272,6 +288,20 @@ def montar(banco, ind, limite=12):
     d.update(serie=s, ult=ult, ant=ant, valor_txt=exibir(ind, ult), valor_curto=exibir(ind, ult, curto=True), variacao=variacao(ind, ult, ant),
              meta_txt=texto_meta(ind, ult), aviso=aviso_antigo(ind), tema_nome=TEMA_NOME[ind['tema']], spark=spark(ind, s[-limite:]))
     return d
+
+def cartao(ind_montado, o=None):
+    """Dados do cartão de indicador (Fase 8): título curto, valor, uma linha de contexto e o conteúdo do ⓘ."""
+    m = ind_montado
+    ult = m['ult']
+    ctx = m['variacao'] or m['meta_txt'] or (f"{ult['periodo']} · {ult['nota']}" if ult['nota'] else ult['periodo'])
+    if m['aviso']:
+        ctx = 'última coleta falhou: ' + ult['coletado_em'].astimezone().strftime('dado de %d/%m/%Y')
+    elif ult['origem'] == 'manual':
+        ctx = 'dado lançado manualmente em ' + ult['coletado_em'].astimezone().strftime('%d/%m/%Y')
+    un = m['unidade'] if m['formato'] not in ('moeda', 'pct') and m['unidade'] else ''
+    return {'l': m.get('titulo_curto') or m['nome'][:32], 'nome': m['nome'], 'v': m['valor_curto'], 'u': un, 'd': ctx, 'href': f"/painel/{m['chave']}", 'cor': 'var(--cor)',
+            'info': {'fonte': m['fonte'], 'link': link_fonte(m, o, ult) if o else '', 'periodo': ult['periodo'] + (f" ({ult['nota']})" if ult['nota'] else ''),
+                     'atualizado': ult['coletado_em'].astimezone().strftime('%d/%m/%Y, %Hh%M'), 'metodo': '', 'base': m['base_legal']}}
 
 def aviso_antigo(ind):
     """'Dado de <data>' quando a última tentativa de coleta falhou e o valor exibido é o último válido."""

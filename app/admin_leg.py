@@ -455,7 +455,17 @@ def transmissoes(request: Request):
     from .web import modulos_do_orgao
     u = exige(request); o = request.state.orgao; _transm_ok(modulos_do_orgao(o), o)
     return T('transmissoes', request, u, itens=db.todos(o['banco'], 'SELECT t.*, s.nome sessao FROM transmissoes t LEFT JOIN sessoes s ON s.id=t.sessao_id ORDER BY ao_vivo DESC, coalesce(previsto_para, iniciada_em) DESC NULLS LAST LIMIT 100'),
-             conf=db.cfg(o['banco'], 'transmissao', {}) or {}, sessoes=db.todos(o['banco'], 'SELECT id, nome, data FROM sessoes ORDER BY data DESC LIMIT 60'))
+             conf=db.cfg(o['banco'], 'transmissao', {}) or {}, sessoes=db.todos(o['banco'], 'SELECT id, nome, data FROM sessoes ORDER BY data DESC LIMIT 60'), yt=_yt_situacao(o))
+
+def _yt_situacao(o):
+    """Texto curto sobre a integração com o YouTube (sem expor a chave)."""
+    from . import credenciais as CR
+    if not CR.situacao('youtube'):
+        return 'chave da YouTube Data API ainda não cadastrada no console (Credenciais de fontes): só o botão manual funciona.'
+    c = db.um(db.PLATAFORMA, "SELECT inicio, ok, mensagem FROM coletas WHERE orgao_slug=%s AND fonte='youtube:canal' ORDER BY id DESC LIMIT 1", (o['slug'],))
+    if not c:
+        return 'chave cadastrada; nenhuma consulta ainda.'
+    return f"última consulta em {c['inicio'].astimezone().strftime('%d/%m/%Y, %Hh%M')}: {'ok' if c['ok'] else 'falhou'} — {c['mensagem']}"
 
 @r.post('/transmissoes')
 async def transmissoes_post(request: Request):
@@ -464,6 +474,8 @@ async def transmissoes_post(request: Request):
     b = o['banco']; acao = f.get('acao')
     try:
         if acao == 'config':
+            if f.get('canal') and not re.fullmatch(r'UC[\w-]{22}', f['canal']):
+                raise ValueError('O ID do canal começa com UC e tem 24 caracteres (YouTube Studio → Configurações → Canal → Configurações avançadas).')
             db.set_cfg(b, 'transmissao', {'canal': f.get('canal', '')[:60], 'canal_url': f.get('canal_url', '')[:200] if f.get('canal_url', '').startswith('https://') else ''}); msg = 'Canal salvo.'
         elif acao == 'nova':
             if not f.get('titulo'):
@@ -534,14 +546,15 @@ async def participacao_post(request: Request):
 # ---------- importação de dados antigos (CSV) ----------
 @r.get('/importar')
 def importar_ver(request: Request):
-    u = exige(request); b = leg_only(request)
-    return T('importar', request, u, modelos=importar.MODELOS, hist=db.todos(b, 'SELECT * FROM importacoes ORDER BY id DESC LIMIT 30'))
+    u = exige(request); b = request.state.orgao['banco']
+    return T('importar', request, u, modelos=importar.modelos_do(request.state.orgao['tipo']), hist=db.todos(b, 'SELECT * FROM importacoes ORDER BY id DESC LIMIT 30'))
 
 @r.post('/importar')
 async def importar_post(request: Request):
-    u = exige(request, 'config'); b = leg_only(request); f = await ler_form(request)
+    u = exige(request, 'config'); b = request.state.orgao['banco']; f = await ler_form(request)
+    modelos = importar.modelos_do(request.state.orgao['tipo'])
     arq = _arq(f, 'arquivo')
-    if not arq or f.get('modelo') not in importar.MODELOS:
+    if not arq or f.get('modelo') not in modelos:
         return ir('/admin/importar', 'Escolha o modelo e o arquivo CSV.', request)
     dados = await arq.read(5 * 1024 * 1024 + 1)
     if len(dados) > 5 * 1024 * 1024:
@@ -550,7 +563,7 @@ async def importar_post(request: Request):
     if f['modelo'] == 'votos' and rel['gravadas']:
         importar.votacoes_importadas_tramitar(b)
     auditar(request, f"Importação {f['modelo']}: {rel['gravadas']} de {rel['linhas']} ({'simulação' if rel['simulacao'] else 'gravado'})")
-    return T('importar', request, u, modelos=importar.MODELOS, hist=db.todos(b, 'SELECT * FROM importacoes ORDER BY id DESC LIMIT 30'), rel=rel)
+    return T('importar', request, u, modelos=modelos, hist=db.todos(b, 'SELECT * FROM importacoes ORDER BY id DESC LIMIT 30'), rel=rel)
 
 # ---------- autoavaliação PNTP ----------
 @r.get('/pntp')

@@ -165,7 +165,7 @@ rq = db.um(CM, "SELECT * FROM proposicoes WHERE tipo='Requerimento' AND numero=7
 if not db.um(CM, "SELECT 1 FROM tramitacao WHERE proposicao_id=%s AND fase='Votação em Plenário (importada)'", (rq['id'],)): falha('tramitação dos votos importados')
 
 # ---------- 7. transmissão ao vivo liga e desliga ----------
-post('/admin/transmissoes', {'acao': 'config', 'canal': 'UCteste', 'canal_url': 'https://www.youtube.com/@canal-teste'}, txt='Canal salvo', nome='canal')
+post('/admin/transmissoes', {'acao': 'config', 'canal': 'UC' + 'x' * 22, 'canal_url': 'https://www.youtube.com/@canal-teste'}, txt='Canal salvo', nome='canal')
 r = post('/admin/transmissoes', {'acao': 'nova', 'titulo': 'Transmissão de teste', 'tipo': 'Sessão', 'video': 'javascript:alert(1)', 'sessao': sid}, nome='vídeo inválido')
 if 'ID do vídeo' not in msg(r): falha('vídeo inválido deveria ser recusado')
 post('/admin/transmissoes', {'acao': 'nova', 'titulo': 'Transmissão de teste', 'tipo': 'Sessão', 'video': 'https://www.youtube.com/watch?v=abcdefghijk', 'sessao': sid, 'legendas': 'on', 'libras': 'on'}, txt='agendada', nome='agendar')

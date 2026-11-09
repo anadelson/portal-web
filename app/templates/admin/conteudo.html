@@ -1,10 +1,19 @@
 {% extends 'admin/base.html' %}{% block h1 %}{{ c.titulo if c else 'Novo conteúdo' }}{% endblock %}
 {% block conteudo %}{% set editavel = pode('editar') and (not c or c.situacao in ('rascunho','devolvido','revisao')) %}
 {% if c and c.situacao == 'devolvido' and c.comentario %}<p class="msg" style="background:#FCEFD9">Comentário do publicador: {{ c.comentario }}</p>{% endif %}
-<form class="campos" method="post" action="/admin/conteudos/salvar"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="id" value="{{ c.id if c else '' }}">
+<form class="campos" method="post" action="/admin/conteudos/salvar" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="id" value="{{ c.id if c else '' }}">
 {% if c %}<p>Situação: <span class="chip">{{ SITUACOES[c.situacao] }}</span> · autor: {{ c.autor }}</p>{% endif %}
-<label>Tipo<select name="tipo">{% for t in ['Notícia','Página','Aviso','Banner','Documento'] %}<option {{ 'selected' if c and c.tipo == t }}>{{ t }}</option>{% endfor %}</select></label>
+<label>Tipo<select name="tipo">{% for t in TIPOS_CONTEUDO + ([c.tipo] if c and c.tipo not in TIPOS_CONTEUDO else []) %}<option {{ 'selected' if c and c.tipo == t }}>{{ t }}</option>{% endfor %}</select><small style="font-weight:400;color:#4B5563">Avisos, convocações, convites, notas oficiais e editais de chamamento são <a href="/admin/comunicados">Comunicados</a>, não notícias.</small></label>
 <label>Seção do portal<select name="secao">{% for t in ['Notícias','Serviços','Transparência','Página inicial'] %}<option {{ 'selected' if c and c.secao == t }}>{{ t }}</option>{% endfor %}</select></label>
+<fieldset style="border:1px solid #DCE1E6;border-radius:12px;padding:12px"><legend><strong>Notícia: capa e destaque</strong></legend>
+{% if c and (c.imagem or '').startswith('/') %}<div class="capa-previa" style="max-width:420px"><img src="{{ c.imagem }}" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover;object-position:{{ c.foco_x }}% {{ c.foco_y }}%;border-radius:8px"><small>Prévia do recorte 16:9 com o ponto focal atual.</small></div>
+<label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="remover_capa" value="1"> Remover a imagem de capa</label>{% endif %}
+<label>Imagem de capa (PNG, JPG ou WEBP, até 3 MB; exibida em 16:9)<input type="file" name="capa" accept="image/png,image/jpeg,image/webp"></label>
+<label>Texto alternativo da capa (obrigatório com imagem: descreva o que ela mostra)<input name="imagem_alt" value="{{ c.imagem_alt if c else '' }}" maxlength="300"></label>
+<label>Crédito da foto<input name="imagem_credito" maxlength="300"></label>
+<div class="grade2"><label>Ponto focal horizontal (0 = esquerda, 100 = direita)<input type="number" name="foco_x" min="0" max="100" value="{{ c.foco_x if c else 50 }}"></label><label>Ponto focal vertical (0 = topo, 100 = base)<input type="number" name="foco_y" min="0" max="100" value="{{ c.foco_y if c else 50 }}"></label></div>
+<label>Data e hora exibidas na notícia (vazio = momento da aprovação)<input type="datetime-local" name="publicado_em" value="{{ c.publicado_em.astimezone().strftime('%Y-%m-%dT%H:%M') if c and c.publicado_em else '' }}"></label>
+<label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="destaque" value="1" {{ 'checked' if c and c.destaque }}> Notícia em destaque na página inicial (só uma por vez)</label></fieldset>
 <label>Foto do cartão (serviços)<select name="imagem"><option value="">Sem foto (cartão só com ícone)</option>{% for k, t in TEMAS.items() %}<option value="{{ k }}" {{ 'selected' if c and c.imagem == k }}>{{ t }}</option>{% endfor %}</select><small style="font-weight:400;color:#4B5563">Fotos de tema (CC0) usadas nos cartões de “Serviços mais procurados”. A foto é decorativa: o título do cartão descreve o serviço.</small></label>
 <label>Título<input name="titulo" value="{{ c.titulo if c else '' }}" required></label>
 <label>Resumo<textarea name="resumo" rows="2">{{ c.resumo if c else '' }}</textarea></label>

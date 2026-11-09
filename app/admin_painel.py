@@ -127,6 +127,9 @@ async def editar_post(request: Request, iid: int):
     volta = f'/admin/indicadores/{iid}'
     acao = f.get('acao')
     if acao == 'config':
+        curto = re.sub(r'\s+', ' ', f.get('titulo_curto', '')).strip()
+        if not curto or len(curto) > 32:
+            return ir(volta, 'O título curto do cartão é obrigatório e tem no máximo 32 caracteres (o nome completo continua na página do indicador).', request)
         desc = f.get('descricao', '')[:1200]
         if TOM_PROPAGANDA.search(desc) and desc != ind['descricao']:
             return ir(volta, 'Texto explicativo recusado: use linguagem neutra, sem nomes de agentes políticos, adjetivos de promoção ou exclamações (o painel continua no ar no período eleitoral como transparência; Constituição, art. 37, § 1º).', request)
@@ -141,10 +144,10 @@ async def editar_post(request: Request, iid: int):
         meta_bl = f.get('meta_base_legal', '')[:400]
         if meta is not None and not meta_bl:
             return ir(volta, 'Informe a base legal (ou o documento) que define a meta.', request)
-        antes = {k: ind[k] for k in ('descricao', 'meta', 'meta_base_legal', 'visivel', 'destaque', 'ordem')}
-        depois = {'descricao': desc, 'meta': meta, 'meta_base_legal': meta_bl, 'visivel': f.get('visivel') == '1', 'destaque': destaque, 'ordem': ordem}
-        db.exe(b, 'UPDATE indicadores SET descricao=%s, meta=%s, meta_base_legal=%s, visivel=%s, destaque=%s, ordem=%s WHERE id=%s',
-               (desc, meta, meta_bl, depois['visivel'], destaque, ordem, iid))
+        antes = {k: ind[k] for k in ('titulo_curto', 'descricao', 'meta', 'meta_base_legal', 'visivel', 'destaque', 'ordem')}
+        depois = {'titulo_curto': curto, 'descricao': desc, 'meta': meta, 'meta_base_legal': meta_bl, 'visivel': f.get('visivel') == '1', 'destaque': destaque, 'ordem': ordem}
+        db.exe(b, 'UPDATE indicadores SET titulo_curto=%s, descricao=%s, meta=%s, meta_base_legal=%s, visivel=%s, destaque=%s, ordem=%s WHERE id=%s',
+               (curto, desc, meta, meta_bl, depois['visivel'], destaque, ordem, iid))
         mud = [k for k in antes if (float(antes[k]) if k == 'meta' and antes[k] is not None else antes[k]) != depois[k]]
         if mud:
             P.historico(b, iid, u['nome'], 'Configuração alterada: ' + ', '.join(mud), {k: antes[k] for k in mud}, {k: depois[k] for k in mud})

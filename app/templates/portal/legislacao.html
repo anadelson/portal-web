@@ -1,0 +1,21 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Legislação municipal — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Legislação</span></nav>
+<h1>Legislação municipal</h1>
+<p class="intro" style="margin-bottom:6px">{% if externo %}Leis, decretos e demais atos publicados no Diário Oficial da {{ externo.nome }}, lidos pela API pública da Prefeitura.{% else %}Leis, leis complementares, decretos, portarias e resoluções publicados no Diário Oficial. Cada ato publicado entra sozinho nesta lista.{% endif %}</p>
+<p class="legal"><strong>Base legal:</strong> {{ legal_txt }}</p>
+{% if falhou %}<p class="nota" role="note">Não foi possível consultar a legislação da Prefeitura agora. Tente de novo em alguns minutos.</p>{% endif %}
+<form class="filtros" method="get" action="/legislacao" role="search" aria-label="Filtrar legislação">
+<label>Tipo<select name="tipo"><option value="">Todos</option>{% for t in tipos %}<option {{ 'selected' if f.tipo == t }}>{{ t }}</option>{% endfor %}</select></label>
+<label>Situação<select name="situacao"><option value="">Todas</option>{% for s, n in [('vigente','Vigente'),('alterada','Alterada'),('revogada','Revogada')] %}<option value="{{ s }}" {{ 'selected' if f.situacao == s }}>{{ n }}</option>{% endfor %}</select></label>
+<label>Ano<select name="ano"><option value="">Todos</option>{% for a in anos %}<option {{ 'selected' if f.ano == a|string }}>{{ a }}</option>{% endfor %}</select></label>
+<label>Número ou assunto<input name="q" type="search" value="{{ f.q }}"></label>
+<span class="botoes"><button class="btn" type="submit">Filtrar</button><a class="btn sec" href="/legislacao">Limpar</a></span></form>
+<div class="cab" style="margin:16px 0 8px"><p style="margin:0" role="status"><strong>{{ itens|length }}</strong> ato(s)</p>
+<span class="botoes">{% if not externo %}<a class="btn sec" href="/legislacao.csv" download>Baixar CSV</a><a class="btn sec" href="/legislacao.json">JSON</a>{% endif %}{% if acervo %}<a class="btn sec" href="{{ acervo }}">Acervo anterior ao Diário eletrônico</a>{% endif %}</span></div>
+{% if itens %}<div class="tabela"><table><caption class="sr">Atos da legislação municipal</caption><thead><tr><th scope="col">Ato</th><th scope="col">Ementa</th><th scope="col">Data</th><th scope="col">Situação</th><th scope="col">Publicação</th></tr></thead><tbody>
+{% for x in itens %}<tr><th scope="row">{% if externo %}{{ rotulo(x) }}{% else %}<a href="/legislacao/{{ x.id }}">{{ rotulo(x) }}</a>{% endif %}</th><td>{{ x.ementa }}</td><td>{{ x.data|br if x.data }}</td><td><span class="chip {{ 'ok' if x.situacao == 'vigente' else 'erro' if x.situacao == 'revogada' else 'alerta' }}">{{ x.situacao }}</span></td>
+<td>{% if x.edicao %}{% if externo %}Diário nº {{ x.edicao }}{% else %}<a href="{{ x.pdf_url }}">Diário nº {{ x.edicao }}{% if x.pagina %}, p. {{ x.pagina }}{% endif %}</a>{% endif %}{% else %}acervo importado{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="vazio">Nenhum ato {{ 'com esses filtros' if f.tipo or f.situacao or f.ano or f.q else 'publicado no Diário Oficial ainda' }}.</p>{% endif %}
+{% endblock %}

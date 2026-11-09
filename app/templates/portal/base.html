@@ -5,9 +5,9 @@
 <title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/portal.css?v=7">
+<link rel="stylesheet" href="/static/portal.css?v=13">
 <style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
-<script>try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
+<script>document.documentElement.classList.add('js');try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
 </head>
 <body class="{{ orgao.tipo }}">
 {% set busca_url = '/proposicoes' if leg else '/servicos' %}
@@ -16,50 +16,48 @@
 <a class="pular" href="#busca-topo" accesskey="3">Ir para a busca [3]</a>
 <a class="pular" href="#rodape" accesskey="4">Ir para o rodapé [4]</a>
 
+{% macro aponta(href) %}{% if atual == href or (href != '/' and atual.startswith(href)) %} aria-current="page"{% endif %}{% endmacro %}
 <div class="barra-acess"><div class="int">
-<span class="atalhos-tec" aria-label="Atalhos de teclado"><a href="#conteudo">Conteúdo [1]</a><a href="#menu">Menu [2]</a><a href="#busca-topo">Busca [3]</a><a href="#rodape">Rodapé [4]</a></span>
+<span class="atalhos-tec" aria-label="Atalhos de teclado"><a href="#conteudo">Conteúdo [1]</a><a href="#menu">Menu [2]</a><a href="#busca-topo">Busca [3]</a><a href="#rodape">Rodapé [4]</a>
+<span class="sep" aria-hidden="true"></span>{% for v in vizinhos %}<a class="vizinho" href="https://{{ v.dominio }}/"><strong>{{ v.nome.replace(' Municipal de ' ~ v.municipio.split(' (')[0], ' Municipal') if v.municipio else v.nome }}</strong></a>{% endfor %}<a href="/admin">Área restrita</a></span>
 <span class="ferramentas" role="group" aria-label="Ferramentas de acessibilidade">
+<button type="button" data-fonte="-10" aria-label="Diminuir o texto">A−</button>
+<button type="button" data-fonte="0" aria-label="Tamanho normal do texto">A</button>
+<button type="button" data-fonte="10" aria-label="Aumentar o texto">A+</button>
 <button type="button" data-acess="hc" aria-pressed="false">Alto contraste</button>
 <button type="button" data-acess="sub" aria-pressed="false">Sublinhar links</button>
-<button type="button" data-fonte="10" aria-label="Aumentar o texto">A+</button>
-<button type="button" data-fonte="0" aria-label="Tamanho normal do texto">A</button>
-<button type="button" data-fonte="-10" aria-label="Diminuir o texto">A−</button>
+{% if vlibras %}<button type="button" class="btn-libras" data-libras aria-pressed="false" aria-label="Libras: abrir a tradução para a Língua Brasileira de Sinais (VLibras)">{{ icone('libras', 16) }}Libras</button>{% endif %}
 <a href="/acessibilidade">{{ icone('acess', 16) }}Acessibilidade</a>
 </span>
 </div></div>
 
-<div class="barra-util"><nav class="int" aria-label="Acesso rápido">
-<a href="/transparencia">Transparência</a>
-<a href="/acesso">e-SIC</a>
-<a href="/acesso#ouvidoria">Ouvidoria</a>
-{% if mods.transm or mods.audiencias %}<a href="/transmissoes">Transmissões</a>{% endif %}
-{% if leg %}<a href="/sessoes">Sessões</a>{% if mods.emend %}<a href="/emendas">Emendas</a>{% endif %}
-{% else %}{% if mods.diario %}<a href="/diario">Diário Oficial</a>{% endif %}<a href="/transparencia/licitacoes">Licitações</a>{% endif %}
-<a href="/dados-abertos">Dados abertos</a>
-<a href="/admin">Área restrita (servidores)</a>
-{% for v in vizinhos %}<a class="vizinho" href="https://{{ v.dominio }}/">{{ icone('predio', 16) }}{{ v.nome.replace(' Municipal de ' ~ v.municipio.split(' (')[0], ' Municipal') if v.municipio else v.nome }}</a>{% endfor %}
-</nav></div>
+<nav class="b-inst" aria-label="{{ 'Transparência e governo' }}"><ul class="int">
+{% for m in barras.institucional %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}>{{ m.rotulo }}</a></li>{% endfor %}
+</ul></nav>
 
-<header class="topo"><div class="int">
+<header class="topo{{ ' cheio' if barras and (barras.portal|length) >= 6 }}"><div class="int">
 <a class="marca" href="/" aria-label="Página inicial — {{ ident.nome or orgao.nome }}">
 {% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="" width="64" height="56">{% else %}<span class="selo" aria-hidden="true">{{ (ident.nome or orgao.nome)|iniciais }}</span>{% endif %}
 <span class="nome">{% if ident.prefixo and not leg %}<span class="pre">{{ ident.prefixo }}</span><strong>{{ ident.nome_curto or ident.nome }}</strong>{% else %}<span class="pre">{{ ident.prefixo or '' }}</span><strong>{{ ident.nome or orgao.nome }}</strong>{% endif %}<span class="sub">{{ ident.subtitulo or orgao.municipio }}</span></span>
 </a>
-<nav class="menu" id="menu" tabindex="-1" aria-label="Menu principal"><ul>
-{% macro item(href, rotulo) %}<li><a href="{{ href }}"{% if atual == href or (href != '/' and atual.startswith(href)) %} aria-current="page"{% endif %}>{{ rotulo }}</a></li>{% endmacro %}
-{{ item('/', 'Início') }}
-{% if leg %}{{ item('/vereadores', 'Vereadores') }}{{ item('/sessoes', 'Sessões') }}{{ item('/proposicoes', 'Projetos') }}{% if mods.emend %}{{ item('/emendas', 'Emendas') }}{% endif %}
-{% else %}{{ item('/servicos', 'Serviços') }}{% if mods.diario %}{{ item('/diario', 'Diário Oficial') }}{% endif %}{% endif %}
-{{ item('/transparencia', 'Transparência') }}
-{% if mods.noticias %}{{ item('/noticias', 'Notícias') }}{% endif %}
-{{ item('/acesso', 'Fale conosco') }}
+<nav class="menu" id="menu" tabindex="-1" aria-label="Portal"><ul>
+{% for m in barras.portal %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}{% if m.vivo %} class="vivo"{% endif %}>{% if m.vivo %}<span class="ponto" aria-hidden="true"></span>{% endif %}{{ m.rotulo }}{% if m.vivo %}<span class="sr"> (transmissão ao vivo agora)</span>{% endif %}</a></li>{% endfor %}
 </ul></nav>
-<form class="busca-topo" action="{{ busca_url }}" role="search"><label class="sr" for="busca-topo">Buscar no portal</label><input id="busca-topo" name="q" type="search" placeholder="Buscar"><button type="submit" aria-label="Buscar">{{ icone('busca', 18) }}</button></form>
+<form class="busca-topo" action="{{ busca_url }}" role="search" id="form-busca"><label class="sr" for="busca-topo">Buscar no portal</label><input id="busca-topo" name="q" type="search" placeholder="Buscar"><button type="submit" aria-label="Buscar">{{ icone('busca', 18) }}<span class="txt">Buscar</span></button></form>
+<button type="button" class="btn-menu" aria-expanded="false" aria-controls="menu-cel" hidden>{{ icone('mods', 20) }}<span>Menu</span></button>
 </div></header>
+
+<div class="menu-cel" id="menu-cel" role="dialog" aria-modal="true" aria-labelledby="h-menu-cel" hidden>
+<div class="cab-menu"><h2 id="h-menu-cel">Menu</h2><button type="button" class="btn sec" data-fechar-menu>Fechar <span aria-hidden="true">✕</span></button></div>
+<form action="{{ busca_url }}" role="search" class="busca-cel"><label class="sr" for="busca-cel">Buscar no portal</label><input id="busca-cel" name="q" type="search" placeholder="Buscar no portal"><button class="btn" type="submit">Buscar</button></form>
+<h3>Portal</h3><ul>{% for m in barras.portal %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}>{{ m.rotulo }}</a></li>{% endfor %}</ul>
+<h3>Transparência e governo</h3><ul>{% for m in barras.institucional %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}>{{ m.rotulo }}</a></li>{% endfor %}</ul>
+</div>
 
 {% if ao_vivo %}<section class="ao-vivo" aria-label="Transmissão ao vivo"><div class="int"><span class="pulso-txt"><span class="ponto" aria-hidden="true"></span>AO VIVO</span><span class="t">{{ ao_vivo.titulo }}</span><a class="btn-vivo" href="/transmissoes">Assistir agora</a></div></section>
 <dialog id="aviso-vivo" aria-labelledby="h-aviso-vivo"><h2 id="h-aviso-vivo">● Transmissão ao vivo</h2><p>{{ ao_vivo.titulo }} está sendo transmitida agora.</p><div class="botoes"><a class="btn" href="/transmissoes">Assistir no portal</a><button class="btn sec" type="button" data-fechar>Agora não</button></div></dialog>
 <script>(function(){try{var d=document.getElementById('aviso-vivo'),k='aviso-vivo-'+new Date().toISOString().slice(0,10)+'-{{ ao_vivo.id }}';if(d&&d.showModal&&!localStorage.getItem(k)){localStorage.setItem(k,'1');d.showModal();d.querySelector('[data-fechar]').addEventListener('click',function(){d.close()})}}catch(e){}})();</script>{% endif %}
+{% if aviso_faixa.texto and (not aviso_faixa.ate or aviso_faixa.ate >= hoje.isoformat()) %}<div class="faixa-aviso" role="region" aria-label="Aviso"><p class="int"><strong>Aviso</strong> <span>{{ aviso_faixa.texto }}</span>{% if aviso_faixa.link %} <a class="btn sec mini" href="{{ aviso_faixa.link }}">{{ aviso_faixa.rotulo or 'Saiba mais' }}</a>{% endif %}</p></div>{% endif %}
 {% if defeso and eleicao.aviso %}<div class="aviso-defeso" role="note"><p class="int">Em cumprimento à Lei 9.504/1997, art. 73, VI, b, parte do conteúdo está suspensa até {{ eleicao.fim|br }}. Transparência, serviços e atos oficiais seguem disponíveis.</p></div>{% endif %}
 
 {% block destaque %}{% endblock %}
@@ -86,13 +84,13 @@
 {% if ident.email %}<li>{{ icone('ouvidoria', 18) }}<span><a href="mailto:{{ ident.email }}">{{ ident.email }}</a></span></li>{% endif %}
 </ul></section>
 <nav class="fcol" aria-labelledby="f-ai"><h2 id="f-ai">Acesso à informação</h2><ul>
-<li><a href="/transparencia">Portal da Transparência</a></li><li><a href="/acesso">Acesso à Informação (e-SIC)</a></li><li><a href="/acesso#ouvidoria">Ouvidoria</a></li>
+<li><a href="/transparencia">Portal da Transparência</a></li>{% if mods.bi %}<li><a href="/painel">Painel de indicadores</a></li>{% endif %}<li><a href="/e-sic">Acesso à Informação (e-SIC)</a></li><li><a href="/ouvidoria">Ouvidoria</a></li>
 {% if leg %}<li><a href="/sessoes">Sessões e votações</a></li>{% else %}<li><a href="/servicos">Carta de Serviços</a></li>{% endif %}
-<li><a href="/dados-abertos">Dados abertos</a></li></ul></nav>
+<li><a href="/legislacao">Legislação</a></li><li><a href="/dados-abertos">Dados abertos</a></li></ul></nav>
 <nav class="fcol" aria-labelledby="f-inst"><h2 id="f-inst">Institucional</h2><ul>
 {% if leg %}<li><a href="/vereadores">Vereadores e Mesa Diretora</a></li><li><a href="/proposicoes">Projetos e proposições</a></li><li><a href="/comissoes">Comissões</a></li><li><a href="/contas">Contas do Prefeito</a></li>{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
-{% else %}{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/transparencia/licitacoes">Licitações</a></li><li><a href="/transparencia/contratos">Contratos</a></li>{% endif %}
-{% if mods.noticias %}<li><a href="/noticias">Notícias e avisos</a></li>{% endif %}</ul>
+{% else %}{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/transparencia/licitacoes">Licitações</a></li><li><a href="/transparencia/contratos">Contratos</a></li><li><a href="/conheca">Conheça {{ ident.nome_curto or 'a cidade' }}</a></li>{% endif %}
+{% if mods.noticias %}<li><a href="/noticias">Notícias</a></li>{% endif %}<li><a href="/comunicados">Comunicados</a></li><li><a href="/governo">Governo</a></li><li><a href="/links-uteis">Links úteis</a></li><li><a href="/fale-conosco">Fale conosco</a></li></ul>
 {% for v in vizinhos %}<a class="f-viz" href="https://{{ v.dominio }}/"><span><small>{{ 'Poder Legislativo' if v.tipo == 'legislativo' else 'Poder Executivo' }}</small><strong>{{ v.nome }}</strong></span>{{ icone('seta', 18) }}</a>{% endfor %}
 </nav>
 <nav class="fcol" aria-labelledby="f-priv"><h2 id="f-priv">Privacidade e acessibilidade</h2><ul>
@@ -113,5 +111,8 @@
 var p=ler();document.querySelectorAll('[data-acess]').forEach(function(b){var k=b.getAttribute('data-acess');b.setAttribute('aria-pressed',p[k]?'true':'false');b.addEventListener('click',function(){p[k]=!p[k];h.classList.toggle(k,!!p[k]);b.setAttribute('aria-pressed',p[k]?'true':'false');gravar(p)})});
 document.querySelectorAll('[data-fonte]').forEach(function(b){b.addEventListener('click',function(){var d=parseInt(b.getAttribute('data-fonte'),10);p.fonte=d===0?0:Math.min(150,Math.max(80,(p.fonte||100)+d));h.style.fontSize=p.fonte?p.fonte+'%':'';gravar(p)})});})();
 </script>
+<script src="/static/portal.js?v=4" defer></script>
+{% if vlibras %}<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>
+<script src="https://vlibras.gov.br/app/vlibras-plugin.js" defer></script><script src="/static/vlibras-iniciar.js" defer></script>{% endif %}
 </body>
 </html>

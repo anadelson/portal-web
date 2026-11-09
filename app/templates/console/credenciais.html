@@ -18,7 +18,7 @@
 <details open><summary>Cadastrar</summary>
 {% endif %}
 <form class="campos" method="post" action="/credenciais" autocomplete="off"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="fonte" value="{{ x.chave }}"><input type="hidden" name="acao" value="salvar">
-<div class="grade2"><label>Usuário<input name="usuario" type="password" autocomplete="off" required></label><label>Senha<input name="senha" type="password" autocomplete="new-password" required></label></div>
+{% if x.so_chave %}<label>Chave da API<input name="senha" type="password" autocomplete="new-password" required></label>{% else %}<div class="grade2"><label>Usuário<input name="usuario" type="password" autocomplete="off" required></label><label>Senha<input name="senha" type="password" autocomplete="new-password" required></label></div>{% endif %}
 <p class="legal">Só gravação: depois de salvar, o valor não volta para a tela.</p>
 <button class="btn" {{ 'disabled' if not chave_ok }}>Salvar</button></form></details>
 </section>

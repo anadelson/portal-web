@@ -74,9 +74,26 @@ def home(request: Request):
         dados['projetos'] = db.todos(b, "SELECT * FROM proposicoes ORDER BY (tipo = 'Indicação'), ano DESC, numero DESC LIMIT 4")
         dados['emendas'] = db.um(b, "SELECT count(*) n, coalesce(sum(valor),0) total, coalesce(sum(pago_cadastro),0) pago, coalesce(sum(pago_empenho),0) pago_emp, count(*) FILTER (WHERE conferencia='divergente') divergentes FROM emendas")
         dados['financas'] = db.cfg(b, 'financas', {})
-    if ctx['mods'].get('bi'):  # bloco "Indicadores em números": até 4 indicadores marcados em destaque no catálogo
+    if ctx['mods'].get('bi'):  # bloco "Acompanhe a gestão": até 4 indicadores em destaque, no cartão único com ⓘ
         from . import painel as P
-        dados['indicadores'] = P.destaques(b)
+        dados['indicadores'] = [P.cartao(m, o) for m in P.destaques(b)]
+        dados['ind_atualizado'] = max((m['ult']['coletado_em'] for m in P.destaques(b)), default=None)
+    from . import fase8 as F8, menus as MN
+    dados['atalhos'] = MN.atalhos(b)
+    dados['comunicados'] = F8.comunicados(b, 5)
+    dados['servicos_top'] = F8.servicos_mais_acessados(b) if ctx['mods'].get('carta') else []
+    dados['noticias8'] = F8.noticias_home(b) if ctx['mods'].get('noticias') else None
+    dados['perfis'] = F8.perfis(b, destaque=True)[:3]
+    dados['quando'] = F8.quando
+    if ctx['mods'].get('transm') or ctx['mods'].get('audiencias'):
+        dados['gravacoes'] = db.todos(b, "SELECT * FROM transmissoes WHERE NOT ao_vivo AND video<>'' AND (encerrada_em IS NOT NULL OR previsto_para < now()) ORDER BY coalesce(encerrada_em, previsto_para) DESC NULLS LAST LIMIT 3")
+        dados['proxima_tv'] = db.um(b, 'SELECT * FROM transmissoes WHERE NOT ao_vivo AND previsto_para > now() ORDER BY previsto_para LIMIT 1')
+    if o['tipo'] == 'executivo':
+        F8.sincronizar(b)
+        dados['pub'] = {'ultima_edicao': db.um(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND NOT modo_teste ORDER BY data DESC, numero DESC LIMIT 1") if ctx['mods'].get('diario') else None,
+                        'licitacoes': db.um(b, "SELECT count(*) n FROM licitacoes WHERE ano=%s", (hoje.year,))['n'],
+                        'modalidades': [r['m'] for r in db.todos(b, "SELECT DISTINCT modalidade m FROM licitacoes WHERE ano=%s AND modalidade<>'' ORDER BY 1", (hoje.year,))],
+                        'legislacao': db.um(b, 'SELECT count(*) n FROM legislacao')['n']}
     if ctx['mods'].get('diario'):
         dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND NOT modo_teste ORDER BY data DESC, numero DESC, letra DESC LIMIT 4")
     destaque = [x for x in blocos if x['regiao'] == 'destaque']
@@ -106,6 +123,9 @@ def conteudo(request: Request, cid: int):
         raise HTTPException(404, 'Conteúdo não encontrado.')
     if eleicao.suspenso(c, ctx['orgao']['banco']):
         return templates.TemplateResponse(request, 'portal/suspenso.html', ctx, status_code=451)
+    if c['secao'] == 'Serviços':
+        from . import fase8
+        fase8.contar_acesso(ctx['orgao']['banco'], c['id'])
     return templates.TemplateResponse(request, 'portal/conteudo.html', dict(ctx, c=c))
 
 # ---------- Câmara ----------
@@ -250,6 +270,9 @@ def mapa(request: Request):
 # ---------- Acesso à informação ----------
 @r.get('/acesso')
 def acesso(request: Request, protocolo: str = ''):
+    if not protocolo:  # destinos próprios desde a Fase 8: /fale-conosco, /ouvidoria e /e-sic
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse('/fale-conosco', status_code=301)
     ctx = ctx_orgao(request)
     p = db.um(ctx['orgao']['banco'], 'SELECT protocolo, tipo, categoria, assunto, recebido, situacao, resposta, respondido FROM esic WHERE protocolo=%s', (protocolo.strip().upper(),)) if protocolo else None
     return templates.TemplateResponse(request, 'portal/acesso.html', dict(ctx, consulta=p, protocolo=protocolo, legal='acesso'))
@@ -260,7 +283,7 @@ async def acesso_enviar(request: Request):
     f = await ler_form(request)
     tipo = 'pedido' if f.get('tipo') == 'pedido' else 'manifestacao'
     if not (f.get('assunto') and f.get('texto') and f.get('nome') and '@' in f.get('email', '')):
-        return ir('/acesso', 'Preencha assunto, texto, nome e e-mail.', request)
+        return ir('/e-sic' if tipo == 'pedido' else '/ouvidoria', 'Preencha assunto, texto, nome e e-mail.', request)
     prefixo = 'SIC' if tipo == 'pedido' else 'OUV'
     prot = f"{prefixo}-{config.hoje().year}-{secrets.token_hex(3).upper()}"
     db.exe(ctx['orgao']['banco'], 'INSERT INTO esic (protocolo, tipo, categoria, assunto, texto, nome, email) VALUES (%s,%s,%s,%s,%s,%s,%s)',
