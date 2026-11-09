@@ -89,3 +89,19 @@
     if (i && !i.value.trim() && f.closest('.topo.cheio')) { e.preventDefault(); i.focus(); }
   });
 })();
+
+/* Avaliação: envia sem recarregar e mostra a resposta no lugar do formulário (sem JS, volta à página com a mensagem no mesmo lugar) */
+(function () {
+  var f = document.querySelector('form.aval-form'), msg = document.querySelector('.aval-msg');
+  if (!f || !msg || !window.fetch) return;
+  f.addEventListener('submit', function (e) {
+    var bt = e.submitter; if (!bt || !bt.value) return;
+    e.preventDefault();
+    var dados = new FormData(f); dados.set('util', bt.value);
+    f.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+    fetch(f.action, { method: 'POST', body: dados, headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { msg.textContent = d.msg; msg.hidden = false; f.remove(); })
+      .catch(function () { msg.textContent = 'Não foi possível enviar agora. Tente de novo.'; msg.hidden = false; f.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); });
+  });
+})();

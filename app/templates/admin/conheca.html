@@ -1,4 +1,4 @@
-{% extends 'admin/base.html' %}{% block h1 %}Conheça {{ ident.nome_curto or 'a cidade' }}{% endblock %}
+{% extends 'admin/base.html' %}{% from 'partials/editor.html' import editor %}{% block h1 %}Conheça {{ ident.nome_curto or 'a cidade' }}<script src="/static/admin.js?v=2" defer></script>{% endblock %}
 {% block conteudo %}{% set C = csrf_token(request) %}
 <p>Perfis de lugares, patrimônio, eventos, festas e economia, com fotos e vídeos. Até 3 em destaque na página inicial. <strong>Fotos com pessoas identificáveis só aparecem no portal com a autorização de uso de imagem registrada.</strong> Eventos da gestão são publicidade e saem do ar no período eleitoral.</p>
 <div class="tabela"><table><caption>Perfis</caption><thead><tr><th scope="col">Perfil</th><th scope="col">Categoria</th><th scope="col">Fotos</th><th scope="col">Situação</th></tr></thead><tbody>
@@ -7,7 +7,7 @@
 <label>Título<input name="titulo" value="{{ p.titulo if p else '' }}" maxlength="120" required></label>
 <div class="grade2"><label>Categoria<select name="categoria">{% for c in categorias %}<option {{ 'selected' if p and p.categoria == c }}>{{ c }}</option>{% endfor %}</select></label>
 <label>Classificação eleitoral<select name="classe">{% for k, v in classes.items() %}<option value="{{ k }}" {{ 'selected' if (p and p.classe == k) or (not p and k == 'util') }}>{{ v[0] }} — {{ v[1] }}</option>{% endfor %}</select></label></div>
-<label>Descrição (texto simples; linha em branco separa parágrafos; vazio = o perfil mostra só título e fotos)<textarea name="descricao" rows="6">{{ p.descricao if p else '' }}</textarea></label>
+{{ editor('Descrição (vazio = o perfil mostra só título e fotos)', p.html if p else '', p.descricao if p else '', nome_texto='descricao', linhas=6) }}
 <div class="grade2"><label>Ordem<input type="number" name="ordem" value="{{ p.ordem if p else 100 }}"></label><fieldset><legend>Exibição</legend><label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="publicado" value="1" {{ 'checked' if p and p.publicado }}> Publicado</label><label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="destaque" value="1" {{ 'checked' if p and p.destaque }}> Destaque na página inicial (até 3)</label></fieldset></div>
 <button class="btn">Salvar perfil</button></form></section>
 {% if p %}

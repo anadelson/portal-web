@@ -46,6 +46,14 @@ ICONES = {
     'painel': 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
     'lista': 'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',
     'home': 'M3 4h18v6H3zM3 14h8v6H3zM15 14h6v6h-6z',
+    'rede_instagram': 'M4 4h16v16H4zM12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7M17 6.8v.4',
+    'rede_facebook': 'M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8z',
+    'rede_youtube': 'M3 7.5C3 6 4 5 5.5 5h13C20 5 21 6 21 7.5v9c0 1.5-1 2.5-2.5 2.5h-13C4 19 3 18 3 16.5zM10 9v6l5-3z',
+    'rede_x': 'M4 4l16 16M20 4L4 20',
+    'rede_tiktok': 'M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5M14 4c.5 2.5 2.5 4 5 4',
+    'rede_whatsapp': 'M4 20l1.3-4A8 8 0 1 1 8 18.7zM9 9c0 3 3 6 6 6l1-1.5-2-1-1 1c-1-.5-2-1.5-2.5-2.5l1-1-1-2z',
+    'rede_linkedin': 'M4 4h16v16H4zM8 10v6M8 7.5v.5M12 16v-6M12 13c0-2 4-2.5 4 0v3',
+    'rede_outra': 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
     'midia': 'M3 5h18v14H3zM3 16l5-5 4 4 3-3 6 6M14 9.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0',
     'ident': 'M3 5h18v14H3zM6 16c.8-2 5.2-2 6 0M7 10.5a2 2 0 1 0 4 0a2 2 0 1 0-4 0M15 9h3M15 12h3M15 15h2',
     'vereadores': 'M5 7.5a4 4 0 1 0 8 0a4 4 0 1 0-8 0M2 21c0-4 3-6 7-6s7 2 7 6M16 3.5a4 4 0 0 1 0 7.5M18 15c2.5.5 4 2.5 4 6',
@@ -213,6 +221,14 @@ def csrf(request: Request) -> str:
 
 templates.env.globals['csrf_token'] = csrf
 
+def _avaliada_em(request, banco, pagina):
+    from . import avaliacao
+    try:
+        return avaliacao.avaliada_em(request, banco, pagina)
+    except Exception:
+        return None
+templates.env.globals['avaliada_em'] = _avaliada_em
+
 async def ler_form(request: Request) -> dict:
     f = await request.form()
     if f.get('csrf') != request.session.get('csrf'):
@@ -255,3 +271,20 @@ def auditar(request: Request, acao: str, quem: str | None = None):
     u = usuario(request)
     ip = request.headers.get('x-forwarded-for', request.client.host if request.client else '').split(',')[0].strip()
     db.exe(o['banco'], 'INSERT INTO auditoria (usuario, acao, ip) VALUES (%s,%s,%s)', (quem or (u['nome'] if u else 'anônimo'), acao, mascara_ip(ip)))
+
+# ---- Fase 9: telas de acesso (login e segundo fator) personalizadas ----
+def tela_acesso(request, passo=None, console=False):
+    if console:
+        try:
+            c = db.um(db.PLATAFORMA, "SELECT valor FROM config_console WHERE chave='login'")
+        except Exception:  # banco ainda sem a migração 018
+            c = None
+        v = (c or {}).get('valor') or {}
+        return {'console': True, 'nome': 'Portais de Borá — plataforma', 'titulo': v.get('titulo') or 'Console do gestor', 'brasao': '', 'cor': '#1B1E30',
+                'fundo': v.get('fundo'), 'passo': passo, 'acao': '/login', 'esqueci': '/esqueci', 'govbr': '/govbr', 'voltar': '/login', 'contato': ''}
+    o = request.state.orgao
+    ident = db.cfg(o['banco'], 'identidade', {}) or {}
+    nome = ident.get('nome') or o['nome']
+    return {'console': False, 'nome': nome, 'titulo': ident.get('login_titulo') or f'Área restrita — {nome}', 'brasao': (ident.get('brasao') or {}).get('url', ''),
+            'cor': ident.get('cor') or o['cor'], 'fundo': ident.get('login'), 'passo': passo, 'acao': '/admin/login', 'esqueci': '/admin/esqueci',
+            'govbr': '/admin/govbr', 'voltar': '/admin/login', 'contato': ident.get('email', '')}

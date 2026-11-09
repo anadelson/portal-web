@@ -257,6 +257,15 @@ def coletar_ibge(o, p, hoje=None):
     ok = bool(vals)
     msg = f'{len(vals)} valores de {len({v[0] for v in vals})} indicadores' + (f'; sem resposta: {", ".join(erros)}' if erros else '')
     falharam = {e.split(':')[0] for e in erros}
+    try:  # Fase 9: área territorial para "Dados do município" (pesquisa 33, indicador 29167)
+        d = buscar('ibge', f'{IBGE_V1}33/periodos/all/indicadores/29167/resultados/{ibge}')
+        res = (d[0]['res'][0]['res'] if d and d[0].get('res') else {}) or {}
+        anos = [a for a, v in res.items() if _v(v) is not None]
+        if anos:
+            a = max(anos)
+            P.gravar_publico(ibge, 'mun_area', a, P.fim_do_ano(_ano(a)), 'ibge', _v(res[a]), nota='Área territorial oficial (IBGE)')
+    except Exception as e:
+        erros.append(f'mun_area: {type(e).__name__}')
     P.marcar_coleta(o['banco'], 'ibge', True, msg, [c for c in _chaves('ibge') if c not in falharam])
     if falharam:
         P.marcar_coleta(o['banco'], 'ibge', False, msg, list(falharam))

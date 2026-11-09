@@ -1,9 +1,11 @@
 {% extends 'admin/base.html' %}{% block h1 %}Painel de indicadores{% endblock %}
-{% block conteudo %}{% set C = csrf_token(request) %}
+{% from 'partials/consulta.html' import consulta %}{% block conteudo %}{% set C = csrf_token(request) %}
 <p>Catálogo dos indicadores publicados em <a href="/painel">/painel</a>. Cada número vem de uma fonte oficial (coleta automática) ou de lançamento manual com motivo. Indicador sem nenhum valor não aparece no portal; aqui ele aparece como “aguardando primeira coleta”.</p>
 <p class="legal">Base legal: LRF, art. 48; LAI, arts. 7º e 8º; Lei 14.129/2021. Classe eleitoral: transparência obrigatória (continua no ar no período eleitoral, com textos neutros). Até {{ max_dest }} indicadores em destaque aparecem no bloco “Indicadores em números” da página inicial.</p>
 {% if aviso_cert %}<p class="chip erro" role="alert">{{ aviso_cert }}</p>{% endif %}
-<section class="cx"><h2>Coleta</h2>
+
+<nav class="abas" aria-label="Áreas do painel">{% for k, n in temas %}<a href="/admin/indicadores?area={{ k }}"{% if area == k %} aria-current="page"{% endif %}>{{ n }}</a>{% endfor %}<a href="/admin/indicadores?area=geral"{% if area == 'geral' %} aria-current="page"{% endif %}>Coleta e agrupamento</a></nav>
+{% if area == 'geral' %}<section class="cx"><h2>Coleta</h2>
 <p>Fontes deste órgão: {% for f in fontes %}<span class="chip {{ 'ok' if f.ativo else 'alerta' }}">{{ f.fonte }} · {{ 'ligada' if f.ativo else 'desligada' }}</span> {% endfor %}</p>
 <form class="inline" method="post" action="/admin/indicadores"><input type="hidden" name="csrf" value="{{ C }}"><button class="btn" name="acao" value="coletar">Coletar agora</button></form>
 <p class="legal">Consulta as fontes ligadas (IBGE, CNES, planilhas do INEP, IEG-M do TCESP se estiver em modo automático e os números do próprio portal) respeitando o limite de 1 consulta por segundo por fonte. Pode levar alguns minutos.</p>
@@ -11,19 +13,6 @@
 {% for c in coletas %}<tr><td>{{ c.inicio|br }}</td><td>{{ c.fonte }}</td><td><span class="chip {{ 'ok' if c.ok else 'erro' }}">{{ 'ok' if c.ok else 'falhou' }}</span></td><td>{{ c.mensagem }}</td></tr>{% endfor %}
 </tbody></table></div>{% endif %}
 </section>
-
-<div class="tabela"><table><caption>Catálogo de indicadores</caption>
-<thead><tr><th scope="col">Área</th><th scope="col">Indicador</th><th scope="col">Último valor</th><th scope="col">Última coleta</th><th scope="col">No portal</th><th scope="col" class="num">Ordem</th><th scope="col"><span class="sr">Ação</span></th></tr></thead><tbody>
-{% for i in itens %}<tr>
-<td>{{ i.tema_nome }}</td>
-<td><strong>{{ i.nome }}</strong><br><small>{{ i.fonte }} · {{ i.periodicidade }} · {{ 'automático' if i.modo == 'automatico' else 'manual' }}</small>{% if i.pendente %}<br><small class="chip alerta">{{ i.pendente }}</small>{% endif %}</td>
-<td>{% if i.ult %}{{ i.valor }}<br><small>{{ i.ult.periodo }}</small>{% else %}<span class="chip alerta">aguardando primeira coleta</span>{% endif %}</td>
-<td>{% if i.coletor == 'iegm' and i.modo == 'automatico' and not origem_iegm %}<span class="chip alerta">aguardando configuração da plataforma</span>{% elif i.ultima_tentativa %}<span class="chip {{ 'erro' if i.aviso else 'ok' }}">{{ 'falhou' if i.aviso else 'ok' }}</span><br><small>{{ i.ultima_tentativa|br }}{% if i.ultima_msg %} · {{ i.ultima_msg }}{% endif %}</small>{% else %}—{% endif %}</td>
-<td>{{ 'visível' if i.visivel else 'oculto' }}{% if i.destaque %}<br><small class="chip ok">destaque na página inicial</small>{% endif %}{% if i.meta is not none %}<br><small>meta: {{ i.meta|float }}</small>{% endif %}</td>
-<td class="num">{{ i.ordem }}</td>
-<td><a class="btn sec" href="/admin/indicadores/{{ i.id }}">Editar<span class="sr"> {{ i.nome }}</span></a></td>
-</tr>{% endfor %}
-</tbody></table></div>
 
 <section class="cx" id="areas"><h2>Agrupamento das unidades por área</h2>
 <p>Usado nos blocos “Para onde vai o dinheiro” e “Orçamento da área” do painel. A sugestão automática é a função de governo com mais empenho em cada unidade; troque quando não representar a área. Para aparecer nas seções do painel, use exatamente {% for a in areas_tema %}“{{ a }}”{{ ', ' if not loop.last }}{% endfor %}.</p>
@@ -39,4 +28,20 @@
 <div class="tabela"><table><caption class="sr">Histórico de alterações do painel</caption><thead><tr><th scope="col">Quando</th><th scope="col">Quem</th><th scope="col">Indicador</th><th scope="col">O que mudou</th></tr></thead><tbody>
 {% for h in hist %}<tr><td>{{ h.quando|br }}</td><td>{{ h.usuario }}</td><td>{{ h.nome or '—' }}</td><td>{{ h.acao }}</td></tr>{% else %}<tr><td colspan="4">Nenhuma alteração registrada.</td></tr>{% endfor %}
 </tbody></table></div></section>
+{% else %}
+<nav class="subabas" aria-label="Fontes desta área">{% for k, n in subs %}<a href="/admin/indicadores?area={{ area }}&amp;sub={{ k }}"{% if sub == k %} aria-current="page"{% endif %}>{{ n }}</a>{% endfor %}</nav>
+<div class="tabela"><table><caption>Indicadores — {{ dict(temas)[area] }} · {{ dict(subs).get(sub, '') }}</caption>
+<thead><tr><th scope="col">Área</th><th scope="col">Indicador</th><th scope="col">Último valor</th><th scope="col">Última coleta</th><th scope="col">No portal</th><th scope="col" class="num">Ordem</th><th scope="col"><span class="sr">Ação</span></th></tr></thead><tbody>
+{% for i in da_aba %}<tr>
+<td>{{ i.tema_nome }}</td>
+<td><strong>{{ i.nome }}</strong><br><small>{{ i.fonte }} · {{ i.periodicidade }} · {{ 'automático' if i.modo == 'automatico' else 'manual' }}</small>{% if i.pendente %}<br><small class="chip alerta">{{ i.pendente }}</small>{% endif %}</td>
+<td>{% if i.ult %}{{ i.valor }}<br><small>{{ i.ult.periodo }}</small>{% else %}<span class="chip alerta">aguardando primeira coleta</span>{% endif %}</td>
+<td>{% if i.coletor == 'iegm' and i.modo == 'automatico' and not origem_iegm %}<span class="chip alerta">aguardando configuração da plataforma</span>{% elif i.ultima_tentativa %}<span class="chip {{ 'erro' if i.aviso else 'ok' }}">{{ 'falhou' if i.aviso else 'ok' }}</span><br><small>{{ i.ultima_tentativa|br }}{% if i.ultima_msg %} · {{ i.ultima_msg }}{% endif %}</small>{% else %}—{% endif %}</td>
+<td>{{ 'visível' if i.visivel else 'oculto' }}{% if i.destaque %}<br><small class="chip ok">destaque na página inicial</small>{% endif %}{% if i.meta is not none %}<br><small>meta: {{ i.meta|float }}</small>{% endif %}</td>
+<td class="num">{{ i.ordem }}</td>
+<td><a class="btn sec" href="/admin/indicadores/{{ i.id }}">Editar<span class="sr"> {{ i.nome }}</span></a></td>
+</tr>{% else %}<tr><td colspan="7">Nenhum indicador desta área vem desta fonte.{% if sub == 'manual' %} Qualquer indicador pode receber lançamento manual quando a consulta falhar: abra o indicador e use “Lançamento manual”.{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+{% if cp %}{{ consulta(cp, '/admin/indicadores?area=' ~ area ~ '&sub=' ~ sub, C, pode('config')) }}{% elif sub == 'portal' %}<p class="legal">Estes números vêm do próprio portal (pedidos de e-SIC e manifestações da Ouvidoria), contados a cada hora; não há consulta externa.</p>{% elif sub == 'manual' %}<p class="legal">Lançamento manual: valor, período, fonte informada e motivo, com auditoria; o portal mostra “dado lançado manualmente em &lt;data&gt;”.</p>{% endif %}
+{% endif %}
 {% endblock %}

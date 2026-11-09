@@ -1,3 +1,8 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Console do gestor</title><link rel="stylesheet" href="/static/admin.css"><style>:root{--cor:#1B1E30}</style></head>
-<body><main class="login"><h1 style="margin-top:0;font-size:22px">Console do gestor</h1>{% set m = pega_msg(request) %}{% if m %}<p class="msg" style="background:#FCEFD9">{{ m }}</p>{% endif %}
-<form class="campos" method="post" action="/login"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><label>E-mail<input name="email" type="email" required autocomplete="username"></label><label>Senha<input name="senha" type="password" required autocomplete="current-password"></label><button class="btn">Entrar</button></form>{% if govbr %}<p style="margin-top:14px"><a class="btn sec" href="/govbr">Entrar com gov.br</a></p>{% endif %}<p class="legal" style="margin-top:14px">Console sempre com segundo fator (aplicativo autenticador).</p></main></body></html>
+{% extends 'acesso/moldura.html' %}
+{% block corpo %}
+<form class="campos" method="post" action="{{ tela.acao }}"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<label>E-mail<input name="email" type="email" autocomplete="username" required autofocus></label><label>Senha<input name="senha" type="password" autocomplete="current-password" required></label><button class="btn" type="submit">Continuar</button></form>
+<p class="acesso-links"><a href="{{ tela.esqueci }}">Esqueci minha senha</a></p>
+{% if govbr %}<p><a class="btn sec largo" href="{{ tela.govbr }}">Entrar com gov.br</a> <small>(conta nível prata ou ouro)</small></p>{% endif %}
+<p class="legal">Depois da senha é pedido o código do aplicativo autenticador. Depois de várias tentativas erradas, o acesso fica bloqueado por alguns minutos.</p>
+{% endblock %}

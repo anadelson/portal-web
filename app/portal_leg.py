@@ -149,12 +149,30 @@ def documento(request: Request, arquivo: str):
 
 @r.post('/avaliar')
 async def avaliar(request: Request):
-    ctx = ctx_orgao(request); f = await ler_form(request)
+    """Grava a avaliação e responde perto do formulário (JSON para o envio por JS; senão volta à página com a mensagem no formulário)."""
+    from fastapi.responses import JSONResponse
+    from . import avaliacao as AV
+    ctx = ctx_orgao(request); f = await ler_form(request); b = ctx['orgao']['banco']
     pagina = (f.get('pagina') or '/')[:200]
+    js = 'application/json' in request.headers.get('accept', '')
+    def resp(msg, ok, gravar=False, cod=200):
+        r = JSONResponse({'ok': ok, 'msg': msg}, status_code=cod) if js else ir(pagina + '#avaliar', '', request)
+        if not js:
+            request.session['msg_aval'] = msg
+        if gravar:
+            AV.gravar_cookie(r, request, b, pagina)
+        return r
     if not pagina.startswith('/') or pagina.startswith('//') or '\\' in pagina or f.get('util') not in ('sim', 'nao') or f.get('site'):
-        return ir('/', '', request)
+        return resp('Não foi possível registrar a avaliação.', False, cod=400)
+    antes = AV.avaliada_em(request, b, pagina)
+    if antes:
+        return resp(f"Você já avaliou esta página em {antes.strftime('%d/%m/%Y')}. Poderá avaliar de novo a partir de {AV.proxima(b, antes).strftime('%d/%m/%Y')}.", False)
+    h = AV.ip_hash(request)
+    if AV.excedeu(b, h):
+        return resp('Muitas avaliações a partir desta conexão na última hora. Tente de novo mais tarde.', False, cod=429)
     coment = f.get('comentario', '')[:600]
     if L.problemas_texto(coment) and 'dado pessoal' in ' '.join(L.problemas_texto(coment)):
         coment = '[comentário removido: continha dado pessoal]'
-    db.exe(ctx['orgao']['banco'], 'INSERT INTO avaliacoes (pagina, util, comentario) VALUES (%s,%s,%s)', (pagina, f['util'] == 'sim', coment))
-    return ir(pagina + '#avaliar', 'Obrigado pela avaliação!', request)
+    db.exe(b, 'INSERT INTO avaliacoes (pagina, util, comentario, ip_hash) VALUES (%s,%s,%s,%s)', (pagina, f['util'] == 'sim', coment, h))
+    prox = AV.proxima(b, AV.config.hoje()).strftime('%d/%m/%Y')
+    return resp(f'Obrigado! Sua avaliação desta página foi registrada. Você poderá avaliar esta página de novo a partir de {prox}.', True, gravar=True)

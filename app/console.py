@@ -34,7 +34,14 @@ def contrato(oid):
 @r.get('/login')
 def login(request: Request):
     from . import acesso as AC
-    return T('login', request, govbr=AC.govbr_ativo())
+    from .web import tela_acesso
+    return T('login', request, govbr=AC.govbr_ativo(), tela=tela_acesso(request, 1, console=True))
+
+@r.get('/esqueci')
+def esqueci(request: Request):
+    from .web import tela_acesso
+    t = tela_acesso(request, console=True); t['titulo'] = 'Esqueci minha senha'
+    return templates.TemplateResponse(request, 'acesso/esqueci.html', dict(request=request, tela=t))
 
 def _log_anonimo(acao):
     db.exe(db.PLATAFORMA, 'INSERT INTO log_console (quem, acao) VALUES (%s,%s)', ('anônimo', acao[:300]))
@@ -58,7 +65,8 @@ def segundo_fator(request: Request):
     if not conta:
         return ir('/login', 'Entre com e-mail e senha.', request)
     cad = None if conta['totp_ativo'] else AC.preparar_cadastro(request, c, conta)
-    return templates.TemplateResponse(request, 'acesso/2fa.html', dict(request=request, acao='/2fa', cadastro=cad, titulo='Console do gestor', codigos=None, sair='/login', cor='#1B1E30'))
+    from .web import tela_acesso
+    return templates.TemplateResponse(request, 'acesso/2fa.html', dict(request=request, acao='/2fa', cadastro=cad, titulo='Console do gestor', codigos=None, sair='/login', cor='#1B1E30', tela=tela_acesso(request, 2, console=True)))
 
 @r.post('/2fa')
 async def segundo_fator_post(request: Request):
@@ -73,7 +81,8 @@ async def segundo_fator_post(request: Request):
             return ir('/2fa', 'Código não confere. Digite o código atual do aplicativo.', request)
         AC.concluir_login(request, c, c.por_id(conta['id']), 'senha+totp')
         log(request.session['gestor'], 'Cadastrou o segundo fator e entrou no console')
-        return templates.TemplateResponse(request, 'acesso/2fa.html', dict(request=request, acao='', cadastro=None, titulo='Console do gestor', codigos=cods, continuar='/senha' if conta['trocar_senha'] else '/', cor='#1B1E30'))
+        from .web import tela_acesso
+        return templates.TemplateResponse(request, 'acesso/2fa.html', dict(request=request, acao='', cadastro=None, titulo='Console do gestor', codigos=cods, continuar='/senha' if conta['trocar_senha'] else '/', cor='#1B1E30', tela=tela_acesso(request, 2, console=True)))
     ok, msg = AC.conferir_segundo_fator(request, c, conta, f.get('codigo', ''), f.get('recuperacao', ''))
     if not ok:
         ate = AC.registrar_tentativa(request, c, conta, False)
@@ -303,3 +312,57 @@ async def credenciais_post(request: Request):
         log(g, f'Credencial da fonte {fonte} testada: {res}')
         return ir('/credenciais', f'Teste de conexão: {res}.', request)
     return ir('/credenciais', '', request)
+
+
+# ---------- Fase 9: aparência da tela de login do console ----------
+import re as _re, secrets as _sec
+from pathlib import Path as _Path
+
+def _pasta_console():
+    p = _Path(config.DADOS_DIR) / '_console'
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+@r.get('/login-fundo/{arquivo}')
+def login_fundo(arquivo: str):
+    from fastapi.responses import FileResponse
+    if not _re.fullmatch(r'[0-9a-f]{32}\.(png|jpg|webp)', arquivo):
+        raise HTTPException(404)
+    f = _pasta_console() / arquivo
+    if not f.is_file():
+        raise HTTPException(404)
+    return FileResponse(f, media_type={'png': 'image/png', 'jpg': 'image/jpeg', 'webp': 'image/webp'}[arquivo.rsplit('.', 1)[1]], headers={'Cache-Control': 'public, max-age=86400'})
+
+@r.get('/aparencia')
+def aparencia(request: Request):
+    gestor(request)
+    from .web import tela_acesso
+    return T('aparencia', request, tela=tela_acesso(request, console=True))
+
+@r.post('/aparencia')
+async def aparencia_post(request: Request):
+    g = gestor(request); f = await ler_form(request)
+    from psycopg.types.json import Jsonb
+    from .imagens import validar_upload, LIMITE_UPLOAD
+    atual = (db.um(db.PLATAFORMA, "SELECT valor FROM config_console WHERE chave='login'") or {}).get('valor') or {}
+    atual['titulo'] = (f.get('titulo') or '').strip()[:120]
+    if f.get('acao') == 'remover':
+        atual.pop('fundo', None)
+    else:
+        arq = f.get('arquivo')
+        if arq is not None and getattr(arq, 'filename', ''):
+            alt = (f.get('credito') or '').strip()
+            dados = await arq.read(LIMITE_UPLOAD + 1)
+            try:
+                ext = validar_upload(dados)
+            except ValueError as e:
+                return ir('/aparencia', str(e), request)
+            nome = f'{_sec.token_hex(16)}.{ext}'
+            (_pasta_console() / nome).write_bytes(dados)
+            atual['fundo'] = {'url': f'/login-fundo/{nome}', 'credito': alt[:200]}
+        if atual.get('fundo'):
+            for k in ('foco_x', 'foco_y'):
+                v = f.get(k, '50'); atual['fundo'][k] = max(0, min(100, int(v))) if str(v).isdigit() else 50
+    db.exe(db.PLATAFORMA, "INSERT INTO config_console (chave, valor) VALUES ('login', %s) ON CONFLICT (chave) DO UPDATE SET valor=EXCLUDED.valor", (Jsonb(atual),))
+    log(g, 'Aparência da tela de login do console alterada')
+    return ir('/aparencia', 'Aparência salva.', request)

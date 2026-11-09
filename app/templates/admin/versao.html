@@ -1,0 +1,6 @@
+{% extends 'admin/base.html' %}{% block h1 %}Comparar versão — {{ c.titulo }}{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<p>Versão de {{ v.quando|br }} ({{ v.quem }} · {{ v.obs }}) comparada com o texto atual. <span class="dif-legenda"><span class="removido">− só na versão antiga</span> <span class="incluido">+ só no texto atual</span></span></p>
+{% for nome, linhas in difs %}<section class="cx"><h2>{{ nome }}</h2><ol class="dif">{% for l in linhas %}<li class="{{ l.tipo }}"><span class="sr">{{ {'removido': 'Removido: ', 'incluido': 'Incluído: ', 'igual': ''}[l.tipo] }}</span><span aria-hidden="true">{{ {'removido': '−', 'incluido': '+', 'igual': ' '}[l.tipo] }}</span> {{ l.texto }}</li>{% else %}<li class="igual">(vazio)</li>{% endfor %}</ol></section>{% endfor %}
+<form method="post" action="/admin/conteudos/{{ c.id }}/versao/{{ v.id }}" class="acoes"><input type="hidden" name="csrf" value="{{ C }}"><button class="btn">Restaurar esta versão (volta como rascunho)</button><a class="btn sec" href="/admin/conteudos/{{ c.id }}">Voltar</a></form>
+{% endblock %}

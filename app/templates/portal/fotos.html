@@ -1,0 +1,8 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Fotos — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Fotos</span></nav>
+<h1>Fotos</h1><p class="intro">Álbuns oficiais, com crédito e licença de cada foto.</p>
+{% if albuns %}<ul class="albuns">{% for a in albuns %}<li><a href="/fotos/{{ a.id }}"><img src="{{ a.capa.url }}" alt="" loading="lazy"><span><strong>{{ a.titulo }}</strong><small style="display:block;color:var(--sub)">{{ a.n }} foto(s)</small></span></a></li>{% endfor %}</ul>
+{% else %}<p class="vazio">Nenhum álbum publicado.</p>{% endif %}
+{% endblock %}

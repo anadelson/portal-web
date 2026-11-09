@@ -34,13 +34,13 @@
 {% endif %}
 
 {% if i.modo == 'manual' or reserva %}
-<section class="cx"><h2>Lançamento manual{% if i.modo != 'manual' %} (reserva){% endif %}</h2>
+<section class="cx"><h2>Lançamento manual{% if i.modo != 'manual' %} (reserva: a consulta automática falhou ou não cobre este período){% endif %}</h2>
 <p>Use só o número publicado pela fonte oficial e cite o documento no motivo. Todo lançamento fica no histórico e no registro de ações.{% if i.modo != 'manual' %} A coleta automática não sobrescreve um período lançado à mão.{% endif %}</p>
 <form class="campos" method="post" action="/admin/indicadores/{{ i.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="lancar">
 <div class="grade2"><label>Período (ex.: 2024)<input name="periodo" required maxlength="40"></label><label>Fim do período de referência<input name="data_ref" type="date" required></label></div>
 {% if i.formato == 'faixa' %}<label>Faixa<select name="texto" required><option value="">Escolha</option>{% for f in faixas %}<option>{{ f }}</option>{% endfor %}</select></label>
 {% else %}<label>Valor ({{ i.unidade }})<input name="valor" inputmode="decimal" required></label>{% endif %}
-<label>Observação pública (opcional; ex.: link do documento)<input name="nota" maxlength="300"></label>
+<label>Fonte informada (obrigatória; ex.: “Secretaria de Educação, ofício nº 12/2026”)<input name="fonte_informada" required minlength="3" maxlength="200"></label><label>Observação pública (opcional; ex.: link do documento)<input name="nota" maxlength="300"></label>
 <label>Motivo e documento de origem (obrigatório)<textarea name="motivo" rows="2" required minlength="10"></textarea></label>
 <button class="btn">Lançar valor</button></form></section>
 {% endif %}

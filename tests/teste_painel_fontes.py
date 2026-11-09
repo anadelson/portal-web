@@ -195,7 +195,7 @@ if not db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE '%%IEG-M — modo de a
 P.semear(PM)
 if db.um(PM, "SELECT modo FROM indicadores WHERE chave='gestao_iegm'")['modo'] != 'automatico': falha('semear desfez o modo escolhido pelo administrador')
 # lançamento manual de reserva (ano-base antigo) antes da coleta: a coleta não sobrescreve
-pm.post(url, data={'csrf': tok(pm, url), 'acao': 'lancar', 'periodo': '2014', 'data_ref': '2014-12-31', 'texto': 'C', 'motivo': 'Valor FICTÍCIO de teste do lançamento de reserva'})
+pm.post(url, data={'csrf': tok(pm, url), 'acao': 'lancar', 'fonte_informada': 'documento de teste', 'periodo': '2014', 'data_ref': '2014-12-31', 'texto': 'C', 'motivo': 'Valor FICTÍCIO de teste do lançamento de reserva'})
 if not val('gestao_iegm', '2014') or val('gestao_iegm', '2014')['origem'] != 'manual': falha('lançamento de reserva com modo automático')
 r = pm.post(url, data={'csrf': tok(pm, url), 'acao': 'coletar'}, follow_redirects=True)
 if 'OK:' not in r.text: falha(f'coletar agora (IEG-M): {r.text[:300]}')
@@ -237,7 +237,7 @@ res = worker.rodar(fonte('iegm'), 'iegm', fonte('iegm')['params'])
 if not res or not res[0][1]: falha(f'coleta com a reserva do .env: {res}')
 config.IEGM_USUARIO, config.IEGM_SENHA = '', ''
 ok(pm.get(url), txt='aguardando configuração da plataforma', nome='órgão em automático sem credencial')
-ok(pm.get('/admin/indicadores'), txt='aguardando configuração da plataforma', nome='lista com IEG-M aguardando')
+ok(pm.get('/admin/indicadores?area=mun&sub=iegm'), txt='aguardando configuração da plataforma', nome='lista com IEG-M aguardando')
 if worker.rodar(fonte('iegm'), 'iegm', fonte('iegm')['params']): falha('sem credencial nenhuma deveria não coletar')
 # nada da credencial em registro algum
 textos = json.dumps([db.todos(db.PLATAFORMA, 'SELECT acao FROM log_console'), db.todos(db.PLATAFORMA, 'SELECT mensagem FROM coletas'),

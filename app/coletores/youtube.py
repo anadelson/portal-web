@@ -21,18 +21,25 @@ def chave():
 
 def _get(caminho, params, key):
     """GET na API. Devolve o JSON; em erro levanta RuntimeError só com o código HTTP ou o tipo do erro."""
-    import httpx
+    import httpx, time
+    from .comum import anotar
+    t0 = time.monotonic(); q = {**params, 'key': key}
     try:
         with httpx.Client(timeout=30, headers={'User-Agent': 'PortaisBora-coletor/1.0', 'Accept': 'application/json'}) as c:
-            r = c.get(f'{API}/{caminho}', params={**params, 'key': key})
+            r = c.get(f'{API}/{caminho}', params=q)
     except Exception as e:
+        anotar('youtube', f'{API}/{caminho}', q, 0, int((time.monotonic() - t0) * 1000), erro=type(e).__name__)
         raise RuntimeError(f'falha de conexão ({type(e).__name__})') from None
+    ms = int((time.monotonic() - t0) * 1000)
     if r.status_code != 200:
+        anotar('youtube', f'{API}/{caminho}', q, r.status_code, ms, erro=f'HTTP {r.status_code}')
         raise RuntimeError(f'HTTP {r.status_code}')
     try:
-        return r.json()
+        d = r.json()
     except ValueError:
         raise RuntimeError('resposta não é JSON') from None
+    anotar('youtube', f'{API}/{caminho}', q, 200, ms, d)
+    return d
 
 def videos_recentes(canal, key, n=10):
     """Últimos vídeos do canal (playlist de envios UU…), com estado de transmissão."""

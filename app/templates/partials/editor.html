@@ -1,0 +1,21 @@
+{# Editor de texto (Fase 9). Sem JS, fica o campo de texto simples. Com JS, o editor grava o HTML no campo oculto `html` (limpo no servidor). #}
+{% macro editor(rotulo, html_atual, texto_atual, nome_texto='texto', linhas=8) %}
+<div class="editor" data-editor>
+<label for="ed-txt-{{ nome_texto }}">{{ rotulo }}</label>
+<textarea id="ed-txt-{{ nome_texto }}" name="{{ nome_texto }}" rows="{{ linhas }}" class="ed-simples">{{ texto_atual }}</textarea>
+<input type="hidden" name="html" value="{{ html_atual }}" data-ed-html>
+<div class="ed-barra" role="toolbar" aria-label="Formatação do texto" hidden>
+<button type="button" data-cmd="h2" aria-label="Título de seção">T2</button><button type="button" data-cmd="h3" aria-label="Subtítulo">T3</button><button type="button" data-cmd="p" aria-label="Parágrafo">¶</button>
+<button type="button" data-cmd="bold" aria-label="Negrito"><b>N</b></button><button type="button" data-cmd="italic" aria-label="Itálico"><i>I</i></button>
+<button type="button" data-cmd="insertUnorderedList" aria-label="Lista com marcadores">• Lista</button><button type="button" data-cmd="insertOrderedList" aria-label="Lista numerada">1. Lista</button>
+<button type="button" data-cmd="link" aria-label="Inserir link">Link</button><button type="button" data-cmd="blockquote" aria-label="Citação">“ ”</button>
+<button type="button" data-cmd="tabela" aria-label="Inserir tabela simples">Tabela</button><button type="button" data-cmd="imagem" aria-label="Inserir imagem">Imagem</button>
+<button type="button" data-cmd="limpar" aria-label="Remover formatação da seleção">Limpar</button></div>
+<div class="ed-area" contenteditable="true" role="textbox" aria-multiline="true" aria-label="{{ rotulo }}" hidden></div>
+<dialog class="ed-img" aria-labelledby="ed-img-t"><form method="dialog" class="campos"><h3 id="ed-img-t">Inserir imagem</h3>
+<label>Arquivo (PNG, JPG ou WEBP, até 3 MB)<input type="file" accept="image/png,image/jpeg,image/webp" data-img-arq></label>
+<label>Texto alternativo (obrigatório: o que a imagem mostra)<input data-img-alt minlength="5"></label><label>Legenda<input data-img-leg></label><label>Crédito<input data-img-cred></label>
+<p class="ed-img-erro chip erro" role="alert" hidden></p><div class="acoes"><button class="btn" value="ok" data-img-ok>Inserir</button><button class="btn sec" value="cancelar" formnovalidate>Cancelar</button></div></form></dialog>
+<p class="legal ed-ajuda" hidden>Colar do Word mantém só títulos, negrito, itálico, listas, links e tabelas. O texto é limpo de novo ao salvar.</p>
+</div>
+{% endmacro %}

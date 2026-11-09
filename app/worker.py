@@ -6,9 +6,9 @@ A falha de uma fonte (ou de uma base) só é registrada em `coletas`; o portal c
 import sys, time, traceback
 from datetime import datetime
 from . import config, db
-from .coletores import fiorilli, pncp, siconfi, tcesp, numeros, comum, indicadores, youtube
+from .coletores import fiorilli, pncp, siconfi, tcesp, numeros, comum, indicadores, youtube, redes
 
-MODULOS = {'fiorilli': fiorilli, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp, 'youtube': youtube, **indicadores.MODULOS}
+MODULOS = {'fiorilli': fiorilli, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp, 'youtube': youtube, 'redes': redes, **indicadores.MODULOS}
 # fontes do painel de indicadores: só rodam para órgão com o módulo "bi" contratado e ligado
 PAINEL = set(indicadores.MODULOS)
 # fonte -> (a cada N minutos, horas permitidas)
@@ -21,7 +21,9 @@ FREQ = {'fiorilli': (60, range(7, 20)), 'pncp': (360, range(0, 24)), 'siconfi': 
         # série mensal das finanças (Fiorilli): uma vez por dia, de madrugada
         'financas': (20 * 60, range(1, 5)),
         # YouTube: tique de 2 min; o coletor só consulta dentro das janelas da agenda (ou com transmissão ao vivo) e na varredura diária
-        'youtube': (2, range(0, 24))}
+        'youtube': (2, range(0, 24)),
+        # redes sociais: últimas publicações (só com credencial e conta informada), a cada 6 h
+        'redes': (6 * 60, range(6, 23))}
 
 def fontes_ativas():
     return db.todos(db.PLATAFORMA, 'SELECT o.*, f.fonte, f.params FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE f.ativo AND o.ativo ORDER BY o.id, f.fonte')
@@ -41,6 +43,7 @@ def bi_ligado(o):
 
 def rodar(o, fonte, p):
     inicio = datetime.now()
+    comum.ORGAO.set(o['slug'])  # a amostra da última resposta de cada consulta fica associada ao órgão
     try:
         res = MODULOS[fonte].coletar(o, p)
     except Exception as e:

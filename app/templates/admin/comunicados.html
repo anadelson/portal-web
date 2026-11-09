@@ -1,10 +1,10 @@
-{% extends 'admin/base.html' %}{% block h1 %}Comunicados{% endblock %}
+{% extends 'admin/base.html' %}{% from 'partials/editor.html' import editor %}{% block h1 %}Comunicados<script src="/static/admin.js?v=2" defer></script>{% endblock %}
 {% block conteudo %}{% set C = csrf_token(request) %}
 <p>Avisos, convocações, convites, notas oficiais e editais de chamamento. <strong>Notícia não é comunicado</strong>: notícias são cadastradas em Conteúdos. Com validade, o comunicado sai da página inicial depois da data (continua em /comunicados).</p>
 <section class="cx"><h2>{{ 'Editar comunicado' if c else 'Novo comunicado' }}</h2><form class="campos" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="salvar">{% if c %}<input type="hidden" name="id" value="{{ c.id }}">{% endif %}
 <div class="grade2"><label>Tipo<select name="tipo">{% for t in tipos %}<option {{ 'selected' if c and c.tipo == t }}>{{ t }}</option>{% endfor %}</select></label>
 <label>Classificação eleitoral<select name="classe">{% for k, v in classes.items() %}<option value="{{ k }}" {{ 'selected' if (c and c.classe == k) or (not c and k == 'util') }}>{{ v[0] }} — {{ v[1] }}</option>{% endfor %}</select></label></div>
-<label>Título<input name="titulo" value="{{ c.titulo if c else '' }}" maxlength="200" required></label><label>Texto<textarea name="texto" rows="6">{{ c.texto if c else '' }}</textarea></label>
+<label>Título<input name="titulo" value="{{ c.titulo if c else '' }}" maxlength="200" required></label>{{ editor('Texto', c.html if c else '', c.texto if c else '', linhas=6) }}
 <div class="grade2"><label>Data e hora da publicação (vazio = ao publicar)<input type="datetime-local" name="publicado_em" value="{{ c.publicado_em.astimezone().strftime('%Y-%m-%dT%H:%M') if c and c.publicado_em else '' }}"></label>
 <label>Válido até (opcional)<input type="date" name="valido_ate" value="{{ c.valido_ate or '' if c else '' }}"></label></div><button class="btn">Salvar</button></form></section>
 <div class="tabela"><table><caption>Comunicados</caption><thead><tr><th scope="col">Tipo</th><th scope="col">Título</th><th scope="col">Publicação</th><th scope="col">Situação</th><th scope="col"><span class="sr">Ações</span></th></tr></thead><tbody>

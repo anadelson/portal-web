@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fase 9 — esboço do painel</title>
+<link rel="stylesheet" href="../../../app/static/admin.css">
+<style>
+:root{--cor:#0E4D64}
+body{background:#F4F7F9;margin:0;font-family:'Public Sans',system-ui,sans-serif;color:#17212B}
+.tela{max-width:1180px;margin:0 auto 40px;padding:16px}
+.tela>h1{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#6B7684;margin:30px 0 6px}
+.tela>h2{font-size:24px;margin:0 0 14px}
+.nota{background:#FFF7E0;border:1px dashed #C9A227;border-radius:10px;padding:8px 12px;font-size:13px;margin:0 0 12px}
+.c{background:#fff;border:1px solid #DCE1E6;border-radius:14px;padding:16px}
+.abas{display:flex;gap:4px;border-bottom:2px solid #DCE1E6;margin:0 0 14px;overflow-x:auto}
+.abas a{padding:10px 14px;min-height:44px;box-sizing:border-box;display:inline-flex;align-items:center;font-weight:600;color:#17212B;text-decoration:none;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.abas a[aria-current]{color:var(--cor);border-bottom-color:var(--cor)}
+.sub{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}.sub a{padding:6px 14px;border:1px solid #6B7684;border-radius:999px;text-decoration:none;color:#17212B;font-size:14px;min-height:36px;display:inline-flex;align-items:center}.sub a[aria-current]{background:var(--cor);color:#fff;border-color:var(--cor)}
+.btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 18px;border-radius:999px;background:var(--cor);color:#fff;border:2px solid var(--cor);font-weight:700;font-size:15px;cursor:pointer;text-decoration:none}
+.btn.sec{background:#fff;color:var(--cor)}
+.chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#EEF1F4}.chip.ok{background:#DCF3E4;color:#14532D}.chip.al{background:#FCEFD9;color:#7A4B00}.chip.er{background:#FBE4D8;color:#9B1C1C}
+/* 1) blocos + mapa */
+.blocos{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.lista-b{list-style:none;margin:0;padding:0}.lista-b li{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #DCE1E6;border-radius:12px;margin-bottom:8px;background:#fff}
+.lista-b li.on,.lista-b li:hover{border-color:var(--cor);box-shadow:0 0 0 3px rgba(14,77,100,.15)}
+.lista-b .n{width:26px;color:#6B7684;font-weight:700}.lista-b .t{flex:1}.lista-b button{min-width:40px;min-height:40px;border-radius:10px;border:1px solid #DCE1E6;background:#fff}
+.lista-b li.off .t{color:#6B7684;text-decoration:line-through}
+.mapa{position:sticky;top:16px}.mapa h3{margin:0 0 8px;font-size:16px}
+.pg{border:1px solid #DCE1E6;border-radius:10px;padding:6px;background:#F8FAFB;display:flex;flex-direction:column;gap:4px}
+.pg div{border-radius:5px;background:#D7E3EA;font-size:11px;padding:4px 6px;color:#17212B;cursor:pointer}
+.pg .cab{background:#0E4D64;color:#fff}.pg .hero{background:#2B4C5C;color:#fff;height:42px}.pg .meia{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:none;padding:0}
+.pg .on{outline:3px solid #F0B429;background:#FCE7A9}.pg .off{background:#fff;border:1.5px dashed #9AA5B1;color:#6B7684}
+.pg .rod{background:#17212B;color:#fff}
+@media (max-width:860px){.blocos{grid-template-columns:1fr}.mapa{position:static}}
+/* 3) consulta */
+.consulta{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.consulta{grid-template-columns:1fr}}
+code,pre{font-family:ui-monospace,Menlo,monospace;font-size:13px}pre{background:#0B1620;color:#E6EDF3;padding:12px;border-radius:10px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin:0}
+table.p{width:100%;border-collapse:collapse;font-size:14px}table.p th,table.p td{text-align:left;padding:6px 8px;border-bottom:1px solid #EEF1F4;vertical-align:top}table.p input{width:100%;box-sizing:border-box;min-height:36px;border:1px solid #9AA5B1;border-radius:8px;padding:0 8px}
+.res{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;margin:8px 0}
+/* 4) identidade */
+.cores{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}@media (max-width:860px){.cores{grid-template-columns:1fr}}
+.cor{display:flex;gap:10px;align-items:center}.cor .am{width:44px;height:44px;border-radius:10px;border:1px solid #9AA5B1}.cor input{min-height:44px;border:1px solid #9AA5B1;border-radius:10px;padding:0 10px;width:120px;font:600 15px ui-monospace}
+.prev-cab{border-radius:12px;overflow:hidden;border:1px solid #DCE1E6}.prev-cab .b1{background:#0E4D64;color:#fff;padding:10px 14px;font-weight:700}.prev-cab .b2{padding:14px;display:flex;gap:10px;align-items:center;background:#fff}
+/* 6) login */
+.login8{min-height:520px;border-radius:16px;overflow:hidden;position:relative;display:grid;place-items:center;background:linear-gradient(rgba(11,22,32,.62),rgba(11,22,32,.62)),url('../../../app/static/img/praca-aerea.jpg') center/cover}
+.login8 .cx8{background:#fff;border-radius:16px;padding:26px;width:min(380px,92%);box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.login8 label{display:flex;flex-direction:column;gap:4px;font-weight:600;margin-bottom:10px}.login8 input{min-height:44px;border:1px solid #6B7684;border-radius:10px;padding:0 12px;font-size:16px}
+.passos{display:flex;gap:8px;font-size:13px;margin:0 0 12px}.passos span{padding:2px 10px;border-radius:999px;background:#EEF1F4}.passos span.at{background:var(--cor);color:#fff}
+/* 5) editor */
+.barra-ed{display:flex;gap:4px;flex-wrap:wrap;border:1px solid #9AA5B1;border-bottom:0;border-radius:10px 10px 0 0;padding:6px;background:#F4F7F9}.barra-ed button{min-width:40px;min-height:40px;border:1px solid #DCE1E6;background:#fff;border-radius:8px;font-weight:700}
+.area-ed{border:1px solid #9AA5B1;border-radius:0 0 10px 10px;padding:14px;min-height:180px;background:#fff}
+.av{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid #DCE1E6;border-radius:14px;padding:14px;background:#fff}
+</style></head><body>
+
+<div class="tela" id="t1"><h1>1 · Página inicial (blocos)</h1><h2>Página inicial — blocos e mapa do layout</h2>
+<p class="nota">O mapa à direita fica fixo enquanto a lista rola. Passar o mouse ou focar um bloco destaca o retângulo; clicar no retângulo seleciona o bloco. Bloco desligado = tracejado. Ordem e liga/desliga atualizam o mapa antes de salvar. No celular, o mapa vira o botão “Ver mapa do layout”.</p>
+<div class="blocos"><ol class="lista-b">
+<li><span class="n">1</span><span class="t">Barra de acessibilidade <span class="chip">travado</span></span></li>
+<li><span class="n">2</span><span class="t">Destaque com busca</span><button aria-label="Subir">▲</button><button aria-label="Descer">▼</button><label><input type="checkbox" checked> exibir</label></li>
+<li><span class="n">3</span><span class="t">Acesso direto</span><button>▲</button><button>▼</button><label><input type="checkbox" checked> exibir</label></li>
+<li class="on"><span class="n">4</span><span class="t">Comunicados e serviços mais acessados</span><button>▲</button><button>▼</button><label><input type="checkbox" checked> exibir</label></li>
+<li><span class="n">5</span><span class="t">Acompanhe seu pedido</span><button>▲</button><button>▼</button><label><input type="checkbox" checked> exibir</label></li>
+<li><span class="n">6</span><span class="t">Acompanhe a gestão</span><button>▲</button><button>▼</button><label><input type="checkbox" checked> exibir</label></li>
+<li><span class="n">7</span><span class="t">Publicações oficiais</span><button>▲</button><button>▼</button><label><input type="checkbox" checked> exibir</label></li>
+<li class="off"><span class="n">8</span><span class="t">Transmissões</span><button>▲</button><button>▼</button><label><input type="checkbox"> exibir</label></li>
+<li><span class="n">9</span><span class="t">Conheça a cidade</span><button>▲</button><button>▼</button><label><input type="checkbox" checked> exibir</label></li>
+<li><span class="n">10</span><span class="t">Notícias</span><button>▲</button><button>▼</button><label><input type="checkbox" checked> exibir</label></li>
+<li><span class="n">11</span><span class="t">Sede e atendimento</span><button>▲</button><button>▼</button><label><input type="checkbox" checked> exibir</label></li>
+<li><span class="n">12</span><span class="t">Rodapé <span class="chip">travado</span></span></li>
+<li style="border:0;background:none;padding:0"><button class="btn" style="min-width:auto">Salvar ordem</button>&nbsp;<span class="chip al">2 mudanças não salvas</span></li>
+</ol>
+<aside class="mapa c" aria-label="Onde fica no portal"><h3>Onde fica no portal</h3>
+<div class="pg"><div class="cab">Cabeçalho (3 barras)</div><div class="hero">Destaque com busca</div><div>Acesso direto</div><div class="on">Comunicados | Serviços</div><div>Acompanhe seu pedido</div><div>Acompanhe a gestão</div><div>Publicações oficiais</div><div class="off">Transmissões (desligado)</div><div>Conheça a cidade</div><div>Notícias</div><div>Sede e atendimento</div><div class="rod">Rodapé</div></div>
+<p class="legal" style="margin:8px 0 0">Proporção aproximada; largura real de cada bloco (inteiro ou meia largura).</p></aside></div></div>
+
+<div class="tela" id="t2"><h1>2 · Avaliação do portal</h1><h2>“Avalie esta página”</h2>
+<p class="nota"><strong>Causa encontrada:</strong> a avaliação é gravada, mas o “Obrigado” aparece no topo da página enquanto a tela volta rolada até o formulário (rodapé), então parece que nada aconteceu. Correção: a resposta aparece no próprio formulário (e sem recarregar, com JS).</p>
+<div class="av" role="status"><strong>Obrigado! Sua avaliação desta página foi registrada.</strong> <span>Você poderá avaliar esta página de novo a partir de 09/12/2026.</span></div>
+<div class="c" style="margin-top:14px"><h3 style="margin-top:0">Painel → Avaliação do portal</h3>
+<div class="abas"><a aria-current="page" href="#">Por página</a><a href="#">Por mês</a><a href="#">Comentários (3 aguardando)</a><a href="#">Regras</a></div>
+<table class="p"><thead><tr><th>Página</th><th>Avaliações</th><th>Úteis</th><th>Não úteis</th><th>% úteis</th><th>Última</th></tr></thead><tbody>
+<tr><td>/transparencia</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td colspan="6" class="legal">(o painel mostra só o que foi registrado; sem dados inventados)</td></tr></tbody></table>
+<p class="legal">Regras: nova avaliação da mesma página pelo mesmo navegador só após <input value="30" style="width:3em"> dias (cookie próprio sem dado pessoal) · no máximo 5 avaliações por hora por conexão (IP guardado só como hash com sal diário) · comentários só aparecem para a equipe; publicar exige moderação.</p></div></div>
+
+<div class="tela" id="t3"><h1>3 · Indicadores e consultas</h1><h2>Painel de indicadores</h2>
+<div class="abas"><a href="#">Dinheiro público</a><a href="#">Contratações</a><a href="#">Saúde</a><a aria-current="page" href="#">Educação</a><a href="#">Assistência social</a><a href="#">Município e gestão</a></div>
+<div class="sub"><a aria-current="page" href="#">INEP</a><a href="#">Siconfi</a><a href="#">Sistema contábil (Fiorilli)</a><a href="#">Manual</a></div>
+<div class="consulta">
+<section class="c"><h3 style="margin-top:0">Como a consulta é montada</h3>
+<p><span class="chip">GET</span> <code>https://download.inep.gov.br/ideb/resultados/divulgacao_anos_iniciais_municipios_{edicao}.zip</code></p>
+<table class="p"><thead><tr><th>Parâmetro</th><th>Valor</th><th>De onde vem</th></tr></thead><tbody>
+<tr><td>edicao</td><td><input value="2023"></td><td>última edição publicada (detectada)</td></tr>
+<tr><td>municipio</td><td><input value="3507209"></td><td>código IBGE do órgão</td></tr>
+<tr><td>rede</td><td><input value="Pública"></td><td>fixo (comparação SP/Brasil)</td></tr></tbody></table>
+<p class="legal">Cabeçalhos: <code>User-Agent: PortaisBora-coletor/1.0</code> · Credencial: <em>não usa</em> (quando usa: “credencial configurada no console”, nunca o valor) · Formato: planilha (ZIP/XLSX) · Periodicidade: a cada 30 dias, 2h–6h</p>
+<h4>Campos da fonte → indicador</h4><table class="p"><tbody><tr><td><code>VL_OBSERVADO_2023</code></td><td>→ IDEB anos iniciais</td></tr><tr><td><code>VL_NOTA_MATEMATICA_2023</code></td><td>→ Saeb Matemática</td></tr></tbody></table>
+<div class="acoes" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sec">Testar consulta (não grava)</button><button class="btn" disabled style="opacity:.5">Salvar e coletar agora</button></div>
+<p class="legal">“Salvar e coletar agora” só libera depois de um teste bem-sucedido com os mesmos parâmetros. Mudar endereço ou parâmetro pede confirmação e vai para o histórico e a auditoria.</p></section>
+<section class="c"><h3 style="margin-top:0">Última execução</h3>
+<div class="res"><span>05/11/2026, 03h12</span><span class="chip ok">HTTP 200</span><span>1,8 s</span><span>3 registros</span></div>
+<h4>Trecho da resposta</h4><pre>{ "CO_MUNICIPIO": 3507209, "REDE": "Pública",
+  "VL_OBSERVADO_2023": "…" }   (trecho real da última resposta, CPF mascarado)</pre>
+<h4>Lançamento manual (quando a consulta falhar)</h4><div class="grade2"><label>Valor<input></label><label>Período<input placeholder="2023"></label></div><label>Fonte informada<input placeholder="Ex.: ofício da Secretaria de Educação nº …"></label><label>Motivo<input></label>
+<p class="legal">No portal: “dado lançado manualmente em &lt;data&gt;”.</p></section></div>
+<div class="c" style="margin-top:14px"><h3 style="margin-top:0">Sistema contábil (Fiorilli) — endpoints usados</h3>
+<table class="p"><thead><tr><th>Base</th><th>GET montado</th></tr></thead><tbody>
+<tr><td>Receitas</td><td><code>{base}/Receitas/?Listagem=ReceitaOrcamentaria&amp;Ano={ano}&amp;Empresa={empresa}&amp;DiaInicioPeriodo=01&amp;MesInicialPeriodo=01&amp;DiaFinalPeriodo={dia}&amp;MesFinalPeriodo={mes}&amp;MostraDadosConsolidado=False&amp;ConectarExercicio={ano}</code></td></tr>
+<tr><td>Despesas por unidade</td><td><code>{base}/Despesas/?Listagem=DespesasPorUnidade&amp;…</code></td></tr>
+<tr><td>Empenhos</td><td><code>{base}/Despesas/?Listagem=DespesasGerais&amp;MostrarFornecedor=True&amp;…</code></td></tr>
+<tr><td>Diárias · Restos a pagar · Ordem cronológica · Licitações · Contratos · Transferências · Pessoal · Emendas</td><td>(uma linha por endpoint, com o GET completo e “Testar”)</td></tr></tbody></table></div></div>
+
+<div class="tela" id="t4"><h1>4 · Identidade e tema</h1><h2>Identidade e imagens</h2>
+<div class="abas"><a aria-current="page" href="#">Tema e cores</a><a href="#">Brasão, mascote e fundos</a><a href="#">Favicon</a><a href="#">Redes sociais</a><a href="#">Dados do município</a><a href="#">Fotos e álbuns</a></div>
+<div class="cores"><section class="c"><h3 style="margin-top:0">Cores</h3>
+<p class="cor"><span class="am" style="background:#0E4D64"></span><input value="#0E4D64" aria-label="Cor principal"> <span>Cor principal · contraste com branco <strong>9,3:1</strong> <span class="chip ok">AA</span></span></p>
+<p class="cor"><span class="am" style="background:#F0B429"></span><input value="#F0B429" aria-label="Cor de destaque"> <span>Destaque · com texto escuro <strong>8,7:1</strong> <span class="chip ok">AA</span></span></p>
+<p class="cor"><span class="am" style="background:#7FB7C9"></span><input value="#7FB7C9" aria-label="Exemplo recusado"> <span>Exemplo: contraste com branco <strong>2,2:1</strong> <span class="chip er">Recusada: abaixo de 4,5:1</span></span></p></section>
+<section class="c"><h3 style="margin-top:0">Prévia ao vivo</h3><div class="prev-cab"><div class="b1">Transparência · Diário Oficial · Legislação</div><div class="b2"><button class="btn">Botão primário</button><button class="btn sec">Secundário</button></div></div>
+<div class="c" style="margin-top:10px;border-top:4px solid #0E4D64">Cartão de indicador · <strong>R$ 22,7 mi</strong></div></section></div>
+<div class="c" style="margin-top:14px"><h3 style="margin-top:0">Dados do município (IBGE)</h3><table class="p"><thead><tr><th>Dado</th><th>Valor</th><th>Fonte e data</th></tr></thead><tbody>
+<tr><td>População estimada</td><td>(valor do IBGE)</td><td>IBGE · servicodados.ibge.gov.br · automático, verificado semanalmente</td></tr>
+<tr><td>Distância da capital</td><td><input value="~500 km"></td><td><span class="chip al">manual</span> (o IBGE não fornece)</td></tr></tbody></table></div></div>
+
+<div class="tela" id="t5"><h1>5 · Conteúdo</h1><h2>Editor de texto</h2>
+<div class="barra-ed" role="toolbar" aria-label="Formatação"><button>T2</button><button>T3</button><button><b>N</b></button><button><i>I</i></button><button>• Lista</button><button>1. Lista</button><button>Link</button><button>“ ”</button><button>Tabela</button><button>Imagem</button><button>Limpar</button></div>
+<div class="area-ed"><h2 style="margin-top:0">Título de seção</h2><p>Texto com <strong>negrito</strong> e <a href="#">link</a>. Colar do Word remove estilos e mantém só títulos, listas, links e tabelas.</p><figure style="margin:0"><div style="height:90px;background:#D7E3EA;border-radius:8px"></div><figcaption><small>Legenda · Crédito (alt obrigatório)</small></figcaption></figure></div>
+<p class="legal">Saída: HTML limpo (lista fechada de tags), sem estilos colados. Histórico de versões com “comparar” e “restaurar”.</p></div>
+
+<div class="tela" id="t6"><h1>6 · Login</h1><h2>Área restrita</h2>
+<div class="login8"><div class="cx8"><p style="display:flex;gap:10px;align-items:center;margin:0 0 6px"><img src="../../../app/static/img/brasao.png" alt="" width="44"><strong>Prefeitura Municipal de Borá</strong></p>
+<h3 style="margin:6px 0 10px;font-size:20px">Área restrita da Prefeitura de Borá</h3><div class="passos"><span class="at">1 · E-mail e senha</span><span>2 · Código do aplicativo</span></div>
+<label>E-mail<input></label><label>Senha<input type="password"></label><button class="btn" style="width:100%;justify-content:center">Continuar</button>
+<p style="margin:10px 0 0;font-size:14px"><a href="#">Esqueci minha senha</a></p><p style="margin:10px 0 0"><a class="btn sec" style="width:100%;justify-content:center;box-sizing:border-box" href="#">Entrar com gov.br</a></p></div></div>
+<p class="legal">Fundo escolhido no painel, com camada escura para manter contraste AA. A 2ª etapa (código) só aparece depois da senha correta; mensagens genéricas; limite de tentativas e auditoria (já existem e continuam).</p></div>
+</body></html>

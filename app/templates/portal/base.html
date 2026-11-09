@@ -5,7 +5,8 @@
 <title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/portal.css?v=13">
+<link rel="stylesheet" href="/static/portal.css?v=14">
+{% if ident.favicon %}{% if ident.favicon.svg %}<link rel="icon" type="image/svg+xml" href="{{ ident.favicon.svg }}">{% endif %}<link rel="icon" type="image/png" sizes="32x32" href="{{ ident.favicon['32'] }}"><link rel="icon" type="image/png" sizes="16x16" href="{{ ident.favicon['16'] }}"><link rel="apple-touch-icon" sizes="180x180" href="{{ ident.favicon['180'] }}"><link rel="icon" type="image/png" sizes="512x512" href="{{ ident.favicon['512'] }}">{% endif %}
 <style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
 <script>document.documentElement.classList.add('js');try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
 </head>
@@ -65,14 +66,14 @@
 {% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}
 {% block conteudo %}{% endblock %}
 {% if legal %}<p class="legal" style="margin-top:28px"><strong>Base legal:</strong> {{ BASE_LEGAL[legal] }}</p>{% endif %}
-<form class="avaliar" id="avaliar" method="post" action="/avaliar" aria-labelledby="h-aval"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="pagina" value="{{ atual }}">
+{% set m_aval = request.session.pop('msg_aval', '') %}{% set ja_aval = avaliada_em(request, orgao.banco, atual) %}<div class="avaliar" id="avaliar"><p class="aval-msg" role="status" aria-live="polite"{% if not m_aval and not ja_aval %} hidden{% endif %}>{% if m_aval %}{{ m_aval }}{% elif ja_aval %}Você já avaliou esta página em {{ ja_aval.strftime('%d/%m/%Y') }}. Obrigado!{% endif %}</p>{% if not ja_aval and not m_aval %}<form class="aval-form" method="post" action="/avaliar" aria-labelledby="h-aval"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="pagina" value="{{ atual }}">
 <span id="h-aval"><strong>Avalie esta página:</strong> as informações foram úteis?</span><span class="botoes"><button class="btn sec" name="util" value="sim">Sim</button><button class="btn sec" name="util" value="nao">Não</button></span>
-<details><summary>Quer comentar? (opcional, sem dados pessoais)</summary><label class="sr" for="aval-c">Comentário</label><textarea id="aval-c" name="comentario" rows="2" maxlength="600"></textarea></details><label class="sr">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label></form>
+<details><summary>Quer comentar? (opcional, sem dados pessoais)</summary><label class="sr" for="aval-c">Comentário</label><textarea id="aval-c" name="comentario" rows="2" maxlength="600"></textarea></details><label class="sr">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label></form>{% endif %}</div>
 </main>
 
 <footer class="rodape" id="rodape" tabindex="-1">
 <div class="f1"><div class="int">
-<div class="f-id">{% if ident.brasao and ident.brasao.url %}<span class="f-bras"><img src="{{ ident.brasao.url }}" alt="" width="46" height="40"></span>{% endif %}<span><strong>{{ ident.nome or orgao.nome }}</strong><span>{{ ident.subtitulo or orgao.municipio }} · Portal oficial e da transparência</span></span></div>
+<div class="f-id">{% if ident.brasao and ident.brasao.url %}<span class="f-bras"><img src="{{ ident.brasao.url }}" alt="" width="46" height="40"></span>{% endif %}<span><strong>{{ ident.nome or orgao.nome }}</strong><span>{{ ident.subtitulo or orgao.municipio }} · Portal oficial e da transparência</span></span>{% if ident.mascote and ident.mascote.url and not defeso %}<img class="f-mascote" src="{{ ident.mascote.url }}" alt="{{ ident.mascote.alt }}" height="56">{% endif %}</div>
 <div class="f-bot"><a class="f-radar" href="https://radardatransparencia.atricon.org.br/">{{ icone('radar', 18) }}Radar da Transparência Pública</a><a class="f-aval" href="#avaliar">{{ icone('estrela', 18) }}Avalie este portal</a></div>
 </div></div>
 <div class="f2 int">
@@ -90,14 +91,15 @@
 <nav class="fcol" aria-labelledby="f-inst"><h2 id="f-inst">Institucional</h2><ul>
 {% if leg %}<li><a href="/vereadores">Vereadores e Mesa Diretora</a></li><li><a href="/proposicoes">Projetos e proposições</a></li><li><a href="/comissoes">Comissões</a></li><li><a href="/contas">Contas do Prefeito</a></li>{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
 {% else %}{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/transparencia/licitacoes">Licitações</a></li><li><a href="/transparencia/contratos">Contratos</a></li><li><a href="/conheca">Conheça {{ ident.nome_curto or 'a cidade' }}</a></li>{% endif %}
-{% if mods.noticias %}<li><a href="/noticias">Notícias</a></li>{% endif %}<li><a href="/comunicados">Comunicados</a></li><li><a href="/governo">Governo</a></li><li><a href="/links-uteis">Links úteis</a></li><li><a href="/fale-conosco">Fale conosco</a></li></ul>
+{% if mods.noticias %}<li><a href="/noticias">Notícias</a></li>{% endif %}<li><a href="/comunicados">Comunicados</a></li><li><a href="/governo">Governo</a></li><li><a href="/fotos">Fotos</a></li><li><a href="/links-uteis">Links úteis</a></li><li><a href="/fale-conosco">Fale conosco</a></li></ul>
 {% for v in vizinhos %}<a class="f-viz" href="https://{{ v.dominio }}/"><span><small>{{ 'Poder Legislativo' if v.tipo == 'legislativo' else 'Poder Executivo' }}</small><strong>{{ v.nome }}</strong></span>{{ icone('seta', 18) }}</a>{% endfor %}
 </nav>
 <nav class="fcol" aria-labelledby="f-priv"><h2 id="f-priv">Privacidade e acessibilidade</h2><ul>
 <li><a href="/privacidade">Política de privacidade</a></li><li><a href="/privacidade#encarregado">Encarregado de dados (LGPD)</a></li><li><a href="/acessibilidade">Acessibilidade</a></li><li><a href="/mapa-do-site">Mapa do site</a></li></ul></nav>
 </div>
 <div class="f3 int">
-{% if ident.redes %}<nav class="f-redes" aria-label="Redes sociais"><span>Siga {{ 'a Câmara' if leg else 'a Prefeitura' }}</span>{% for r in ident.redes %}<a href="{{ r[1] }}">{{ r[0] }}</a>{% endfor %}</nav>{% else %}<span></span>{% endif %}
+{% if ident.redes_v2 %}<nav class="f-redes" aria-label="Redes sociais"><span>Siga {{ 'a Câmara' if leg else 'a Prefeitura' }}</span>{% for r in ident.redes_v2 %}<a href="{{ r.url }}" aria-label="{{ r.nome }}">{{ icone('rede_' ~ r.tipo, 20) }}<span class="rede-nome">{{ r.nome }}</span></a>{% endfor %}</nav>
+{% elif ident.redes %}<nav class="f-redes" aria-label="Redes sociais"><span>Siga {{ 'a Câmara' if leg else 'a Prefeitura' }}</span>{% for r in ident.redes %}<a href="{{ r[1] }}">{{ r[0] }}</a>{% endfor %}</nav>{% else %}<span></span>{% endif %}
 <a class="f-topo" href="#topo">{{ icone('topo', 16) }}Voltar ao topo</a>
 </div>
 <div class="f4"><div class="int">
@@ -111,7 +113,7 @@
 var p=ler();document.querySelectorAll('[data-acess]').forEach(function(b){var k=b.getAttribute('data-acess');b.setAttribute('aria-pressed',p[k]?'true':'false');b.addEventListener('click',function(){p[k]=!p[k];h.classList.toggle(k,!!p[k]);b.setAttribute('aria-pressed',p[k]?'true':'false');gravar(p)})});
 document.querySelectorAll('[data-fonte]').forEach(function(b){b.addEventListener('click',function(){var d=parseInt(b.getAttribute('data-fonte'),10);p.fonte=d===0?0:Math.min(150,Math.max(80,(p.fonte||100)+d));h.style.fontSize=p.fonte?p.fonte+'%':'';gravar(p)})});})();
 </script>
-<script src="/static/portal.js?v=4" defer></script>
+<script src="/static/portal.js?v=5" defer></script>
 {% if vlibras %}<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>
 <script src="https://vlibras.gov.br/app/vlibras-plugin.js" defer></script><script src="/static/vlibras-iniciar.js" defer></script>{% endif %}
 </body>

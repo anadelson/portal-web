@@ -89,6 +89,16 @@ async def menus_post(request: Request):
         return ir('/admin/menus#vlibras', 'VLibras ' + ('ligado.' if ac['vlibras'] else 'desligado.'), request)
     return ir('/admin/menus', '', request)
 
+def _rico(f, campo):
+    """Texto do editor: (html_limpo, texto_puro); sem editor (sem JS), ('', texto). Problema: (None, mensagem)."""
+    if not (f.get('html') or '').strip():
+        return '', f.get(campo, '')
+    from . import editor as ED
+    html, probs = ED.limpar(f['html'])
+    if probs:
+        return None, ' '.join(probs)
+    return html, ED.texto(html)
+
 # ---------- Comunicados ----------
 @r.get('/comunicados')
 def comunicados(request: Request, id: int = 0):
@@ -133,11 +143,14 @@ async def comunicados_post(request: Request):
     except ValueError:
         return ir('/admin/comunicados', 'Data inválida.', request)
     classe = f.get('classe') if f.get('classe') in CLASSES else 'util'
-    vals = (tipo, titulo, f.get('texto', '')[:20000], pub, val, classe)
+    html, texto = _rico(f, 'texto')
+    if html is None:
+        return ir(f'/admin/comunicados?id={cid}' if cid else '/admin/comunicados', texto, request)
+    vals = (tipo, titulo, texto[:20000], html, pub, val, classe)
     if cid:
-        db.exe(b, 'UPDATE comunicados SET tipo=%s, titulo=%s, texto=%s, publicado_em=%s, valido_ate=%s, classe=%s WHERE id=%s', vals + (cid,))
+        db.exe(b, 'UPDATE comunicados SET tipo=%s, titulo=%s, texto=%s, html=%s, publicado_em=%s, valido_ate=%s, classe=%s WHERE id=%s', vals + (cid,))
     else:
-        cid = db.exe(b, 'INSERT INTO comunicados (tipo, titulo, texto, publicado_em, valido_ate, classe, autor) VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
+        cid = db.exe(b, 'INSERT INTO comunicados (tipo, titulo, texto, html, publicado_em, valido_ate, classe, autor) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
     auditar(request, f'Comunicado salvo: {tipo} — {titulo}')
     return ir(f'/admin/comunicados?id={cid}', 'Comunicado salvo como rascunho. Publique quando estiver pronto.' if not f.get('id') else 'Comunicado salvo.', request)
 
@@ -169,15 +182,18 @@ async def conheca_post(request: Request):
             return ir(volta, 'Já há 3 perfis em destaque na página inicial. Tire um deles antes.', request)
         cat = f.get('categoria') if f.get('categoria') in F.CATEGORIAS else 'Lugares'
         classe = 'pub' if cat == 'Eventos' else (f.get('classe') if f.get('classe') in CLASSES else 'util')  # evento da gestão é publicidade (sai no defeso)
-        vals = (titulo, f.get('descricao', '')[:20000], cat, classe,
+        html, desc = _rico(f, 'descricao')
+        if html is None:
+            return ir(volta, desc, request)
+        vals = (titulo, desc[:20000], cat, classe,
                 int(f.get('ordem') or 100), f.get('publicado') == '1', destaque)
         if pid:
-            db.exe(b, 'UPDATE perfis SET titulo=%s, descricao=%s, categoria=%s, classe=%s, ordem=%s, publicado=%s, destaque=%s WHERE id=%s', vals + (pid,))
+            db.exe(b, 'UPDATE perfis SET titulo=%s, descricao=%s, categoria=%s, classe=%s, ordem=%s, publicado=%s, destaque=%s, html=%s WHERE id=%s', vals + (html, pid))
         else:
             s, i = F.slug(titulo), 2
             while db.um(b, 'SELECT 1 FROM perfis WHERE slug=%s', (s,)):
                 s = f'{F.slug(titulo)}-{i}'; i += 1
-            pid = db.exe(b, 'INSERT INTO perfis (titulo, descricao, categoria, classe, ordem, publicado, destaque, slug) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (s,))['id']
+            pid = db.exe(b, 'INSERT INTO perfis (titulo, descricao, categoria, classe, ordem, publicado, destaque, slug, html) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (s, html))['id']
         auditar(request, f'Conheça: perfil “{titulo}” salvo')
         return ir(f'/admin/conheca?id={pid}', 'Perfil salvo.', request)
     if not pid:

@@ -15,6 +15,9 @@ FONTES = {
     'youtube': {'nome': 'YouTube Data API v3 (transmissões)', 'so_chave': True,
                 'explica': 'Chave de API do Google Cloud com a YouTube Data API v3 ativada, usada para detectar a transmissão ao vivo e listar as gravações '
                            'do canal oficial de cada órgão (o canal é informado no painel do órgão, em Transmissões). Restrinja a chave à YouTube Data API.'},
+    'meta': {'nome': 'Meta Graph API (Instagram e Facebook)', 'so_chave': True,
+             'explica': 'Token de acesso de longa duração do app da Meta ligado às contas oficiais (conta comercial do Instagram / página do Facebook). '
+                        'Usado só para mostrar no portal as últimas publicações; as miniaturas ficam no próprio portal.'},
 }
 
 class SemChave(Exception):
@@ -99,6 +102,14 @@ def _http_teste(fonte, auth):
         except RuntimeError as e:
             st = str(e)
             return (int(st[5:]) if st.startswith('HTTP ') else 0), False
+    if fonte == 'meta':  # consulta mínima: dados do próprio token
+        import httpx
+        with httpx.Client(timeout=30, headers={'User-Agent': 'PortaisBora-coletor/1.0'}) as c:
+            r = c.get('https://graph.facebook.com/v21.0/me', params={'fields': 'id', 'access_token': auth[1]})
+        try:
+            return r.status_code, 'id' in r.json()
+        except ValueError:
+            return r.status_code, False
     raise ValueError('fonte sem teste previsto')
 
 def testar(fonte, quem):

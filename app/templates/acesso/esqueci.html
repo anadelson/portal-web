@@ -1,0 +1,7 @@
+{% extends 'acesso/moldura.html' %}
+{% block corpo %}
+<p>Por segurança, a senha não é enviada por e-mail. Peça a redefinição {{ 'ao administrador do painel do seu órgão' if not tela.console else 'a outro gestor da plataforma' }}: ele cria uma senha provisória, que você troca no primeiro acesso.</p>
+{% if tela.contato %}<p>Contato: <a href="mailto:{{ tela.contato }}">{{ tela.contato }}</a></p>{% endif %}
+<p>Se você perdeu só o celular do aplicativo autenticador, use um dos códigos de recuperação na tela do código, ou peça ao administrador para “zerar o segundo fator”.</p>
+<p><a class="btn sec" href="{{ tela.voltar }}">Voltar ao login</a></p>
+{% endblock %}
