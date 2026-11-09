@@ -1,0 +1,41 @@
+{% extends 'admin/base.html' %}{% block h1 %}{{ s.nome if s else 'Nova ficha de serviço' }}{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+{% set sit = s.situacao if s else 'rascunho' %}
+<ol class="fluxo-carta" aria-label="Situação da ficha">{% for k in ['rascunho', 'em_validacao', 'autorizado', 'publicado'] %}<li{% if sit == k or (k == 'rascunho' and sit == 'devolvido') %} aria-current="step"{% endif %}>{{ situacoes[k] if not (k == 'rascunho' and sit == 'devolvido') else 'Devolvido' }}</li>{% endfor %}</ol>
+{% if s and s.situacao == 'devolvido' and s.comentario %}<p class="msg" role="alert" style="background:#FCEFD9"><strong>Devolvida pelo responsável:</strong> {{ s.comentario }}</p>{% endif %}
+{% if s and s.publicado_dados and s.situacao != 'publicado' %}<p class="msg" role="status" style="background:#E7F0F7">A versão publicada anteriormente continua no ar até esta nova versão ser autorizada e publicada.</p>{% endif %}
+{% if s and s.autorizado_por %}<p class="legal">Última autorização: {{ s.autorizado_por }} ({{ s.autorizado_ato }}) em {{ s.autorizado_em|br }}{% if mudou_desde_autorizacao %} · <strong>o conteúdo mudou depois disso</strong>{% endif %}.</p>{% endif %}
+{% if faltam %}<p class="msg" role="status" style="background:#FFF7E0"><strong>Faltam {{ faltam|length }} campo(s) obrigatório(s)</strong> para enviar à validação: {{ faltam|join('; ') }}.</p>{% endif %}
+{% if avisos %}<div class="avisos-ling" role="note"><strong>Sugestões de linguagem simples (não bloqueiam):</strong><ul>{% for a in avisos %}<li>{{ a }}</li>{% endfor %}</ul></div>{% endif %}
+{% set editavel = pode('carta_redigir') and (not s or s.situacao in ('rascunho', 'devolvido', 'autorizado', 'publicado') or (s.situacao == 'em_validacao' and validar[0])) %}
+<form class="campos ficha-carta" method="post" action="/admin/carta/salvar"><input type="hidden" name="csrf" value="{{ C }}">{% if s %}<input type="hidden" name="id" value="{{ s.id }}">{% endif %}
+{% macro campo(k, linhas=0) %}{% set rot, obr = campos[k][0], campos[k][1] %}<label><span>{{ rot }}{% if obr %} <span class="obr" aria-hidden="true">*</span><span class="sr"> (obrigatório)</span>{% endif %}</span>
+{% if linhas %}<textarea name="{{ k }}" rows="{{ linhas }}" {{ '' if editavel else 'readonly' }}>{{ s[k] if s else '' }}</textarea>{% else %}<input name="{{ k }}" value="{{ s[k] if s else '' }}" {{ '' if editavel else 'readonly' }}>{% endif %}</label>{% endmacro %}
+<fieldset><legend>Identificação</legend>
+{{ campo('nome') }}{{ campo('descricao', 3) }}
+<div class="grade2"><label><span>Secretaria responsável <span class="obr" aria-hidden="true">*</span><span class="sr"> (obrigatório)</span></span><select name="secretaria_id" {{ 'disabled' if u.perfil in ('redator', 'validador') or not editavel }}><option value="">—</option>{% for x in secretarias %}<option value="{{ x.id }}" {{ 'selected' if (s and s.secretaria_id == x.id) or (not s and u.secretaria_id == x.id) }}>{{ x.nome }}</option>{% endfor %}</select></label>{{ campo('setor') }}</div>
+<div class="grade2"><label><span>Categoria <span class="obr" aria-hidden="true">*</span><span class="sr"> (obrigatório)</span></span><select name="categoria" {{ '' if editavel else 'disabled' }}><option value="">—</option>{% for c in categorias %}<option {{ 'selected' if s and s.categoria == c }}>{{ c }}</option>{% endfor %}</select></label>
+<fieldset class="opcoes"><legend>Público <span class="obr" aria-hidden="true">*</span></legend>{% for k, n in publicos.items() %}<label><input type="checkbox" name="publicos" value="{{ k }}" {{ 'checked' if s and k in (s.publicos or []) }} {{ '' if editavel else 'disabled' }}> {{ n }}</label>{% endfor %}</fieldset></div>
+{{ campo('sinonimos') }}</fieldset>
+<fieldset><legend>Como pedir</legend>{{ campo('requisitos', 3) }}{{ campo('documentos', 3) }}{{ campo('etapas', 4) }}
+<div class="grade2">{{ campo('prazo') }}<fieldset class="opcoes"><legend>Forma de prestação <span class="obr" aria-hidden="true">*</span></legend>{% for k, n in formas.items() %}<label><input type="checkbox" name="formas" value="{{ k }}" {{ 'checked' if s and k in (s.formas or []) }} {{ '' if editavel else 'disabled' }}> {{ n }}</label>{% endfor %}</fieldset></div>
+{{ campo('locais', 3) }}<div class="grade2">{{ campo('custo') }}{{ campo('custo_base_legal') }}</div>{{ campo('link_online') }}</fieldset>
+<fieldset><legend>Atendimento ao usuário (art. 7º, § 3º)</legend>{{ campo('prioridades', 2) }}{{ campo('tempo_espera') }}{{ campo('comunicacao', 2) }}{{ campo('manifestacoes', 2) }}{{ campo('acompanhamento', 2) }}</fieldset>
+<fieldset><legend>Complementos</legend>{{ campo('legislacao', 2) }}</fieldset>
+{% if editavel %}<div class="acoes"><button class="btn sec" name="acao" value="rascunho">Salvar rascunho</button>{% if not s or s.situacao in ('rascunho', 'devolvido') %}<button class="btn" name="acao" value="enviar">Enviar para validação</button>{% endif %}</div>{% endif %}
+</form>
+{% if s and s.situacao == 'em_validacao' %}<section class="cx"><h2>Validação</h2>
+{% if validar[0] %}<p>Você pode validar esta ficha como <strong>{{ validar[1] }}</strong>.</p>
+<form class="campos" method="post" action="/admin/carta/salvar"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ s.id }}">
+<label>Comentário para o redator (obrigatório para devolver)<textarea name="comentario" rows="2"></textarea></label>
+<div class="acoes"><button class="btn" name="acao" value="autorizar">Autorizar esta versão</button><button class="btn perigo" name="acao" value="devolver">Devolver ao redator</button></div></form>
+{% else %}<p>Aguardando o responsável pela secretaria ou o servidor designado.</p>{% endif %}</section>{% endif %}
+{% if s and pode('carta_publicar') and s.situacao in ('autorizado', 'publicado') %}<section class="cx"><h2>Organização e publicação (DTIC)</h2>
+<form class="campos" method="post" action="/admin/carta/salvar"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ s.id }}">
+<div class="grade2"><label>Categoria<select name="categoria">{% for c in categorias %}<option {{ 'selected' if s.categoria == c }}>{{ c }}</option>{% endfor %}</select></label><label>Ordem<input name="ordem" type="number" value="{{ s.ordem }}"></label></div>
+<label>Sinônimos para a busca<input name="sinonimos" value="{{ s.sinonimos }}"></label>
+<div class="acoes"><button class="btn sec" name="acao" value="organizar">Salvar categoria e sinônimos</button>{% if s.situacao == 'autorizado' %}<button class="btn" name="acao" value="publicar">Publicar na Carta</button>{% endif %}<button class="btn perigo" name="acao" value="arquivar">Arquivar (tirar do portal)</button></div></form>
+<p class="legal">Categoria, sinônimos e ordem não mudam o conteúdo autorizado. Qualquer outra mudança volta a ficha para validação.</p></section>{% endif %}
+{% if aval and aval.n %}<section class="cx"><h2>Avaliação dos usuários</h2><p>{{ aval.n }} avaliação(ões) · nota média {{ aval.media }} · conseguiram: {{ aval.sim }} · não conseguiram: {{ aval.nao }}</p></section>{% endif %}
+{% if versoes %}<section class="cx"><h2>Histórico</h2><ul>{% for v in versoes %}<li>{{ v.quando|br }} · {{ v.quem }} · {{ situacoes.get(v.situacao, v.situacao) }}{% if v.comentario %} — {{ v.comentario }}{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.carta }}</p>{% endblock %}

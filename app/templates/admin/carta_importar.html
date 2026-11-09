@@ -1,0 +1,10 @@
+{% extends 'admin/base.html' %}{% block h1 %}Carta de Serviços — importar inventário{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<p>Etapa 1 do fluxo: inventário. Cada linha da planilha vira um <strong>rascunho</strong> da secretaria indicada (pelo nome oficial ou sigla já cadastrados), que depois é completado, enviado para validação e publicado como qualquer ficha. CSV em UTF-8, separador ponto e vírgula. Modelo em <code>Docs/modelos/carta-servicos.csv</code>.</p>
+<p class="legal" style="overflow-wrap:anywhere">Colunas: {{ colunas|join('; ') }} · público: cidadao, empresa, servidor, orgaos · formas: online, presencial, telefone, whatsapp (separados por vírgula).</p>
+<section class="cx"><form class="campos" method="post" action="/admin/carta-importar" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}">
+<label>Arquivo CSV (até 2 MB)<input type="file" name="arquivo" accept=".csv,text/csv" required></label>
+<div class="acoes"><button class="btn sec" name="acao" value="simular">Simular (não grava)</button><button class="btn" name="acao" value="gravar">Importar como rascunhos</button></div></form></section>
+{% if rel %}<section class="cx" role="status"><h2>Relatório</h2><p>{{ rel.linhas }} linhas · {{ rel.validas }} válidas · <strong>{{ rel.gravadas }} gravadas</strong>{% if rel.simulacao %} (simulação: nada gravado){% elif rel.erros %} (com erros: nada gravado){% endif %}.</p>
+{% if rel.erros %}<div class="tabela"><table><thead><tr><th scope="col">Linha</th><th scope="col">Erro</th></tr></thead><tbody>{% for e in rel.erros %}<tr><td>{{ e.linha }}</td><td>{{ e.erro }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}</section>{% endif %}
+{% endblock %}
