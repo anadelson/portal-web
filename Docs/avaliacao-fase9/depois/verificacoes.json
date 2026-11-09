@@ -1,0 +1,226 @@
+{
+ "medidas": {
+  "admin-blocos-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-avaliacao-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-avaliacao-regras-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-indicadores-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-indicadores-fin-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-integracoes-fiorilli-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-identidade-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-identidade-tema-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-identidade-imagens-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-identidade-favicon-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-identidade-redes-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-identidade-municipio-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-identidade-fotos-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-conteudo-novo-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-comunicados-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-conheca-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-menus-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "admin-usuarios-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "console-orgao-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "console-credenciais-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "console-aparencia-1280": {
+   "http": 200,
+   "scrollW": 1280
+  },
+  "login-orgao-1280": {
+   "scrollW": 1280
+  },
+  "login-console-1280": {
+   "scrollW": 1280
+  },
+  "esqueci-orgao-1280": {
+   "scrollW": 1280
+  },
+  "admin-blocos-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-avaliacao-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-avaliacao-regras-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-indicadores-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-indicadores-fin-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-integracoes-fiorilli-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-identidade-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-identidade-tema-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-identidade-imagens-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-identidade-favicon-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-identidade-redes-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-identidade-municipio-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-identidade-fotos-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-conteudo-novo-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-comunicados-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-conheca-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-menus-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "admin-usuarios-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "console-orgao-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "console-credenciais-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "console-aparencia-390": {
+   "http": 200,
+   "scrollW": 390
+  },
+  "login-orgao-390": {
+   "scrollW": 390
+  },
+  "login-console-390": {
+   "scrollW": 390
+  },
+  "esqueci-orgao-390": {
+   "scrollW": 390
+  }
+ },
+ "axe": {
+  "admin-blocos": [],
+  "admin-avaliacao": [],
+  "admin-avaliacao-regras": [],
+  "admin-indicadores": [],
+  "admin-indicadores-fin": [],
+  "admin-integracoes-fiorilli": [],
+  "admin-identidade": [],
+  "admin-identidade-tema": [],
+  "admin-identidade-imagens": [],
+  "admin-identidade-favicon": [],
+  "admin-identidade-redes": [],
+  "admin-identidade-municipio": [],
+  "admin-identidade-fotos": [],
+  "admin-conteudo-novo": [],
+  "admin-comunicados": [],
+  "admin-conheca": [],
+  "admin-menus": [],
+  "admin-usuarios": [],
+  "console-orgao": [],
+  "console-credenciais": [],
+  "console-aparencia": [],
+  "login-orgao": [],
+  "login-console": [],
+  "esqueci-orgao": []
+ },
+ "teclado": {
+  "mapa_destaca": true,
+  "mapa_atualiza_antes_de_salvar": true,
+  "cor_aviso_aa": "contraste 2,2:1 abaixo de 4,5:1",
+  "editor_visivel": true
+ },
+ "avaliar": {
+  "texto": "Obrigado! Sua avaliação desta página foi registrada. Você poderá avaliar esta página de novo a partir de 09/12/2026.",
+  "visivel": true
+ }
+}

@@ -101,3 +101,8 @@ body.acesso{margin:0;background:#0B1620}.acesso-fundo{min-height:100vh;display:g
 .acesso-passos{list-style:none;margin:0 0 14px;padding:0;display:flex;gap:6px;flex-wrap:wrap}.acesso-passos li{font-size:13px;padding:3px 10px;border-radius:999px;background:#EEF1F4;color:#374151}
 .acesso-passos li[aria-current]{background:var(--cor);color:#fff;font-weight:700}.acesso-links{margin:12px 0 0}.btn.largo{width:100%;justify-content:center;box-sizing:border-box}
 .acesso-credito{position:fixed;right:10px;bottom:6px;margin:0;color:#fff;font-size:12px;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px}
+/* Fase 9 — painel no celular: nada passa da largura da tela */
+.grade2>*,.cons-grade>*,.editor,.ed-area,.campos>*{min-width:0}.ed-area,.consulta code.url{overflow-wrap:anywhere}
+@media (max-width:980px){.consulta .cons-grade{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){.grade2{grid-template-columns:minmax(0,1fr)!important}.linha-menu input{max-width:100%}}
+.lista-blocos .t .chip{align-self:flex-start}body.acesso{font-family:'Public Sans',system-ui,sans-serif}

@@ -852,3 +852,16 @@ Código pronto e testado no branch `fase-8`. **Nada foi aplicado na VPS de produ
 - **5) Editor:** próprio, com formatação limitada (títulos, negrito, itálico, listas, links, citação, tabela, imagem). Ao colar do Word, os estilos são limpos no navegador e de novo no servidor (`nh3`, lista fechada). Imagem no corpo do texto só do próprio portal e com texto alternativo obrigatório. Prévia no bloco de notícias. Versões com cópia do texto, para comparar (diferenças marcadas em texto, não só por cor) e restaurar como rascunho. Vale para conteúdos, comunicados e perfis.
 - **6) Login:** moldura comum (órgão e console) com brasão, título configurável, fundo com camada de contraste e etapas "1 · E-mail e senha / 2 · Código". "Esqueci minha senha" orienta a pedir a redefinição; o administrador ganhou "senha provisória" na tela de usuários. O console tem a tela "Aparência do login".
 - **Testes:** `tests/teste_fase9.py` (tudo ok). Usa APIs simuladas (PNCP, YouTube/Meta, IBGE), sem rede. Os testes rodam com `nh3` instalado só dentro do contêiner de teste; na imagem ele entra pelo `requirements.txt` no próximo build, que depende de aprovação.
+- **Verificação "depois"** (ambiente de teste, `Docs/avaliacao-fase9/depois/` e `comparacao.html`):
+  - axe sem violações em todas as telas do painel, do console e de login;
+  - sem rolagem horizontal em 390 px (corrigido: grade da consulta, `.grade2` e editor no celular — item 5);
+  - foco num bloco destaca o mapa, e "descer" muda o mapa antes de salvar;
+  - prévia de cor avisa "2,2:1 abaixo de 4,5:1";
+  - editor ativo;
+  - "Obrigado" visível na tela depois de avaliar.
+- **Corrigido durante a verificação:** seções "Agrupamento" e "Histórico" que tinham sumido da tela de indicadores ao dividir em abas; selo "travado" esticado; fonte da tela de login.
+- **Suítes:** as 10 deram ERROS: 0 / tudo ok (fluxos, painel_layout, painel, painel_fontes, diario_seguranca, transparencia, legislativo, fase8, fase9). As suítes antigas foram ajustadas só para abrir a aba nova onde o conteúdo foi parar.
+
+### Onde parou (Fase 9)
+Código pronto e testado no branch `fase-9`. **Nada aplicado na VPS.** Aguardando aprovação do deploy: snapshot, backup, build (instala `nh3`), 10 suítes com a imagem nova, `up -d`, `provision atualizar` (migrações 017 e 018, fonte `redes`, layout com "Nas redes"), conferência no domínio, merge e tag `fase-9`.
+Depois: credenciais opcionais no console (token "meta" para Instagram/Facebook) e conta de cada rede em Identidade → Redes sociais.
