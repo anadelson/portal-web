@@ -2,7 +2,7 @@
 <title>{% block titulo %}Painel{% endblock %} — {{ ident.nome }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/admin.css?v=4"><style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }}}</style></head>
+<link rel="stylesheet" href="/static/admin.css?v=5"><style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }}}</style></head>
 <body><a class="pular" href="#conteudo">Ir para o conteúdo</a><div class="casca">
 {% macro item(href, ic, rotulo, badge=0) %}<a href="/admin{{ href }}"{% if atual == href or (href != '/' and atual.startswith(href)) %} aria-current="page"{% endif %}>{{ icone(ic, 20) }}<span>{{ rotulo }}</span>{% if badge %}<span class="badge" aria-label="{{ badge }} pendente(s)">{{ badge }}</span>{% endif %}</a>{% endmacro %}
 {% macro grupo(nome, chave, hrefs) %}<details class="grupo" open><summary>{{ nome }}</summary>{{ caller() }}</details>{% endmacro %}
@@ -18,7 +18,7 @@
 {% if orgao.tipo != 'legislativo' and not (mods.transm or mods.audiencias) %}{% call grupo('Participação', 'pa', []) %}{{ item('/participacao', 'participacao', 'Avaliação do portal') }}{% endcall %}{% endif %}
 {% if mods.bi %}{% call grupo('Transparência', 't', []) %}{{ item('/indicadores', 'indicadores', 'Painel de indicadores') }}{% endcall %}{% endif %}
 {% call grupo('Atendimento', 'a', []) %}{{ item('/atendimento', 'esic', 'e-SIC e Ouvidoria', pend.esic) }}{% endcall %}
-{% call grupo('Configuração', 'g', []) %}{{ item('/identidade', 'ident', 'Identidade e imagens') }}{{ item('/funcionalidades', 'mods', 'Funcionalidades') }}{% if mods.eleicao %}{{ item('/eleicao', 'eleicao', 'Período eleitoral') }}{% endif %}{{ item('/usuarios', 'users', 'Usuários e perfis') }}{{ item('/auditoria', 'aud', 'Registro de ações') }}{% endcall %}
+{% call grupo('Configuração', 'g', []) %}{{ item('/identidade', 'ident', 'Identidade e imagens') }}{% if pode('config') %}{{ item('/integracoes', 'integ', 'Integrações (fontes de dados)') }}{% endif %}{{ item('/funcionalidades', 'mods', 'Funcionalidades') }}{% if mods.eleicao %}{{ item('/eleicao', 'eleicao', 'Período eleitoral') }}{% endif %}{{ item('/usuarios', 'users', 'Usuários e perfis') }}{{ item('/auditoria', 'aud', 'Registro de ações') }}{% endcall %}
 <div class="usuario"><span class="ini" aria-hidden="true">{{ u.nome|iniciais }}</span><span><strong>{{ u.nome }}</strong><small>{{ PERFIS[u.perfil] }}</small></span></div>
 <div class="rodape"><a href="/admin/senha">Trocar senha</a> · <a href="/admin/sair">Sair</a> · <a href="/">Ver portal ↗</a></div>
 </nav>

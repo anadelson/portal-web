@@ -1,0 +1,11 @@
+{% extends 'console/base.html' %}{% block h1 %}Aparência da tela de login do console{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<p>Imagem de fundo e título da tela de entrada do console do gestor. Uma camada escura sobre a foto mantém o contraste AA da caixa de login. (A tela de login de cada órgão é configurada no painel do próprio órgão, em Identidade.)</p>
+<form class="campos" method="post" action="/aparencia" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}">
+<label>Título<input name="titulo" value="{{ tela.titulo if tela.titulo != 'Console do gestor' else '' }}" maxlength="120" placeholder="Console do gestor"></label>
+<label>Imagem de fundo (PNG, JPG ou WEBP, até 3 MB)<input type="file" name="arquivo" accept="image/png,image/jpeg,image/webp"></label>
+<label>Crédito da foto<input name="credito" value="{{ tela.fundo.credito if tela.fundo else '' }}" maxlength="200"></label>
+<div class="grade2"><label>Ponto focal horizontal (0–100)<input type="number" name="foco_x" min="0" max="100" value="{{ tela.fundo.foco_x if tela.fundo else 50 }}"></label><label>Ponto focal vertical (0–100)<input type="number" name="foco_y" min="0" max="100" value="{{ tela.fundo.foco_y if tela.fundo else 50 }}"></label></div>
+<div class="acoes"><button class="btn" name="acao" value="salvar">Salvar</button>{% if tela.fundo %}<button class="btn perigo" name="acao" value="remover">Remover imagem</button>{% endif %}</div></form>
+{% if tela.fundo %}<p><img src="{{ tela.fundo.url }}" alt="Imagem de fundo atual" style="max-width:420px;width:100%;border-radius:12px"></p>{% endif %}
+{% endblock %}

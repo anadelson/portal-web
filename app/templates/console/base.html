@@ -9,6 +9,7 @@
 </details>
 <details class="grupo" open><summary>Integrações</summary>
 <a href="/credenciais"{% if atual == '/credenciais' %} aria-current="page"{% endif %}>{{ icone('cadeado', 20) }}<span>Credenciais de fontes</span></a>
+<a href="/aparencia"{% if atual == '/aparencia' %} aria-current="page"{% endif %}>{{ icone('ident', 20) }}<span>Aparência do login</span></a>
 </details>
 <div class="rodape">{{ g.nome if g else '' }} · Hoje: {{ hoje|br }}<br><a href="/senha" style="padding:0;color:#C9D1D9">Trocar senha</a> · <a href="/sair" style="padding:0;color:#C9D1D9">Sair</a></div></nav>
 <div class="principal"><header class="barra"><h1>{% block h1 %}{% endblock %}</h1></header><main>{% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}{% block conteudo %}{% endblock %}</main></div></div></body></html>

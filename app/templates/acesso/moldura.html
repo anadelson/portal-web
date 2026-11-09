@@ -1,0 +1,10 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block titulo_pag %}{{ tela.titulo }}{% endblock %}</title>
+<link rel="stylesheet" href="/static/admin.css?v=6"><style>:root{--cor:{{ tela.cor }}}{% if tela.fundo %}.acesso-fundo{background-image:url('{{ tela.fundo.url }}');background-position:{{ tela.fundo.foco_x|default(50) }}% {{ tela.fundo.foco_y|default(50) }}%}{% endif %}.qr svg{width:220px;height:220px;display:block;background:#fff}</style></head>
+<body class="acesso"><div class="acesso-fundo{{ ' com-foto' if tela.fundo }}"><div class="acesso-veu"></div>
+<main class="acesso-caixa" aria-labelledby="h-acesso">
+<p class="acesso-marca">{% if tela.brasao %}<img src="{{ tela.brasao }}" alt="" width="48" height="42">{% endif %}<span>{{ tela.nome }}</span></p>
+<h1 id="h-acesso">{{ tela.titulo }}</h1>
+{% if tela.passo %}<ol class="acesso-passos" aria-label="Etapas do acesso"><li{% if tela.passo == 1 %} aria-current="step"{% endif %}>1 · E-mail e senha</li><li{% if tela.passo == 2 %} aria-current="step"{% endif %}>2 · Código do aplicativo</li></ol>{% endif %}
+{% set m = pega_msg(request) %}{% if m %}<p class="msg" role="alert" style="background:#FCEFD9">{{ m }}</p>{% endif %}
+{% block corpo %}{% endblock %}
+</main></div>{% if tela.fundo and tela.fundo.credito %}<p class="acesso-credito">{{ tela.fundo.credito }}</p>{% endif %}</body></html>
