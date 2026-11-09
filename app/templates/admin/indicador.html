@@ -7,6 +7,7 @@
 
 <section class="cx"><h2>Configuração</h2>
 <form class="campos" method="post" action="/admin/indicadores/{{ i.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="config">
+<label>Título curto do cartão (até 32 caracteres; o nome completo aparece na página do indicador)<input name="titulo_curto" value="{{ i.titulo_curto }}" maxlength="32" required></label>
 <label>Texto explicativo (linguagem simples e neutra)<textarea name="descricao" rows="3" maxlength="1200">{{ i.descricao }}</textarea></label>
 <div class="grade2"><label>Meta (opcional)<input name="meta" inputmode="decimal" value="{{ '' if i.meta is none else (i.meta|string).replace('.', ',') }}"></label>
 <label>Base legal ou documento da meta<input name="meta_base_legal" value="{{ i.meta_base_legal }}" maxlength="400"></label></div>

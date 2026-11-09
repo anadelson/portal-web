@@ -208,7 +208,7 @@ if [x for x in api['indicadores'] if x['chave'] == 'gestao_ouv_manifestacoes'][0
 ok(pm.get('/painel/api/saude_minimo.json'), txt='registros', nome='api indicador')
 ok(cm.get('/painel'), 404, nome='Câmara sem painel próprio')
 # home: bloco com os destaques do catálogo
-r = ok(pm.get('/'), txt='ind-home', nome='home com destaques')
+r = ok(pm.get('/'), txt='class="ics"', nome='home com destaques')
 if r.text.count('/painel/') < 4 or 'Borá em números' not in r.text: falha('bloco "Indicadores em números" com os destaques')
 ok(pm.get('/transparencia'), txt='href="/painel"', nome='atalho na central de transparência')
 
@@ -258,13 +258,18 @@ if val('mun_populacao', '2027'): falha('lançamento manual aceito em indicador a
 # configuração: meta com base legal, texto neutro, destaque limitado
 sm = db.um(PM, "SELECT id FROM indicadores WHERE chave='mun_salario_medio'")['id']
 u2 = f'/admin/indicadores/{sm}'
-pm.post(u2, data={'csrf': tok(pm, u2), 'acao': 'config', 'descricao': 'Graças à atual gestão do prefeito, o melhor salário da região!', 'ordem': '7', 'visivel': '1'})
+curto = db.um(PM, 'SELECT titulo_curto FROM indicadores WHERE id=%s', (sm,))['titulo_curto']
+pm.post(u2, data={'csrf': tok(pm, u2), 'acao': 'config', 'titulo_curto': 'x' * 33, 'descricao': 'Média salarial dos trabalhadores formais.', 'ordem': '7', 'visivel': '1'})
+if db.um(PM, 'SELECT titulo_curto FROM indicadores WHERE id=%s', (sm,))['titulo_curto'] != curto: falha('título curto com mais de 32 caracteres aceito')
+pm.post(u2, data={'csrf': tok(pm, u2), 'acao': 'config', 'titulo_curto': '', 'descricao': 'Média salarial dos trabalhadores formais.', 'ordem': '7', 'visivel': '1'})
+if not db.um(PM, 'SELECT titulo_curto FROM indicadores WHERE id=%s', (sm,))['titulo_curto']: falha('título curto vazio aceito')
+pm.post(u2, data={'csrf': tok(pm, u2), 'acao': 'config', 'titulo_curto': curto, 'descricao': 'Graças à atual gestão do prefeito, o melhor salário da região!', 'ordem': '7', 'visivel': '1'})
 if 'Graças' in db.um(PM, 'SELECT descricao FROM indicadores WHERE id=%s', (sm,))['descricao']: falha('texto com tom de propaganda aceito')
-pm.post(u2, data={'csrf': tok(pm, u2), 'acao': 'config', 'descricao': 'Média salarial dos trabalhadores formais.', 'ordem': '7', 'visivel': '1', 'meta': '3', 'meta_base_legal': ''})
+pm.post(u2, data={'csrf': tok(pm, u2), 'acao': 'config', 'titulo_curto': curto, 'descricao': 'Média salarial dos trabalhadores formais.', 'ordem': '7', 'visivel': '1', 'meta': '3', 'meta_base_legal': ''})
 if db.um(PM, 'SELECT meta FROM indicadores WHERE id=%s', (sm,))['meta'] is not None: falha('meta sem base legal aceita')
-pm.post(u2, data={'csrf': tok(pm, u2), 'acao': 'config', 'descricao': 'Média salarial dos trabalhadores formais.', 'ordem': '7', 'visivel': '1', 'destaque': '1'})
+pm.post(u2, data={'csrf': tok(pm, u2), 'acao': 'config', 'titulo_curto': curto, 'descricao': 'Média salarial dos trabalhadores formais.', 'ordem': '7', 'visivel': '1', 'destaque': '1'})
 if db.um(PM, 'SELECT destaque FROM indicadores WHERE id=%s', (sm,))['destaque']: falha('5º destaque aceito')
-pm.post(u2, data={'csrf': tok(pm, u2), 'acao': 'config', 'descricao': 'Média salarial dos trabalhadores formais.', 'ordem': '7'})
+pm.post(u2, data={'csrf': tok(pm, u2), 'acao': 'config', 'titulo_curto': curto, 'descricao': 'Média salarial dos trabalhadores formais.', 'ordem': '7'})
 if 'Salário médio' in pm.get('/painel?aba=mun').text: falha('indicador oculto continua no portal')
 if not db.um(PM, "SELECT 1 FROM indicador_historico WHERE indicador_id=%s AND acao LIKE 'Configuração alterada%%visivel%%'", (sm,)): falha('ocultar sem histórico')
 r = pm.post('/admin/indicadores', data={'csrf': tok(pm, '/admin/indicadores'), 'acao': 'coletar'}, follow_redirects=True)

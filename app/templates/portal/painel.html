@@ -1,6 +1,7 @@
 {% extends 'portal/base.html' %}
 {% block titulo %}Painel de indicadores — {{ ident.nome }}{% endblock %}
-{% macro kpis(lista, rotulo) %}{% if lista %}<dl class="pk" aria-label="{{ rotulo }}">{% for k in lista %}<div style="border-top-color:{{ k.cor }}"><dt>{% if k.href %}<a href="{{ k.href }}">{{ k.l }}</a>{% else %}{{ k.l }}{% endif %}</dt><dd class="v">{{ k.v }}</dd><dd class="d">{{ k.d }}</dd></div>{% endfor %}</dl>{% endif %}{% endmacro %}
+{% from 'partials/cartoes.html' import cartao %}
+{% macro kpis(lista, rotulo) %}{% if lista %}<div class="ics" role="group" aria-label="{{ rotulo }}">{% for k in lista %}{{ cartao(k, rotulo|replace(' ', '-')|lower ~ '-' ~ loop.index) }}{% endfor %}</div>{% endif %}{% endmacro %}
 {% macro fonte(txt, quando) %}<p class="pfonte">Fonte: {{ txt }}{% if quando %} Consulta em {{ quando|br }}.{% endif %}</p>{% endmacro %}
 {% macro barras(itens, rotulo, val='v', pct='p') %}<ul class="pbarras" role="img" aria-label="{{ rotulo }}: {% for x in itens %}{{ x.area or x.l or x.nome }} {{ x[val] }} ({{ x[pct] }}){{ '; ' if not loop.last }}{% endfor %}.">{% for x in itens %}<li><span class="t">{{ x.area or x.l or x.nome }}</span><span class="n">{{ x[pct] }} · {{ x[val] }}</span><span class="b" aria-hidden="true"><span style="width:{{ x.w }}%"></span></span></li>{% endfor %}</ul>{% endmacro %}
 {% macro links(lst) %}{% if lst %}<nav class="plinks" aria-label="Indicadores desta área"><span>Série histórica e downloads:</span>{% for x in lst %}<a href="/painel/{{ x.chave }}">{{ x.nome }}</a>{% endfor %}</nav>{% endif %}{% endmacro %}

@@ -83,12 +83,12 @@ def financas(o, hoje):
     if desp and desp['pago'] is not None:
         k.append({'l': f'Despesa paga em {ano}', 'v': mi(desp['pago']), 'd': f"até {dm(ate)}, {pct(desp['pago'], desp['dot'])} da dotação", 'cor': VERDE, 'href': '/painel/fin_despesa_paga'})
     if pop:
-        k.append({'l': 'Receita por habitante', 'v': reais(float(rec['liq']) / pop['n']), 'd': _calc(pop), 'cor': ESCURO})
+        k.append({'l': 'Receita por habitante', 'v': reais(float(rec['liq']) / pop['n']), 'd': f"{ano}, população IBGE {pop['ano']}", 'metodo': _calc(pop), 'cor': ESCURO})
         for area, cor in (('Saúde', '#C8553D'), ('Educação', '#6B2D5C')):
             if porarea.get(area) and porarea[area]['emp']:
-                k.append({'l': f'{area} por habitante', 'v': reais(float(porarea[area]['emp']) / pop['n']), 'd': f'empenhado em {ano}; ' + _calc(pop), 'cor': cor})
+                k.append({'l': f'{area} por habitante', 'v': reais(float(porarea[area]['emp']) / pop['n']), 'd': f'empenhado em {ano}', 'metodo': 'valor empenhado na área ÷ população estimada; ' + _calc(pop), 'cor': cor})
     if bruta:
-        k.append({'l': 'Receita vinda de repasses', 'v': pct(repasses, bruta), 'd': 'União e Estado; o resto é arrecadação própria', 'cor': LARANJA})
+        k.append({'l': 'Receita vinda de repasses', 'v': pct(repasses, bruta), 'd': 'da União e do Estado', 'metodo': 'transferências correntes e de capital (naturezas 1.7 e 2.4) ÷ receita bruta (1 + 2), antes das deduções do FUNDEB', 'cor': LARANJA})
     # mês a mês
     meses = db.todos(b, 'SELECT * FROM fin_mensal WHERE ano=%s ORDER BY mes', (ano,))
     mensal = None
@@ -185,6 +185,8 @@ def orcamento_area(b, ano, area):
 def kpi_ind(m, rotulo=None, detalhe=None, cor=None):
     if not m:
         return None
+    c = P.cartao(m)
+    return dict(c, l=(rotulo or c['l'])[:32], d=detalhe or c['d'], cor=cor or c['cor'])
     return {'l': rotulo or m['nome'], 'v': m['valor_curto'], 'd': detalhe or (f"{m['ult']['periodo']} · {m['meta_txt']}" if m['meta_txt'] else f"{m['ult']['periodo']} · {m['ult']['nota']}"),
             'cor': cor or 'var(--cor)', 'href': f"/painel/{m['chave']}"}
 
@@ -275,6 +277,19 @@ def pendentes(b):
 def links_tema(b, tema):
     return [{'chave': m['chave'], 'nome': m['nome']} for m in P.painel(b, tema)]
 
+FONTE_FIN = 'Sistema contábil da Prefeitura (dados abertos)'
+
+def cartoes(lista, fonte, atualizado):
+    """KPIs no formato do cartão único (Fase 8): título curto, valor, contexto curto; fonte, datas e método no ⓘ."""
+    out = []
+    for k in lista:
+        if not k:
+            continue
+        info = k.get('info') or {'fonte': k.get('fonte') or fonte, 'link': '', 'periodo': '', 'atualizado': atualizado.astimezone().strftime('%d/%m/%Y, %Hh%M') if atualizado else '',
+                                 'metodo': k.get('metodo', ''), 'base': k.get('base', '')}
+        out.append(dict(k, l=k['l'][:32], nome=k.get('nome') or k['l'], u=k.get('u', ''), info=info))
+    return out
+
 def montar(o, tema):
     hoje = config.hoje()
     b = o['banco']
@@ -282,6 +297,8 @@ def montar(o, tema):
     quer = lambda t: tema in ('tudo', t)
     if quer('fin'):
         d['fin'] = financas(o, hoje)
+        if d['fin']:
+            d['fin']['kpis'] = cartoes(d['fin']['kpis'], FONTE_FIN, d['selo'])
         d['fin_links'] = links_tema(b, 'fin')
     if quer('cont'):
         d['cont'] = contratacoes(o)
@@ -297,14 +314,14 @@ def montar(o, tema):
             ul = fechados[-1] if fechados else None
         k = []
         if ul:
-            k.append({'l': f"Aplicado em saúde em {ul['periodo']}", 'v': P.exibir(sm, ul), 'd': 'da receita de impostos; mínimo legal 15%', 'cor': '#C8553D', 'href': '/painel/saude_minimo'})
+            k.append({'fonte': 'Siconfi — RREO, Anexo 14 (declarado pela Prefeitura)', 'base': 'LC 141/2012; Constituição, arts. 198 e 212', 'l': f"Aplicado em saúde em {ul['periodo']}", 'v': P.exibir(sm, ul), 'd': 'da receita de impostos; mínimo legal 15%', 'cor': '#C8553D', 'href': '/painel/saude_minimo'})
         a = porarea.get('Saúde')
         if a and a['emp']:
             k.append({'l': f'Saúde empenhada em {hoje.year}', 'v': mi(a['emp']), 'd': f"pago {mi(a['pago'] or 0)}; {pct(a['emp'], a['dot'])} da dotação", 'cor': ESCURO})
             if pop:
-                k.append({'l': 'Saúde por habitante', 'v': reais(float(a['emp']) / pop['n']), 'd': _calc(pop), 'cor': '#C8553D'})
+                k.append({'l': 'Saúde por habitante', 'v': reais(float(a['emp']) / pop['n']), 'd': f'empenhado em {hoje.year}', 'metodo': 'valor empenhado na área ÷ população estimada; ' + _calc(pop), 'cor': '#C8553D'})
         k.append(kpi_ind(_ind(b, 'saude_estabelecimentos'), 'Estabelecimentos no CNES', cor=VERDE))
-        d['saude'] = {'kpis': [x for x in k if x], 'minimos': minimos(b, ['saude_minimo']), 'cnes': cnes(o), 'vitais': vitais(b),
+        d['saude'] = {'kpis': cartoes(k, FONTE_FIN, d['selo']), 'minimos': minimos(b, ['saude_minimo']), 'cnes': cnes(o), 'vitais': vitais(b),
                       'orc': orcamento_area(b, hoje.year, 'Saúde'), 'links': links_tema(b, 'saude')}
     if quer('edu'):
         k = []
@@ -313,25 +330,25 @@ def montar(o, tema):
             if m:
                 fech = [x for x in m['serie'] if not x['parcial'] and x['valor'] is not None]
                 if fech:
-                    k.append({'l': f"{rot} em {fech[-1]['periodo']}", 'v': P.exibir(m, fech[-1]), 'd': m['meta_base_legal'].split(';')[0] if m['meta_base_legal'] else '', 'cor': cor, 'href': f'/painel/{ch}'})
+                    k.append({'fonte': 'Siconfi — RREO, Anexo 14 (declarado pela Prefeitura)', 'base': 'LC 141/2012; Constituição, arts. 198 e 212', 'l': f"{rot} em {fech[-1]['periodo']}", 'v': P.exibir(m, fech[-1]), 'd': m['meta_base_legal'].split(';')[0] if m['meta_base_legal'] else '', 'cor': cor, 'href': f'/painel/{ch}'})
         idb = ideb(o)
         if idb and idb['m']['ult']['valor'] is not None:
-            k.append({'l': f"IDEB {idb['per']}, anos iniciais", 'v': idb['m']['valor_txt'],
+            k.append({'fonte': 'INEP — planilhas oficiais de resultados do IDEB', 'l': f"IDEB {idb['per']}, anos iniciais", 'v': idb['m']['valor_txt'],
                       'd': (idb['resp'] or 'rede pública') + ('; ' + '; '.join(f"{c['l']}: {c['v']}" for c in idb['comp']) if idb['comp'] else ''), 'cor': ESCURO, 'href': '/painel/edu_ideb_ai'})
         a = porarea.get('Educação')
         if a and a['emp']:
-            k.append({'l': f'Educação empenhada em {hoje.year}', 'v': mi(a['emp']), 'd': (f"{reais(float(a['emp']) / pop['n'])} por habitante; " + _calc(pop)) if pop else f"pago {mi(a['pago'] or 0)}", 'cor': VERDE})
-        d['edu'] = {'kpis': k, 'minimos': minimos(b, ['edu_mde_minimo', 'edu_fundeb_minimo']), 'ideb': idb, 'orc': orcamento_area(b, hoje.year, 'Educação'), 'links': links_tema(b, 'edu')}
+            k.append({'l': f'Educação empenhada em {hoje.year}', 'v': mi(a['emp']), 'd': f"{reais(float(a['emp']) / pop['n'])} por habitante" if pop else f"pago {mi(a['pago'] or 0)}", 'metodo': ('por habitante: ' + _calc(pop)) if pop else '', 'cor': VERDE})
+        d['edu'] = {'kpis': cartoes(k, FONTE_FIN, d['selo']), 'minimos': minimos(b, ['edu_mde_minimo', 'edu_fundeb_minimo']), 'ideb': idb, 'orc': orcamento_area(b, hoje.year, 'Educação'), 'links': links_tema(b, 'edu')}
     if quer('social'):
         k = []
         a = porarea.get('Assistência Social')
         if a and a['emp']:
-            k.append({'l': f'Assistência social empenhada, {hoje.year}', 'v': mi(a['emp']), 'd': f"{pct(a['emp'], a['dot'])} da dotação", 'cor': VERDE})
+            k.append({'l': f'Assistência social, {hoje.year}', 'v': mi(a['emp']), 'd': f"{pct(a['emp'], a['dot'])} da dotação", 'cor': VERDE})
             k.append({'l': 'Já pago pela área social', 'v': mi(a['pago'] or 0), 'd': f"{pct(a['pago'] or 0, a['emp'])} do empenhado", 'cor': ESCURO})
             if pop:
-                k.append({'l': 'Área social por habitante', 'v': reais(float(a['emp']) / pop['n']), 'd': _calc(pop), 'cor': VERDE})
+                k.append({'l': 'Área social por habitante', 'v': reais(float(a['emp']) / pop['n']), 'd': f'empenhado em {hoje.year}', 'metodo': 'valor empenhado na área ÷ população estimada; ' + _calc(pop), 'cor': VERDE})
         beneficios = [m for m in P.painel(b, 'social')]
-        d['social'] = {'kpis': k, 'orc': orcamento_area(b, hoje.year, 'Assistência Social'), 'beneficios': beneficios, 'links': links_tema(b, 'social')}
+        d['social'] = {'kpis': cartoes(k, FONTE_FIN, d['selo']), 'orc': orcamento_area(b, hoje.year, 'Assistência Social'), 'beneficios': beneficios, 'links': links_tema(b, 'social')}
     if quer('mun'):
         sic = [m for m in P.painel(b, 'mun') if m['chave'].startswith(('gestao_sic', 'gestao_ouv'))]
         d['mun'] = {'iegm': iegm(o), 'municipio': municipio(b), 'sic': sic}
