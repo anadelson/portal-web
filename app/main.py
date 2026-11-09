@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from . import config, portal, admin, console, transparencia, admin_leg, portal_leg, remessa, portal_painel, admin_painel
+from . import config, portal, admin, console, transparencia, admin_leg, portal_leg, remessa, portal_painel, admin_painel, portal_fase8, admin_fase8
 from .web import RoteadorPorDominio, templates
 
 app = FastAPI(title='Portais de Borá — piloto', docs_url=None, redoc_url=None, openapi_url=None)
@@ -12,8 +12,10 @@ app.mount('/static', StaticFiles(directory=str(Path(__file__).parent / 'static')
 app.include_router(transparencia.r)
 app.include_router(portal.r)
 app.include_router(portal_painel.r)
+app.include_router(portal_fase8.r)
 app.include_router(admin.r)
 app.include_router(admin_painel.r)
+app.include_router(admin_fase8.r)
 app.include_router(admin_leg.r)
 app.include_router(portal_leg.r)
 app.include_router(remessa.r)
@@ -35,8 +37,11 @@ async def erros(request: Request, exc: HTTPException):
     html = f'<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>{exc.status_code}</title><body style="font-family:system-ui;max-width:640px;margin:10vh auto;padding:0 20px"><h1>{exc.status_code}</h1><p>{msg}</p><p><a href="/">Voltar ao início</a></p></body></html>'
     return HTMLResponse(html, status_code=exc.status_code)
 
-CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; "
-       "img-src 'self' data:; frame-src https://www.youtube-nocookie.com https:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
+# VLibras (Governo Federal, aprovado em 09/11/2026): o widget carrega script, estilos, imagens e o avatar (WebGL/WebAssembly) de vlibras.gov.br.
+VLIBRAS = 'https://vlibras.gov.br https://*.vlibras.gov.br https://cdn.jsdelivr.net/gh/spbgovbr-vlibras/'  # vlibras.gov.br/app redireciona para a pasta oficial no jsDelivr
+CSP = (f"default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' {VLIBRAS}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com {VLIBRAS}; "
+       f"font-src 'self' https://fonts.gstatic.com {VLIBRAS}; img-src 'self' data: blob: https://i.ytimg.com {VLIBRAS}; media-src 'self' blob: {VLIBRAS}; worker-src 'self' blob:; "
+       f"frame-src https://www.youtube-nocookie.com https:; connect-src 'self' {VLIBRAS}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
 
 class Cabecalhos:
     """Cabeçalhos de segurança em todas as respostas (o HSTS vem do nginx)."""

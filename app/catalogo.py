@@ -36,21 +36,32 @@ BLOCOS = {
     'atalhos': ('Acesso direto', ['destaque', 'principal'], None, False, 'ambos'),
     'servicos': ('Serviços mais procurados', ['principal'], 'carta', False, 'executivo'),
     'noticias': ('Notícias', ['principal', 'lateral'], 'noticias', False, 'ambos'),
-    'diario': ('Últimas edições do Diário', ['principal', 'lateral'], 'diario', False, 'executivo'),
+    'diario': ('Atos oficiais e oportunidades (Diário Oficial)', ['principal', 'lateral'], 'diario', False, 'executivo'),
     'ver': ('Vereadores e Mesa Diretora', ['principal'], 'ver', False, 'legislativo'),
     'contas': ('Prestação de contas', ['principal', 'lateral'], 'transp', False, 'legislativo'),
     'emendas': ('Emendas impositivas', ['principal', 'lateral'], 'emend', False, 'legislativo'),
     'sessoes': ('Últimas sessões', ['principal', 'lateral'], 'sess', False, 'legislativo'),
     'projetos': ('Projetos em tramitação', ['principal', 'lateral'], 'prop', False, 'legislativo'),
-    'numeros': ('Indicadores em números (só aparece com dados; com o módulo "bi", mostra os destaques do painel)', ['principal'], 'transp', False, 'executivo'),
+    'numeros': ('Acompanhe a gestão (indicadores em números; com o módulo "bi", os destaques do painel)', ['principal'], 'transp', False, 'executivo'),
+    'comunicados': ('Comunicados e serviços mais acessados', ['principal'], None, False, 'ambos'),
+    'protocolo': ('Acompanhe seu pedido (protocolo)', ['principal', 'lateral'], None, False, 'ambos'),
+    'publicacoes': ('Publicações oficiais', ['principal'], 'transp', False, 'executivo'),
+    'transmissoes': ('Transmissões (3 últimas gravações; some sem vídeos)', ['principal'], None, False, 'ambos'),
     'conheca': ('Conheça a cidade (mosaico de fotos)', ['principal'], None, False, 'executivo'),
     'sede': ('Sede e atendimento', ['principal', 'lateral'], None, False, 'ambos'),
     'rodape': ('Rodapé com links obrigatórios', ['rodape'], None, True, 'ambos'),
 }
 # Largura do bloco na página inicial: blocos "meio" lado a lado; contas × emendas na proporção 55/45
-LARGURA = {'contas': 'l55', 'emendas': 'l45', 'sessoes': 'meio', 'projetos': 'meio', 'sede': 'meio', 'noticias': 'meio', 'diario': 'meio'}
+LARGURA = {'contas': 'l55', 'emendas': 'l45', 'sessoes': 'meio', 'projetos': 'meio'}
 REGIOES = [('topo', 'Cabeçalho'), ('avisos', 'Faixa de avisos'), ('destaque', 'Destaque'), ('principal', 'Área principal'), ('lateral', 'Coluna lateral'), ('rodape', 'Rodapé')]
-LAYOUT_PADRAO = {
+LAYOUT_PADRAO = {  # Fase 8: ordem do protótipo de 09/11/2026
+    'executivo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('comunicados', 'principal'), ('protocolo', 'principal'), ('numeros', 'principal'),
+                  ('publicacoes', 'principal'), ('diario', 'principal'), ('transmissoes', 'principal'), ('conheca', 'principal'), ('noticias', 'principal'), ('sede', 'principal'), ('rodape', 'rodape')],
+    'legislativo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('ver', 'principal'), ('comunicados', 'principal'), ('contas', 'principal'), ('emendas', 'principal'),
+                    ('sessoes', 'principal'), ('projetos', 'principal'), ('transmissoes', 'principal'), ('noticias', 'principal'), ('rodape', 'rodape')],
+}
+# Padrão da Fase 3/7: quem ainda estiver exatamente nele recebe o novo padrão inteiro no "provision atualizar"
+LAYOUT_PADRAO_V2 = {
     'executivo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('servicos', 'principal'), ('numeros', 'principal'), ('diario', 'principal'), ('conheca', 'principal'), ('sede', 'principal'), ('noticias', 'principal'), ('rodape', 'rodape')],
     'legislativo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('ver', 'principal'), ('contas', 'principal'), ('emendas', 'principal'), ('sessoes', 'principal'), ('projetos', 'principal'), ('noticias', 'principal'), ('rodape', 'rodape')],
 }
@@ -101,4 +112,6 @@ BASE_LEGAL = {
     'acesso': 'LAI, arts. 9º a 11, 15 e 30; Lei 13.460/2017; LGPD, art. 41.',
     'diario': 'Lei Municipal 910/2026 e decreto de 25/03/2026; MP 2.200-2/2001 (ICP-Brasil); Lei 14.063/2020.',
     'noticias': 'Constituição, art. 37, § 1º (vedada promoção pessoal); Lei 9.504/1997, art. 73, VI, b.',
+    'comunicados': 'Constituição, art. 37, caput e § 1º (publicidade de caráter informativo); Lei 9.504/1997, art. 73, VI, b (período eleitoral).',
+    'conheca': 'Constituição, art. 37, § 1º; Código Civil, art. 20, e LGPD (Lei 13.709/2018), art. 7º (uso de imagem só com autorização); Lei 9.610/1998, art. 24 (crédito do autor).',
 }
