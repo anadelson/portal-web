@@ -1,0 +1,14 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Conheça {{ ident.nome_curto or '' }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Conheça {{ ident.nome_curto or 'a cidade' }}</span></nav>
+<h1>Conheça {{ ident.nome_curto or 'a cidade' }}</h1>
+<p class="intro">Lugares, patrimônio, eventos, festas e economia, com fotos e vídeos.</p>
+<form class="filtros" method="get" action="/conheca" role="search" aria-label="Filtrar perfis">
+<label>Categoria<select name="categoria"><option value="">Todas</option>{% for c in categorias %}<option {{ 'selected' if categoria == c }}>{{ c }}</option>{% endfor %}</select></label>
+<label>Busca<input name="q" type="search" value="{{ q }}" placeholder="Ex.: igreja, festa"></label>
+<span class="botoes"><button class="btn" type="submit">Filtrar</button><a class="btn sec" href="/conheca">Limpar</a></span></form>
+<p role="status" style="margin:16px 0 8px"><strong>{{ perfis|length }}</strong> perfil(is)</p>
+{% if perfis %}<ul class="perfis-grade">{% for p in perfis %}<li><a href="/conheca/{{ p.slug }}">{% if p.capa %}<img src="{{ p.capa.url }}" alt="" loading="lazy">{% else %}<span class="sem-foto" aria-hidden="true"></span>{% endif %}<span class="t"><small>{{ p.categoria }}</small><strong>{{ p.titulo }}</strong></span></a></li>{% endfor %}</ul>
+{% else %}<p class="vazio">Nenhum perfil{{ ' nesta categoria' if categoria }}{{ ' com essa busca' if q }} ainda. A {{ 'Câmara' if leg else 'Prefeitura' }} cadastra lugares, patrimônio, festas e eventos pelo painel administrativo.</p>{% endif %}
+{% endblock %}

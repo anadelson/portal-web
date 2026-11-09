@@ -1,27 +1,49 @@
 {% extends 'portal/base.html' %}
 {% block classe_main %}home{% endblock %}
+{% from 'partials/cartoes.html' import cartao %}
 
 {% macro retrato(v, grande=False) %}<span class="retrato">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt or ('Foto oficial de ' ~ v.nome) }}">{% else %}<span class="ini" aria-hidden="true">{{ v.nome|iniciais }}</span>{% endif %}{% if not grande %}<span class="chip-partido">{{ v.partido }}</span>{% endif %}</span>{% endmacro %}
 
 {% macro bloco(b) %}
 {% if b.chave == 'atalhos' %}
-<nav class="atalhos{{ ' leg' if leg }}" aria-label="Acesso direto">
-{% if leg %}
-<a href="/sessoes"><strong>Sessões e votações</strong><span class="d">Pauta, ata e presença</span></a>
-<a href="/proposicoes"><strong>Projetos</strong><span class="d">Indicações, requerimentos e moções</span></a>
-<a href="/transparencia"><strong>Gastos da Câmara</strong><span class="d">Duodécimo, pessoal e relatórios fiscais</span></a>
-<a href="/acesso"><strong>Fale com a Câmara</strong><span class="d">e-SIC e Ouvidoria</span></a>
-{% else %}
-<a href="/servicos"><span class="ico">{{ icone('atendimento', 26) }}</span><span><strong>Serviços online</strong><span class="d">Peça e acompanhe sem sair de casa</span></span></a>
-<a href="/transparencia"><span class="ico" style="background:#E3F2E9;color:#146C43">{{ icone('grafico', 26) }}</span><span><strong>Portal da Transparência</strong><span class="d">Receitas, despesas, contratos e obras</span></span></a>
-{% if mods.diario %}<a href="/diario"><span class="ico" style="background:#FCEFD9;color:#7A4A00">{{ icone('diario', 26) }}</span><span><strong>Diário Oficial</strong><span class="d">Edições e busca no acervo</span></span></a>{% endif %}
-<a href="/acesso"><span class="ico" style="background:#E4ECF7;color:#1D4E89">{{ icone('participacao', 26) }}</span><span><strong>Ouvidoria e e-SIC</strong><span class="d">Reclame, sugira ou peça informação</span></span></a>
-{% endif %}
-</nav>
+{% if d.atalhos %}<nav class="atalhos{{ ' leg' if leg }}" aria-label="Acesso direto">
+{% for a in d.atalhos %}<a href="{{ a.destino }}"><span class="ico">{{ icone(a.icone, 26) }}</span><span><strong>{{ a.titulo }}</strong>{% if a.descricao %}<span class="d">{{ a.descricao }}</span>{% endif %}</span></a>{% endfor %}
+</nav>{% endif %}
+
+{% elif b.chave == 'comunicados' %}
+<div class="duas faixa-com">
+<section class="caixa com" aria-labelledby="h-com"><h2 id="h-com">Comunicados</h2><p class="sub">Avisos, convocações, convites e notas oficiais {{ 'da Câmara' if leg else 'da Prefeitura' }}.</p>
+{% if d.comunicados %}<ul class="com-lista">{% for c in d.comunicados %}<li><span class="etq">{{ c.tipo }}</span><a href="/comunicados/{{ c.id }}">{{ c.titulo }}</a><small>{{ d.quando(c) }}{% if c.valido_ate %} · válido até {{ c.valido_ate|br }}{% endif %}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</small></li>{% endfor %}</ul>
+{% else %}<p class="vazio">Nenhum comunicado em vigor.</p>{% endif %}
+<div class="acoes"><a class="btn sec" href="/comunicados">Todos os comunicados {{ icone('seta', 18, 'seta') }}</a></div></section>
+{% if mods.carta %}<section class="caixa" aria-labelledby="h-serv"><h2 id="h-serv">Serviços mais acessados</h2><p class="sub">Os serviços mais consultados no portal neste mês.</p>
+{% if d.servicos_top %}<ul class="serv-top">{% for c in d.servicos_top %}<li><a href="/conteudo/{{ c.id }}"><span class="ico">{{ icone(c.imagem if c.imagem in TEMAS else 'lista', 22) }}</span><span>{{ c.titulo }}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</span></a></li>{% endfor %}</ul>
+{% else %}<p class="vazio">Nenhum serviço publicado ainda.</p>{% endif %}
+<div class="acoes"><a class="btn sec" href="/servicos">Todos os serviços {{ icone('seta', 18, 'seta') }}</a></div></section>{% endif %}
+</div>
+
+{% elif b.chave == 'protocolo' %}
+<section class="caixa protocolo-b" aria-labelledby="h-prot"><h2 id="h-prot">Acompanhe seu pedido</h2>
+<form action="/acesso" role="search" aria-labelledby="h-prot"><label class="sr" for="f-prot">Número do protocolo</label><input id="f-prot" name="protocolo" placeholder="Número do protocolo, ex.: OUV-2026-ABC123"><button class="btn" type="submit">Consultar</button></form>
+<p>Serviços, ouvidoria e pedidos de informação usam o mesmo número de protocolo.</p></section>
+
+{% elif b.chave == 'publicacoes' and d.pub %}
+<section aria-labelledby="h-pub"><h2 id="h-pub">Publicações oficiais</h2><p class="sub">Escolha o que procura e clique em Ver.</p>
+<div class="pub-cartoes">
+{% if mods.diario %}<form action="/diario" class="pub-c"><h3>Diário Oficial</h3><p>{% if d.pub.ultima_edicao %}Edição nº {{ d.pub.ultima_edicao.numero }}{{ d.pub.ultima_edicao.letra }} de {{ d.pub.ultima_edicao.data|br }}{% else %}Nenhuma edição publicada ainda{% endif %}</p><button class="btn sec" type="submit">Ver edições {{ icone('seta', 18, 'seta') }}</button></form>{% endif %}
+<form action="/transparencia/despesas" class="pub-c" onsubmit="this.action=this.querySelector('select').value;"><h3>Contas públicas</h3><p>Receitas, despesas e relatórios</p><label class="sr" for="pub-contas">Categoria</label><select id="pub-contas"><option value="/transparencia/despesas">Despesas</option><option value="/transparencia/receitas">Receitas</option><option value="/transparencia/relatorios-fiscais">Relatórios fiscais</option></select><button class="btn sec" type="submit">Ver contas {{ icone('seta', 18, 'seta') }}</button></form>
+<form action="/transparencia/licitacoes" class="pub-c"><h3>Licitações</h3><p>{{ d.pub.licitacoes }} publicação(ões) em {{ hoje.year }}</p><label class="sr" for="pub-lic">Modalidade</label><select id="pub-lic" name="unidade"><option value="">Todas as modalidades</option>{% for m in d.pub.modalidades %}<option>{{ m }}</option>{% endfor %}</select><button class="btn sec" type="submit">Ver licitações {{ icone('seta', 18, 'seta') }}</button></form>
+<form action="/legislacao" class="pub-c"><h3>Legislação</h3><p>{{ d.pub.legislacao }} ato(s) no acervo</p><label class="sr" for="pub-leg">Tipo de ato</label><select id="pub-leg" name="tipo"><option value="">Todos os tipos</option><option>Lei</option><option>Lei Complementar</option><option>Decreto</option><option>Portaria</option><option>Resolução</option></select><button class="btn sec" type="submit">Ver legislação {{ icone('seta', 18, 'seta') }}</button></form>
+</div></section>
+
+{% elif b.chave == 'transmissoes' and (mods.transm or mods.audiencias) and d.gravacoes %}
+<section aria-labelledby="h-tv"><div class="cab"><h2 id="h-tv">Transmissões</h2><a class="btn sec" href="/transmissoes">Todas as transmissões {{ icone('seta', 18, 'seta') }}</a></div>
+{% if d.proxima_tv %}<p class="sub">Próxima: {{ d.proxima_tv.titulo }} · {{ d.proxima_tv.previsto_para|br }}</p>{% endif %}
+<ul class="tv-ultimas">{% for v in d.gravacoes %}<li><a href="/transmissoes?v={{ v.id }}">{% if v.video|length == 11 %}<img src="https://i.ytimg.com/vi/{{ v.video }}/mqdefault.jpg" alt="" loading="lazy">{% else %}<span class="th" aria-hidden="true">{{ icone('play', 32) }}</span>{% endif %}<small>{{ v.tipo }}</small><strong>{{ v.titulo }}</strong><small>{{ (v.encerrada_em or v.previsto_para)|br }}</small></a></li>{% endfor %}</ul></section>
 
 {% elif b.chave == 'servicos' %}
 <section aria-labelledby="h-serv">
-<div class="cab"><h2 id="h-serv">Serviços mais procurados</h2><a class="link-forte" href="/servicos">Ver todos os serviços</a></div>
+<div class="cab"><h2 id="h-serv">Serviços mais procurados</h2><a class="btn sec" href="/servicos">Todos os serviços {{ icone('seta', 18, 'seta') }}</a></div>
 {% if d.servicos %}<div class="servicos">
 {% for c in d.servicos %}<a class="serv{{ '' if c.imagem in TEMAS else ' sem-foto' }}" href="/conteudo/{{ c.id }}">
 {% if c.imagem in TEMAS %}<span class="foto" aria-hidden="true"><img src="/static/img/serv-{{ c.imagem }}.webp" alt="" loading="lazy"></span>{% endif %}
@@ -35,9 +57,10 @@
 
 {% elif b.chave == 'numeros' and mods.bi and d.indicadores %}
 <section class="painel" aria-labelledby="h-num">
-<div class="cab" style="align-items:flex-end"><div><p class="rotulo">Painel de indicadores</p><h2 id="h-num">{{ (ident.nome_curto or 'O município') ~ ' em números' }}</h2><p style="margin:4px 0 0;color:var(--sub)">Números oficiais, cada um com a fonte e o período de referência.</p></div></div>
-<ul class="ind-home">{% for i in d.indicadores %}<li><span class="l"><a href="/painel/{{ i.chave }}">{{ i.nome }}</a></span><span class="v">{{ i.valor_curto }}{% if i.unidade and i.formato not in ('moeda', 'pct') %} <small style="font-size:14px;font-weight:600;color:var(--sub)">{{ i.unidade }}</small>{% endif %}</span><span class="d">{{ i.ult.periodo }}{% if i.ult.nota %} · {{ i.ult.nota }}{% endif %}</span>{% if i.meta_txt %}<span class="d">{{ i.meta_txt }}</span>{% endif %}<span class="d">Fonte: {{ i.fonte }}</span></li>{% endfor %}</ul>
-<nav class="pilulas" aria-label="Atalhos do painel"><a class="pilula cheia" href="/painel">Painel de indicadores</a><a class="pilula" href="/transparencia">Portal da Transparência</a><a class="pilula" href="/dados-abertos">Dados abertos</a></nav>
+<p class="rotulo">Prestação de contas</p><h2 id="h-num">Acompanhe a gestão</h2>
+<p class="sub">Números oficiais da {{ 'Câmara' if leg else 'Prefeitura' }}.{% if d.ind_atualizado %} Atualizado em {{ d.ind_atualizado|br }} · fonte de cada número no ⓘ.{% endif %}</p>
+<div class="ics" role="group" aria-label="Indicadores em destaque">{% for k in d.indicadores %}{{ cartao(k, 'home-' ~ loop.index) }}{% endfor %}</div>
+<div class="acoes"><a class="btn" href="/painel">Painel de indicadores {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/dados-abertos">Dados abertos</a></div>
 </section>
 
 {% elif b.chave == 'numeros' and d.numeros %}
@@ -50,21 +73,18 @@
 </section>
 
 {% elif b.chave == 'diario' %}
-<section class="lista-cartao" aria-labelledby="h-diario"><h2 id="h-diario">Diário Oficial</h2>
-<ul>{% for e in d.edicoes %}<li><a href="/diario/{{ e.id }}.pdf"><small>{{ e.data|br }}</small><strong>Edição nº {{ e.numero }}{{ e.letra }}{% if e.sem_atos %} · sem atos{% endif %}</strong></a></li>{% else %}<li><div><small>Lei Municipal 910/2026</small><strong>Nenhuma edição publicada ainda.</strong></div></li>{% endfor %}</ul>
-<a href="/diario">Todas as edições e verificação de autenticidade</a></section>
+<section class="caixa" aria-labelledby="h-diario"><h2 id="h-diario">Atos oficiais e oportunidades</h2>
+{% if d.edicoes %}<ul class="atos-ult">{% for e in d.edicoes %}<li><a href="/diario/{{ e.id }}.pdf"><small>{{ e.data|br }}</small><strong>Edição nº {{ e.numero }}{{ e.letra }}{% if e.sem_atos %} · sem atos{% endif %}</strong></a></li>{% endfor %}</ul>
+{% else %}<p class="vazio">Diário Oficial (Lei Municipal 910/2026): nenhuma edição publicada ainda.</p>{% endif %}
+<div class="acoes"><a class="btn" href="/diario">Todas as edições do Diário {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/diario/verificar">Verificar autenticidade</a></div></section>
 
 {% elif b.chave == 'conheca' and ident.conheca %}
 {% set cx = ident.conheca %}
-<section class="conheca" aria-labelledby="h-conheca">
-<div class="txt">
-<div>{% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="{{ ident.brasao.alt or 'Brasão' }}" width="72" height="63">{% endif %}<p class="rotulo">{{ cx.rotulo or 'Conheça a cidade' }}</p></div>
-<h2 id="h-conheca">{{ cx.titulo }}</h2><p>{{ cx.texto }}</p>
-{% if cx.numeros %}<dl>{% for n in cx.numeros %}<div><dt>{{ n[0] }}</dt><dd>{{ n[1] }}</dd></div>{% endfor %}</dl>{% endif %}
-{% if cx.fonte %}<p class="legal" style="margin:0">{{ cx.fonte }}</p>{% endif %}
-{% if mods.bi %}<a class="pilula" style="align-self:flex-start" href="/painel">{{ ident.nome_curto }} em números</a>{% endif %}
-</div>
-{% if cx.fotos %}<div class="mosaico">{% for f in cx.fotos %}<figure class="{{ 'alta' if loop.first and cx.fotos|length > 2 }}"><img src="{{ f.url }}" alt="{{ f.alt }}" loading="lazy"><figcaption>{{ f.legenda }}</figcaption></figure>{% endfor %}</div>{% endif %}
+<section class="conheca8" aria-labelledby="h-conheca">
+<p class="rotulo">{{ cx.rotulo or 'Conheça a cidade' }}</p><h2 id="h-conheca">{{ cx.titulo }}</h2>{% if cx.texto %}<p class="sub">{{ cx.texto }}</p>{% endif %}
+{% if cx.numeros %}<dl class="con-num">{% for n in cx.numeros %}<div><dt>{{ n[0] }}</dt><dd>{{ n[1] }}</dd></div>{% endfor %}</dl>{% if cx.fonte %}<p class="legal" style="margin:0 0 12px">{{ cx.fonte }}</p>{% endif %}{% endif %}
+{% if d.perfis %}<ul class="perfis-grade">{% for p in d.perfis %}<li><a href="/conheca/{{ p.slug }}">{% if p.capa %}<img src="{{ p.capa.url }}" alt="" loading="lazy">{% else %}<span class="sem-foto" aria-hidden="true"></span>{% endif %}<span class="t"><strong>{{ p.titulo }}</strong><span class="ver">Ver perfil</span></span></a></li>{% endfor %}</ul>{% endif %}
+<div class="acoes"><a class="btn" href="/conheca">Conheça mais {{ icone('seta', 18, 'seta') }}</a>{% if mods.bi %}<a class="btn sec" href="/painel">{{ ident.nome_curto }} em números</a>{% endif %}</div>
 </section>
 
 {% elif b.chave == 'sede' %}
@@ -74,18 +94,20 @@
 <div class="txt"><h2 id="h-sede" style="font-size:22px;margin:0">{{ sd.titulo or 'Sede e atendimento' }}</h2>
 {% if ident.horario %}<p>Atendimento ao público: {{ ident.horario }}.</p>{% endif %}
 <p style="color:var(--sub)">{{ ident.endereco }}{% if ident.telefone %} · {{ ident.telefone }}{% endif %}</p>
-<a class="link-forte" style="margin-top:auto" href="/acesso">Fale conosco</a></div>
+<div class="acoes" style="margin-top:auto"><a class="btn" href="/fale-conosco#unidades">Unidades e horários {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/fale-conosco">Fale conosco</a></div></div>
 </section>
 
-{% elif b.chave == 'noticias' %}
-<section class="lista-cartao" aria-labelledby="h-not"><h2 id="h-not" style="font-size:22px">{{ 'Notícias e avisos' if leg else 'Comunicados' }}</h2>
-{% if defeso %}<p class="vazio">Publicidade institucional suspensa durante o período eleitoral (Lei 9.504/1997, art. 73, VI, b). Serviços, atos oficiais e transparência continuam disponíveis.</p>{% endif %}
-<ul>{% for c in d.noticias %}<li><a href="/conteudo/{{ c.id }}"><small>{{ c.publicar_em|br }} · {{ c.secao }}{% if c.exemplo %} · <span class="exemplo">exemplo</span>{% endif %}</small><strong>{{ c.titulo }}</strong></a></li>{% else %}<li><div><strong>Nenhuma notícia no momento.</strong></div></li>{% endfor %}</ul>
-<a href="/noticias">Todas as notícias</a></section>
+{% elif b.chave == 'noticias' and d.noticias8 %}{% set n = d.noticias8 %}
+<section class="noticias8" aria-labelledby="h-not"><h2 id="h-not">Notícias</h2>
+<div class="not-grade"><article class="not-dest">{% if (n.destaque.imagem or '').startswith('/') %}<img src="{{ n.destaque.imagem }}" alt="{{ n.destaque.imagem_alt }}" style="object-position:{{ n.destaque.foco_x }}% {{ n.destaque.foco_y }}%">{% endif %}
+<h3><a href="/conteudo/{{ n.destaque.id }}">{{ n.destaque.titulo }}</a></h3><p class="meta"><time>{{ d.quando(n.destaque) }}</time>{% if n.destaque.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</p>{% if n.destaque.resumo %}<p class="res">{{ n.destaque.resumo }}</p>{% endif %}</article>
+<div>{% if n.secundarias %}<ul class="not-sec">{% for c in n.secundarias %}<li>{% if (c.imagem or '').startswith('/') %}<img src="{{ c.imagem }}" alt="{{ c.imagem_alt }}" style="object-position:{{ c.foco_x }}% {{ c.foco_y }}%" loading="lazy">{% endif %}<h3><a href="/conteudo/{{ c.id }}">{{ c.titulo }}</a></h3><p class="meta"><time>{{ d.quando(c) }}</time></p></li>{% endfor %}</ul>{% endif %}
+{% if n.lista %}<ul class="not-tit">{% for c in n.lista %}<li><a href="/conteudo/{{ c.id }}">{{ c.titulo }}</a></li>{% endfor %}</ul>{% endif %}
+<div class="acoes"><a class="btn sec" href="/noticias">Todas as notícias {{ icone('seta', 18, 'seta') }}</a></div></div></div></section>
 
 {% elif b.chave == 'ver' %}
 <section aria-labelledby="h-ver">
-<div class="cab"><h2 id="h-ver">Vereadores{% if d.legislatura %} da {{ d.legislatura }}ª Legislatura{% endif %}</h2><a class="link-forte" href="/vereadores">Perfis e galeria das legislaturas</a></div>
+<div class="cab"><h2 id="h-ver">Vereadores{% if d.legislatura %} da {{ d.legislatura }}ª Legislatura{% endif %}</h2><a class="btn sec" href="/vereadores">Perfis e galeria das legislaturas {{ icone('seta', 18, 'seta') }}</a></div>
 {% if not d.vereadores %}<p class="vazio">Composição a cadastrar.</p>{% endif %}
 <ul class="vers">
 {% for v in d.vereadores %}
@@ -139,12 +161,12 @@
 {% elif b.chave == 'sessoes' %}
 <section class="lista-cartao" aria-labelledby="h-ses"><h2 id="h-ses" style="font-size:22px">Últimas sessões</h2>
 <ul>{% for s in d.sessoes %}<li><div style="flex-direction:row;justify-content:space-between;gap:12px"><span><strong>{{ s.nome }}</strong><small style="display:block">{{ s.data|br }} · {{ s.hora }}</small></span><span class="chip {{ 'ok' if s.ata_publicada else '' }}" style="align-self:center">{{ 'Ata publicada' if s.ata_publicada else ('Pauta publicada' if s.pauta_publicada else 'Realizada') }}</span></div></li>{% else %}<li><div><strong>Nenhuma sessão registrada.</strong></div></li>{% endfor %}</ul>
-<a href="/sessoes">Todas as sessões</a></section>
+<div class="acoes"><a class="btn sec" href="/sessoes">Todas as sessões {{ icone('seta', 18, 'seta') }}</a></div></section>
 
 {% elif b.chave == 'projetos' %}
 <section class="lista-cartao" aria-labelledby="h-proj"><h2 id="h-proj" style="font-size:22px">Projetos e proposições</h2>
 <ul>{% for p in d.projetos %}<li><div><span><strong>{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</strong> <span class="chip ok">{{ p.situacao }}</span></span><span>{{ p.ementa }}</span><small>Autoria: {{ p.autor }}</small></div></li>{% else %}<li><div><strong>Nenhuma proposição registrada.</strong></div></li>{% endfor %}</ul>
-<a href="/proposicoes">Todos os projetos</a></section>
+<div class="acoes"><a class="btn sec" href="/proposicoes">Todos os projetos {{ icone('seta', 18, 'seta') }}</a></div></section>
 {% endif %}
 {% endmacro %}
 

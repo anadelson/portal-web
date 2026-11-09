@@ -1,0 +1,16 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ p.titulo }} — Conheça {{ ident.nome_curto or '' }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/conheca">Conheça {{ ident.nome_curto or 'a cidade' }}</a><span aria-hidden="true">›</span><span aria-current="page">{{ p.titulo }}</span></nav>
+<p class="rotulo">{{ p.categoria }}</p><h1>{{ p.titulo }}</h1>
+{% if fotos %}<figure class="perfil-capa"><img src="{{ fotos[0].url }}" alt="{{ fotos[0].alt }}"><figcaption>{{ fotos[0].legenda }}{% if fotos[0].credito %} · {{ fotos[0].credito }}{% endif %}</figcaption></figure>{% endif %}
+{% if p.descricao %}<div class="texto">{% for par in p.descricao.split('\n') if par.strip() %}<p>{{ par }}</p>{% endfor %}</div>{% endif %}
+{% if fotos|length > 1 %}<section aria-labelledby="h-gal" class="secao"><h2 id="h-gal">Galeria de fotos</h2>
+<ul class="galeria">{% for f in fotos %}<li><a href="{{ f.url }}" data-galeria="{{ loop.index0 }}" aria-label="Ampliar foto {{ loop.index }} de {{ fotos|length }}: {{ f.alt }}"><img src="{{ f.url }}" alt="{{ f.alt }}" loading="lazy"></a>{% if f.legenda or f.credito %}<small>{{ f.legenda }}{% if f.credito %} · {{ f.credito }}{% endif %}</small>{% endif %}</li>{% endfor %}</ul>
+<dialog class="ampliada" aria-labelledby="amp-leg"><figure><img alt=""><figcaption id="amp-leg"></figcaption></figure><div class="botoes"><button class="btn sec" type="button" data-amp="-1">‹ Anterior</button><span role="status" data-amp-pos></span><button class="btn sec" type="button" data-amp="1">Próxima ›</button><button class="btn" type="button" data-amp-fechar>Fechar</button></div></dialog>
+<script type="application/json" id="fotos-dados">{{ fotos|map(attribute='url')|list|tojson }}</script>
+<script type="application/json" id="fotos-leg">{{ fotos|map(attribute='alt')|list|tojson }}</script></section>{% endif %}
+{% if videos %}<section aria-labelledby="h-vid" class="secao"><h2 id="h-vid">Vídeos</h2><div class="videos">{% for v in videos %}<figure><iframe src="https://www.youtube-nocookie.com/embed/{{ v.youtube_id }}?rel=0" title="Vídeo: {{ v.titulo or p.titulo }}" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>{% if v.titulo %}<figcaption>{{ v.titulo }}</figcaption>{% endif %}</figure>{% endfor %}</div></section>{% endif %}
+{% if outros %}<section aria-labelledby="h-out" class="secao"><h2 id="h-out">Outros perfis</h2><ul class="perfis-grade">{% for x in outros %}<li><a href="/conheca/{{ x.slug }}">{% if x.capa %}<img src="{{ x.capa.url }}" alt="" loading="lazy">{% else %}<span class="sem-foto" aria-hidden="true"></span>{% endif %}<span class="t"><small>{{ x.categoria }}</small><strong>{{ x.titulo }}</strong></span></a></li>{% endfor %}</ul></section>{% endif %}
+<div class="acoes"><a class="btn sec" href="/conheca">Todos os perfis</a></div>
+{% endblock %}

@@ -3,6 +3,7 @@ import re, secrets
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from fastapi import APIRouter, Request, HTTPException
+from psycopg.types.json import Jsonb
 from . import config, db, eleicao, diario as diario_pdf
 from .catalogo import MOD, serve, BLOCOS, CLASSES, VEDADAS, PERFIS, PODE, TEMAS
 from .security import hash_senha, confere_senha, cpf_hash
@@ -23,6 +24,8 @@ def T(nome, request, u, **kw):
 
 # ---------- login: senha + segundo fator (TOTP) ou gov.br ----------
 from . import acesso as AC
+TIPOS_CONTEUDO = ['Notícia', 'Página', 'Banner', 'Documento']  # avisos e similares são Comunicados (Fase 8)
+templates.env.globals['TIPOS_CONTEUDO'] = TIPOS_CONTEUDO
 
 @r.get('/login')
 def login(request: Request):
@@ -167,12 +170,38 @@ async def conteudo_salvar(request: Request):
             raise HTTPException(403)
         if not f.get('titulo'):
             return ir(f"/admin/conteudos/{cid or 'novo'}", 'Informe o título.', request)
-        img = f.get('imagem', '') if f.get('imagem', '') in TEMAS else ''
-        vals = (f.get('tipo', 'Notícia'), f.get('secao', 'Notícias'), f['titulo'], f.get('resumo', ''), f.get('texto', ''), f['classe'], acao, pub, tirar, img)
+        volta = f"/admin/conteudos/{cid or 'novo'}"
+        tipo = f.get('tipo', 'Notícia')
+        if tipo not in TIPOS_CONTEUDO and not (c and c['tipo'] == tipo):
+            return ir(volta, 'Tipo inválido. Avisos, convocações, convites, notas oficiais e editais de chamamento são cadastrados em Comunicados.', request)
+        # imagem: foto enviada (capa da notícia, alt obrigatório) ou foto de tema (cartões de serviço)
+        img, alt = (f.get('imagem', '') if f.get('imagem', '') in TEMAS else ''), ''
+        arq = f.get('capa')
+        if c and (c['imagem'] or '').startswith('/') and f.get('remover_capa') != '1':
+            img, alt = c['imagem'], f.get('imagem_alt', '').strip() or c['imagem_alt']
+        if arq is not None and getattr(arq, 'filename', ''):
+            try:
+                img = await salvar_midia(request, u, arq, 'noticia', f.get('imagem_alt', '').strip(), f.get('imagem_credito', '').strip())
+            except ValueError as e:
+                return ir(volta, str(e), request)
+            alt = f.get('imagem_alt', '').strip()
+        if img.startswith('/') and len(alt) < 5:
+            return ir(volta, 'A imagem de capa precisa de texto alternativo (o que ela mostra), com pelo menos 5 caracteres.', request)
+        foco = lambda k: max(0, min(100, int(f.get(k) or 50))) if str(f.get(k) or '50').isdigit() else 50
+        try:
+            pub_em = datetime.fromisoformat(f['publicado_em']) if f.get('publicado_em') else None
+        except ValueError:
+            return ir(volta, 'Data e hora da publicação inválidas.', request)
+        if pub_em and pub_em.tzinfo is None:
+            pub_em = pub_em.astimezone()  # hora local do servidor (TZ do contêiner)
+        destaque = f.get('destaque') == '1' and tipo == 'Notícia'
+        vals = (tipo, f.get('secao', 'Notícias'), f['titulo'], f.get('resumo', ''), f.get('texto', ''), f['classe'], acao, pub, tirar, img, alt[:300], foco('foco_x'), foco('foco_y'), destaque, pub_em)
         if c:
-            db.exe(b, 'UPDATE conteudos SET tipo=%s, secao=%s, titulo=%s, resumo=%s, texto=%s, classe=%s, situacao=%s, publicar_em=%s, tirar_em=%s, imagem=%s, atualizado_em=now() WHERE id=%s', vals + (cid,))
+            db.exe(b, 'UPDATE conteudos SET tipo=%s, secao=%s, titulo=%s, resumo=%s, texto=%s, classe=%s, situacao=%s, publicar_em=%s, tirar_em=%s, imagem=%s, imagem_alt=%s, foco_x=%s, foco_y=%s, destaque=%s, publicado_em=%s, atualizado_em=now() WHERE id=%s', vals + (cid,))
         else:
-            cid = db.exe(b, 'INSERT INTO conteudos (tipo, secao, titulo, resumo, texto, classe, situacao, publicar_em, tirar_em, imagem, autor) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
+            cid = db.exe(b, 'INSERT INTO conteudos (tipo, secao, titulo, resumo, texto, classe, situacao, publicar_em, tirar_em, imagem, imagem_alt, foco_x, foco_y, destaque, publicado_em, autor) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
+        if destaque:  # uma notícia em destaque por vez
+            db.exe(b, 'UPDATE conteudos SET destaque=FALSE WHERE destaque AND id<>%s', (cid,))
         obs = 'Salvou rascunho' if acao == 'rascunho' else 'Enviou para revisão'
     elif acao in ('aprovar', 'devolver', 'arquivar'):
         if not pode('publicar') or not c:
@@ -181,7 +210,8 @@ async def conteudo_salvar(request: Request):
             if f['classe'] in VEDADAS and eleicao.em_defeso(b) and eleicao.conf(b).get('bloquear', True) and not c['excecao_eleitoral']:
                 return ir(f'/admin/conteudos/{cid}', 'Período eleitoral: esta classificação não pode ser publicada até o fim do defeso.', request)
             nova = 'agendado' if pub and date.fromisoformat(pub) > config.hoje() else 'publicado'
-            db.exe(b, 'UPDATE conteudos SET situacao=%s, classe=%s, publicar_em=coalesce(%s::date, %s::date), tirar_em=%s, atualizado_em=now() WHERE id=%s', (nova, f['classe'], pub, config.hoje(), tirar, cid))
+            db.exe(b, 'UPDATE conteudos SET situacao=%s, classe=%s, publicar_em=coalesce(%s::date, %s::date), tirar_em=%s, publicado_em=coalesce(publicado_em, CASE WHEN %s::date IS NULL THEN now() ELSE %s::date + time \'08:00\' END), atualizado_em=now() WHERE id=%s',
+                   (nova, f['classe'], pub, config.hoje(), tirar, pub, pub, cid))
             obs = 'Aprovou e ' + ('agendou' if nova == 'agendado' else 'publicou')
         elif acao == 'devolver':
             if not f.get('comentario'):
@@ -596,8 +626,10 @@ async def diario_ato(request: Request):
             return ir('/admin/diario', 'O texto tem CPF completo. Remova ou mascare antes de enviar (LGPD).', request)
         ret = int(f['retifica']) if f.get('retifica', '').isdigit() else None
         alvo = diario_pdf.data_alvo(b, config.agora())
-        db.exe(b, "INSERT INTO diario_atos (caderno, tipo, numero, orgao, ementa, texto, situacao, autor, retifica_ato_id, data_alvo) VALUES (%s,%s,%s,%s,%s,%s,'revisao',%s,%s,%s)",
-               (f.get('caderno', 'executivo') if f.get('caderno') in ('executivo', 'legislativo') else 'executivo', f['tipo'], f.get('numero', ''), f.get('orgao', ''), f['ementa'], f['texto'], u['nome'], ret, alvo))
+        rels = [{'tipo': f.get(f'rel_tipo_{i}'), 'alvo': f.get(f'rel_alvo_{i}', '').strip()[:60]} for i in range(5)
+                if f.get(f'rel_tipo_{i}') in ('altera', 'revoga', 'regulamenta') and f.get(f'rel_alvo_{i}', '').strip()]
+        db.exe(b, "INSERT INTO diario_atos (caderno, tipo, numero, orgao, ementa, texto, situacao, autor, retifica_ato_id, data_alvo, relacoes) VALUES (%s,%s,%s,%s,%s,%s,'revisao',%s,%s,%s,%s)",
+               (f.get('caderno', 'executivo') if f.get('caderno') in ('executivo', 'legislativo') else 'executivo', f['tipo'], f.get('numero', ''), f.get('orgao', ''), f['ementa'], f['texto'], u["nome"], ret, alvo, Jsonb(rels)))
         msg = f"Ato enviado para revisão. Edição prevista: {alvo.strftime('%d/%m/%Y')}" + (' (passou do horário de corte das 16h).' if alvo > config.hoje() else '.')
     else:
         aid = int(f['id'])
