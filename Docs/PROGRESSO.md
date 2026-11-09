@@ -798,3 +798,25 @@ Código pronto e testado no branch `fase-8`. **Nada foi aplicado na VPS de produ
 2. Quem contrata o módulo "audiencias" para a Prefeitura.
 3. O endereço do acervo antigo de legislação.
 4. A chave da YouTube Data API cadastrada no console e os IDs dos canais.
+
+### Implantação da Fase 8 (09/11/2026, aprovada: "Aprovo os 6 passos" + "Snapshot ok")
+- Snapshot da VPS confirmado pelo usuário. Backup com `deploy/backup.sh`: 3 bancos, mídia e `.env` (permissão 600).
+- Build de app e worker. As **8 suítes** com a imagem nova (sem montar código) deram ERROS: 0 / tudo ok.
+- `up -d` de app e worker: app saudável. `provision atualizar` aplicou as migrações 015 e 016:
+  - Prefeitura: 15 itens de menu e 3 perfis do Conheça (das fotos atuais, descrição vazia);
+  - Câmara: 14 itens de menu;
+  - fonte `youtube` nas duas (inativa na prática até haver chave e canal).
+- **Conferência no domínio** (`Docs/avaliacao-fase8/implantado/`): mesmo resultado da prévia.
+  - axe sem violações em 12 páginas;
+  - teclado ok (menu do celular, ⓘ);
+  - VLibras carregado sem violação de CSP;
+  - sem rolagem horizontal e sem destino repetido entre as barras.
+  - `/acesso` responde 301 para `/fale-conosco`; `/legislacao.json` responde 200; a Câmara lê `/legislacao`.
+  - Logs de app e worker sem erro.
+- `fase-8` mesclada em `main` com a tag `fase-8`.
+
+### Pendências da Fase 8 (dependem do usuário)
+- Quem contrata o módulo "audiencias" da Prefeitura.
+- O endereço do acervo antigo de legislação (Painel → Menus e atalhos → Legislação).
+- A chave da YouTube Data API (console → Credenciais de fontes) e os IDs dos canais (Painel → Transmissões).
+- O teste com NVDA real (roteiro em `Docs/avaliacao-fase8/EMAG.md`).
