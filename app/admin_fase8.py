@@ -103,8 +103,11 @@ def _rico(f, campo):
 @r.get('/comunicados')
 def comunicados(request: Request, id: int = 0):
     u = exige(request, 'editar'); b = request.state.orgao['banco']
-    return T('comunicados', request, u, itens=db.todos(b, 'SELECT * FROM comunicados ORDER BY coalesce(publicado_em, criado_em) DESC, id DESC LIMIT 200'),
-             c=db.um(b, 'SELECT * FROM comunicados WHERE id=%s', (id,)) if id else None, tipos=F.tipos_comunicado(b), classes=CLASSES)
+    from . import anexos as AX
+    itens = db.todos(b, 'SELECT * FROM comunicados ORDER BY coalesce(publicado_em, criado_em) DESC, id DESC LIMIT 200')
+    c = db.um(b, 'SELECT * FROM comunicados WHERE id=%s', (id,)) if id else None
+    return T('comunicados', request, u, itens=itens, c=c, tipos=F.tipos_comunicado(b), classes=CLASSES,
+             anexos=AX.listar(b, c['id']) if c else [], n_anexos=AX.contagem(b, [x['id'] for x in itens]), aceitos=AX.ACEITOS, max_anexos=AX.MAX_POR_COMUNICADO)
 
 @r.post('/comunicados')
 async def comunicados_post(request: Request):
@@ -119,6 +122,24 @@ async def comunicados_post(request: Request):
         db.set_cfg(b, 'comunicados_tipos', tipos); auditar(request, 'Comunicados: lista de tipos alterada')
         return ir('/admin/comunicados', 'Tipos salvos.', request)
     cid = int(f['id']) if f.get('id') else None
+    if acao in ('anexo', 'anexo_remover') and cid:
+        from . import anexos as AX
+        o = request.state.orgao
+        if not db.um(b, 'SELECT 1 FROM comunicados WHERE id=%s', (cid,)):
+            raise HTTPException(404)
+        volta = f'/admin/comunicados?id={cid}#anexos'
+        if acao == 'anexo_remover':
+            a = AX.remover(o, int(f.get('anexo_id') or 0), cid)
+            if a:
+                auditar(request, f'Comunicado {cid}: anexo removido ({a["titulo"]}, {a["nome_original"]})')
+            return ir(volta, 'Anexo removido.' if a else 'Anexo não encontrado.', request)
+        try:
+            aid = await AX.salvar(o, cid, f.get('arquivo'), f.get('titulo_anexo', ''), u['nome'])
+        except ValueError as e:
+            return ir(volta, f'Anexo não enviado: {e}', request)
+        a = db.um(b, 'SELECT * FROM comunicado_anexos WHERE id=%s', (aid,))
+        auditar(request, f'Comunicado {cid}: anexo enviado ({a["titulo"]}, {a["nome_original"]}, {AX.tamanho(a["bytes"])})')
+        return ir(volta, f'Anexo enviado: {a["titulo"]} ({AX.TIPOS[a["ext"]][1]}, {AX.tamanho(a["bytes"])}).', request)
     if acao == 'situacao' and cid:
         nova = f.get('situacao')
         if nova not in ('publicado', 'arquivado', 'rascunho'):

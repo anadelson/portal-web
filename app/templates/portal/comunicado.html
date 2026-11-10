@@ -5,5 +5,8 @@
 <p><span class="etq">{{ c.tipo }}</span></p><h1>{{ c.titulo }}</h1>{{ legal_topo(legal) }}
 <p class="atualizado" style="margin-bottom:16px">Publicado em {{ quando(c) }}{% if c.valido_ate %} · válido até {{ c.valido_ate|br }}{% endif %}</p>
 {% if c.html %}<div class="texto texto-rico">{{ c.html|safe }}</div>{% else %}<div class="texto">{% for par in c.texto.split('\n') if par.strip() %}<p>{{ par }}</p>{% endfor %}</div>{% endif %}
+{% if anexos %}<section class="anexos" aria-labelledby="h-anexos"><h2 id="h-anexos">Arquivos ({{ anexos|length }})</h2>
+{% set imgs = anexos|selectattr('imagem')|list %}{% if imgs %}<div class="anexos-img">{% for a in imgs %}<figure><a href="/anexo/{{ a.arquivo }}"><img src="/anexo/{{ a.arquivo }}" alt="{{ a.titulo }}" loading="lazy"></a><figcaption>{{ a.titulo }}</figcaption></figure>{% endfor %}</div>{% endif %}
+<ul class="anexos-lista">{% for a in anexos %}<li><a href="/anexo/{{ a.arquivo }}"{% if a.ext not in ('pdf', 'png', 'jpg', 'webp') %} download{% endif %}><span class="ico">{{ icone('diario' if a.ext == 'pdf' else ('midia' if a.imagem else 'lista'), 22) }}</span><span><strong>{{ a.titulo }}</strong><small>{{ a.rotulo }} · {{ a.tamanho }}{% if a.ext not in ('pdf', 'png', 'jpg', 'webp') %} · baixar{% endif %}</small></span></a></li>{% endfor %}</ul></section>{% endif %}
 <div class="acoes"><a class="btn sec" href="/comunicados">Todos os comunicados</a></div>
 {% endblock %}

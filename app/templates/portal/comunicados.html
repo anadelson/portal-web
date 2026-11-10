@@ -9,5 +9,5 @@
 <label>Ano<select name="ano"><option value="">Todos</option>{% for a in anos %}<option {{ 'selected' if ano == a|string }}>{{ a }}</option>{% endfor %}</select></label>
 <span class="botoes"><button class="btn" type="submit">Filtrar</button><a class="btn sec" href="/comunicados">Limpar</a></span></form>
 <p role="status" style="margin:16px 0 8px"><strong>{{ itens|length }}</strong> comunicado(s)</p>
-<ul class="com-lista">{% for c in itens %}<li><span class="etq">{{ c.tipo }}</span><a href="/comunicados/{{ c.id }}">{{ c.titulo }}</a><small>{{ quando(c) }}{% if c.valido_ate %} · válido até {{ c.valido_ate|br }}{% endif %}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</small></li>{% else %}<li class="vazio">Nenhum comunicado publicado{{ ' com esses filtros' if tipo or ano }}.</li>{% endfor %}</ul>
+<ul class="com-lista">{% for c in itens %}<li><span class="etq">{{ c.tipo }}</span><a href="/comunicados/{{ c.id }}">{{ c.titulo }}</a><small>{{ quando(c) }}{% if c.valido_ate %} · válido até {{ c.valido_ate|br }}{% endif %}{% if n_anexos.get(c.id) %} · {{ n_anexos[c.id] }} arquivo(s){% endif %}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</small></li>{% else %}<li class="vazio">Nenhum comunicado publicado{{ ' com esses filtros' if tipo or ano }}.</li>{% endfor %}</ul>
 {% endblock %}

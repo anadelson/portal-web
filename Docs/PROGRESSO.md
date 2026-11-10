@@ -1282,3 +1282,33 @@ Próximos passos dependem das pessoas:
   - na Prefeitura, 55% do cartão sobre a foto; sem rolagem horizontal;
   - portal.css v=23 servido; portais 200, console 303 (login); logs sem erro.
 - `visual-prefeitura` mesclado em `main` com a tag `visual-prefeitura`.
+
+## Anexos nos comunicados (10/11/2026, branch `anexos-comunicados`, nada aplicado na VPS)
+- **Pedido:** poder anexar arquivos (PNG, JPG, PDF etc.) a editais, comunicados, avisos e convites.
+- **Feito:**
+  - **Migração `022_orgao_anexos.sql`** (banco de cada órgão): tabela `comunicado_anexos`, ligada ao comunicado; se o comunicado for apagado, os anexos vão junto.
+  - **`app/anexos.py`:**
+    - formatos aceitos: PDF, PNG, JPG, WEBP, DOCX, XLSX, ODT, ODS e CSV;
+    - tipo conferido pelo CONTEÚDO (um PDF disfarçado de .png é gravado como PDF; um executável com extensão .pdf é recusado);
+    - recusados com explicação: Office com macro, .doc/.xls antigos, ZIP, executável, HTML disfarçado de CSV, arquivo vazio e acima de 20 MB;
+    - no máximo 15 anexos por comunicado;
+    - arquivos em `DADOS_DIR/<órgão>/anexos/` com nome interno aleatório (o nome original fica guardado);
+    - cada anexo exige uma descrição curta ("o que é o arquivo"), usada no link e como texto alternativo da imagem.
+  - **Painel → Comunicados → editar:** quadro "Arquivos anexos" com lista (miniatura das imagens, tipo, tamanho, quem enviou, Remover) e formulário "Anexar arquivo".
+    - Na tela de novo comunicado, aviso para salvar antes.
+    - A lista do painel ganhou a coluna "Anexos".
+    - Envio e remoção vão para a auditoria. Aviso de LGPD (não anexar CPF completo nem dados pessoais).
+  - **Portal:**
+    - página do comunicado com a seção "Arquivos (N)": imagens em miniatura com texto alternativo, e todos os arquivos em lista com tipo e tamanho;
+    - PDF e imagem abrem no navegador; documentos e planilhas são baixados com nome legível;
+    - a lista de comunicados mostra "N arquivo(s)".
+  - **Rota `/anexo/<arquivo>`:**
+    - só entrega anexo de comunicado publicado e visível (no período eleitoral segue a mesma regra do comunicado); no painel do próprio órgão, permite a pré-visualização do rascunho;
+    - nome validado (sem truques de caminho), cabeçalho `nosniff`.
+- **Conferência** (ambiente de TESTE, removido com `rm -fv`):
+  - comunicado-exemplo com PDF, imagem e planilha enviados pelo painel e publicados;
+  - axe sem violações no painel e no portal; sem rolagem horizontal em 390 px.
+  - Capturas em `Docs/avaliacao-anexos-comunicados/`.
+- **Teste novo:** `tests/teste_anexos.py` (detecção e recusas, envio, auditoria, rascunho × publicado, tipo e nome do download, caminhos inválidos, remoção do arquivo, remoção só do próprio comunicado, sem login).
+- **Testes:** as 16 suítes (15 de antes + `teste_anexos`) deram ERROS: 0 / tudo ok no banco de TESTE; nenhum volume solto.
+- **Onde parou:** aguardando aprovação para implantar. **Tem migração** (022, banco de cada órgão): aplicar `provision atualizar` logo depois de subir o app e antes de reiniciar o worker (lição da implantação da agenda).
