@@ -1360,3 +1360,17 @@ Próximos passos dependem das pessoas:
 - **Implantação:** sem migração de banco, mas é preciso rodar `provision atualizar` (grava a lei do Diário do piloto na configuração) logo depois de subir o app, antes do worker.
 - **Testes:** as 17 suítes (16 de antes + `teste_cadastro_orgao`) deram ERROS: 0 / tudo ok no banco de TESTE; nenhum volume solto. O `teste_fluxos` cadastrava com o formulário antigo (sem o e-mail do administrador): atualizado para o cadastro completo.
 - **Onde parou:** aguardando aprovação para implantar. Na subida: `up -d app` → `provision atualizar` → `up -d worker`.
+
+### Implantação da etapa 1 do modelo multi-órgão (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 23h20 UTC.
+- **Build e testes:** as 17 suítes com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida na ordem certa:** `up -d app` → `provision atualizar` (gravou a lei e a base legal do Diário do piloto na configuração do bd_pm_bora) → `up -d worker`. Worker sem erros. Disco em 75%.
+- **Conferência no domínio:**
+  - /diario de Borá com "Lei Municipal nº 910/2026" e a base legal completa;
+  - console com o formulário novo (console.js 200); o login do console mostra "Portais Municipais — plataforma" (antes "Portais de Borá"; ajustável por `NOME_PLATAFORMA` no .env);
+  - portais 200, console 303 (login); logs sem erro.
+- `modelo-neutro` mesclado em `main` com a tag `modelo-neutro`.
+- **Próximas etapas (a combinar):**
+  - 2: ativar domínio, certificado e nginx pelo console;
+  - 3: Diário configurável por órgão (decreto e horários);
+  - 4: adaptadores de outros sistemas da transparência.
