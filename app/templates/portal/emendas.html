@@ -3,7 +3,7 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Emendas impositivas</span></nav>
 <h1>Emendas impositivas</h1>
-<p class="intro">Parte do orçamento que cada vereador direcionou para a cidade. Para cada emenda, veja o caminho na Prefeitura: empenho, liquidação e pagamento.</p>
+<p class="intro">Parte do orçamento que cada vereador direcionou para a cidade. Para cada emenda, veja o caminho na Prefeitura: empenho, liquidação e pagamento.</p>{{ legal_topo(legal) }}
 <dl class="kpis" style="margin-bottom:20px">
 <div><dt>Emendas</dt><dd class="v">{{ tot.n }}</dd><dd class="d">cadastradas</dd></div>
 <div><dt>Valor indicado</dt><dd class="v">{{ tot.total|moeda }}</dd></div>

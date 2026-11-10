@@ -5,7 +5,7 @@
 <title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/portal.css?v=14">
+<link rel="stylesheet" href="/static/portal.css?v=15">
 {% if ident.favicon %}{% if ident.favicon.svg %}<link rel="icon" type="image/svg+xml" href="{{ ident.favicon.svg }}">{% endif %}<link rel="icon" type="image/png" sizes="32x32" href="{{ ident.favicon['32'] }}"><link rel="icon" type="image/png" sizes="16x16" href="{{ ident.favicon['16'] }}"><link rel="apple-touch-icon" sizes="180x180" href="{{ ident.favicon['180'] }}"><link rel="icon" type="image/png" sizes="512x512" href="{{ ident.favicon['512'] }}">{% endif %}
 <style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
 <script>document.documentElement.classList.add('js');try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
@@ -65,7 +65,6 @@
 <main id="conteudo" tabindex="-1" class="{% block classe_main %}{% endblock %}">
 {% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}
 {% block conteudo %}{% endblock %}
-{% if legal %}<p class="legal" style="margin-top:28px"><strong>Base legal:</strong> {{ BASE_LEGAL[legal] }}</p>{% endif %}
 {% set m_aval = request.session.pop('msg_aval', '') %}{% set ja_aval = avaliada_em(request, orgao.banco, atual) %}<div class="avaliar" id="avaliar"><p class="aval-msg" role="status" aria-live="polite"{% if not m_aval and not ja_aval %} hidden{% endif %}>{% if m_aval %}{{ m_aval }}{% elif ja_aval %}Você já avaliou esta página em {{ ja_aval.strftime('%d/%m/%Y') }}. Obrigado!{% endif %}</p>{% if not ja_aval and not m_aval %}<form class="aval-form" method="post" action="/avaliar" aria-labelledby="h-aval"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="pagina" value="{{ atual }}">
 <span id="h-aval"><strong>Avalie esta página:</strong> as informações foram úteis?</span><span class="botoes"><button class="btn sec" name="util" value="sim">Sim</button><button class="btn sec" name="util" value="nao">Não</button></span>
 <details><summary>Quer comentar? (opcional, sem dados pessoais)</summary><label class="sr" for="aval-c">Comentário</label><textarea id="aval-c" name="comentario" rows="2" maxlength="600"></textarea></details><label class="sr">Não preencha<input name="site" tabindex="-1" autocomplete="off"></label></form>{% endif %}</div>

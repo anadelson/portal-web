@@ -1,0 +1,62 @@
+{
+ "portal-inicio-1280": {
+  "scrollW": 1280
+ },
+ "portal-noticias-1280": {
+  "scrollW": 1280
+ },
+ "portal-noticia-1280": {
+  "scrollW": 1280
+ },
+ "portal-comunicados-1280": {
+  "scrollW": 1280
+ },
+ "portal-conheca-1280": {
+  "scrollW": 1280
+ },
+ "portal-perfil-1280": {
+  "scrollW": 1280
+ },
+ "portal-ouvidoria-1280": {
+  "scrollW": 1280
+ },
+ "portal-e-sic-1280": {
+  "scrollW": 1280
+ },
+ "portal-governo-1280": {
+  "scrollW": 1280
+ },
+ "portal-legislacao-1280": {
+  "scrollW": 1280
+ },
+ "portal-inicio-390": {
+  "scrollW": 390
+ },
+ "portal-noticias-390": {
+  "scrollW": 390
+ },
+ "portal-noticia-390": {
+  "scrollW": 390
+ },
+ "portal-comunicados-390": {
+  "scrollW": 390
+ },
+ "portal-conheca-390": {
+  "scrollW": 390
+ },
+ "portal-perfil-390": {
+  "scrollW": 390
+ },
+ "portal-ouvidoria-390": {
+  "scrollW": 390
+ },
+ "portal-e-sic-390": {
+  "scrollW": 390
+ },
+ "portal-governo-390": {
+  "scrollW": 390
+ },
+ "portal-legislacao-390": {
+  "scrollW": 390
+ }
+}

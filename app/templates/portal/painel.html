@@ -15,7 +15,7 @@
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/transparencia">Transparência</a><span aria-hidden="true">›</span><span aria-current="page">Painel de indicadores</span></nav>
 <h1>Painel de indicadores</h1>
 <p class="intro" style="margin-bottom:6px">Os principais números do município, cada um com a fonte oficial, o período a que se refere e a data da consulta. Clique no nome de um indicador para ver a série histórica e baixar os dados.</p>
-<p class="legal"><strong>Base legal:</strong> {{ legal_txt }}</p>
+<p class="legal legal-topo"><strong>Base legal:</strong> {{ legal_txt }}</p>
 
 <div class="pcab">
 <nav class="ppilulas" aria-label="Áreas do painel">{% for k, nome in abas %}<a href="/painel{{ '' if k == 'tudo' else '?tema=' ~ k }}"{% if aba == k %} aria-current="page"{% endif %}>{{ nome }}</a>{% endfor %}</nav>

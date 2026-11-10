@@ -7,5 +7,5 @@
 <div class="acoes">{% if x.pdf_url %}<a class="btn" href="{{ x.pdf_url }}">PDF assinado da edição{% if x.edicao %} nº {{ x.edicao }}{% endif %}</a>{% endif %}<a class="btn sec" href="/legislacao">Toda a legislação</a></div>
 {% if relacoes %}<section class="secao caixa" aria-labelledby="h-rel" style="margin-top:20px"><h2 id="h-rel">Relação com outros atos</h2><ul class="itens">{% for r in relacoes %}<li>{{ r.rot|capitalize }} <a href="/legislacao/{{ r.ato.id }}">{{ rotulo(r.ato) }}</a> — {{ r.ato.ementa[:120] }}</li>{% endfor %}</ul></section>{% endif %}
 {% if x.texto %}<section class="secao" aria-labelledby="h-txt"><h2 id="h-txt">Texto integral</h2><div class="texto">{% for par in x.texto.split('\n') if par.strip() %}<p>{{ par }}</p>{% endfor %}</div></section>{% endif %}
-<p class="legal"><strong>Base legal:</strong> {{ legal_txt }}</p>
+<p class="legal legal-topo"><strong>Base legal:</strong> {{ legal_txt }}</p>
 {% endblock %}

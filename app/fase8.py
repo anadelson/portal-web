@@ -195,3 +195,37 @@ def rotulo(x):
 # ---------- links úteis ----------
 def links_uteis(banco):
     return [l for l in (db.cfg(banco, 'links_uteis', []) or []) if l.get('titulo') and l.get('url')]
+
+# ---------- Ajustes da Fase 8: editoria das notícias (secretarias da Carta) e imagem neutra ----------
+PALETA_EDITORIA = ['#0E4D64', '#1D4E89', '#2F5233', '#6B3FA0', '#9B1C1C', '#7A4100', '#155E63', '#3F4A5A']  # todas com contraste AA com branco
+ICONES_EDITORIA = ['predio', 'saude', 'educacao', 'social', 'tributos', 'cidade', 'empresas', 'atendimento', 'grafico', 'participacao', 'lista']
+
+def editorias(banco):
+    """id -> {nome, cor, icone}. Cor fixa por secretaria (paleta AA), ícone escolhido no painel."""
+    try:
+        rows = db.todos(banco, 'SELECT id, nome, sigla, icone FROM secretarias WHERE ativa ORDER BY nome')
+    except Exception:
+        return {}
+    return {r['id']: {'id': r['id'], 'nome': r['nome'], 'cor': PALETA_EDITORIA[r['id'] % len(PALETA_EDITORIA)], 'icone': r['icone'] or 'predio'} for r in rows}
+
+def editoria_de(c, eds, orgao_nome, cor_orgao):
+    e = eds.get(c.get('secretaria_id'))
+    return e or {'id': None, 'nome': orgao_nome, 'cor': cor_orgao, 'icone': 'predio'}
+
+def mover_exemplos_para_comunicados(banco):
+    """D1 (10/11/2026): conteúdos-EXEMPLO que não são notícia e apareciam em /noticias viram comunicados-exemplo
+    (aviso → "Aviso"; edital de concurso → "Convocação") e o conteúdo é arquivado. Só mexe em exemplos; roda uma vez."""
+    if (db.cfg(banco, 'ajustes8', {}) or {}).get('d1'):
+        return 0
+    n = 0
+    for c in db.todos(banco, "SELECT * FROM conteudos WHERE exemplo AND situacao='publicado' AND tipo <> 'Notícia'"):
+        tipo = 'Aviso' if c['tipo'] == 'Aviso' else 'Convocação' if re.search(r'edital|concurso|processo seletivo', c['titulo'], re.I) else None
+        if not tipo:
+            continue
+        texto = '\n\n'.join(x for x in (c['resumo'], c['texto']) if x)
+        db.exe(banco, "INSERT INTO comunicados (tipo, titulo, texto, publicado_em, classe, situacao, exemplo, autor) VALUES (%s,%s,%s,coalesce(%s::timestamptz, now()),%s,'publicado',TRUE,'migração (exemplo)')",
+               (tipo, c['titulo'], texto, c['publicado_em'] or c['publicar_em'], c['classe'] if c['classe'] else 'util'))
+        db.exe(banco, "UPDATE conteudos SET situacao='arquivado' WHERE id=%s", (c['id'],))
+        n += 1
+    cfg = db.cfg(banco, 'ajustes8', {}) or {}; cfg['d1'] = True; db.set_cfg(banco, 'ajustes8', cfg)
+    return n

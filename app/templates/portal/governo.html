@@ -1,0 +1,10 @@
+{% extends 'portal/base.html' %}
+{% from 'partials/cena.html' import cena with context %}
+{% block titulo %}Governo — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Governo</span></nav>
+<h1>Governo</h1><p class="intro">Como a {{ 'Câmara' if leg else 'Prefeitura' }} está organizada: secretarias, o que cada uma faz e a legislação da estrutura.</p>{{ legal_topo(legal) }}
+{% if secretarias %}<ul class="gov-grade">{% for x in secretarias %}<li class="gov-card">{{ cena(x.ed, '16/9', 40) }}<h2>{{ x.nome }}{% if x.sigla %} <small>({{ x.sigla }})</small>{% endif %}</h2>{% if x.resumo %}<p>{{ x.resumo }}</p>{% endif %}{% if x.servicos %}<p class="gov-serv"><a href="/servicos?secretaria={{ x.id }}">{{ x.servicos }} serviço(s) na Carta</a></p>{% endif %}</li>{% endfor %}</ul>
+{% else %}<p class="vazio">A estrutura do governo (secretarias e o que cada uma faz) ainda não foi publicada.</p>{% endif %}
+<div class="acoes gov-links"><a class="btn sec" href="/legislacao">Legislação {{ icone('seta', 18, 'seta') }}</a>{% if ident.organograma and ident.organograma.url %}<a class="btn sec" href="{{ ident.organograma.url }}">Organograma ({{ ident.organograma.tipo|upper }}) {{ icone('seta', 18, 'seta') }}</a>{% endif %}{% if mods.carta %}<a class="btn sec" href="/servicos">Carta de Serviços {{ icone('seta', 18, 'seta') }}</a>{% endif %}</div>
+{% endblock %}

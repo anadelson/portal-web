@@ -945,3 +945,65 @@ Depois do deploy: o administrador cadastra as secretarias e os responsáveis; as
 Próximos passos dependem das pessoas:
 - **Carta de Serviços:** o administrador de cada órgão cadastra secretarias, responsáveis, designações e redatores; as secretarias fazem o inventário; a minuta do decreto vai para a Procuradoria.
 - **Pendências anteriores:** módulo de audiências (Prefeitura), endereço do acervo de legislação, chave do YouTube e canais, token da Meta (opcional) e teste com NVDA.
+
+## Ajustes da Fase 8 — portal × protótipo (branch `fase-8-ajustes`)
+### Conferência "antes" (10/11/2026, só leitura)
+- `Docs/PEDIDO-FASE8-AJUSTES.md` versionado. O `Main.dc.html` da VPS é de 09/11 às 14h26 (BRT), a versão certa.
+- Capturas e medidas do portal real em `Docs/avaliacao-fase8/conferencia/antes/`. Confirmação item a item em `Docs/avaliacao-fase8/CONFERENCIA-ANTES.md`:
+  - **Confirmados:** itens 1, 2, 5, 6, 7, 8 e 9.
+  - **Item 3:** transmissões ausentes por falta de módulo, canal e chave.
+  - **Item 4:** já está OK.
+  - **Diferenças com o pedido:** /fale-conosco não tem introdução; /acessibilidade e a página da notícia não têm base legal; não existem páginas de secretaria; o "Voltar" do protótipo é link.
+- **Parado aguardando** aprovação e as decisões D1 a D5.
+
+### INCIDENTE — disco cheio e portal fora do ar (10/11/2026)
+- **O que aconteceu:**
+  - O disco da VPS (48 GB) encheu (0 MB livres). O contêiner do app do portal parou, e o portal respondeu **502** nos três domínios.
+  - Dois contêineres do sistema **hotspot** (`hotspot-backend` e `hotspot-backend-casemaster`) também pararam, às 10h11 UTC, com código 127.
+- **Causa (minha):** cada execução das suítes de teste e das prévias criava um PostgreSQL descartável, removido com `docker rm -f`, que **não apaga o volume anônimo**. Acumularam **199 volumes de ~74 MB (~14 GB)** entre 07 e 10/11, mais as imagens antigas dos builds e o cache de build.
+- **Correção, com aprovação do usuário a cada passo:**
+  1. Limpeza segura: `docker builder prune -f`, `docker image prune -f` e remoção dos contêineres de teste que sobraram.
+  2. Remoção **só** dos 199 volumes anônimos de teste criados entre 07 e 10/11. Os 9 volumes nomeados de outros sistemas (`pmuinix-central_*`, `wg-config`) foram preservados.
+  3. Disco de 99% para 69% (15 GB livres).
+  4. O app não voltava com `up -d` ("unable to find user portal": a camada de escrita do contêiner se corrompeu com o disco cheio). Foi recriado com `docker compose up -d --force-recreate app`, a mesma imagem, sem build. Depois disso, os três domínios responderam 200.
+  5. Hotspot: os dois serviços foram recriados com `docker compose up -d --no-build --no-deps --force-recreate` e ficaram saudáveis.
+  6. Banco e worker do portal não registraram erro de escrita.
+- **Prevenção:** os scripts de teste e prévia passaram a usar `docker rm -fv` (apaga o volume junto). Antes de cada rodada de testes, conferir `df -h`.
+
+### Ajustes da Fase 8 — implementação (10/11/2026, branch `fase-8-ajustes`, nada aplicado na VPS)
+- **Decisões do usuário:**
+  - D1: exemplos para Comunicados.
+  - D2/D3: editoria e /governo a partir das secretarias da Carta (com campo "resumo" e ícone); organograma enviado pelo painel.
+  - D4: "Voltar" como botão secundário.
+  - D5: o usuário contrata o módulo "audiências" no console.
+- **Migração `020_orgao_ajustes8.sql`:** editoria da notícia (`conteudos.secretaria_id`), resumo e ícone das secretarias.
+- **Dados (D1):** feito pelo `provision atualizar`, uma vez só; mexe só em exemplos.
+- **Implementado:**
+  - casco único de todas as páginas internas, com a "Base legal" logo abaixo da introdução;
+  - início com a fileira Notícias + Paço e o cartão do Conheça com mosaico;
+  - /noticias só com notícias, com filtro por secretaria e cartões horizontais;
+  - página da notícia em cartão com imagem 21:9;
+  - Ouvidoria/e-SIC com pílulas e "Outros canais" (contatos reais);
+  - /governo com cartões das secretarias, mais Legislação, Carta e Organograma;
+  - imagem neutra por editoria (cor AA + ícone, nunca foto de banco);
+  - avisos "Transmissões: o que falta" na Visão geral e em Integrações.
+- **Testes:**
+  - `tests/teste_ajustes8.py` deu tudo ok.
+  - As 10 suítes anteriores passam. Ajustes nos testes antigos: o conteúdo 1 virou comunicado (D1), e a estrutura do bloco de notícias mudou.
+- **Conferência:** `Docs/avaliacao-fase8/conferencia/index.html` (portal × reconstrução do protótipo, 10 páginas, 1280/390 px) e `Docs/avaliacao-fase8/CONFERENCIA.md` (tabela item | estava | ficou | ok?). axe sem violações em 12 páginas; sem rolagem horizontal.
+- **Onde parou:** aguardando aprovação do deploy: snapshot, backup, build, 11 suítes, `up -d`, `provision atualizar` (migração 020 e D1), conferência no domínio, merge e tag `fase-8-ajustes`.
+
+### Implantação dos ajustes da Fase 8 (10/11/2026, aprovada: "Aprovo os 6 passos" + "Snapshot ok")
+- Snapshot confirmado pelo usuário. Disco antes: 69%. Backup às 11h02 UTC.
+- **Build e testes:** as **11 suítes** com a imagem nova deram ERROS: 0 / tudo ok, sem nenhum volume solto.
+- **Subida:** `up -d` de app e worker, app saudável. `provision atualizar` aplicou a migração 020; o D1 transformou 2 conteúdos-exemplo em comunicados-exemplo.
+- **Limpeza:** imagem antiga removida (`docker image prune -f`). Disco depois: 70%.
+- **Conferência no domínio** (`Docs/avaliacao-fase8/conferencia/implantado/`):
+  - axe sem violações; sem violação de CSP; sem rolagem horizontal; sem destino repetido;
+  - todas as páginas internas com trilha e com a base legal logo abaixo da introdução;
+  - página inicial com o Conheça em cartão e mosaico (fotos reais) e a fileira Notícias + Paço;
+  - /noticias só com notícias; comunicados-exemplo em /comunicados e na página inicial;
+  - Ouvidoria/e-SIC com pílulas e "Outros canais";
+  - /governo mostra "ainda não foi publicada" até as secretarias serem cadastradas;
+  - logs sem erro.
+- `fase-8-ajustes` mesclada em `main` com a tag `fase-8-ajustes`.

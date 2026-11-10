@@ -29,7 +29,7 @@ for p in ['/vereadores', '/vereadores?leg=13', '/sessoes', '/proposicoes', '/eme
     ok(cm.get(p), nome='cm'+p)
 pm = cli('pmbora.localhost')
 ok(pm.get('/diario'), nome='pm diario'); ok(pm.get('/vereadores'), 404, nome='pm sem vereadores')
-ok(pm.get('/conteudo/1'), nome='pm conteudo')
+ok(pm.get('/conteudo/2'), nome='pm conteudo')
 ok(cli('outro.localhost').get('/'), 404, nome='desconhecido')
 # e-SIC
 t = token(pm, '/acesso')
@@ -99,7 +99,7 @@ for txt in ['Serviços mais acessados', 'Conheça Borá', 'Paço Municipal', 'Ra
 assert 'Prefeitura em números' not in pm.get('/').text and 'Borá em números</h2>' not in pm.get('/').text, 'bloco de números deveria estar oculto sem dados'
 for txt in ['Próxima sessão', 'Presidente da Câmara', 'Mesa Diretora da 15ª Legislatura', 'Quanto custa a Câmara', 'Emendas impositivas dos vereadores', 'Últimas sessões', 'Projetos e proposições', 'Prefeitura Municipal']:
     ok(cm.get('/'), txt=txt, nome='cm home: ' + txt)
-for c, paginas in [(pm, ['/', '/servicos', '/transparencia', '/acesso', '/diario', '/privacidade', '/acessibilidade', '/mapa-do-site', '/conteudo/1']),
+for c, paginas in [(pm, ['/', '/servicos', '/transparencia', '/acesso', '/diario', '/privacidade', '/acessibilidade', '/mapa-do-site', '/conteudo/2']),
                    (cm, ['/', '/vereadores', '/vereadores?leg=14', '/vereadores?leg=acervo', '/vereador/1', '/emendas', '/emendas/2026/22', '/sessoes', '/proposicoes'])]:
     for pg in paginas:
         r = ok(c.get(pg), nome='a11y ' + pg)

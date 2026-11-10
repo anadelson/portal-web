@@ -2,7 +2,7 @@
 {% block titulo %}{{ s.nome }} — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/sessoes">Sessões</a><span aria-hidden="true">›</span><span aria-current="page">{{ s.nome }}</span></nav>
-<h1>{{ s.nome }}</h1><p class="intro">{{ s.tipo }} · {{ s.data|br }} às {{ s.hora }}</p>
+<h1>{{ s.nome }}</h1><p class="intro">{{ s.tipo }} · {{ s.data|br }} às {{ s.hora }}</p>{{ legal_topo(legal) }}
 <div class="duas-col">
 <section class="caixa" aria-labelledby="h-pauta"><h2 id="h-pauta">Pauta</h2>
 {% if s.pauta_publicada or s.votacao_publicada %}{% if itens %}<ol class="itens">{% for it in itens %}<li>{% if it.proposicao_id %}<a href="/proposicoes/{{ it.proposicao_id }}"><strong>{{ it.descricao }}</strong></a>{% else %}<strong>{{ it.descricao }}</strong>{% endif %}<span style="display:block;font-size:14px;color:var(--sub)">{{ it.fase }}</span>{% if s.votacao_publicada and it.resultado %}<span class="chip {{ 'ok' if it.resultado == 'aprovado' else 'erro' }}">{{ it.resultado|upper }}</span> {{ it.cont.sim }} sim · {{ it.cont.nao }} não · {{ it.cont.abstencao }} abst. · {{ it.cont.ausente }} aus.{% endif %}</li>{% endfor %}</ol>{% elif s.pauta %}<div style="white-space:pre-line">{{ s.pauta }}</div>{% else %}<p class="vazio">Pauta sem itens.</p>{% endif %}

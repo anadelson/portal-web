@@ -1,4 +1,13 @@
 {% extends 'portal/base.html' %}
+{% from 'partials/cena.html' import imagem_noticia with context %}
+{% macro cartao_paco(lado=False) %}{% set sd = ident.sede or {} %}
+<section class="paco{{ ' paco-lado' if lado }}" aria-labelledby="h-sede">
+{% if sd.foto and sd.foto.url %}<img src="{{ sd.foto.url }}" alt="{{ sd.foto.alt }}" loading="lazy" style="object-position:{{ sd.foto.foco_x|default(50) }}% {{ sd.foto.foco_y|default(50) }}%">{% endif %}
+<div class="txt"><h2 id="h-sede">{{ sd.titulo or 'Sede e atendimento' }}</h2>
+{% if ident.horario %}<p>Atendimento ao público: {{ ident.horario }}.</p>{% endif %}
+<p class="sub">{{ ident.endereco }}{% if ident.telefone %} · {{ ident.telefone }}{% endif %}</p>
+<div class="acoes"><a class="btn sec" href="/fale-conosco#unidades">Unidades e horários {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/fale-conosco">Fale conosco</a></div></div>
+</section>{% endmacro %}
 {% block classe_main %}home{% endblock %}
 {% from 'partials/cartoes.html' import cartao %}
 
@@ -80,13 +89,14 @@
 
 {% elif b.chave == 'conheca' and ident.conheca %}
 {% set cx = ident.conheca %}
-<section class="conheca8" aria-labelledby="h-conheca">
-<p class="rotulo">{{ cx.rotulo or 'Conheça a cidade' }}</p><h2 id="h-conheca">{{ cx.titulo }}</h2>{% if cx.texto %}<p class="sub">{{ cx.texto }}</p>{% endif %}
-{% if d.mun_numeros %}<dl class="con-num">{% for n in d.mun_numeros[:6] %}<div><dt>{{ n.rotulo }}{% if not n.manual and n.periodo %} ({{ n.periodo }}){% endif %}{% if n.manual %}*{% endif %}</dt><dd>{{ n.valor }}</dd></div>{% endfor %}</dl>
-<p class="legal" style="margin:0 0 12px">Fonte: IBGE, atualizado automaticamente{% if d.mun_numeros|selectattr('manual')|list %}; * informado pela {{ 'Câmara' if leg else 'Prefeitura' }}{% endif %}.</p>
-{% elif cx.numeros %}<dl class="con-num">{% for n in cx.numeros %}<div><dt>{{ n[0] }}</dt><dd>{{ n[1] }}</dd></div>{% endfor %}</dl>{% if cx.fonte %}<p class="legal" style="margin:0 0 12px">{{ cx.fonte }}</p>{% endif %}{% endif %}
-{% if d.perfis %}<ul class="perfis-grade">{% for p in d.perfis %}<li><a href="/conheca/{{ p.slug }}">{% if p.capa %}<img src="{{ p.capa.url }}" alt="" loading="lazy">{% else %}<span class="sem-foto" aria-hidden="true"></span>{% endif %}<span class="t"><strong>{{ p.titulo }}</strong><span class="ver">Ver perfil</span></span></a></li>{% endfor %}</ul>{% endif %}
-<div class="acoes"><a class="btn" href="/conheca">Conheça mais {{ icone('seta', 18, 'seta') }}</a>{% if mods.bi %}<a class="btn sec" href="/painel">{{ ident.nome_curto }} em números</a>{% endif %}</div>
+<section class="conheca9" aria-labelledby="h-conheca"><div class="c-txt">
+<div class="c-marca">{% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="Brasão do Município de {{ ident.nome_curto or '' }}" width="72" height="63">{% endif %}<p class="rotulo">{{ cx.rotulo or ('Conheça ' ~ (ident.nome_curto or 'a cidade')) }}</p></div>
+<h2 id="h-conheca">{{ cx.titulo }}</h2>{% if cx.texto %}<p>{{ cx.texto }}</p>{% endif %}
+{% if d.mun_numeros %}<dl class="c-num">{% for n in d.mun_numeros[:6] %}<div><dt>{{ n.rotulo }}{% if not n.manual and n.periodo %} ({{ n.periodo }}){% endif %}{% if n.manual %}*{% endif %}</dt><dd>{{ n.valor }}</dd></div>{% endfor %}</dl>
+<p class="legal">Fonte: IBGE, atualizado automaticamente{% if d.mun_numeros|selectattr('manual')|list %}; * informado pela {{ 'Câmara' if leg else 'Prefeitura' }}{% endif %}.</p>
+{% elif cx.numeros %}<dl class="c-num">{% for n in cx.numeros %}<div><dt>{{ n[0] }}</dt><dd>{{ n[1] }}</dd></div>{% endfor %}</dl>{% if cx.fonte %}<p class="legal">{{ cx.fonte }}</p>{% endif %}{% endif %}
+<div class="acoes"><a class="btn" href="/conheca">Conheça mais {{ icone('seta', 18, 'seta') }}</a>{% if mods.bi %}<a class="btn sec" href="/painel">{{ ident.nome_curto }} em números</a>{% endif %}</div></div>
+{% if d.perfis %}<ul class="c-mosaico n{{ d.perfis|length }}">{% for p in d.perfis %}<li><a href="/conheca/{{ p.slug }}">{% if p.capa %}<img src="{{ p.capa.url }}" alt="" loading="lazy">{% else %}<span class="sem-foto" aria-hidden="true"></span>{% endif %}<span class="leg"><span>{{ p.titulo }}</span><span class="ver">Ver perfil</span></span></a></li>{% endfor %}</ul>{% endif %}
 </section>
 
 {% elif b.chave == 'redes' and d.redes_feed and not defeso %}
@@ -94,23 +104,20 @@
 <ul class="feed">{% for x in d.redes_feed[:6] %}<li><a href="{{ x.link }}">{% if x.img %}<img src="{{ x.img }}" alt="" loading="lazy">{% endif %}<span class="r">{{ icone('rede_' ~ x.rede, 16) }}{{ {'youtube': 'YouTube', 'instagram': 'Instagram', 'facebook': 'Facebook'}[x.rede] }}{% if x.quando %} · {{ x.quando[8:10] }}/{{ x.quando[5:7] }}/{{ x.quando[:4] }}{% endif %}</span><span class="t">{{ x.texto|truncate(110) or 'Ver publicação' }}</span></a></li>{% endfor %}</ul>
 <p class="legal">Publicações das contas oficiais, lidas pelas APIs oficiais das redes. As imagens são servidas por este portal.</p></section>
 
-{% elif b.chave == 'sede' %}
-{% set sd = ident.sede or {} %}
-<section class="sede" aria-labelledby="h-sede">
-{% if sd.foto and sd.foto.url %}<img src="{{ sd.foto.url }}" alt="{{ sd.foto.alt }}" loading="lazy">{% endif %}
-<div class="txt"><h2 id="h-sede" style="font-size:22px;margin:0">{{ sd.titulo or 'Sede e atendimento' }}</h2>
-{% if ident.horario %}<p>Atendimento ao público: {{ ident.horario }}.</p>{% endif %}
-<p style="color:var(--sub)">{{ ident.endereco }}{% if ident.telefone %} · {{ ident.telefone }}{% endif %}</p>
-<div class="acoes" style="margin-top:auto"><a class="btn" href="/fale-conosco#unidades">Unidades e horários {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/fale-conosco">Fale conosco</a></div></div>
-</section>
+{% elif b.chave == 'sede' and not d.sede_junto %}
+{{ cartao_paco() }}
 
 {% elif b.chave == 'noticias' and d.noticias8 %}{% set n = d.noticias8 %}
-<section class="noticias8" aria-labelledby="h-not"><h2 id="h-not">Notícias</h2>
-<div class="not-grade"><article class="not-dest">{% if (n.destaque.imagem or '').startswith('/') %}<img src="{{ n.destaque.imagem }}" alt="{{ n.destaque.imagem_alt }}" style="object-position:{{ n.destaque.foco_x }}% {{ n.destaque.foco_y }}%">{% endif %}
-<h3><a href="/conteudo/{{ n.destaque.id }}">{{ n.destaque.titulo }}</a></h3><p class="meta"><time>{{ d.quando(n.destaque) }}</time>{% if n.destaque.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</p>{% if n.destaque.resumo %}<p class="res">{{ n.destaque.resumo }}</p>{% endif %}</article>
-<div>{% if n.secundarias %}<ul class="not-sec">{% for c in n.secundarias %}<li>{% if (c.imagem or '').startswith('/') %}<img src="{{ c.imagem }}" alt="{{ c.imagem_alt }}" style="object-position:{{ c.foco_x }}% {{ c.foco_y }}%" loading="lazy">{% endif %}<h3><a href="/conteudo/{{ c.id }}">{{ c.titulo }}</a></h3><p class="meta"><time>{{ d.quando(c) }}</time></p></li>{% endfor %}</ul>{% endif %}
-{% if n.lista %}<ul class="not-tit">{% for c in n.lista %}<li><a href="/conteudo/{{ c.id }}">{{ c.titulo }}</a></li>{% endfor %}</ul>{% endif %}
-<div class="acoes"><a class="btn sec" href="/noticias">Todas as notícias {{ icone('seta', 18, 'seta') }}</a></div></div></div></section>
+<div class="linha-not-paco">
+<section class="noticias9" aria-labelledby="h-not"><h2 id="h-not">Notícias</h2>
+<article class="nd" aria-labelledby="h-nd"><a class="nd-img" href="/conteudo/{{ n.destaque.id }}" tabindex="-1" aria-hidden="true">{{ imagem_noticia(n.destaque, n.destaque.ed, '16/9', 56, False) }}</a>
+<div class="nd-txt"><p class="meta"><span class="ed" style="color:{{ n.destaque.ed.cor }}">{{ n.destaque.ed.nome }}</span> · <time>{{ d.quando(n.destaque) }}</time>{% if n.destaque.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</p>
+<h3 id="h-nd"><a href="/conteudo/{{ n.destaque.id }}">{{ n.destaque.titulo }}</a></h3>{% if n.destaque.resumo %}<p class="res">{{ n.destaque.resumo }}</p>{% endif %}</div></article>
+{% if n.secundarias %}<ul class="ns">{% for c in n.secundarias %}<li><a href="/conteudo/{{ c.id }}"><span class="ns-img">{{ imagem_noticia(c, c.ed, '16/9', 32) }}</span><span class="q">{{ d.quando(c) }}</span><span class="t">{{ c.titulo }}</span></a></li>{% endfor %}</ul>{% endif %}
+{% if n.lista %}<ul class="nt">{% for c in n.lista %}<li><a href="/conteudo/{{ c.id }}">{{ c.titulo }}</a></li>{% endfor %}</ul>{% endif %}
+<a class="btn sec nfim" href="/noticias">Todas as notícias {{ icone('seta', 18, 'seta') }}</a></section>
+{% if d.sede_junto %}{{ cartao_paco(True) }}{% endif %}
+</div>
 
 {% elif b.chave == 'ver' %}
 <section aria-labelledby="h-ver">
@@ -202,6 +209,7 @@
 {% endblock %}
 
 {% block conteudo %}
+
 {% if not destaque|selectattr('chave', 'equalto', 'hero')|list %}<h1 class="sr">{{ ident.nome }}</h1>{% endif %}
 {% for b in destaque if b.chave != 'hero' %}{{ bloco(b) }}{% endfor %}
 <div class="fluxo">{% for b in principal + lateral %}{% set html = bloco(b) %}{% if html|trim %}<div class="b {{ b.largura }}">{{ html }}</div>{% endif %}{% endfor %}</div>

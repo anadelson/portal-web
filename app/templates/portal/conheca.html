@@ -3,7 +3,7 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Conheça {{ ident.nome_curto or 'a cidade' }}</span></nav>
 <h1>Conheça {{ ident.nome_curto or 'a cidade' }}</h1>
-<p class="intro">Lugares, patrimônio, eventos, festas e economia, com fotos e vídeos.</p>
+<p class="intro">Lugares, patrimônio, eventos, festas e economia, com fotos e vídeos.</p>{{ legal_topo(legal) }}
 <form class="filtros" method="get" action="/conheca" role="search" aria-label="Filtrar perfis">
 <label>Categoria<select name="categoria"><option value="">Todas</option>{% for c in categorias %}<option {{ 'selected' if categoria == c }}>{{ c }}</option>{% endfor %}</select></label>
 <label>Busca<input name="q" type="search" value="{{ q }}" placeholder="Ex.: igreja, festa"></label>

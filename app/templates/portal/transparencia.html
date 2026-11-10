@@ -3,7 +3,7 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Transparência</span></nav>
 <h1>Portal da Transparência</h1>
-<p class="intro">Receitas, despesas, contratações, pessoal e relatórios fiscais de {{ ident.nome or orgao.nome }}, com filtros e download em CSV e JSON.</p>
+<p class="intro">Receitas, despesas, contratações, pessoal e relatórios fiscais de {{ ident.nome or orgao.nome }}, com filtros e download em CSV e JSON.</p>{{ legal_topo(legal) }}
 <div class="servicos" style="margin-bottom:28px">
 {% if mods.bi %}<a class="serv sem-foto" href="/painel"><span class="tema"><span class="ico">{{ icone('indicadores', 26) }}</span>Gráficos e séries</span><span class="t">Painel de indicadores</span><span class="d">Os principais números do município em gráficos, com a fonte de cada um.</span></a>{% endif %}
 {% for c in cards %}<a class="serv sem-foto" href="/transparencia/{{ c.chave }}">

@@ -1,0 +1,3 @@
+{# Imagem neutra da editoria (sem foto): fundo na cor da editoria + ícone. Decorativa (o título descreve a notícia). Nunca foto de banco nem de outra notícia. #}
+{% macro cena(ed, razao='16/9', tam=44) %}<span class="cena" aria-hidden="true" style="aspect-ratio:{{ razao }};background:{{ ed.cor }}">{{ icone(ed.icone, tam) }}</span>{% endmacro %}
+{% macro imagem_noticia(c, ed, razao='16/9', tam=44, lazy=True) %}{% if (c.imagem or '').startswith('/') %}<img src="{{ c.imagem }}" alt="{{ c.imagem_alt }}" style="aspect-ratio:{{ razao }};object-position:{{ c.foco_x }}% {{ c.foco_y }}%"{% if lazy %} loading="lazy"{% endif %}>{% else %}{{ cena(ed, razao, tam) }}{% endif %}{% endmacro %}

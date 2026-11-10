@@ -286,6 +286,9 @@ def atualizar():
         npf = F8.migrar_conheca(o['banco'], db.cfg(o['banco'], 'identidade', {}))
         from . import municipio
         municipio.migrar(o['banco'], db.cfg(o['banco'], 'identidade', {}))
+        nd1 = F8.mover_exemplos_para_comunicados(o['banco'])
+        if nd1:
+            print(f"  ajustes 8: {nd1} conteúdo(s)-exemplo que não eram notícia viraram comunicados-exemplo")
         if nm or npf:
             print(f"  fase 8: {nm} item(ns) de menu e {npf} perfil(is) do Conheça criados")
         ni, nfp = configurar_painel(o)

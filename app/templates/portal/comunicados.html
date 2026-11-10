@@ -3,7 +3,7 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Comunicados</span></nav>
 <h1>Comunicados</h1>
-<p class="intro">Avisos, convocações, convites, notas oficiais e editais de chamamento{{ ' da Câmara' if leg else ' da Prefeitura' }}. Notícias ficam na página <a href="/noticias">Notícias</a>.</p>
+<p class="intro">Avisos, convocações, convites, notas oficiais e editais de chamamento{{ ' da Câmara' if leg else ' da Prefeitura' }}. Notícias ficam na página <a href="/noticias">Notícias</a>.</p>{{ legal_topo(legal) }}
 <form class="filtros" method="get" action="/comunicados" role="search" aria-label="Filtrar comunicados">
 <label>Tipo<select name="tipo"><option value="">Todos</option>{% for t in tipos %}<option {{ 'selected' if tipo == t }}>{{ t }}</option>{% endfor %}</select></label>
 <label>Ano<select name="ano"><option value="">Todos</option>{% for a in anos %}<option {{ 'selected' if ano == a|string }}>{{ a }}</option>{% endfor %}</select></label>

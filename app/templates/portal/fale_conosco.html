@@ -2,7 +2,7 @@
 {% block titulo %}Fale conosco — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Fale conosco</span></nav>
-<h1>Fale conosco</h1>
+<h1>Fale conosco</h1><p class="intro">Endereço, horário e os canais para falar com a {{ 'Câmara' if leg else 'Prefeitura' }}: ouvidoria, pedido de informação e atendimento presencial.</p>{{ legal_topo(legal) }}
 <div class="duas"><section class="caixa" aria-labelledby="h-canais"><h2 id="h-canais">Canais de atendimento</h2><ul class="f-ic contato">
 {% if ident.endereco %}<li>{{ icone('local', 18) }}<span>{{ ident.endereco }}</span></li>{% endif %}{% if ident.horario %}<li>{{ icone('relogio', 18) }}<span>{{ ident.horario }}</span></li>{% endif %}
 {% if ident.telefone %}<li>{{ icone('telefone', 18) }}<span>{{ ident.telefone }}</span></li>{% endif %}{% if ident.whatsapp %}<li>{{ icone('whatsapp', 18) }}<span>WhatsApp {{ ident.whatsapp }}</span></li>{% endif %}

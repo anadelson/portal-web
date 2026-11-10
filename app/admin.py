@@ -136,7 +136,8 @@ def painel(request: Request):
         count(*) FILTER (WHERE situacao IN ('publicado','agendado') AND classe = ANY(%s) AND excecao_eleitoral='') vedados FROM conteudos""", (list(VEDADAS),))
     sic = db.um(b, "SELECT count(*) FILTER (WHERE situacao NOT IN ('respondido')) abertos FROM esic")
     log = db.todos(b, 'SELECT * FROM auditoria ORDER BY id DESC LIMIT 8')
-    return T('painel', request, u, k=k, sic=sic, log=log)
+    from . import avisos
+    return T('painel', request, u, k=k, sic=sic, log=log, aviso_tv=avisos.transmissoes(request.state.orgao, modulos_do_orgao(request.state.orgao)))
 
 # ---------- conteúdos ----------
 @r.get('/conteudos')
@@ -148,10 +149,16 @@ def conteudos(request: Request, sit: str = ''):
         c['suspenso'] = eleicao.suspenso(c, b)
     return T('conteudos', request, u, itens=itens, sit=sit)
 
+def _secretarias_ativas(request):
+    try:
+        return db.todos(request.state.orgao['banco'], 'SELECT id, nome FROM secretarias WHERE ativa ORDER BY nome')
+    except Exception:
+        return []
+
 @r.get('/conteudos/novo')
 def conteudo_novo(request: Request):
     u = exige(request, 'editar')
-    return T('conteudo', request, u, c=None, versoes=[])
+    return T('conteudo', request, u, c=None, versoes=[], secretarias=_secretarias_ativas(request))
 
 @r.get('/conteudos/{cid}')
 def conteudo_ver(request: Request, cid: int):
@@ -160,7 +167,7 @@ def conteudo_ver(request: Request, cid: int):
     c = db.um(b, 'SELECT * FROM conteudos WHERE id=%s', (cid,))
     if not c:
         raise HTTPException(404)
-    return T('conteudo', request, u, c=c, versoes=db.todos(b, 'SELECT * FROM conteudo_versoes WHERE conteudo_id=%s ORDER BY id DESC', (cid,)))
+    return T('conteudo', request, u, c=c, versoes=db.todos(b, 'SELECT * FROM conteudo_versoes WHERE conteudo_id=%s ORDER BY id DESC', (cid,)), secretarias=_secretarias_ativas(request))
 
 @r.post('/conteudos/salvar')
 async def conteudo_salvar(request: Request):
@@ -216,6 +223,8 @@ async def conteudo_salvar(request: Request):
             db.exe(b, 'UPDATE conteudos SET tipo=%s, secao=%s, titulo=%s, resumo=%s, texto=%s, html=%s, classe=%s, situacao=%s, publicar_em=%s, tirar_em=%s, imagem=%s, imagem_alt=%s, foco_x=%s, foco_y=%s, destaque=%s, publicado_em=%s, atualizado_em=now() WHERE id=%s', vals + (cid,))
         else:
             cid = db.exe(b, 'INSERT INTO conteudos (tipo, secao, titulo, resumo, texto, html, classe, situacao, publicar_em, tirar_em, imagem, imagem_alt, foco_x, foco_y, destaque, publicado_em, autor) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
+        sec_id = int(f['secretaria_id']) if str(f.get('secretaria_id', '')).isdigit() else None
+        db.exe(b, 'UPDATE conteudos SET secretaria_id=%s WHERE id=%s', (sec_id, cid))
         if destaque:  # uma notícia em destaque por vez
             db.exe(b, 'UPDATE conteudos SET destaque=FALSE WHERE destaque AND id<>%s', (cid,))
         obs = 'Salvou rascunho' if acao == 'rascunho' else 'Enviou para revisão'

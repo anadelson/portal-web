@@ -2,7 +2,7 @@
 {% block titulo %}{{ a.titulo }} — Fotos — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/fotos">Fotos</a><span aria-hidden="true">›</span><span aria-current="page">{{ a.titulo }}</span></nav>
-<h1>{{ a.titulo }}</h1>{% if a.descricao %}<p class="intro">{{ a.descricao }}</p>{% endif %}
+<h1>{{ a.titulo }}</h1>{% if a.descricao %}<p class="intro">{{ a.descricao }}</p>{% endif %}{{ legal_topo(legal) }}
 <section aria-labelledby="h-gal" class="secao"><h2 id="h-gal" class="sr">Fotos do álbum</h2>
 <ul class="galeria">{% for f in fotos %}<li><a href="{{ f.url }}" data-galeria="{{ loop.index0 }}" aria-label="Ampliar foto {{ loop.index }} de {{ fotos|length }}: {{ f.alt }}"><img src="{{ f.url }}" alt="{{ f.alt }}" loading="lazy"></a>
 <small>{% if f.titulo %}<strong>{{ f.titulo }}</strong> · {% endif %}{{ f.credito }}<span class="lic">Licença: {{ f.licenca }}</span>{% if f.descricao %}{{ f.descricao }}{% endif %}</small></li>{% endfor %}</ul>

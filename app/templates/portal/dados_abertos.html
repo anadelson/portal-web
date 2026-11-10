@@ -4,7 +4,7 @@
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/transparencia">Transparência</a><span aria-hidden="true">›</span><span aria-current="page">Dados abertos</span></nav>
 <h1>Dados abertos</h1>
 <p class="intro" style="margin-bottom:6px">Todas as bases do Portal da Transparência em formato aberto (CSV e JSON), sem cadastro, para qualquer pessoa reutilizar.</p>
-<p class="legal"><strong>Base legal:</strong> {{ legal_txt }}</p>
+<p class="legal legal-topo"><strong>Base legal:</strong> {{ legal_txt }}</p>
 <section class="caixa" style="margin-bottom:20px"><h2>Como usar a API</h2>
 <p><code>GET https://{{ orgao.dominio }}/dados/&lt;base&gt;.json</code> — devolve JSON com <code>fontes</code>, <code>base_legal</code>, <code>atualizado_em</code>, <code>total_registros</code>, <code>totais</code>, <code>campos</code> e <code>registros</code> (até 50.000 por resposta).</p>
 <p>Parâmetros opcionais (os mesmos filtros das telas): <code>ano</code>, <code>mes</code> (1 a 12; em receitas, 0 = acumulado), <code>unidade</code>, <code>credor</code>, <code>q</code> (texto). Exemplo: <code>/dados/empenhos.json?ano={{ hoje.year }}&amp;mes=3&amp;credor=posto</code></p>

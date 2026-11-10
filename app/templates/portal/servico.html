@@ -4,7 +4,7 @@
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/servicos">Carta de Serviços</a><span aria-hidden="true">›</span><span aria-current="page">{{ x.nome }}</span></nav>
 <div class="ficha-serv"><article>
 <p class="rotulo">{{ x.categoria }}{% if x.secretaria %} · {{ x.secretaria }}{% endif %}{% if x.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</p>
-<h1>{{ x.nome }}</h1>{% if x.em_revisao %}<p class="chip alerta" role="note">Esta ficha está em revisão pela secretaria; as informações podem mudar.</p>{% endif %}
+<h1>{{ x.nome }}</h1>{{ legal_topo(legal) }}{% if x.em_revisao %}<p class="chip alerta" role="note">Esta ficha está em revisão pela secretaria; as informações podem mudar.</p>{% endif %}
 <p class="intro">{{ x.descricao }}</p>
 <p class="sub">Para: {% for p in x.publicos or [] %}{{ publicos.get(p, p) }}{{ ', ' if not loop.last }}{% endfor %} · Atendimento: {% for p in x.formas or [] %}{{ formas.get(p, p) }}{{ ', ' if not loop.last }}{% endfor %}</p>
 {% for titulo, k, v in secoes %}<section class="ficha-sec" aria-labelledby="s-{{ k }}"><h2 id="s-{{ k }}">{{ titulo }}</h2>

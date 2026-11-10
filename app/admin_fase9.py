@@ -28,7 +28,9 @@ def integracoes(request: Request, fonte: str = ''):
     fs = [dict(f, nome=CS.NOMES.get(f['fonte'], f['fonte'])) for f in _fontes(o)]
     sel = fonte if fonte in {f['fonte'] for f in fs} else (fs[0]['fonte'] if fs else '')
     ult = {x['f']: x for x in db.todos(db.PLATAFORMA, "SELECT DISTINCT ON (split_part(fonte, ':', 1)) split_part(fonte, ':', 1) f, inicio, ok, mensagem FROM coletas WHERE orgao_slug=%s ORDER BY split_part(fonte, ':', 1), id DESC", (o['slug'],))}
-    return T('integracoes', request, u, fontes=fs, sel=sel, ult=ult, cp=painel_completo(o, sel) if sel else None)
+    from . import avisos
+    from .web import modulos_do_orgao
+    return T('integracoes', request, u, fontes=fs, sel=sel, ult=ult, cp=painel_completo(o, sel) if sel else None, aviso_tv=avisos.transmissoes(o, modulos_do_orgao(o)))
 
 @r.post('/integracoes/{fonte}')
 async def integracao_post(request: Request, fonte: str):

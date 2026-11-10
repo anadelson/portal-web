@@ -111,6 +111,14 @@ templates.env.filters['moeda'] = moeda
 templates.env.filters['iniciais'] = iniciais
 templates.env.globals.update(CLASSES=CLASSES, SITUACOES=SITUACOES, PERFIS=PERFIS, BASE_LEGAL=BASE_LEGAL, icone=icone, TEMAS=TEMAS)
 
+def legal_topo(chave):
+    """Casco das páginas internas: "Base legal:" logo abaixo da introdução (ajustes da Fase 8)."""
+    from markupsafe import Markup, escape
+    if not chave or chave not in BASE_LEGAL:
+        return ''
+    return Markup(f'<p class="legal legal-topo"><strong>Base legal:</strong> {escape(BASE_LEGAL[chave])}</p>')
+templates.env.globals['legal_topo'] = legal_topo
+
 _cache = {'t': 0, 'orgaos': {}}
 
 def orgao_por_dominio(host: str):

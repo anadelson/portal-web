@@ -4,7 +4,7 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Vereadores</span></nav>
 <h1>Vereadores e Mesa Diretora</h1>
-<p class="intro">Quem são os vereadores de cada legislatura, os partidos, os votos e a composição da Mesa Diretora.</p>
+<p class="intro">Quem são os vereadores de cada legislatura, os partidos, os votos e a composição da Mesa Diretora.</p>{{ legal_topo(legal) }}
 <nav class="abas" aria-label="Legislaturas">
 {% for l in legs %}<a href="/vereadores?leg={{ l.numero }}"{% if leg and l.numero == leg.numero %} aria-current="page"{% endif %}><strong>{{ l.numero }}ª Legislatura</strong><span>{{ l.anos }}{% if loop.first %} · atual{% endif %}</span></a>{% endfor %}
 <a href="/vereadores?leg=acervo"{% if not leg %} aria-current="page"{% endif %}><strong>Acervo</strong><span>Legislaturas anteriores</span></a>

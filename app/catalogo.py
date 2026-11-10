@@ -125,6 +125,7 @@ BASE_LEGAL = {
     'acesso': 'LAI, arts. 9º a 11, 15 e 30; Lei 13.460/2017; LGPD, art. 41.',
     'diario': 'Lei Municipal 910/2026 e decreto de 25/03/2026; MP 2.200-2/2001 (ICP-Brasil); Lei 14.063/2020.',
     'noticias': 'Constituição, art. 37, § 1º (vedada promoção pessoal); Lei 9.504/1997, art. 73, VI, b.',
+    'acessibilidade': 'Lei 13.146/2015 (Estatuto da Pessoa com Deficiência), art. 63; Lei 10.098/2000, art. 17; eMAG 3.1 (Portaria SLTI/MP nº 3/2007); WCAG 2.1, nível AA.',
     'carta': 'Lei 13.460/2017 (Código de Defesa do Usuário do Serviço Público), arts. 7º, 23 e 24; LAI (Lei 12.527/2011), art. 8º.',
     'comunicados': 'Constituição, art. 37, caput e § 1º (publicidade de caráter informativo); Lei 9.504/1997, art. 73, VI, b (período eleitoral).',
     'conheca': 'Constituição, art. 37, § 1º; Código Civil, art. 20, e LGPD (Lei 13.709/2018), art. 7º (uso de imagem só com autorização); Lei 9.610/1998, art. 24 (crédito do autor).',

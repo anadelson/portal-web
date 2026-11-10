@@ -2,6 +2,6 @@
 {% block titulo %}Links úteis — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Links úteis</span></nav>
-<h1>Links úteis</h1>
+<h1>Links úteis</h1><p class="intro">Endereços oficiais de outros órgãos e serviços públicos.</p>{{ legal_topo(legal) }}
 {% if links %}<ul class="links-uteis">{% for l in links %}<li><a href="{{ l.url }}">{{ l.titulo }}</a>{% if l.descricao %}<span>{{ l.descricao }}</span>{% endif %}</li>{% endfor %}</ul>{% else %}<p class="vazio">Nenhum link cadastrado ainda.</p>{% endif %}
 {% endblock %}

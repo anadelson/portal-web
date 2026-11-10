@@ -7,7 +7,7 @@
 <figcaption>{% if v.foto_url %}{{ v.foto_credito or 'Foto oficial enviada pela Câmara.' }}{% else %}Foto oficial ainda não enviada pela Câmara.{% endif %}</figcaption></figure>
 <div class="dados">
 <div class="tags">{% if v.apelido %}<span class="tag">“{{ v.apelido }}”</span>{% endif %}<span class="tag forte">{{ v.partido }}</span>{% for c in cargos if c.legislatura == v.legislatura %}<span class="tag">{{ c.cargo }} · {{ c.bienio }}</span>{% endfor %}</div>
-<h1 id="h-nome" style="margin:0">{{ v.nome }}</h1>
+<h1 id="h-nome" style="margin:0">{{ v.nome }}</h1>{{ legal_topo(legal) }}
 <dl class="campos">
 <div><dt>Mandato</dt><dd>{{ v.legislatura }}ª Legislatura{% if leg %} · {{ leg.anos }}{% endif %}</dd></div>
 <div><dt>Eleição</dt><dd>{{ (v.votos ~ ' votos') if v.votos else '—' }}</dd></div>

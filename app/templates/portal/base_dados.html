@@ -5,7 +5,7 @@
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/transparencia">Transparência</a><span aria-hidden="true">›</span><span aria-current="page">{{ b.titulo }}</span></nav>
 <h1>{{ b.titulo }}</h1>
 <p class="intro" style="margin-bottom:6px">{{ b.desc }}</p>
-<p class="legal"><strong>Base legal:</strong> {{ legal_txt }}</p>
+<p class="legal legal-topo"><strong>Base legal:</strong> {{ legal_txt }}</p>
 <p class="atualizado" style="margin-bottom:6px">Fonte: {{ b.fontes.values()|join(' e ') }} · {% if st.atualizado %}atualizado em {{ st.atualizado|br }}{% else %}aguardando a primeira coleta{% endif %}</p>
 {% if st.falhou %}<p class="nota" role="note">A última tentativa de coleta ({{ st.falhou.inicio|br }}) falhou. Os dados abaixo são da última coleta válida{% if st.atualizado %}, de {{ st.atualizado|br }}{% endif %}.</p>{% endif %}
 {% if b.nota %}<p class="legal" style="margin-top:6px">{{ b.nota }}</p>{% endif %}
