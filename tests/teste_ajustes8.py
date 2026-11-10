@@ -41,6 +41,8 @@ def casco(u, nome, legal=True):
         checa(i_leg > i_h1 and m.find('Base legal:') == m.find('Base legal:', i_h1), f'{nome}: "Base legal:" logo abaixo do título/introdução')
         checa(m.count('Base legal:') == 1, f'{nome}: base legal uma vez só (não repete no fim)')
     checa('id="avaliar"' in m, f'{nome}: "Avalie esta página" no fim')
+    cab = r.text[r.text.find('class="b-inst"'):r.text.find('</nav>', r.text.find('class="b-inst"'))]
+    checa(cab.count('<li') >= 5 and r.text[r.text.find('id="menu"'):].split('</nav>')[0].count('<li') >= 3, f'{nome}: barras do cabeçalho com itens')
     return r
 for u, nome, legal in [('/noticias', 'notícias', True), ('/ouvidoria', 'ouvidoria', True), ('/e-sic', 'e-sic', True), ('/governo', 'governo', True), ('/fotos', 'fotos', True),
                        ('/links-uteis', 'links úteis', False), ('/privacidade', 'privacidade', True), ('/acessibilidade', 'acessibilidade', True), ('/mapa-do-site', 'mapa', False),

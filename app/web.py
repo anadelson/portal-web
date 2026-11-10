@@ -198,13 +198,17 @@ def vizinhos(o):
     orgao_por_dominio(o['dominio'])
     return [x for x in _cache['orgaos'].values() if x['ibge'] == o['ibge'] and x['id'] != o['id']]
 
+LARGURAS = (1200, 1320, 1440)  # largura máxima do conteúdo do portal (Identidade > Tema)
+LARGURA_PADRAO = 1320
+
 def ctx_orgao(request: Request, **extra):
     o = request.state.orgao
     ident = db.cfg(o['banco'], 'identidade', {}) or {}
     mods = modulos_do_orgao(o)
     cor = ident.get('cor') or o['cor']
     tokens = {'cor': cor, 'cor_escura': mistura(cor, '#000000', .3), 'cor_clara': mistura(cor, '#FFFFFF', .88),
-              'destaque': ident.get('cor_destaque') or '#F0B429'}
+              'destaque': ident.get('cor_destaque') or '#F0B429',
+              'largura': ident.get('largura') if ident.get('largura') in LARGURAS else LARGURA_PADRAO}
     ao_vivo = db.um(o['banco'], 'SELECT id, titulo, tipo, iniciada_em FROM transmissoes WHERE ao_vivo ORDER BY iniciada_em DESC LIMIT 1') if (mods.get('transm') or mods.get('audiencias')) else None
     defeso = mods.get('eleicao') and eleicao.em_defeso(o['banco'])
     from . import menus

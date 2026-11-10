@@ -1007,3 +1007,21 @@ Próximos passos dependem das pessoas:
   - /governo mostra "ainda não foi publicada" até as secretarias serem cadastradas;
   - logs sem erro.
 - `fase-8-ajustes` mesclada em `main` com a tag `fase-8-ajustes`.
+
+## Largura do portal: 1200 → 1320 px (10/11/2026, branch `largura-portal`, nada aplicado na VPS)
+- **Pedido:** largura máxima 1320 px em todo o portal, com variável `--largura`; configurável em Identidade > Tema (1200, 1320 ou 1440 px; padrão 1320); larguras de leitura mantidas; margem lateral de 24 px.
+- **Levantamento:**
+  - Só dois containers tinham 1200 px: `main` e `.int`. O `.int` é usado no cabeçalho, nas barras, no destaque e no rodapé.
+  - A margem lateral real era **20 px** (não 24); passou a 24 px (`--margem`), como no protótipo e no pedido.
+- **Feito:**
+  - `:root{--largura:1320px;--margem:24px}`; `main` e `.int` com `max-width:var(--largura)`.
+  - O valor do órgão vai no estilo inline do `base.html` (`tokens.largura`, validado em 1200/1320/1440).
+  - Painel → Identidade → Tema e cores: grupo "Largura máxima do conteúdo"; o salvamento entra no histórico e na auditoria.
+  - Mantidos: `.intro` 70ch, base legal 110ch, `.materia` 820 px.
+- **Dois defeitos achados nas capturas "antes" (já estavam em produção) e corrigidos:**
+  1. Em `/painel`, as barras do cabeçalho apareciam **vazias**: a macro `barras` do painel (gráficos da Fase 7) tinha o mesmo nome da variável do cabeçalho. Renomeada para `grafico_barras`. Teste novo em `teste_painel` e `teste_ajustes8`.
+  2. Em `/painel`, a "Base legal" **sobrepunha** a última linha da introdução, porque a introdução tinha margem inline. A base legal passou a ter margem própria (`.intro:has(+ .legal-topo)`).
+- **Capturas** antes/depois em 1920, 1366 e 390 px: `Docs/avaliacao-largura/index.html`, com a tabela de medidas.
+  - Depois: conteúdo de 1320 px em 1920 e 1366, margem de 24 px e sem rolagem horizontal.
+- **Testes:** as 11 suítes deram ERROS: 0 / tudo ok; `teste_fase9` agora testa a largura (padrão, 1440 aplicada, valor inválido volta a 1320).
+- **Onde parou:** aguardando aprovação para implantar.

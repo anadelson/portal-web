@@ -3,7 +3,7 @@
 {% from 'partials/cartoes.html' import cartao %}
 {% macro kpis(lista, rotulo) %}{% if lista %}<div class="ics" role="group" aria-label="{{ rotulo }}">{% for k in lista %}{{ cartao(k, rotulo|replace(' ', '-')|lower ~ '-' ~ loop.index) }}{% endfor %}</div>{% endif %}{% endmacro %}
 {% macro fonte(txt, quando) %}<p class="pfonte">Fonte: {{ txt }}{% if quando %} Consulta em {{ quando|br }}.{% endif %}</p>{% endmacro %}
-{% macro barras(itens, rotulo, val='v', pct='p') %}<div class="pbarras-g" role="img" aria-label="{{ rotulo }}: {% for x in itens %}{{ x.area or x.l or x.nome }} {{ x[val] }} ({{ x[pct] }}){{ '; ' if not loop.last }}{% endfor %}."><ul class="pbarras">{% for x in itens %}<li><span class="t">{{ x.area or x.l or x.nome }}</span><span class="n">{{ x[pct] }} · {{ x[val] }}</span><span class="b" aria-hidden="true"><span style="width:{{ x.w }}%"></span></span></li>{% endfor %}</ul></div>{% endmacro %}
+{% macro grafico_barras(itens, rotulo, val='v', pct='p') %}<div class="pbarras-g" role="img" aria-label="{{ rotulo }}: {% for x in itens %}{{ x.area or x.l or x.nome }} {{ x[val] }} ({{ x[pct] }}){{ '; ' if not loop.last }}{% endfor %}."><ul class="pbarras">{% for x in itens %}<li><span class="t">{{ x.area or x.l or x.nome }}</span><span class="n">{{ x[pct] }} · {{ x[val] }}</span><span class="b" aria-hidden="true"><span style="width:{{ x.w }}%"></span></span></li>{% endfor %}</ul></div>{% endmacro %}
 {% macro links(lst) %}{% if lst %}<nav class="plinks" aria-label="Indicadores desta área"><span>Série histórica e downloads:</span>{% for x in lst %}<a href="/painel/{{ x.chave }}">{{ x.nome }}</a>{% endfor %}</nav>{% endif %}{% endmacro %}
 {% macro minimos(lst) %}{% for m in lst %}<div class="pmin"><p class="t"><a href="{{ m.href }}">{{ m.l }}</a></p><p class="d">{{ m.base }}</p>
 <div class="g-img" role="img" aria-label="{{ m.l }}: {% for a in m.anos %}{{ a.ano }} {{ a.p }}{{ '; ' if not loop.last }}{% endfor %}; mínimo {{ m.meta }}."><ul>{% for a in m.anos %}<li><span class="ano">{{ a.ano }}</span><span class="b" aria-hidden="true"><span style="width:{{ a.w }}%"></span>{% if m.meta_w %}<i style="left:{{ m.meta_w }}%"></i>{% endif %}</span><span class="n">{{ a.p }}</span></li>{% endfor %}</ul></div>
@@ -33,7 +33,7 @@
 {% for m in f.mensal.meses %}<tr><th scope="row">{{ ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][m.mes - 1] }}{% if m.parcial %} (em andamento){% endif %}</th><td class="num">{{ m.receita|moeda }}</td><td class="num">{{ m.despesa_paga|moeda }}</td></tr>{% endfor %}</tbody></table></div></details>
 {{ fonte('dados abertos do sistema contábil da Prefeitura (consulta mês a mês). Receita já descontado o FUNDEB.', f.mensal.coletado) }}</section>{% endif %}
 {% if f.para_onde %}<section class="pcard" aria-labelledby="h-area"><h3 id="h-area">Para onde vai o dinheiro</h3>{% if f.para_onde.frase %}<p class="sub">{{ f.para_onde.frase }}</p>{% endif %}
-{{ barras(f.para_onde.itens, 'Valor empenhado por área em ' ~ f.ano) }}
+{{ grafico_barras(f.para_onde.itens, 'Valor empenhado por área em ' ~ f.ano) }}
 <details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Empenhado por área</caption><thead><tr><th scope="col">Área</th><th scope="col" class="num">Empenhado</th><th scope="col" class="num">%</th></tr></thead><tbody>{% for x in f.para_onde.itens %}<tr><th scope="row">{{ x.area }}</th><td class="num">{{ x.v }}</td><td class="num">{{ x.p }}</td></tr>{% endfor %}</tbody></table></div></details>
 {{ fonte('dados abertos do sistema contábil. Valor empenhado em ' ~ f.ano ~ ' até ' ~ f.ate.strftime('%d/%m') ~ ', agrupando as ' ~ f.para_onde.n_unid ~ ' unidades orçamentárias por área (agrupamento definido pela Prefeitura).', d.selo) }}</section>{% endif %}
 {% if f.de_onde %}<section class="pcard" aria-labelledby="h-orig"><h3 id="h-orig">De onde vem o dinheiro</h3><p class="sub">{{ f.de_onde.frase }}</p>
@@ -49,7 +49,7 @@
 
 {% if d.cont %}{% set c = d.cont %}
 <section class="psec pcard" aria-labelledby="h-cont"><h2 id="h-cont">Contratações publicadas no PNCP</h2>{% if c.frase %}<p class="sub">{{ c.frase }}</p>{% endif %}
-{{ barras(c.itens, 'Contratações por modalidade em ' ~ c.ano, 'n', 'p') }}
+{{ grafico_barras(c.itens, 'Contratações por modalidade em ' ~ c.ano, 'n', 'p') }}
 <details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Contratações por modalidade</caption><thead><tr><th scope="col">Modalidade</th><th scope="col" class="num">Quantidade</th><th scope="col" class="num">%</th></tr></thead><tbody>{% for x in c.itens %}<tr><th scope="row">{{ x.l }}</th><td class="num">{{ x.n }}</td><td class="num">{{ x.p }}</td></tr>{% endfor %}</tbody></table></div></details>
 {{ fonte('Portal Nacional de Contratações Públicas (PNCP), publicações do município. Dispensas incluem compras de pequeno valor, permitidas pela Lei 14.133/2021.', c.coletado) }}
 <nav class="plinks" aria-label="Indicadores de contratações"><span>Série histórica e downloads:</span><a href="/painel/cont_publicadas">Contratações publicadas</a><a href="/painel/cont_valor">Valor das contratações</a><a href="/painel/cont_dispensa">Dispensas</a></nav></section>

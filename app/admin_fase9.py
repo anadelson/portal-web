@@ -115,10 +115,13 @@ async def ident_cores(request: Request):
         return ir('/admin/identidade?aba=tema', 'Recusado (acessibilidade AA): ' + ' '.join(erros), request)
     ident = db.cfg(b, 'identidade', {}) or {}
     antes = (ident.get('cor'), ident.get('cor_destaque'))
-    ident['cor'], ident['cor_destaque'] = cor, dest
+    from .web import LARGURAS, LARGURA_PADRAO
+    larg = int(f['largura']) if str(f.get('largura', '')).isdigit() and int(f['largura']) in LARGURAS else LARGURA_PADRAO
+    antes_l = ident.get('largura') or LARGURA_PADRAO
+    ident['cor'], ident['cor_destaque'], ident['largura'] = cor, dest, larg
     db.set_cfg(b, 'identidade', ident)
-    auditar(request, f'Identidade: cores {antes[0]}/{antes[1]} → {cor}/{dest}')
-    return ir('/admin/identidade?aba=tema', 'Cores salvas.', request)
+    auditar(request, f'Identidade: cores {antes[0]}/{antes[1]} → {cor}/{dest}; largura {antes_l} → {larg} px')
+    return ir('/admin/identidade?aba=tema', 'Tema salvo.', request)
 
 FAVICON_TAMANHOS = (16, 32, 180, 512)
 SVG_PROIBIDO = re.compile(r'<\s*(script|foreignObject|iframe|object|embed)|\son\w+\s*=|javascript:|xlink:href\s*=\s*["\'](?!#)|href\s*=\s*["\'](?!#)', re.I)
