@@ -26,6 +26,8 @@ EOF
 cat > "$T/bin/curl" <<EOF
 #!/bin/bash
 [ -f "$T/https-falha" ] && { echo 000; exit 7; }
+# "https-lento": falha nas primeiras N chamadas (o nginx ainda com os processos antigos logo depois da recarga)
+if [ -f "$T/https-lento" ]; then n=\$(cat "$T/https-lento"); if [ "\$n" -gt 0 ]; then echo \$((n - 1)) > "$T/https-lento"; echo 000; exit 60; fi; fi
 echo 200
 EOF
 # --- app simulado: fila em arquivos (id acao dominio situacao) e geração do vhost como o app.ativacao ---
@@ -48,7 +50,7 @@ esac
 EOF
 chmod +x "$T/bin/"*
 pedido() { echo "$1 $2 $3 pendente" > "$T/fila/$1.ped"; }
-rodar() { PROJ="$RAIZ" CONF_DIR="$T/conf.d" CERTS_DIR="$T/certs" ESTADO="$T/estado" LOG="$T/ativador.log" DOCKER="$T/bin/docker" CURL="$T/bin/curl" \
+rodar() { TENTATIVAS=${TENTATIVAS:-5} ESPERA=0 PROJ="$RAIZ" CONF_DIR="$T/conf.d" CERTS_DIR="$T/certs" ESTADO="$T/estado" LOG="$T/ativador.log" DOCKER="$T/bin/docker" CURL="$T/bin/curl" \
           APP_CMD="$T/bin/app" FILA="$T/fila" bash "$RAIZ/deploy/ativador.sh" "$@"; }
 sit() { cut -d' ' -f4 < "$T/fila/$1.ped"; }
 
@@ -79,6 +81,13 @@ checa '[ "$(sit 4)" = erro ] && ! grep -q semcert "$T/conf.d/portal-orgaos.conf"
 # 5. HTTPS não responde: retira de novo
 touch "$T/https-falha"; pedido 5 ativar mudo.exemplo.com; rodar; rm -f "$T/https-falha"
 checa '[ "$(sit 5)" = erro ] && ! grep -q mudo "$T/conf.d/portal-orgaos.conf"' 'HTTPS mudo: domínio retirado de novo'
+# 5b. HTTPS só responde depois de alguns instantes (recarga gradual do nginx): o ativador tenta de novo e publica
+echo 2 > "$T/https-lento"; pedido 51 ativar lento.exemplo.com; rodar
+checa '[ "$(sit 51)" = no_ar ] && grep -q "server_name lento.exemplo.com;" "$T/conf.d/portal-orgaos.conf"' 'HTTPS lento após a recarga: publicado na 3ª tentativa'
+checa '[ "$(grep -c "conferência do HTTPS de lento.exemplo.com: tentativa" "$T/ativador.log")" = 2 ]' 'tentativas registradas no log'
+echo 9 > "$T/https-lento"; pedido 52 ativar lento2.exemplo.com; TENTATIVAS=3 rodar; rm -f "$T/https-lento"
+checa '[ "$(sit 52)" = erro ] && ! grep -q lento2 "$T/conf.d/portal-orgaos.conf"' 'HTTPS que não responde em nenhuma tentativa: retirado'
+pedido 53 desativar lento.exemplo.com; rodar
 # 6. DNS deixou de apontar (revalidação)
 touch "$T/fila/dns-ruim"; pedido 6 ativar dns.exemplo.com; rodar; rm -f "$T/fila/dns-ruim"
 checa '[ "$(sit 6)" = erro ] && grep -q "Recusado" "$T/fila/6.msg"' 'DNS revalidado na hora'

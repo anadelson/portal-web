@@ -1432,3 +1432,16 @@ Próximos passos dependem das pessoas:
   1. `DRY_RUN=1 deploy/ativador.sh --teste teste-ativacao.conectatech.tech` (ensaio);
   2. o teste real (publica, confere o HTTPS e retira).
 - `ativacao-dominio` mesclado em `main` com a tag `ativacao-dominio`.
+
+### Teste real da etapa 2 e ajuste do ativador (10–11/11/2026)
+- DNS de teste criado pelo usuário: `teste-ativacao.conectatech.tech` → 76.13.167.181 (confirmado no 8.8.8.8 e no 1.1.1.1).
+- **Ensaio** (`DRY_RUN=1 ativador.sh --teste …`): Let's Encrypt validou o domínio; nada publicado.
+- **1º teste real:**
+  - certificado emitido (válido até 08/02/2027);
+  - domínio publicado com `nginx -t` aceito;
+  - **conferência do HTTPS falhou**: o curl recebeu o certificado de outro site. O ativador retirou o domínio, como previsto. Os outros sites não foram afetados.
+  - **Causa:** a recarga do nginx é gradual; a conferência foi feita no mesmo instante e caiu num processo antigo.
+- **Ajuste (aprovado: "Sim, ajustar e repetir"):** a conferência do HTTPS tenta até 5 vezes, a cada 2 segundos (`TENTATIVAS`/`ESPERA`). Ensaio simulado com dois casos novos: HTTPS lento (publica na 3ª tentativa) e HTTPS que nunca responde (retira).
+- **2º teste real:** 1ª tentativa sem sucesso, 2ª com certificado válido. Domínio de teste retirado no fim (`portal-orgaos.conf` só com o cabeçalho). Portais e sites do hotspot normais.
+- O certificado de teste ficou guardado; o registro DNS de teste pode ser apagado quando quiser.
+- `ajuste-ativador` mesclado em `main` com a tag `ativacao-dominio-ok`.
