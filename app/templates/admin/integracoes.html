@@ -4,5 +4,26 @@
 <p>Todas as fontes de dados que o portal consulta sozinho: como cada consulta é montada, os parâmetros (editáveis pelo administrador, com teste antes de salvar), a última execução e um trecho da última resposta. Credenciais nunca aparecem aqui: só “configurada no console”.</p>
 {% if aviso_tv %}<p class="msg" role="status" style="background:#FCEFD9"><strong>Transmissões não aparecem no portal porque:</strong> {{ aviso_tv|join('; ') }}.</p>{% endif %}
 <nav class="subabas" aria-label="Fontes deste órgão">{% for f in fontes %}<a href="/admin/integracoes?fonte={{ f.fonte }}"{% if f.fonte == sel %} aria-current="page"{% endif %}>{{ f.nome }}{% if not f.ativo %} (desligada){% elif ult.get(f.fonte) and not ult[f.fonte].ok %} ⚠{% endif %}</a>{% endfor %}</nav>
+{% if ag %}<section class="cx form-tela" id="agenda" aria-labelledby="h-agenda"><h2 id="h-agenda">Agenda de execução</h2>
+{% if ag.fixa %}<p>Esta fonte tem agenda automática: {{ ag.fixa }}.</p>
+{% else %}
+<p>Hoje: <strong>{{ ag.descricao }}</strong>{% if ag.vezes %} · {{ ag.vezes }} vez(es) por dia{% else %} · menos de uma vez por dia{% endif %}{% if not ag.propria %} <span class="chip">padrão do sistema</span>{% endif %}</p>
+{% if ag.proximas %}<p class="legal">Próximas execuções: {% for t in ag.proximas %}{{ ag.dias[t.weekday()] }} {{ t.strftime('%d/%m %H:%M') }}{{ ' · ' if not loop.last }}{% endfor %}</p>{% endif %}
+{% if pode('config') %}{% set a = ag.atual %}
+<form class="campos form-agenda" method="post" action="/admin/integracoes/{{ sel }}/agenda"><input type="hidden" name="csrf" value="{{ C }}">
+<fieldset class="opcoes"><legend>Dias da semana</legend>{% for d in ag.dias %}<label><input type="checkbox" name="dias" value="{{ loop.index0 }}" {{ 'checked' if loop.index0 in a.dias }}> {{ d }}</label>{% endfor %}</fieldset>
+<fieldset><legend>Como rodar</legend>
+<label class="opc"><input type="radio" name="modo" value="horarios" {{ 'checked' if a.modo == 'horarios' }}> Em horários fixos</label>
+<label class="sub-campo">Horários do dia, separados por vírgula (ex.: 06:00, 12:30, 18:00)<input name="horarios" value="{{ (a.horarios or [])|join(', ') }}" placeholder="06:00, 18:00" inputmode="numeric"></label>
+<label class="opc"><input type="radio" name="modo" value="intervalo" {{ 'checked' if a.modo != 'horarios' }}> Repetir em intervalo</label>
+{% set c = a.cada_min or 60 %}{% set un = 'd' if c % 1440 == 0 else ('h' if c % 60 == 0 else 'min') %}
+<div class="grade2 sub-campo"><label>A cada<input type="number" name="cada" min="1" value="{{ (c // 1440) if un == 'd' else ((c // 60) if un == 'h' else c) }}"></label>
+<label>Unidade<select name="unidade"><option value="min" {{ 'selected' if un == 'min' }}>minutos</option><option value="h" {{ 'selected' if un == 'h' }}>horas</option><option value="d" {{ 'selected' if un == 'd' }}>dias</option></select></label>
+<label>Das (hora)<select name="inicio">{% for h in range(0, 24) %}<option value="{{ h }}" {{ 'selected' if (a.inicio or 0) == h }}>{{ '%02d'|format(h) }}h</option>{% endfor %}</select></label>
+<label>Até (hora)<select name="fim">{% for h in range(1, 25) %}<option value="{{ h }}" {{ 'selected' if (a.fim or 24) == h }}>{{ '%02d'|format(h) }}h</option>{% endfor %}</select></label></div>
+</fieldset>
+<p class="legal">Para não sobrecarregar a fonte, esta integração roda no máximo a cada {{ ag.minimo }}. Padrão do sistema: {{ ag.padrao }}.</p>
+<div class="acoes-form"><button class="btn" name="acao" value="salvar">Salvar agenda</button>{% if ag.propria %}<button class="btn sec" name="acao" value="padrao" formnovalidate>Voltar ao padrão</button>{% endif %}</div>
+</form>{% endif %}{% endif %}</section>{% endif %}
 {% if cp %}{{ consulta(cp, '/admin/integracoes?fonte=' ~ sel, C, pode('config')) }}{% else %}<p>Nenhuma fonte cadastrada para este órgão.</p>{% endif %}
 {% endblock %}

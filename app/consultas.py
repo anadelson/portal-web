@@ -116,7 +116,13 @@ MAPEAMENTO = {
     'youtube': [('liveBroadcastContent, actualStartTime/EndTime, caption', 'Transmissões (ao vivo e gravações)')],
 }
 
-def periodicidade(fonte):
+def periodicidade(fonte, f=None):
+    """Quando a fonte roda: a agenda do órgão (se houver linha em `fontes`) ou o padrão do sistema."""
+    from . import agenda as AG
+    if fonte in AG.FIXAS:
+        return AG.FIXAS[fonte]
+    if fonte in AG.PADRAO:
+        return AG.descrever(AG.da_fonte(dict(f or {}, fonte=fonte)))
     from .worker import FREQ
     if fonte not in FREQ:
         return '—'
@@ -239,7 +245,7 @@ def painel(o, fonte):
     cred = CREDENCIAL.get(fonte)
     return {'fonte': fonte, 'nome': NOMES.get(fonte, fonte), 'cadastrada': bool(f), 'ativa': bool(f and f['ativo']), 'params': p,
             'esquema': [(n, r, t, de, p.get(n)) for n, r, t, de in ESQUEMA.get(fonte, [])], 'endpoints': endpoints(fonte, p),
-            'mapeamento': MAPEAMENTO.get(fonte, []), 'formato': FORMATO.get(fonte, 'JSON'), 'periodicidade': periodicidade(fonte),
+            'mapeamento': MAPEAMENTO.get(fonte, []), 'formato': FORMATO.get(fonte, 'JSON'), 'periodicidade': periodicidade(fonte, f),
             'credencial': ('configurada no console' if CR.situacao(cred) else 'NÃO configurada no console') if cred else 'não usa',
             'amostras': amostras, 'coletas': coletas, 'teste': ultimo_teste(o, fonte),
             'historico': db.todos(db.PLATAFORMA, 'SELECT * FROM fontes_historico WHERE orgao_id=%s AND fonte=%s ORDER BY id DESC LIMIT 10', (o['id'], fonte)),

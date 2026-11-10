@@ -1217,3 +1217,29 @@ Próximos passos dependem das pessoas:
 - **Subida:** `up -d` de app e worker; app saudável. Sem migração de banco. Disco em 72%.
 - **Conferência no domínio:** admin.css v=10 servido, com `.form-tela{max-width:none}`; portais 200, console 303 (login); logs sem erro.
 - `form-largura` mesclado em `main` com a tag `form-largura`.
+
+## Agenda das integrações no painel (10/11/2026, branch `agenda-integracoes`, nada aplicado na VPS)
+- **Pedido:** o próprio órgão configura no painel, para cada integração, os dias, o horário e quantas vezes ela roda, sem mexer no código.
+- **Antes:** o agendamento era fixo no código (`FREQ` no `worker.py`), igual para todos os órgãos.
+- **Feito:**
+  - **Migração `021_plataforma_agenda.sql`:** coluna `fontes.agenda` (JSONB). Vazia = padrão do sistema, idêntico ao agendamento de antes (o teste confere fonte por fonte). Nada muda até alguém configurar.
+  - **`app/agenda.py`:**
+    - dois modos: horários fixos ("06:00, 18:00") ou "repetir a cada N minutos/horas/dias, das X às Y h";
+    - em ambos, os dias da semana;
+    - mostra as próximas execuções e quantas vezes por dia;
+    - horário fixo perdido é recuperado só até 60 min depois.
+  - **Proteção das fontes externas:** intervalo mínimo por fonte. Fiorilli 30 min; Painel 15 min; PNCP e redes 1 h; Siconfi, TCESP e série mensal 6 h; IBGE, CNES, MDS, PNI, INEP e IEG-M 1 dia (um horário por dia).
+  - **YouTube:** continua com a agenda automática (só dentro da janela de cada transmissão), sem edição.
+  - **Worker:** lê a agenda de cada órgão a cada minuto (`pronta()`). As regras do TCESP (dia 20 ou ano faltante) e do módulo de BI continuam valendo.
+  - **Painel → Integrações → cada fonte:** quadro "Agenda de execução" com:
+    - a agenda em vigor ("padrão do sistema" ou a do órgão), as próximas 5 execuções e as vezes por dia;
+    - o formulário e o botão "Voltar ao padrão".
+    Só o perfil com permissão de configuração altera; toda mudança vai para a auditoria ("antes → depois").
+  - A "Periodicidade" na descrição da consulta passou a mostrar a agenda do órgão.
+- **Conferência** (ambiente de TESTE, removido com `rm -fv`):
+  - salvar uma agenda pelo navegador funciona; horários a menos do mínimo são recusados com explicação;
+  - axe sem violações no quadro; sem rolagem horizontal em 390 px;
+  - capturas em `Docs/avaliacao-agenda-integracoes/`.
+- **Teste novo:** `tests/teste_agenda.py` (lógica, limites, painel, auditoria, worker obedecendo a agenda, volta ao padrão, acesso sem login).
+- **Testes:** as 15 suítes (14 de antes + `teste_agenda`) deram ERROS: 0 / tudo ok no banco de TESTE; nenhum volume solto.
+- **Onde parou:** aguardando aprovação para implantar. **Tem migração** (021): no passo 5 roda também `python -m app.provision atualizar`.
