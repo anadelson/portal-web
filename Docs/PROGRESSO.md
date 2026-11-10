@@ -1374,3 +1374,61 @@ Próximos passos dependem das pessoas:
   - 2: ativar domínio, certificado e nginx pelo console;
   - 3: Diário configurável por órgão (decreto e horários);
   - 4: adaptadores de outros sistemas da transparência.
+
+## Modelo multi-órgão — etapa 2: publicar domínio pelo console (10/11/2026, branch `ativacao-dominio`, nada aplicado na VPS)
+- **Desenho e decisões:** `Docs/ETAPA2-ATIVACAO-DOMINIO.md`. D1–D4 aprovadas:
+  - gravar `portal-orgaos.conf` e `portal-comum.inc` na pasta do nginx do hotspot e recarregá-lo;
+  - instalar o timer do systemd;
+  - corrigir a recarga depois da renovação;
+  - teste real com o registro A `teste-ativacao.conectatech.tech`, criado pelo usuário.
+- **Achado (já existia):** ninguém recarregava o nginx depois da renovação automática dos certificados. Vale para todos os sites da VPS; os do piloto vencem ~05/02/2027.
+- **Feito:**
+  - **Migração `023_plataforma_ativacoes.sql`:** fila `ativacoes` e `orgaos.vhost_ativo`.
+  - **`app/ativacao.py`:**
+    - verificação de DNS (o domínio precisa apontar só para a VPS);
+    - fila de pedidos;
+    - geração do `portal-orgaos.conf` (um par de blocos 80/443 por órgão publicado);
+    - comandos para o ativador: `pendentes`, `validar`, `vhost`, `passo`, `concluir`.
+  - **`deploy/ativador.sh`** (root, a cada minuto via `portal-ativador.timer`). Lista fechada de ações, para cada pedido:
+    1. revalida o pedido e o DNS;
+    2. recusa domínio que já esteja em outro site da VPS;
+    3. pede o certificado (certbot webroot, `--keep-until-expiring`);
+    4. gera o arquivo de forma atômica;
+    5. roda `nginx -t` (se recusar, volta o anterior e não recarrega) e recarrega;
+    6. confere o HTTPS; se não responder, retira de novo.
+    - "Tirar do ar" retira o domínio e guarda o certificado.
+    - Recarrega o nginx quando algum certificado foi renovado.
+    - Trava contra execução dupla; registro em `logs/ativador.log`.
+    - Modo `--teste DOMINIO` (com `DRY_RUN=1` só ensaia o certificado).
+  - **Console → órgão → "Domínio e publicação":**
+    - DNS ao vivo e instrução do registro A;
+    - botão "Publicar domínio" (só com o DNS certo) e "Tirar do ar";
+    - passos do pedido e resultado.
+    - Os domínios do piloto ficam fora: continuam no `portal-bora.conf`.
+  - A tela "Órgão criado" passou a orientar o uso do botão.
+- **Testes novos:**
+  - `tests/teste_ativacao.py` (DNS simulado): console, fila, vhost, recusas, piloto fora, sem login;
+  - `tests/teste_ativador.sh`: o ativador real com docker, certbot, nginx e curl simulados, em 23 verificações (sucesso, domínio de outro sistema, nginx -t recusado com volta do anterior, sem certificado, HTTPS mudo, DNS revalidado, retirada, renovação, modo de teste, ensaio e trava).
+- **DNS de teste:** em 10/11 à noite, `teste-ativacao.conectatech.tech` ainda não resolvia; o usuário vai criar o registro.
+- **Testes:** as 18 suítes (17 de antes + `teste_ativacao`) deram ERROS: 0 / tudo ok no banco de TESTE, e `teste_ativador.sh` deu tudo ok; nenhum volume solto.
+- **Onde parou:** aguardando aprovação para implantar. **Tem migração** (023) e **instalação no sistema** (timer do systemd). Ordem:
+  1. `up -d app` → `provision atualizar` → `up -d worker`;
+  2. copiar as unidades para `/etc/systemd/system`, `daemon-reload`, `enable --now portal-ativador.timer`;
+  3. com o DNS de teste no ar: `DRY_RUN=1 ativador.sh --teste teste-ativacao.conectatech.tech` e depois o teste real.
+
+### Implantação da etapa 2 (10/11/2026, aprovada: "Aprovo a implantação" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 23h45 UTC.
+- **Build e testes:** as 18 suítes com a imagem nova deram ERROS: 0 / tudo ok; `teste_ativador.sh` tudo ok; nenhum volume solto.
+- **Subida:** `up -d app` → `provision atualizar` (aplicou a `023_plataforma_ativacoes.sql`) → `up -d worker`. Worker sem erros.
+- **Instalação no sistema** (comandos mostrados antes):
+  - `install` das unidades em `/etc/systemd/system`;
+  - `systemctl daemon-reload`;
+  - `systemctl enable --now portal-ativador.timer`.
+- **Conferência:**
+  - timer ativo, a cada minuto;
+  - primeira execução com sucesso: só criou a marca de renovação em `/var/lib/portal-ativador`; **nenhum arquivo do nginx criado nem recarga** (fila vazia);
+  - portais do piloto e sites do hotspot respondendo normalmente; logs sem erro.
+- **Pendente:** teste real de certificado com `teste-ativacao.conectatech.tech`. Em 10/11 às 23h55 UTC o DNS ainda não resolvia. Quando resolver:
+  1. `DRY_RUN=1 deploy/ativador.sh --teste teste-ativacao.conectatech.tech` (ensaio);
+  2. o teste real (publica, confere o HTTPS e retira).
+- `ativacao-dominio` mesclado em `main` com a tag `ativacao-dominio`.

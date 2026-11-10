@@ -189,3 +189,4 @@ caption.titulo-lista{caption-side:top;text-align:left;font-weight:700;font-size:
 .cadastro-orgao{max-width:none}
 .senha-unica{border:2px solid #F0B429}.dados-senha{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:10px 0 0}.dados-senha dt{font-weight:700}.dados-senha dd{margin:0}
 .dados-senha code.senha{font-size:var(--fs-secao);letter-spacing:.06em;background:#FFF7E0;padding:2px 8px;border-radius:6px}
+.passos-ativacao{margin:4px 0 10px;padding-left:20px}.passos-ativacao small{color:var(--sub)}

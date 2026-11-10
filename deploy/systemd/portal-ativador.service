@@ -1,0 +1,10 @@
+[Unit]
+Description=Ativador dos Portais: publica domínios pedidos no console (certificado, nginx) e recarrega o nginx após renovação
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/portal_web/deploy/ativador.sh
+Nice=10
+TimeoutStartSec=600
