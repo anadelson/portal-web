@@ -8,6 +8,7 @@
   (vídeos comuns do canal, como propaganda, não entram).
 - Custo: 2 unidades da cota por consulta (playlistItems + videos), bem abaixo da cota diária gratuita.
 - Erros registram só o código HTTP ou o tipo do erro: a URL leva a chave e nunca vai para o log."""
+from .. import config
 from datetime import datetime, timedelta, timezone
 from .. import db, credenciais as CR
 
@@ -25,7 +26,7 @@ def _get(caminho, params, key):
     from .comum import anotar
     t0 = time.monotonic(); q = {**params, 'key': key}
     try:
-        with httpx.Client(timeout=30, headers={'User-Agent': 'PortaisBora-coletor/1.0', 'Accept': 'application/json'}) as c:
+        with httpx.Client(timeout=30, headers={'User-Agent': config.USER_AGENT, 'Accept': 'application/json'}) as c:
             r = c.get(f'{API}/{caminho}', params=q)
     except Exception as e:
         anotar('youtube', f'{API}/{caminho}', q, 0, int((time.monotonic() - t0) * 1000), erro=type(e).__name__)

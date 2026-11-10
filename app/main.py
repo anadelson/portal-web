@@ -7,7 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from . import config, portal, admin, console, transparencia, admin_leg, portal_leg, remessa, portal_painel, admin_painel, portal_fase8, admin_fase8, admin_fase9, portal_fase9, admin_carta, portal_carta
 from .web import RoteadorPorDominio, templates
 
-app = FastAPI(title='Portais de Borá — piloto', docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title=config.NOME_PLATAFORMA, docs_url=None, redoc_url=None, openapi_url=None)
 app.mount('/static', StaticFiles(directory=str(Path(__file__).parent / 'static')), name='static')
 app.include_router(transparencia.r)
 app.include_router(portal.r)
@@ -65,7 +65,7 @@ class Cabecalhos:
                     if k not in nomes:
                         h.append((k, v))
                 host = dict(scope.get('headers') or []).get(b'host', b'').decode().split(':')[0].lower()
-                if caminho.startswith('/admin') or host == config.DOMINIO_GESTAO.lower():
+                if (caminho.startswith('/admin') or host == config.DOMINIO_GESTAO.lower()) and b'cache-control' not in nomes:
                     h.append((b'cache-control', b'no-store'))
                 msg = dict(msg, headers=h)
             await send(msg)

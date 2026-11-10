@@ -118,7 +118,7 @@ def publicar(o, e, quem):
     if e['situacao'] != 'fechada':
         raise ValueError('Feche a edição antes de publicar.')
     if e['assinatura'] not in ('assinada', 'teste'):
-        raise ValueError('A edição só pode ser publicada depois de assinada em todas as etapas (Lei 910/2026, art. 7º).')
+        raise ValueError('A edição só pode ser publicada depois de assinada em todas as etapas (lei municipal do Diário Oficial).')
     db.exe(b, "UPDATE diario_edicoes SET situacao='publicada', publicada_em=now() WHERE id=%s", (e['id'],))
     db.exe(b, "UPDATE diario_atos SET situacao='publicado' WHERE edicao_id=%s", (e['id'],))
     try:  # Fase 8: leis, decretos etc. entram sozinhos na página Legislação

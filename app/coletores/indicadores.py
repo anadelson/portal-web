@@ -320,7 +320,7 @@ def coletar_painel(o, p, hoje=None):
     anos = int(p.get('anos_minimos', 5))
     feitos = {(x['indicador'], x['periodo']) for x in db.todos(db.PLATAFORMA, "SELECT indicador, periodo FROM indicadores_publicos WHERE ibge=%s AND fonte='siconfi' AND NOT parcial", (str(ibge),))}
     # no máximo uma consulta ao Siconfi por dia (anos fechados já gravados não são pedidos de novo; anos sem os mínimos
-    # no Anexo 14 — ex.: 2022 e 2023 em Borá — ficam em branco e são tentados de novo só no dia seguinte)
+    # no Anexo 14 — ex.: anos que o município não entregou — ficam em branco e são tentados de novo só no dia seguinte)
     ult = db.cfg(o['banco'], 'painel_siconfi_consulta')
     pedir = []
     if not ult or ult < (config.agora() - timedelta(hours=20)).isoformat():

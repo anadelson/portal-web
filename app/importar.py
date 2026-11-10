@@ -1,6 +1,6 @@
 """Importação de dados antigos da Câmara a partir de CSV exportado pelo sistema do fornecedor ou digitado (nada de raspagem).
 
-  python -m app.importar MODELO ARQUIVO.csv [--orgao cm-bora] [--gravar]
+  python -m app.importar MODELO ARQUIVO.csv [--orgao SLUG] [--gravar]
 Sem --gravar é só simulação: valida tudo e mostra o relatório de erros sem gravar nada.
 CSV em UTF-8, separador ponto e vírgula, datas dd/mm/aaaa. Modelos em Docs/modelos/.
 A importação é tudo ou nada: com qualquer erro, nada é gravado."""

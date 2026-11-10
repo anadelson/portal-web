@@ -1,7 +1,7 @@
 """Coletor do sistema contábil (Fiorilli, API pública VersaoJson / dados abertos).
 
 Parâmetros por órgão (tabela `fontes`, fonte='fiorilli'):
-  base      URL da API (ex.: https://borasp.dcfiorilli.com.br:879/transparencia/VersaoJson/)
+  base      URL da API (ex.: https://<municipio>.dcfiorilli.com.br:879/transparencia/VersaoJson/)
   empresa   código da entidade na Fiorilli (ex.: '2')
   bases     lista das bases a coletar (receitas, despesas_unidade, empenhos, diarias, restos_pagar,
             ordem_cronologica, licitacoes, contratos, transferencias, servidores, emendas)

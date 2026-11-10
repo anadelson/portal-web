@@ -86,7 +86,7 @@ def _http_teste(fonte, auth):
     import httpx
     if fonte == 'iegm':
         from .coletores.inep_iegm import IEGM_URL, IEGM_CONSULTA
-        with httpx.Client(timeout=60, auth=auth, headers={'User-Agent': 'PortaisBora-coletor/1.0', 'Accept': 'application/json'}) as c:
+        with httpx.Client(timeout=60, auth=auth, headers={'User-Agent': config.USER_AGENT, 'Accept': 'application/json'}) as c:
             r = c.get(IEGM_URL, params={**IEGM_CONSULTA, 'parampExercicio_mapa': config.hoje().year - 1})
         try:
             d = r.json()
@@ -104,7 +104,7 @@ def _http_teste(fonte, auth):
             return (int(st[5:]) if st.startswith('HTTP ') else 0), False
     if fonte == 'meta':  # consulta mínima: dados do próprio token
         import httpx
-        with httpx.Client(timeout=30, headers={'User-Agent': 'PortaisBora-coletor/1.0'}) as c:
+        with httpx.Client(timeout=30, headers={'User-Agent': config.USER_AGENT}) as c:
             r = c.get('https://graph.facebook.com/v21.0/me', params={'fields': 'id', 'access_token': auth[1]})
         try:
             return r.status_code, 'id' in r.json()

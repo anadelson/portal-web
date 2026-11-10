@@ -1,0 +1,20 @@
+{% extends 'console/base.html' %}{% block h1 %}Órgão criado{% endblock %}
+{% block conteudo %}
+<p class="msg" role="status"><strong>{{ o.nome }}</strong> foi criado em implantação (banco {{ o.banco }}, município {{ o.municipio }}, IBGE {{ o.ibge }}).</p>
+<section class="cx senha-unica" aria-labelledby="h-senha"><h2 id="h-senha">Acesso do administrador — anote agora</h2>
+<p>Esta senha aparece <strong>só nesta tela</strong>: não fica gravada (o sistema guarda apenas o código cifrado) e não vai para o registro. Entregue ao administrador por um canal seguro; no primeiro acesso ele cadastra o segundo fator e troca a senha.</p>
+<dl class="dados-senha"><dt>Endereço do painel</dt><dd><code>https://{{ o.dominio }}/admin</code></dd><dt>E-mail</dt><dd><code>{{ dados.email_admin }}</code></dd><dt>Senha provisória</dt><dd><code class="senha">{{ senha }}</code></dd></dl>
+</section>
+<section class="cx"><h2>O que foi montado</h2><ul>
+<li>Identidade: {{ dados.identidade.nome }} · {{ dados.identidade.subtitulo }} · cor {{ dados.cor }}{% if dados.identidade.cnpj %} · CNPJ {{ dados.identidade.cnpj }}{% endif %}</li>
+<li>Integrações: {% for k in dados.fontes|sort %}{{ k }}{{ ', ' if not loop.last }}{% endfor %}{% if o.tipo == 'executivo' %}, e as do painel de indicadores (IBGE, CNES, INEP, IEG-M){% endif %}. Sistema da transparência: {{ sistemas[dados.sistema] }}.</li>
+<li>Módulos opcionais: {% set on = dados.opcionais.items()|selectattr(1)|map(attribute=0)|list %}{{ on|join(', ') if on else 'nenhum' }} (ajuste em Órgãos → {{ o.nome }}).</li>
+{% if vizinhos %}<li>Outros órgãos do mesmo município (ligados automaticamente pelo código IBGE): {% for x in vizinhos %}{{ x.nome }} ({{ x.dominio }}){{ ', ' if not loop.last }}{% endfor %}.</li>{% endif %}
+</ul></section>
+<section class="cx"><h2>Próximos passos para publicar</h2><ol>
+<li>No DNS do domínio <code>{{ o.dominio }}</code>, crie o registro do tipo A apontando para o IP da VPS.</li>
+<li>Emita o certificado e inclua o domínio no nginx (por enquanto manual — a etapa 2 automatiza estes dois passos).</li>
+<li>Entregue o acesso ao administrador; ele completa a identidade (brasão, fotos, textos) e confere as integrações no painel.</li>
+<li>Quando estiver pronto, mude a situação do contrato de “em implantação” para ativo, em Órgãos → {{ o.nome }}.</li></ol></section>
+<div class="acoes"><a class="btn" href="/orgao/{{ o.id }}">Abrir o órgão no console</a><a class="btn sec" href="/">Voltar à lista</a></div>
+{% endblock %}

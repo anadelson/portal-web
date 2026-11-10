@@ -5,7 +5,7 @@
 {% if sd.foto and sd.foto.url %}<img src="{{ sd.foto.url }}" alt="{{ sd.foto.alt }}" loading="lazy" style="object-position:{{ sd.foto.foco_x|default(50) }}% {{ sd.foto.foco_y|default(50) }}%">{% endif %}
 <div class="txt"><h2 id="h-sede">{{ sd.titulo or 'Sede e atendimento' }}</h2>
 {% if ident.horario %}<p>Atendimento ao público: {{ ident.horario }}.</p>{% endif %}
-<p class="sub">{{ ident.endereco }}{% if ident.telefone %} · {{ ident.telefone }}{% endif %}</p>
+{% set contato = [ident.endereco, ident.telefone]|select|join(' · ') %}{% if contato %}<p class="sub">{{ contato }}</p>{% endif %}
 <div class="acoes"><a class="btn sec" href="/fale-conosco#unidades">Unidades e horários {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/fale-conosco">Fale conosco</a></div></div>
 </section>{% endmacro %}
 {% block classe_main %}home{% endblock %}
@@ -86,10 +86,10 @@
 {% elif b.chave == 'diario' %}
 <section class="caixa" aria-labelledby="h-diario"><h2 id="h-diario">Atos oficiais e oportunidades</h2>
 {% if d.edicoes %}{% call fileira_cartoes(d.edicoes|length, 'Últimas edições do Diário Oficial', 'fil-atos', tag='ul', classe='atos-ult') %}{% for e in d.edicoes %}<li><a href="/diario/{{ e.id }}.pdf"><small>{{ e.data|br }}</small><strong>Edição nº {{ e.numero }}{{ e.letra }}{% if e.sem_atos %} · sem atos{% endif %}</strong></a></li>{% endfor %}{% endcall %}
-{% else %}<p class="vazio">Diário Oficial (Lei Municipal 910/2026): nenhuma edição publicada ainda.</p>{% endif %}
+{% else %}<p class="vazio">Diário Oficial{% if lei_diario() %} ({{ lei_diario() }}){% endif %}: nenhuma edição publicada ainda.</p>{% endif %}
 <div class="acoes"><a class="btn" href="/diario">Todas as edições do Diário {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/diario/verificar">Verificar autenticidade</a></div></section>
 
-{% elif b.chave == 'conheca' and ident.conheca %}
+{% elif b.chave == 'conheca' and ident.conheca and (ident.conheca.titulo or ident.conheca.texto or d.perfis) %}
 {% set cx = ident.conheca %}
 <section class="conheca9" aria-labelledby="h-conheca"><div class="c-txt">
 <div class="c-marca">{% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="Brasão do Município de {{ ident.nome_curto or '' }}" width="72" height="63">{% endif %}<p class="rotulo">{{ cx.rotulo or ('Conheça ' ~ (ident.nome_curto or 'a cidade')) }}</p></div>

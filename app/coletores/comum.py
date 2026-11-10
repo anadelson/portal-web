@@ -1,4 +1,5 @@
 """Peças comuns dos coletores: HTTP respeitoso, conversões, LGPD, upsert e registro de coletas."""
+from .. import config
 import hashlib, json, re, time
 from datetime import date, datetime
 import httpx
@@ -65,7 +66,7 @@ def buscar(fonte: str, url: str, params=None, headers=None, tentativas=3, timeou
         _ultimo[fonte] = time.monotonic()
         t0 = time.monotonic(); st = 0
         try:
-            with httpx.Client(timeout=timeout, follow_redirects=True, auth=auth, verify=verify, headers={'User-Agent': 'PortaisBora-coletor/1.0', 'Accept': 'application/json', **(headers or {})}) as c:
+            with httpx.Client(timeout=timeout, follow_redirects=True, auth=auth, verify=verify, headers={'User-Agent': config.USER_AGENT, 'Accept': 'application/json', **(headers or {})}) as c:
                 r = c.get(url, params=params)
             st = r.status_code
             r.raise_for_status()

@@ -2,7 +2,7 @@
 {% macro consulta(cp, volta, C, pode_config) %}
 <section class="cx consulta" aria-labelledby="h-cons-{{ cp.fonte }}"><h2 id="h-cons-{{ cp.fonte }}">Como a consulta é montada — {{ cp.nome }}</h2>
 {% if not cp.cadastrada %}<p class="chip alerta">Fonte não cadastrada para este órgão.</p>{% else %}
-<p><span class="chip {{ 'ok' if cp.ativa else 'alerta' }}">{{ 'ligada' if cp.ativa else 'desligada' }}</span> · Formato: {{ cp.formato }} · Periodicidade: {{ cp.periodicidade }} · Credencial: {{ cp.credencial }} · Cabeçalho <code>User-Agent: PortaisBora-coletor/1.0</code></p>
+<p><span class="chip {{ 'ok' if cp.ativa else 'alerta' }}">{{ 'ligada' if cp.ativa else 'desligada' }}</span> · Formato: {{ cp.formato }} · Periodicidade: {{ cp.periodicidade }} · Credencial: {{ cp.credencial }} · Cabeçalho <code>User-Agent: {{ USER_AGENT }}</code></p>
 <div class="cons-grade"><div>
 {% for nome, met, url, q, base in cp.endpoints %}<details{% if loop.first %} open{% endif %}><summary><strong>{{ nome }}</strong></summary>
 <p><span class="chip">{{ met }}</span> <code class="url">{{ url }}</code></p>

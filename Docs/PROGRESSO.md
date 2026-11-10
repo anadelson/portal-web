@@ -1323,3 +1323,54 @@ Próximos passos dependem das pessoas:
   - portal.css v=24 servido; portais 200, console 303 (login); logs sem erro.
 - `anexos-comunicados` mesclado em `main` com a tag `anexos-comunicados`.
 - **Para o usuário:** em Painel → Comunicados → editar, usar o quadro "Arquivos anexos". Os arquivos aparecem no portal quando o comunicado é publicado.
+
+## Modelo multi-órgão — etapa 1: modelo neutro e cadastro completo (10/11/2026, branch `modelo-neutro`, nada aplicado na VPS)
+- **Pedido:** usar o piloto como modelo para outros órgãos. O cadastro no console monta portal e painel a partir dos dados do órgão (IBGE, sistema da transparência), sem nada de órgão fixo no código. Análise e etapas aprovadas: começar pela etapa 1.
+- **Feito:**
+  - **Dados do piloto fora do código:** `app/seeds/piloto_bora.json` (identidade, imagens, textos do Conheça, integrações, conteúdos-exemplo, lei do Diário), lido só por `provision init/atualizar` para os órgãos do piloto.
+    - Removidos do código: `IBGE_BORA`, `DOMINIO_PM/CM`, a URL do Fiorilli, o CNPJ, o "Portais de Borá" e o User-Agent "PortaisBora".
+    - Nome da plataforma e User-Agent configuráveis (`NOME_PLATAFORMA`, `USER_AGENT`), com padrão neutro ("Portais Municipais").
+    - A descoberta de fontes agora recebe o órgão (`python -m app.coletores.descoberta SLUG`).
+    - A lei do Diário (Lei 910/2026) saiu dos textos: vem da configuração do Diário do órgão. O piloto continua com ela pelo arquivo de dados; um órgão novo vê texto genérico até informar a lei.
+  - **Cadastro completo no console (`Órgãos → Cadastrar órgão`):**
+    - tipo; código IBGE com "Buscar no IBGE", que preenche município e UF e sugere nome, identificador e município no TCESP;
+    - CNPJ (com dígitos verificadores); cor; domínio; e-mail do administrador; contatos;
+    - sistema da transparência: Fiorilli (endereço da API e código da entidade; recebedora, para a Câmara) ou "ainda sem integração";
+    - módulos opcionais.
+    - O IBGE confirma município e UF ao cadastrar; sem resposta, valem os digitados.
+  - **Montagem automática** (`app/cadastro.py`):
+    - identidade (nome, nome curto, "Estado de …", cor, contatos, "Conheça <município>");
+    - integrações: Siconfi pelo IBGE (poder E/L); PNCP pelo CNPJ (Prefeitura); TCESP (Prefeitura de SP); Fiorilli conforme o cadastro; painel de indicadores (IBGE, CNES, INEP, IEG-M);
+    - menus, página inicial e ligação Câmara ↔ Prefeitura pelo mesmo IBGE.
+  - **Senha inicial única por órgão:**
+    - aleatória, com 16 caracteres;
+    - mostrada UMA vez na tela "Órgão criado" (sem cache), sem ir para o registro do console; só o hash fica guardado;
+    - troca obrigatória e segundo fator no primeiro acesso.
+  - **Ajustes para órgão recém-criado:** bloco "Conheça" oculto enquanto não tiver conteúdo; contato da sede sem separador sobrando; cabeçalho `Cache-Control` sem duplicar.
+- **Conferência:**
+  - Ambiente de TESTE: cadastro pelo navegador de uma Prefeitura fictícia, com portal no ar sem "Borá" e sem "910", axe sem violações e sem rolagem em 390 px.
+  - Prévia com cópia dos bancos: o piloto ficou igual ao do ar em 12 páginas. A única mudança é a redação da lei do Diário ("Lei Municipal nº 910/2026").
+  - Capturas em `Docs/avaliacao-modelo-neutro/`.
+- **Teste novo:** `tests/teste_cadastro_orgao.py`:
+  - código sem dados do piloto;
+  - validações;
+  - Prefeitura e Câmara fictícias de SP e Prefeitura fictícia de MG sem sistema;
+  - integrações, identidade, senha única, login e troca de senha do administrador;
+  - portal sem Borá; piloto intacto.
+- **Implantação:** sem migração de banco, mas é preciso rodar `provision atualizar` (grava a lei do Diário do piloto na configuração) logo depois de subir o app, antes do worker.
+- **Testes:** as 17 suítes (16 de antes + `teste_cadastro_orgao`) deram ERROS: 0 / tudo ok no banco de TESTE; nenhum volume solto. O `teste_fluxos` cadastrava com o formulário antigo (sem o e-mail do administrador): atualizado para o cadastro completo.
+- **Onde parou:** aguardando aprovação para implantar. Na subida: `up -d app` → `provision atualizar` → `up -d worker`.
+
+### Implantação da etapa 1 do modelo multi-órgão (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 23h20 UTC.
+- **Build e testes:** as 17 suítes com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida na ordem certa:** `up -d app` → `provision atualizar` (gravou a lei e a base legal do Diário do piloto na configuração do bd_pm_bora) → `up -d worker`. Worker sem erros. Disco em 75%.
+- **Conferência no domínio:**
+  - /diario de Borá com "Lei Municipal nº 910/2026" e a base legal completa;
+  - console com o formulário novo (console.js 200); o login do console mostra "Portais Municipais — plataforma" (antes "Portais de Borá"; ajustável por `NOME_PLATAFORMA` no .env);
+  - portais 200, console 303 (login); logs sem erro.
+- `modelo-neutro` mesclado em `main` com a tag `modelo-neutro`.
+- **Próximas etapas (a combinar):**
+  - 2: ativar domínio, certificado e nginx pelo console;
+  - 3: Diário configurável por órgão (decreto e horários);
+  - 4: adaptadores de outros sistemas da transparência.

@@ -1,5 +1,38 @@
 {% extends 'console/base.html' %}{% block h1 %}Cadastrar órgão{% endblock %}
-{% block conteudo %}<p>Cria o banco próprio do órgão, aplica o esquema, o layout padrão do plano e o usuário administrador inicial (admin@&lt;domínio&gt;, senha SENHA_INICIAL_ADMIN do .env). O órgão nasce em implantação.</p>
-<form class="campos" method="post" action="/orgaos/novo"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
-<label>Nome<input name="nome" required placeholder="Câmara Municipal de ..."></label><label>Tipo<select name="tipo"><option value="executivo">Prefeitura (Executivo)</option><option value="legislativo">Câmara (Legislativo)</option></select></label>
-<label>Identificador (ex.: cm-paraguacu)<input name="slug" required pattern="[a-z0-9-]{3,30}"></label><label>Domínio<input name="dominio" required placeholder="cmxxx.conectatech.tech"></label><label>Município (UF)<input name="municipio"></label><label>Código IBGE<input name="ibge"></label><button class="btn">Cadastrar</button></form>{% endblock %}
+{% block conteudo %}{% set v = f.get %}
+<p>Cria o órgão a partir do modelo: banco próprio, esquema, menus, página inicial, identidade com os dados abaixo, integrações montadas a partir do código IBGE, do CNPJ e do sistema da transparência, e o administrador inicial com senha única (mostrada uma vez). O órgão nasce “em implantação”.</p>
+{% if erros %}<div class="msg" role="alert" style="background:#FBE4D8"><strong>Não cadastrado:</strong><ul>{% for e in erros %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<form class="campos cadastro-orgao" method="post" action="/orgaos/novo" id="form-cadastro"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<fieldset><legend>1. Órgão e município</legend>
+<div class="grade2"><label>Tipo<select name="tipo" id="c-tipo"><option value="executivo" {{ 'selected' if v('tipo') != 'legislativo' }}>Prefeitura (Executivo)</option><option value="legislativo" {{ 'selected' if v('tipo') == 'legislativo' }}>Câmara (Legislativo)</option></select></label>
+<label>Código IBGE do município (7 dígitos)<span class="linha-ibge"><input name="ibge" id="c-ibge" value="{{ v('ibge', '') }}" inputmode="numeric" pattern="\d{7}" required><button type="button" class="btn sec" id="c-buscar" hidden>Buscar no IBGE</button></span></label>
+<label>Município<input name="municipio" id="c-municipio" value="{{ v('municipio', '') }}"></label>
+<label>UF<select name="uf" id="c-uf"><option value="">—</option>{% for k, n in ufs.items() %}<option value="{{ k }}" {{ 'selected' if v('uf') == k }}>{{ k }} — {{ n }}</option>{% endfor %}</select></label></div>
+<p class="legal" id="c-ibge-msg" role="status" aria-live="polite">O município e a UF são confirmados no IBGE ao cadastrar. Sem resposta do IBGE, valem os digitados.</p>
+<div class="grade2"><label>Nome do órgão (vazio = sugerido)<input name="nome" id="c-nome" value="{{ v('nome', '') }}" placeholder="Prefeitura Municipal de …"></label>
+<label>Identificador (vazio = sugerido)<input name="slug" id="c-slug" value="{{ v('slug', '') }}" pattern="[a-z0-9-]{3,30}" placeholder="pm-nome-do-municipio"></label>
+<label>CNPJ do órgão<input name="cnpj" value="{{ v('cnpj', '') }}" placeholder="00.000.000/0000-00"></label>
+<label>Cor principal<input name="cor" id="c-cor" value="{{ v('cor', '') }}" placeholder="{{ cores.executivo }}" pattern="#[0-9A-Fa-f]{6}"></label></div>
+</fieldset>
+<fieldset><legend>2. Endereço do portal e administrador</legend>
+<div class="grade2"><label>Domínio do portal<input name="dominio" value="{{ v('dominio', '') }}" required placeholder="portal.municipio.sp.gov.br"></label>
+<label>E-mail do administrador do órgão<input name="email_admin" type="email" value="{{ v('email_admin', '') }}" required></label></div>
+<p class="legal">O administrador recebe uma senha provisória única (mostrada uma vez na próxima tela), cadastra o segundo fator e troca a senha no primeiro acesso.</p>
+</fieldset>
+<fieldset><legend>3. Contatos (aparecem no rodapé e em “Fale conosco”; podem ser preenchidos depois no painel)</legend>
+<div class="grade2"><label>Endereço<input name="endereco" value="{{ v('endereco', '') }}"></label><label>Telefone<input name="telefone" value="{{ v('telefone', '') }}"></label>
+<label>E-mail de atendimento<input name="email" type="email" value="{{ v('email', '') }}"></label><label>Horário de atendimento<input name="horario" value="{{ v('horario', '') }}" placeholder="Segunda a sexta, 8h às 17h"></label></div>
+</fieldset>
+<fieldset><legend>4. Integrações</legend>
+<p class="legal">Montadas sozinhas: Siconfi (pelo código IBGE); PNCP (Prefeitura com CNPJ); TCESP (Prefeitura de SP); IBGE, CNES, INEP e IEG-M no painel de indicadores (Prefeitura). Todas podem ser ajustadas e testadas depois no painel do órgão, em Integrações.</p>
+<div class="grade2"><label>Sistema da transparência (contábil)<select name="sistema" id="c-sistema">{% for k, n in sistemas.items() %}<option value="{{ k }}" {{ 'selected' if v('sistema', 'nenhum') == k }}>{{ n }}</option>{% endfor %}</select></label>
+<label>Município no TCESP (só SP; vazio = sugerido)<input name="tcesp" id="c-tcesp" value="{{ v('tcesp', '') }}" placeholder="nome-do-municipio"></label></div>
+<div class="grade2" id="c-fio"><label>Fiorilli: endereço da API (VersaoJson)<input name="fio_base" value="{{ v('fio_base', '') }}" placeholder="https://<municipio>.dcfiorilli.com.br:879/transparencia/VersaoJson/"></label>
+<label>Fiorilli: código da entidade<input name="fio_empresa" value="{{ v('fio_empresa', '') }}" inputmode="numeric" placeholder="2"></label>
+<label>Câmara: nome do órgão recebedor nas transferências<input name="fio_recebedora" value="{{ v('fio_recebedora', '') }}" placeholder="Câmara Municipal"></label></div>
+</fieldset>
+<fieldset class="opcoes"><legend>5. Módulos opcionais contratados</legend>{% for m in mods %}<label data-serve="{{ m[4] }}"><input type="checkbox" name="mod_{{ m[0] }}" value="1" {{ 'checked' if v('mod_' ~ m[0]) }}> {{ m[1] }}{% if m[4] != 'ambos' %} <small>({{ 'Prefeitura' if m[4] == 'executivo' else 'Câmara' }})</small>{% endif %}</label>{% endfor %}</fieldset>
+<div class="acoes-form"><button class="btn">Cadastrar órgão</button><a class="btn sec" href="/">Cancelar</a></div>
+</form>
+<script src="/static/console.js?v=1" defer></script>
+{% endblock %}

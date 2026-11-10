@@ -115,12 +115,27 @@ templates.env.filters['moeda'] = moeda
 templates.env.filters['iniciais'] = iniciais
 templates.env.globals.update(CLASSES=CLASSES, SITUACOES=SITUACOES, PERFIS=PERFIS, BASE_LEGAL=BASE_LEGAL, icone=icone, TEMAS=TEMAS)
 
-def legal_topo(chave):
-    """Casco das páginas internas: "Base legal:" logo abaixo da introdução (ajustes da Fase 8)."""
+from jinja2 import pass_context
+
+def _conf_diario(ctx):
+    o = ctx.get('orgao')
+    return (db.cfg(o['banco'], 'diario', {}) or {}) if o else {}
+
+@pass_context
+def lei_diario(ctx):
+    """Lei de instituição do Diário Oficial do órgão (Diário → Signatários, calendário e lei); vazio se não informada."""
+    return _conf_diario(ctx).get('lei', '')
+
+@pass_context
+def legal_topo(ctx, chave):
+    """Casco das páginas internas: "Base legal:" logo abaixo da introdução (ajustes da Fase 8).
+    O Diário Oficial usa a base legal do próprio órgão, quando informada."""
     from markupsafe import Markup, escape
     if not chave or chave not in BASE_LEGAL:
         return ''
-    return Markup(f'<p class="legal legal-topo"><strong>Base legal:</strong> {escape(BASE_LEGAL[chave])}</p>')
+    txt = (_conf_diario(ctx).get('base_legal') if chave == 'diario' else '') or BASE_LEGAL[chave]
+    return Markup(f'<p class="legal legal-topo"><strong>Base legal:</strong> {escape(txt)}</p>')
+templates.env.globals['lei_diario'] = lei_diario
 templates.env.globals['legal_topo'] = legal_topo
 
 _cache = {'t': 0, 'orgaos': {}}
@@ -306,7 +321,7 @@ def tela_acesso(request, passo=None, console=False):
         except Exception:  # banco ainda sem a migração 018
             c = None
         v = (c or {}).get('valor') or {}
-        return {'console': True, 'nome': 'Portais de Borá — plataforma', 'titulo': v.get('titulo') or 'Console do gestor', 'brasao': '', 'cor': '#1B1E30',
+        return {'console': True, 'nome': f'{config.NOME_PLATAFORMA} — plataforma', 'titulo': v.get('titulo') or 'Console do gestor', 'brasao': '', 'cor': '#1B1E30',
                 'fundo': v.get('fundo'), 'passo': passo, 'acao': '/login', 'esqueci': '/esqueci', 'govbr': '/govbr', 'voltar': '/login', 'contato': ''}
     o = request.state.orgao
     ident = db.cfg(o['banco'], 'identidade', {}) or {}
