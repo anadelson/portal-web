@@ -159,7 +159,24 @@ def orgao(request: Request, oid: int):
     contratados = {x['chave']: x['contratado'] for x in db.todos(db.PLATAFORMA, 'SELECT * FROM orgao_modulos WHERE orgao_id=%s', (oid,))}
     opc = [dict(chave=m[0], nome=m[1], desc=m[2], depende=m[5], on=contratados.get(m[0], False)) for m in MODULOS if m[3] == 'opc' and serve(m[0], o['tipo'])]
     anos = (c['fim'] - c['inicio']).days / 365.25
-    return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD)
+    from . import ativacao as AT
+    pub = {'dns': AT.dns(o['dominio']), 'ultima': AT.ultima(oid), 'pilotos': {x['slug'] for x in provision.PILOTO}}
+    return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub)
+
+@r.post('/orgao/{oid}/dominio')
+async def orgao_dominio(request: Request, oid: int):
+    """Pede ao ativador da VPS para publicar (ou tirar do ar) o domínio do órgão. O console só grava o pedido."""
+    g = gestor(request); f = await ler_form(request)
+    o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    if not o:
+        raise HTTPException(404)
+    if o['slug'] in {x['slug'] for x in provision.PILOTO}:
+        return ir(f'/orgao/{oid}#publicacao', 'Os domínios do piloto são publicados pelo portal-bora.conf, fora do ativador.', request)
+    from . import ativacao as AT
+    ok, msg = AT.pedir(o, f.get('acao', ''), g['nome'])
+    if ok:
+        log(g, f"{o['nome']}: pediu {'publicação' if f.get('acao') == 'ativar' else 'retirada'} do domínio {o['dominio']}")
+    return ir(f'/orgao/{oid}#publicacao', msg, request)
 
 def _add_meses(d: date, n: int) -> date:
     m = d.month - 1 + n
