@@ -7,7 +7,7 @@ from psycopg.types.json import Jsonb
 from . import config, db, eleicao, diario as diario_pdf
 from .catalogo import MOD, serve, BLOCOS, CLASSES, VEDADAS, PERFIS, PODE, TEMAS
 from .security import hash_senha, confere_senha, cpf_hash
-from .web import templates, ctx_orgao, ler_form, ir, usuario, exige, auditar, modulos_do_orgao
+from .web import templates, ctx_orgao, ler_form, ir, usuario, exige, auditar, modulos_do_orgao, volta_segura
 
 r = APIRouter(prefix='/_a')
 
@@ -497,7 +497,7 @@ async def salvar_midia(request, u, arquivo, uso, alt, credito):
     return f'/midia/{nome}'
 
 ABAS_ID = [('dados', 'Dados e textos'), ('tema', 'Tema e cores'), ('imagens', 'Brasão, mascote e fundos'), ('favicon', 'Favicon'), ('redes', 'Redes sociais'),
-           ('municipio', 'Dados do município'), ('fotos', 'Fotos e álbuns')]
+           ('municipio', 'Números do município'), ('fotos', 'Fotos e álbuns'), ('conheca', 'Bloco da página inicial')]
 
 @r.get('/identidade')
 def identidade(request: Request, aba: str = 'dados', album: int = 0):
@@ -545,7 +545,7 @@ async def identidade_post(request: Request):
     for k, _ in CAMPOS_ID:
         if k in f:
             if k in ('cor', 'cor_destaque') and f[k] and not COR.match(f[k]):
-                return ir('/admin/identidade', 'Cor inválida: use o formato #RRGGBB.', request)
+                return ir(volta_segura(f, '/admin/identidade'), 'Cor inválida: use o formato #RRGGBB.', request)
             ident[k] = f[k][:400]
     if 'redes' in f:
         ident['redes'] = [r for r in _linhas(f['redes']) if r[1].startswith('https://')]
@@ -559,7 +559,7 @@ async def identidade_post(request: Request):
     ident['revisado_em'] = config.hoje().isoformat()
     db.set_cfg(b, 'identidade', ident)
     auditar(request, 'Atualizou a identidade do órgão')
-    return ir('/admin/identidade?aba=dados', 'Identidade salva.', request)
+    return ir(volta_segura(f, '/admin/identidade?aba=dados'), 'Identidade salva.', request)
 
 @r.post('/identidade/midia')
 async def identidade_midia(request: Request):
@@ -568,6 +568,7 @@ async def identidade_midia(request: Request):
     uso = f.get('uso', '')
     if uso not in USOS:
         raise HTTPException(400)
+    volta = volta_segura(f, '/admin/identidade?aba=conheca' if uso == 'conheca' else '/admin/identidade?aba=imagens')
     ident = db.cfg(b, 'identidade', {}) or {}
     alt, credito = f.get('alt', ''), f.get('credito', '')
     arq = f.get('arquivo')
@@ -580,7 +581,7 @@ async def identidade_midia(request: Request):
                 fotos.pop(i)
             db.set_cfg(b, 'identidade', ident)
             auditar(request, 'Removeu foto do “Conheça a cidade”')
-            return ir('/admin/identidade?aba=imagens', 'Foto removida.', request)
+            return ir(volta, 'Foto removida.', request)
         atual = fotos[i] if 0 <= i < len(fotos) else None
     else:
         atual = (ident.get('sede') or {}).get('foto') if uso == 'sede' else ident.get(uso)
@@ -594,7 +595,7 @@ async def identidade_midia(request: Request):
         else:
             raise ValueError('Escolha o arquivo da imagem.')
     except ValueError as e:
-        return ir('/admin/identidade?aba=imagens', str(e), request)
+        return ir(volta, str(e), request)
     item = {'url': url, 'alt': alt[:300], 'credito': credito[:300]}
     if uso in ('hero', 'login', 'sede'):  # ponto focal: define o recorte da imagem em cada formato de tela
         fx, fy = f.get('foco_x', '50'), f.get('foco_y', '50')
@@ -607,7 +608,7 @@ async def identidade_midia(request: Request):
         elif len(fotos) < MAX_CONHECA:
             fotos.append(item)
         else:
-            return ir('/admin/identidade?aba=imagens', f'O mosaico aceita até {MAX_CONHECA} fotos.', request)
+            return ir(volta, f'O mosaico aceita até {MAX_CONHECA} fotos.', request)
     elif uso == 'sede':
         ident.setdefault('sede', {})['foto'] = item
     else:
@@ -615,7 +616,7 @@ async def identidade_midia(request: Request):
     ident['revisado_em'] = config.hoje().isoformat()
     db.set_cfg(b, 'identidade', ident)
     auditar(request, f'Atualizou a imagem: {USOS[uso]}')
-    return ir('/admin/identidade?aba=imagens', f'{USOS[uso]} atualizada.', request)
+    return ir(volta, f'{USOS[uso]} atualizada.', request)
 
 # ---------- Câmara: vereadores ----------
 @r.get('/vereadores')

@@ -1,6 +1,7 @@
-{% extends 'admin/base.html' %}{% block h1 %}Vereadores{% endblock %}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}Vereadores e Mesas{% endblock %}
 {% block conteudo %}
-<p>Perfil público de cada vereador: apelido, partido, biografia, contato do gabinete e foto oficial. Sem foto oficial, o portal mostra as iniciais — nunca use foto de banco de imagens.</p>
+{{ abas_tela('Vereadores e Mesas', [('/admin/vereadores', 'Perfis dos vereadores', True), ('/admin/legislaturas', 'Legislaturas e Mesas', False)]) }}
+<p class="tela-cab">Perfil público de cada vereador: apelido, partido, biografia, contato do gabinete e foto oficial. Sem foto oficial, o portal mostra as iniciais — nunca use foto de banco de imagens.</p>
 <nav class="acoes" aria-label="Legislaturas" style="margin-bottom:14px">{% for l in legs %}<a class="btn {{ '' if l.numero == leg else 'sec' }}" href="/admin/vereadores?leg={{ l.numero }}"{% if l.numero == leg %} aria-current="page"{% endif %}>{{ l.numero }}ª · {{ l.anos }}</a>{% endfor %}</nav>
 <div class="tabela"><table><caption class="sr">Vereadores da {{ leg }}ª Legislatura</caption><thead><tr><th scope="col">Vereador(a)</th><th scope="col">Partido</th><th scope="col">Foto oficial</th><th scope="col">Biografia</th><th scope="col"><span class="sr">Ação</span></th></tr></thead><tbody>
 {% for v in itens %}<tr><td><strong>{{ v.nome }}</strong>{% if v.apelido %}<br><small>“{{ v.apelido }}”</small>{% endif %}</td><td>{{ v.partido }}</td><td>{% if v.foto_url %}<span class="chip ok">Enviada</span>{% else %}<span class="chip alerta">Iniciais</span>{% endif %}</td><td>{% if v.bio %}<span class="chip ok">Preenchida</span>{% else %}<span class="chip">A enviar</span>{% endif %}</td><td><a class="btn sec" href="/admin/vereadores/{{ v.id }}" aria-label="Editar {{ v.nome }}">Editar</a></td></tr>{% endfor %}

@@ -40,7 +40,7 @@ SA = db.um(PM, "SELECT id FROM secretarias WHERE sigla='STA'")['id']
 adm.post(S, data={'csrf': tok(adm, S), 'acao': 'redator', 'secretaria_id': SA, 'usuario_id': U['red']})
 adm.post(S, data={'csrf': tok(adm, S), 'acao': 'designar', 'secretaria_id': SA, 'usuario_id': U['desig'], 'ato_tipo': 'Portaria', 'ato_numero': '99/2026', 'ato_data': '2026-11-01'})
 checa(db.um(PM, 'SELECT perfil, secretaria_id FROM usuarios WHERE id=%s', (U['desig'],)) == {'perfil': 'validador', 'secretaria_id': SA}, 'designado vira validador da secretaria')
-ok(adm.get(S), txt='Portaria nº 99/2026', nome='designação aparece com o ato')
+ok(adm.get(f'{S}?id={SA}'), txt='Portaria nº 99/2026', nome='designação aparece com o ato (tela da secretaria)')
 
 red, resp, dtic, desig, outro = cli(ip='203.0.113.21'), cli(ip='203.0.113.22'), cli(ip='203.0.113.23'), cli(ip='203.0.113.24'), cli(ip='203.0.113.25')
 for c, e in ((red, 'red'), (resp, 'resp'), (dtic, 'dtic'), (desig, 'desig'), (outro, 'outro')):

@@ -1,9 +1,13 @@
-{% extends 'admin/base.html' %}{% block h1 %}Julgamento das contas do Prefeito{% endblock %}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}{% if request.query_params.get('novo') %}Novo exercício (ou atualizar){% else %}Julgamento das contas do Prefeito{% endif %}{% endblock %}
 {% block conteudo %}{% set C = csrf_token(request) %}
-<section class="cx"><h2>Novo exercício ou atualizar</h2><form class="campos" method="post" action="/admin/contas"><input type="hidden" name="csrf" value="{{ C }}"><div class="grade2">
+{% if request.query_params.get('novo') %}
+{{ voltar('/admin/contas') }}
+<section class="cx form-tela"><form class="campos" method="post" action="/admin/contas"><input type="hidden" name="csrf" value="{{ C }}"><div class="grade2">
 <label>Exercício<input name="exercicio" inputmode="numeric" required></label><label>Responsável (Prefeito no exercício)<input name="responsavel" required></label><label>Processo no TCESP<input name="tce_processo"></label>
 <label>Parecer prévio do TCESP<select name="tce_parecer"><option value="">—</option><option>favorável</option><option>desfavorável</option></select></label><label>Parecer da Comissão (conclusão)<input name="comissao_parecer"></label><label>Decreto legislativo (nº/ano)<input name="decreto"></label></div>
 <button class="btn" name="acao" value="salvar">Salvar</button></form></section>
+{% else %}
+<div class="tela-cab"><p>Julgamento das contas anuais do Prefeito: parecer prévio do TCESP, parecer da Comissão, votação em sessão e decreto legislativo. Para atualizar um exercício, informe o mesmo ano.</p><div class="tela-acoes"><a class="btn" href="/admin/contas?novo=1">+ Novo exercício</a></div></div>
 {% for c in itens %}<section class="cx"><h2>Contas de {{ c.exercicio }} · {{ c.responsavel }}</h2>
 <ul><li>Processo TCESP: {{ c.tce_processo or '—' }} · parecer prévio: <strong>{{ c.tce_parecer or 'a informar' }}</strong></li><li>Parecer da Comissão: {{ c.comissao_parecer or '—' }}</li>
 <li>Votação: {% if c.pauta_item_id %}<a href="/admin/sessoes/{{ c.sessao_id }}">{{ c.sessao }}</a> — {{ c.item_resultado|upper if c.item_resultado else 'a votar' }}{% else %}não incluída em pauta{% endif %}</li><li>Resultado: {{ c.resultado or '—' }} · Decreto legislativo: {{ c.decreto or '—' }}</li>
@@ -12,4 +16,5 @@
 {% if not c.pauta_item_id %}<form class="inline" method="post" action="/admin/contas" style="margin-top:8px"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="contas" value="{{ c.id }}"><label>Incluir na pauta da sessão <select name="sessao">{% for s in sessoes %}<option value="{{ s.id }}">{{ s.nome }} · {{ s.data|br }}</option>{% endfor %}</select></label> <button class="btn sec" name="acao" value="pauta">Incluir</button></form>{% endif %}
 {% if not c.publicado and pode('publicar') %}<form class="inline" method="post" action="/admin/contas" style="margin-top:8px"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="contas" value="{{ c.id }}"><button class="btn" name="acao" value="publicar">Publicar no portal</button></form>{% elif c.publicado %}<p><span class="chip ok">Publicado</span></p>{% endif %}
 </section>{% endfor %}
-<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.contas }}</p>{% endblock %}
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.contas }}</p>
+{% endif %}{% endblock %}

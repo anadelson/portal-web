@@ -46,17 +46,17 @@ async def menus_post(request: Request):
         aid = int(f['id']) if f.get('id') else None
         t, dest = f.get('titulo', '').strip()[:60], f.get('destino', '').strip()
         if not t or not MN.destino_valido(dest):
-            return ir('/admin/menus#atalhos', 'Informe o título e um destino válido para o botão.', request)
+            return ir('/admin/menus?aba=atalhos', 'Informe o título e um destino válido para o botão.', request)
         vals = (t, f.get('descricao', '').strip()[:120], dest, f.get('icone', 'lista')[:30] or 'lista', int(f.get('ordem') or 100), f.get('ativo') == '1')
         if aid:
             db.exe(b, 'UPDATE atalhos SET titulo=%s, descricao=%s, destino=%s, icone=%s, ordem=%s, ativo=%s WHERE id=%s', vals + (aid,))
         else:
             db.exe(b, 'INSERT INTO atalhos (titulo, descricao, destino, icone, ordem, ativo) VALUES (%s,%s,%s,%s,%s,%s)', vals)
         auditar(request, f'Página inicial: botão de acesso direto “{t}” salvo')
-        return ir('/admin/menus#atalhos', 'Botão salvo.', request)
+        return ir('/admin/menus?aba=atalhos', 'Botão salvo.', request)
     if acao == 'excluir_atalho':
         db.exe(b, 'DELETE FROM atalhos WHERE id=%s', (int(f.get('id') or 0),)); auditar(request, 'Página inicial: botão de acesso direto excluído')
-        return ir('/admin/menus#atalhos', 'Botão excluído.', request)
+        return ir('/admin/menus?aba=atalhos', 'Botão excluído.', request)
     if acao == 'links':
         links, erros = [], []
         for n, linha in enumerate((f.get('links') or '').splitlines(), 1):
@@ -67,26 +67,26 @@ async def menus_post(request: Request):
                 erros.append(str(n)); continue
             links.append({'titulo': partes[0][:120], 'url': partes[1][:300], 'descricao': (partes[2] if len(partes) > 2 else '')[:200]})
         if erros:
-            return ir('/admin/menus#links', f"Linha(s) {', '.join(erros)}: use “Título | https://endereço | descrição (opcional)”.", request)
+            return ir('/admin/menus?aba=links', f"Linha(s) {', '.join(erros)}: use “Título | https://endereço | descrição (opcional)”.", request)
         db.set_cfg(b, 'links_uteis', links); auditar(request, f'Links úteis atualizados ({len(links)})')
-        return ir('/admin/menus#links', 'Links úteis salvos.', request)
+        return ir('/admin/menus?aba=links', 'Links úteis salvos.', request)
     if acao == 'aviso':
         txt, link = f.get('texto', '').strip()[:240], f.get('link', '').strip()
         if link and not MN.destino_valido(link):
-            return ir('/admin/menus#aviso', 'O link do aviso precisa ser um caminho do portal ou https://.', request)
+            return ir('/admin/menus?aba=aviso', 'O link do aviso precisa ser um caminho do portal ou https://.', request)
         db.set_cfg(b, 'aviso_faixa', {'texto': txt, 'link': link, 'rotulo': f.get('rotulo', '').strip()[:40], 'ate': f.get('ate', '')})
         auditar(request, 'Faixa de aviso ' + ('atualizada' if txt else 'removida'))
-        return ir('/admin/menus#aviso', 'Faixa de aviso salva.', request)
+        return ir('/admin/menus?aba=aviso', 'Faixa de aviso salva.', request)
     if acao == 'acervo':
         url = f.get('url', '').strip()
         if url and not url.startswith('https://'):
-            return ir('/admin/menus#acervo', 'Informe o endereço https:// da página de legislação do site atual.', request)
+            return ir('/admin/menus?aba=acervo', 'Informe o endereço https:// da página de legislação do site atual.', request)
         db.set_cfg(b, 'legislacao_acervo', {'url': url}); auditar(request, 'Legislação: endereço do acervo anterior ' + ('definido' if url else 'removido'))
-        return ir('/admin/menus#acervo', 'Endereço do acervo salvo.', request)
+        return ir('/admin/menus?aba=acervo', 'Endereço do acervo salvo.', request)
     if acao == 'vlibras':
         ac = db.cfg(b, 'acessibilidade', {}) or {}; ac['vlibras'] = f.get('vlibras') == '1'
         db.set_cfg(b, 'acessibilidade', ac); auditar(request, 'VLibras ' + ('ligado' if ac['vlibras'] else 'desligado'))
-        return ir('/admin/menus#vlibras', 'VLibras ' + ('ligado.' if ac['vlibras'] else 'desligado.'), request)
+        return ir('/admin/menus?aba=vlibras', 'VLibras ' + ('ligado.' if ac['vlibras'] else 'desligado.'), request)
     return ir('/admin/menus', '', request)
 
 def _rico(f, campo):

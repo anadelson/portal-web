@@ -1,5 +1,6 @@
-{% extends 'admin/base.html' %}{% block h1 %}Carta de Serviços — monitoramento{% endblock %}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}Carta de Serviços{% endblock %}
 {% block conteudo %}{% set C = csrf_token(request) %}
+{{ abas_tela('Carta de Serviços', [('/admin/carta', 'Fichas dos serviços', False), ('/admin/carta-secretarias', 'Secretarias e responsáveis', False), ('/admin/carta-monitoramento', 'Monitoramento', True)]) }}
 <dl class="kpis-carta"><div><dt>No ar</dt><dd>{{ no_ar }}</dd></div><div><dt>Em validação</dt><dd>{{ tot.get('em_validacao', 0) }}</dd></div><div><dt>Rascunhos e devolvidas</dt><dd>{{ tot.get('rascunho', 0) + tot.get('devolvido', 0) }}</dd></div><div><dt>Autorizadas (aguardando publicação)</dt><dd>{{ tot.get('autorizado', 0) }}</dd></div><div><dt>Revisão vencida</dt><dd>{{ vencidas|length }}</dd></div></dl>
 <div class="tabela"><table><caption>Por secretaria</caption><thead><tr><th scope="col">Secretaria</th><th scope="col">No ar</th><th scope="col">Em validação</th><th scope="col">Rascunhos</th><th scope="col">Vencidas</th></tr></thead><tbody>
 {% for x in por_sec %}<tr><td>{{ x.nome }}</td><td>{{ x.no_ar }}</td><td>{{ x.validacao }}</td><td>{{ x.rascunhos }}</td><td>{{ x.vencidas }}</td></tr>{% else %}<tr><td colspan="5">Nenhuma secretaria cadastrada.</td></tr>{% endfor %}</tbody></table></div>

@@ -1,18 +1,27 @@
-{% extends 'admin/base.html' %}{% block h1 %}Transmissões{% endblock %}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}{% if request.query_params.get('novo') %}Agendar transmissão{% else %}Transmissões{% endif %}{% endblock %}
 {% block conteudo %}{% set C = csrf_token(request) %}
-{% if not conf.canal %}<p class="msg" role="status" style="background:#FCEFD9"><strong>Configure o canal:</strong> sem o ID do canal oficial no YouTube, o bloco “Transmissões” fica fora da página inicial e o “ao vivo” só aparece pelo botão “Iniciar transmissão”.</p>{% endif %}
-<section class="cx"><h2>Canal oficial</h2>
-<p>Com o ID do canal (começa com <code>UC</code>, 24 caracteres; em YouTube Studio → Configurações → Canal → Configurações avançadas), o sistema detecta sozinho a transmissão ao vivo — a cada 2 minutos, só dentro da janela de cada transmissão agendada abaixo (15 min antes até 4 h depois) — e registra uma vez por dia as gravações das transmissões do canal. Vídeos comuns do canal não entram.</p>
-{% if yt %}<p><small>Situação da integração: {{ yt }}</small></p>{% endif %}
-<form class="inline" method="post" action="/admin/transmissoes" style="flex-wrap:wrap"><input type="hidden" name="csrf" value="{{ C }}"><label>ID do canal no YouTube <input name="canal" value="{{ conf.canal or '' }}" pattern="UC[A-Za-z0-9_-]{22}" title="UC seguido de 22 caracteres"></label> <label>Endereço público do canal (https) <input name="canal_url" value="{{ conf.canal_url or '' }}" size="40"></label> <button class="btn sec" name="acao" value="config">Salvar</button></form></section>
-<section class="cx"><h2>Agendar transmissão</h2><form class="campos" method="post" action="/admin/transmissoes"><input type="hidden" name="csrf" value="{{ C }}"><div class="grade2">
+{% if request.query_params.get('novo') %}{{ voltar('/admin/transmissoes') }}
+<section class="cx form-tela"><form class="campos" method="post" action="/admin/transmissoes"><input type="hidden" name="csrf" value="{{ C }}"><div class="grade2">
 <label>Título<input name="titulo" required></label><label>Tipo<select name="tipo"><option>Sessão</option><option>Audiência pública</option><option>Sessão solene</option><option>Reunião de comissão</option></select></label><label>Início previsto<input type="datetime-local" name="previsto_para"></label>
 <label>Vídeo (ID ou endereço do YouTube, ou URL https do player)<input name="video"></label><label>Sessão vinculada<select name="sessao"><option value="">—</option>{% for s in sessoes %}<option value="{{ s.id }}">{{ s.nome }} · {{ s.data|br }}</option>{% endfor %}</select></label></div>
-<label style="flex-direction:row;gap:6px"><input type="checkbox" name="legendas"> Com legendas</label><label style="flex-direction:row;gap:6px"><input type="checkbox" name="libras"> Com janela de Libras</label><button class="btn" name="acao" value="nova">Agendar</button></form></section>
+<label style="flex-direction:row;gap:6px"><input type="checkbox" name="legendas"> Com legendas</label><label style="flex-direction:row;gap:6px"><input type="checkbox" name="libras"> Com janela de Libras</label><div class="acoes-form"><button class="btn" name="acao" value="nova">Agendar</button><a class="btn sec" href="/admin/transmissoes">Cancelar</a></div></form></section>
+{% else %}
+{{ cab('Transmissões agendadas e gravadas. Com o canal configurado, o “ao vivo” é detectado sozinho dentro da janela de cada transmissão agendada.', '/admin/transmissoes?novo=1', 'Agendar transmissão') }}
+{{ abas_tela('Transmissões', [('/admin/transmissoes', 'Transmissões', request.query_params.get('aba') != 'canal'), ('/admin/transmissoes?aba=canal', 'Canal do YouTube', request.query_params.get('aba') == 'canal')]) }}
+{% if not conf.canal %}<p class="msg" role="status" style="background:#FCEFD9"><strong>Configure o canal:</strong> sem o ID do canal oficial no YouTube, o bloco “Transmissões” fica fora da página inicial e o “ao vivo” só aparece pelo botão “Iniciar transmissão”.</p>{% endif %}
+{% if request.query_params.get('aba') == 'canal' %}
+<section class="cx form-tela">
+<p>Com o ID do canal (começa com <code>UC</code>, 24 caracteres; em YouTube Studio → Configurações → Canal → Configurações avançadas), o sistema detecta sozinho a transmissão ao vivo — a cada 2 minutos, só dentro da janela de cada transmissão agendada abaixo (15 min antes até 4 h depois) — e registra uma vez por dia as gravações das transmissões do canal. Vídeos comuns do canal não entram.</p>
+{% if yt %}<p><small>Situação da integração: {{ yt }}</small></p>{% endif %}
+<form class="campos" method="post" action="/admin/transmissoes"><input type="hidden" name="csrf" value="{{ C }}"><label>ID do canal no YouTube <input name="canal" value="{{ conf.canal or '' }}" pattern="UC[A-Za-z0-9_-]{22}" title="UC seguido de 22 caracteres"></label> <label>Endereço público do canal (https) <input name="canal_url" value="{{ conf.canal_url or '' }}" size="40"></label> <button class="btn sec" name="acao" value="config">Salvar</button></form></section>
+{% else %}
+
 {% for t in itens %}<section class="cx"><h2>{% if t.ao_vivo %}<span class="chip erro">● AO VIVO</span> {% endif %}{{ t.titulo }}</h2><p>{{ t.tipo }} · {{ t.previsto_para|br if t.previsto_para else 'sem horário' }}{% if t.sessao %} · {{ t.sessao }}{% endif %}{% if t.encerrada_em %} · encerrada em {{ t.encerrada_em|br }}{% endif %}</p>
 <form class="acoes" method="post" action="/admin/transmissoes"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ t.id }}">{% if t.ao_vivo %}<button class="btn perigo" name="acao" value="encerrar">Encerrar transmissão</button>{% else %}<button class="btn" name="acao" value="iniciar">● Iniciar transmissão</button>{% endif %}</form>
 <details><summary>Editar vídeo, capítulos, legendas e Libras</summary><form class="campos" method="post" action="/admin/transmissoes"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ t.id }}"><label>Vídeo<input name="video" value="{{ t.video }}"></label>
 <label>Sessão vinculada<select name="sessao"><option value="">—</option>{% for s in sessoes %}<option value="{{ s.id }}" {{ 'selected' if s.id == t.sessao_id }}>{{ s.nome }} · {{ s.data|br }}</option>{% endfor %}</select></label>
 <label>Capítulos (um por linha: 0:05:30 Ordem do Dia)<textarea name="capitulos" rows="4">{% for c in t.capitulos %}{{ c[0] }} {{ c[1] }}
 {% endfor %}</textarea></label><label style="flex-direction:row;gap:6px"><input type="checkbox" name="legendas" {{ 'checked' if t.legendas }}> Legendas</label><label style="flex-direction:row;gap:6px"><input type="checkbox" name="libras" {{ 'checked' if t.libras }}> Libras</label><button class="btn sec" name="acao" value="editar">Salvar</button></form></details></section>{% endfor %}
-<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.transmissoes }}</p>{% endblock %}
+{% endif %}
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.transmissoes }}</p>
+{% endif %}{% endblock %}

@@ -1,14 +1,18 @@
-{% extends 'admin/base.html' %}{% block h1 %}Legislaturas e Mesas{% endblock %}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}{% if request.query_params.get('novo') %}Nova legislatura (ou atualizar){% elif request.query_params.get('incluir') %}Incluir vereador{% else %}Vereadores e Mesas{% endif %}{% endblock %}
 {% block conteudo %}
 {% set C = csrf_token(request) %}
-<nav class="acoes" aria-label="Legislaturas" style="margin-bottom:14px">{% for l in legs %}<a class="btn {{ '' if l.numero == leg else 'sec' }}" href="/admin/legislaturas?leg={{ l.numero }}"{% if l.numero == leg %} aria-current="page"{% endif %}>{{ l.numero }}ª · {{ l.anos }}</a>{% endfor %}</nav>
-<div class="grade2">
-<section class="cx"><h2>Nova legislatura ou atualizar dados</h2><form class="campos" method="post" action="/admin/legislaturas"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="nova">
+{% if request.query_params.get('novo') %}{{ voltar('/admin/legislaturas') }}
+<section class="cx form-tela"><p class="legal">Para atualizar uma legislatura, informe o mesmo número.</p><form class="campos" method="post" action="/admin/legislaturas"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="nova">
 <label>Número<input name="numero" required inputmode="numeric"></label><label>Anos (ex.: 2029–2032)<input name="anos" required></label><label>Prefeito(a) no período<input name="prefeito"></label><label>Vice<input name="vice"></label><button class="btn">Salvar legislatura</button></form></section>
-{% if leg %}<section class="cx"><h2>Incluir vereador na {{ leg }}ª Legislatura</h2><form class="campos" method="post" action="/admin/legislaturas"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="vereador"><input type="hidden" name="leg" value="{{ leg }}">
+{% elif request.query_params.get('incluir') %}{{ voltar('/admin/legislaturas?leg=' ~ (leg or '')) }}
+{% if leg %}<section class="cx form-tela"><h2>{{ leg }}ª Legislatura</h2><form class="campos" method="post" action="/admin/legislaturas"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="vereador"><input type="hidden" name="leg" value="{{ leg }}">
 <label>Nome civil<input name="nome" required></label><label>Apelido (como é conhecido)<input name="apelido"></label><label>Partido<input name="partido" required></label><label>Votos<input name="votos" inputmode="numeric"></label><button class="btn">Salvar vereador</button></form>
 <p class="legal">Foto oficial, biografia e contato do gabinete: em <a href="/admin/vereadores?leg={{ leg }}">Vereadores (perfis)</a>.</p></section>{% endif %}
-</div>
+{% else %}
+{{ abas_tela('Vereadores e Mesas', [('/admin/vereadores', 'Perfis dos vereadores', False), ('/admin/legislaturas', 'Legislaturas e Mesas', True)]) }}
+{{ cab('Composição de cada legislatura e a Mesa Diretora de cada biênio. Foto, biografia e contato ficam em “Perfis dos vereadores”.', '/admin/legislaturas?incluir=1&leg=' ~ (leg or '') if leg else None, 'Incluir vereador', [('/admin/legislaturas?novo=1', 'Nova legislatura')]) }}
+<nav class="acoes" aria-label="Legislaturas" style="margin-bottom:14px">{% for l in legs %}<a class="btn {{ '' if l.numero == leg else 'sec' }}" href="/admin/legislaturas?leg={{ l.numero }}"{% if l.numero == leg %} aria-current="page"{% endif %}>{{ l.numero }}ª · {{ l.anos }}</a>{% endfor %}</nav>
+
 {% if leg %}
 <section class="cx"><h2>Vereadores da {{ leg }}ª Legislatura ({{ ver|length }})</h2><div class="tabela"><table><thead><tr><th scope="col">Nome</th><th scope="col">Apelido</th><th scope="col">Partido</th><th scope="col">Votos</th><th scope="col">Perfil</th></tr></thead><tbody>{% for v in ver %}<tr><td>{{ v.nome }}</td><td>{{ v.apelido }}</td><td>{{ v.partido }}</td><td>{{ v.votos or '—' }}</td><td><a href="/admin/vereadores/{{ v.id }}">editar perfil</a></td></tr>{% endfor %}</tbody></table></div></section>
 {% for g in mesas|groupby('bienio') %}{% set bi = bienios.get(g.grouper) %}
@@ -17,4 +21,5 @@
 <div class="grade2"><label>Data da eleição<input type="date" name="eleicao" value="{{ bi.eleicao if bi and bi.eleicao }}"></label><label>Data da posse<input type="date" name="posse" value="{{ bi.posse if bi and bi.posse }}"></label><label>Ato (ex.: Ata da sessão de eleição, Resolução nº)<input name="ato" value="{{ bi.ato if bi }}"></label></div>
 <button class="btn">Salvar Mesa do biênio</button></form></section>{% endfor %}
 {% endif %}
-<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.vereadores }} Regimento Interno (eleição da Mesa).</p>{% endblock %}
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.vereadores }} Regimento Interno (eleição da Mesa).</p>
+{% endif %}{% endblock %}

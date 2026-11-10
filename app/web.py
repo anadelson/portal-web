@@ -1,4 +1,5 @@
 """Peças comuns: resolução do órgão pelo domínio, templates, sessão e proteção de formulários."""
+import re
 import time
 from datetime import date, datetime
 from pathlib import Path
@@ -99,6 +100,9 @@ ICONES = {
     'acess': 'M12 4a1.5 1.5 0 1 0 0 .01M6 8l6 1.2L18 8M12 9.2V14m0 0l-3 6m3-6l3 6',
     'libras': 'M8 13V5a1.5 1.5 0 0 1 3 0v6M11 11V4a1.5 1.5 0 0 1 3 0v7M14 11V5.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-3l-2.5-4a1.5 1.5 0 0 1 2.5-1.6L8 13',
     'play': 'M8 5v14l11-7z',
+    'menu': 'M4 6h16M4 12h16M4 18h16',
+    'cor': 'M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.9 1.2-1.8-.5-1 .2-2.2 1.3-2.2H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8zM7.5 11.5h.01M10 7.5h.01M15 7.5h.01',
+    'estrutura': 'M10 3h4v4h-4zM4 17h4v4H4zM16 17h4v4h-4zM12 7v5M6 17v-3h12v3',
 }
 
 def icone(nome, tam=24, classe=''):
@@ -250,6 +254,12 @@ async def ler_form(request: Request) -> dict:
     if f.get('csrf') != request.session.get('csrf'):
         raise HTTPException(400, 'Formulário expirado. Volte e tente de novo.')
     return {k: (v.strip() if isinstance(v, str) else v) for k, v in f.items()}
+
+_VOLTA = re.compile(r'^/admin/[A-Za-z0-9/_\-]*(\?[A-Za-z0-9_=&\-]*)?$')
+def volta_segura(f, padrao: str) -> str:
+    """Endereço de retorno pedido pelo formulário (campo "volta"), só se for uma tela do próprio painel; senão, o padrão."""
+    v = (f.get('volta') or '') if f else ''
+    return v if _VOLTA.match(v) else padrao
 
 def ir(url: str, msg: str = '', request: Request | None = None):
     if msg and request is not None:

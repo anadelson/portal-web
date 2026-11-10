@@ -125,6 +125,38 @@
           cmd('insertHTML', fig.outerHTML + '<p></p>'); dlg.close();
         });
     });
+    dlg.querySelector('[data-img-cancelar]').addEventListener('click', function () { dlg.close(); });
     form.addEventListener('submit', function () { oculto.value = limpar(area.cloneNode(true)).innerHTML; simples.value = area.innerText; });
   });
+})();
+
+/* Menu do painel (10/11/2026): no celular, botão "Menu" abre o menu por cima (foco preso, Esc fecha). Sem JS, o menu aparece acima do conteúdo.
+   Grupos do menu lembram se estavam abertos ou fechados (só neste navegador). */
+(function () {
+  var nav = document.getElementById('menu-painel'), bt = document.querySelector('.btn-menu');
+  if (!nav) return;
+  try {
+    var salvo = JSON.parse(localStorage.getItem('painel-grupos') || '{}');
+    nav.querySelectorAll('details.grupo').forEach(function (d) {
+      var k = d.dataset.grupo;
+      if (salvo[k] === false && !d.querySelector('[aria-current]')) d.removeAttribute('open');
+      d.addEventListener('toggle', function () { salvo[k] = d.open; try { localStorage.setItem('painel-grupos', JSON.stringify(salvo)); } catch (e) {} });
+    });
+  } catch (e) {}
+  if (!bt) return;
+  var mq = window.matchMedia('(max-width: 820px)'), foco = 'a[href],button:not([disabled]),summary';
+  document.documentElement.classList.add('js-menu');
+  bt.hidden = false;
+  function abrir() { nav.classList.add('aberto'); bt.setAttribute('aria-expanded', 'true'); document.body.classList.add('menu-aberto'); var f = nav.querySelector(foco); if (f) f.focus(); }
+  function fechar() { nav.classList.remove('aberto'); bt.setAttribute('aria-expanded', 'false'); document.body.classList.remove('menu-aberto'); bt.focus(); }
+  bt.addEventListener('click', function () { nav.classList.contains('aberto') ? fechar() : abrir(); });
+  nav.addEventListener('keydown', function (e) {
+    if (!mq.matches || !nav.classList.contains('aberto')) return;
+    if (e.key === 'Escape') { e.preventDefault(); fechar(); return; }
+    if (e.key !== 'Tab') return;
+    var f = [].slice.call(nav.querySelectorAll(foco)).filter(function (x) { return x.offsetParent !== null; });
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  });
+  document.addEventListener('click', function (e) { if (mq.matches && nav.classList.contains('aberto') && !nav.contains(e.target) && e.target !== bt && !bt.contains(e.target)) fechar(); });
 })();

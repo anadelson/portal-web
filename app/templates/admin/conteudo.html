@@ -30,6 +30,6 @@
 {% if c and c.situacao == 'revisao' and pode('publicar') %}<button class="btn" name="acao" value="aprovar">Aprovar e publicar</button><button class="btn sec" name="acao" value="devolver">Devolver ao autor</button>{% endif %}
 {% if c and c.situacao in ('publicado','agendado') and pode('publicar') %}<button class="btn perigo" name="acao" value="arquivar">Tirar do ar e arquivar</button>{% endif %}
 </div></form>
-<script src="/static/admin.js?v=2" defer></script>
+
 {% if versoes %}<section class="cx" style="margin-top:18px"><h2>Histórico de versões</h2><ul>{% for v in versoes %}<li>{{ v.quando|br }} · {{ v.quem }} · {{ v.obs }}{% if v.dados and not loop.first %} · <a href="/admin/conteudos/{{ c.id }}/versao/{{ v.id }}">comparar com o atual e restaurar</a>{% endif %}</li>{% endfor %}</ul></section>{% endif %}
 <p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.noticias }}</p>{% endblock %}

@@ -1,15 +1,15 @@
-{% extends 'admin/base.html' %}{% from 'partials/editor.html' import editor %}{% block h1 %}Conheça {{ ident.nome_curto or 'a cidade' }}<script src="/static/admin.js?v=2" defer></script>{% endblock %}
+{% extends 'admin/base.html' %}{% from 'partials/editor.html' import editor %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}
+{% block h1 %}{% if p %}{{ p.titulo }}{% elif request.query_params.get('novo') %}Novo perfil{% else %}Conheça {{ ident.nome_curto or 'a cidade' }}{% endif %}{% endblock %}
 {% block conteudo %}{% set C = csrf_token(request) %}
-<p>Perfis de lugares, patrimônio, eventos, festas e economia, com fotos e vídeos. Até 3 em destaque na página inicial. <strong>Fotos com pessoas identificáveis só aparecem no portal com a autorização de uso de imagem registrada.</strong> Eventos da gestão são publicidade e saem do ar no período eleitoral.</p>
-<div class="tabela"><table><caption>Perfis</caption><thead><tr><th scope="col">Perfil</th><th scope="col">Categoria</th><th scope="col">Fotos</th><th scope="col">Situação</th></tr></thead><tbody>
-{% for x in perfis %}<tr><td><a href="/admin/conheca?id={{ x.id }}">{{ x.titulo }}</a><br><small>/conheca/{{ x.slug }}</small></td><td>{{ x.categoria }}</td><td>{{ x.nfotos }}</td><td>{{ 'publicado' if x.publicado else 'não publicado' }}{% if x.destaque %} · <span class="chip ok">destaque</span>{% endif %}</td></tr>{% else %}<tr><td colspan="4">Nenhum perfil.</td></tr>{% endfor %}</tbody></table></div>
-<section class="cx"><h2>{{ 'Editar perfil' if p else 'Novo perfil' }}</h2><form class="campos" method="post" action="/admin/conheca"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="perfil">{% if p %}<input type="hidden" name="id" value="{{ p.id }}">{% endif %}
+{% if p or request.query_params.get('novo') %}
+{{ voltar('/admin/conheca', 'Voltar aos perfis') }}
+<section class="cx form-tela"><h2>Dados do perfil</h2><form class="campos" method="post" action="/admin/conheca"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="perfil">{% if p %}<input type="hidden" name="id" value="{{ p.id }}">{% endif %}
 <label>Título<input name="titulo" value="{{ p.titulo if p else '' }}" maxlength="120" required></label>
 <div class="grade2"><label>Categoria<select name="categoria">{% for c in categorias %}<option {{ 'selected' if p and p.categoria == c }}>{{ c }}</option>{% endfor %}</select></label>
 <label>Classificação eleitoral<select name="classe">{% for k, v in classes.items() %}<option value="{{ k }}" {{ 'selected' if (p and p.classe == k) or (not p and k == 'util') }}>{{ v[0] }} — {{ v[1] }}</option>{% endfor %}</select></label></div>
 {{ editor('Descrição (vazio = o perfil mostra só título e fotos)', p.html if p else '', p.descricao if p else '', nome_texto='descricao', linhas=6) }}
-<div class="grade2"><label>Ordem<input type="number" name="ordem" value="{{ p.ordem if p else 100 }}"></label><fieldset><legend>Exibição</legend><label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="publicado" value="1" {{ 'checked' if p and p.publicado }}> Publicado</label><label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="destaque" value="1" {{ 'checked' if p and p.destaque }}> Destaque na página inicial (até 3)</label></fieldset></div>
-<button class="btn">Salvar perfil</button></form></section>
+<div class="grade2"><label>Ordem na lista<input type="number" name="ordem" value="{{ p.ordem if p else 100 }}"></label><fieldset><legend>Exibição</legend><label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="publicado" value="1" {{ 'checked' if p and p.publicado }}> Publicado</label><label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="destaque" value="1" {{ 'checked' if p and p.destaque }}> Destaque na página inicial (até 3)</label></fieldset></div>
+{{ acoes('Salvar perfil', '/admin/conheca') }}</form></section>
 {% if p %}
 <section class="cx"><h2>Fotos</h2>
 {% for f in fotos %}<form class="campos linha-foto" method="post" action="/admin/conheca"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ p.id }}"><input type="hidden" name="foto_id" value="{{ f.id }}"><input type="hidden" name="acao" value="foto_editar">
@@ -26,5 +26,12 @@
 <section class="cx"><h2>Vídeos (YouTube)</h2><ul>{% for v in videos %}<li>{{ v.titulo or v.youtube_id }} <form class="inline" method="post" action="/admin/conheca"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ p.id }}"><input type="hidden" name="video_id" value="{{ v.id }}"><button class="btn sec" name="acao" value="video_excluir">Excluir</button></form></li>{% else %}<li>Nenhum vídeo.</li>{% endfor %}</ul>
 <form class="campos" method="post" action="/admin/conheca"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ p.id }}"><input type="hidden" name="acao" value="video"><div class="grade2"><label>Endereço do vídeo no YouTube<input name="youtube" placeholder="https://www.youtube.com/watch?v=…" required></label><label>Título<input name="titulo"></label></div><button class="btn">Incluir vídeo</button></form>
 <p class="legal">Os vídeos são exibidos pelo endereço youtube-nocookie.com (sem cookies de rastreamento até a pessoa dar play). Envio de arquivo de vídeo não é aceito.</p></section>
+{% endif %}
+{% else %}
+{{ cab('Perfis de lugares, patrimônio, eventos, festas e economia, com fotos e vídeos. Até 3 em destaque na página inicial. Fotos com pessoas identificáveis só aparecem com a autorização de uso de imagem registrada; eventos da gestão saem do ar no período eleitoral.', '/admin/conheca?novo=1', 'Novo perfil') }}
+{{ abas_tela('Conheça', [('/admin/conheca', 'Perfis', True), ('/admin/identidade?aba=conheca', 'Bloco da página inicial', False), ('/admin/identidade?aba=municipio', 'Números do município', False)]) }}
+{% if perfis %}<div class="tabela"><table><caption class="sr">Perfis</caption><thead><tr><th scope="col">Perfil</th><th scope="col">Categoria</th><th scope="col">Fotos</th><th scope="col">Situação</th><th scope="col"><span class="sr">Ações</span></th></tr></thead><tbody>
+{% for x in perfis %}<tr><td><a href="/admin/conheca?id={{ x.id }}">{{ x.titulo }}</a><br><small>/conheca/{{ x.slug }}</small></td><td>{{ x.categoria }}</td><td>{{ x.nfotos }}</td><td>{{ 'publicado' if x.publicado else 'não publicado' }}{% if x.destaque %} · <span class="chip ok">destaque</span>{% endif %}</td><td class="acoes-linha"><a class="btn sec" href="/admin/conheca?id={{ x.id }}">Editar</a></td></tr>{% endfor %}</tbody></table></div>
+{% else %}{{ vazio('Nenhum perfil cadastrado.', '/admin/conheca?novo=1', 'Novo perfil') }}{% endif %}
 {% endif %}
 {% endblock %}
