@@ -1243,3 +1243,15 @@ Próximos passos dependem das pessoas:
 - **Teste novo:** `tests/teste_agenda.py` (lógica, limites, painel, auditoria, worker obedecendo a agenda, volta ao padrão, acesso sem login).
 - **Testes:** as 15 suítes (14 de antes + `teste_agenda`) deram ERROS: 0 / tudo ok no banco de TESTE; nenhum volume solto.
 - **Onde parou:** aguardando aprovação para implantar. **Tem migração** (021): no passo 5 roda também `python -m app.provision atualizar`.
+
+### Implantação da agenda das integrações (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 17h58 UTC.
+- **Build e testes:** as 15 suítes com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida:** `up -d` de app e worker, e `provision atualizar` aplicou a `021_plataforma_agenda.sql`. Disco em 72%.
+- **Ocorrência:** o worker subiu segundos antes da migração e registrou "column f.agenda does not exist" no laço. O laço é tolerante a falhas, então só tentou de novo no minuto seguinte, sem perda nem efeito no portal. Reiniciado depois da migração: 0 erros desde então, e coletas de 15:05 (horário de Brasília) com sucesso.
+  - **Lição:** quando houver migração, aplicar `provision atualizar` ANTES de subir o worker (ou reiniciar o worker logo depois).
+- **Conferência:**
+  - 18 fontes, nenhuma com agenda própria (todas no padrão, igual a antes);
+  - admin.css v=11 servido; portais 200, console 303 (login).
+- `agenda-integracoes` mesclada em `main` com a tag `agenda-integracoes`.
+- **Para o usuário:** em Painel → Integrações → cada fonte → "Agenda de execução", escolher os dias e os horários de cada integração.
