@@ -6,7 +6,7 @@
 <div class="txt"><h2 id="h-sede">{{ sd.titulo or 'Sede e atendimento' }}</h2>
 {% if ident.horario %}<p>Atendimento ao público: {{ ident.horario }}.</p>{% endif %}
 <p class="sub">{{ ident.endereco }}{% if ident.telefone %} · {{ ident.telefone }}{% endif %}</p>
-<div class="acoes"><a class="btn" href="/fale-conosco#unidades">Unidades e horários {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/fale-conosco">Fale conosco</a></div></div>
+<div class="acoes"><a class="btn sec" href="/fale-conosco#unidades">Unidades e horários {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/fale-conosco">Fale conosco</a></div></div>
 </section>{% endmacro %}
 {% block classe_main %}home{% endblock %}
 {% from 'partials/cartoes.html' import cartao %}
