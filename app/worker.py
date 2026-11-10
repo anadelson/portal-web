@@ -6,11 +6,13 @@ A falha de uma fonte (ou de uma base) só é registrada em `coletas`; o portal c
 import sys, time, traceback
 from datetime import datetime
 from . import config, db
+from . import agenda as AG
 from .coletores import fiorilli, pncp, siconfi, tcesp, numeros, comum, indicadores, youtube, redes
 
 MODULOS = {'fiorilli': fiorilli, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp, 'youtube': youtube, 'redes': redes, **indicadores.MODULOS}
 # fontes do painel de indicadores: só rodam para órgão com o módulo "bi" contratado e ligado
 PAINEL = set(indicadores.MODULOS)
+# padrão quando o órgão não escolheu agenda (ver app/agenda.py, que é a referência); o YouTube usa só esta tabela
 # fonte -> (a cada N minutos, horas permitidas)
 FREQ = {'fiorilli': (60, range(7, 20)), 'pncp': (360, range(0, 24)), 'siconfi': (24 * 60, range(0, 24)), 'tcesp': (24 * 60, range(0, 24)),
         # painel: dados anuais (IBGE) e mensais (CNES, MDS) consultados uma vez por semana; números do próprio órgão a cada hora
@@ -25,8 +27,16 @@ FREQ = {'fiorilli': (60, range(7, 20)), 'pncp': (360, range(0, 24)), 'siconfi': 
         # redes sociais: últimas publicações (só com credencial e conta informada), a cada 6 h
         'redes': (6 * 60, range(6, 23))}
 
+def pronta(f, agora, ultimo):
+    """A fonte deve rodar agora? Usa a agenda escolhida pelo órgão no painel (fontes.agenda) ou o padrão do sistema.
+    O YouTube mantém o tique de 2 minutos (o coletor só consulta dentro da janela de cada transmissão)."""
+    if f['fonte'] in AG.FIXAS:
+        cada, horas = FREQ[f['fonte']]
+        return agora.hour in horas and (ultimo is None or (agora - ultimo).total_seconds() >= cada * 60)
+    return AG.deve_rodar(AG.da_fonte(f), agora, ultimo)
+
 def fontes_ativas():
-    return db.todos(db.PLATAFORMA, 'SELECT o.*, f.fonte, f.params FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE f.ativo AND o.ativo ORDER BY o.id, f.fonte')
+    return db.todos(db.PLATAFORMA, 'SELECT o.*, f.fonte, f.params, f.agenda FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE f.ativo AND o.ativo ORDER BY o.id, f.fonte')
 
 def tcesp_pendente(o, p):
     """TCESP: mensal (dia 20) ou enquanto faltar algum ano configurado."""
@@ -88,9 +98,8 @@ def main():
         agora = datetime.now()
         try:
             for f in fontes_ativas():
-                cada, horas = FREQ[f['fonte']]
                 k = (f['slug'], f['fonte'])
-                if agora.hour not in horas or (k in ultimo and (agora - ultimo[k]).total_seconds() < cada * 60):
+                if not pronta(f, agora, ultimo.get(k)):
                     continue
                 if f['fonte'] in PAINEL and not bi_ligado(f):
                     ultimo[k] = agora

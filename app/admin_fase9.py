@@ -30,7 +30,43 @@ def integracoes(request: Request, fonte: str = ''):
     ult = {x['f']: x for x in db.todos(db.PLATAFORMA, "SELECT DISTINCT ON (split_part(fonte, ':', 1)) split_part(fonte, ':', 1) f, inicio, ok, mensagem FROM coletas WHERE orgao_slug=%s ORDER BY split_part(fonte, ':', 1), id DESC", (o['slug'],))}
     from . import avisos
     from .web import modulos_do_orgao
-    return T('integracoes', request, u, fontes=fs, sel=sel, ult=ult, cp=painel_completo(o, sel) if sel else None, aviso_tv=avisos.transmissoes(o, modulos_do_orgao(o)))
+    ag = None
+    if sel:
+        from . import agenda as AG
+        from datetime import datetime
+        fr = CS.fonte_do(o, sel) or {}
+        atual = AG.da_fonte(dict(fr, fonte=sel))
+        u_ini = ult.get(sel, {}).get('inicio')
+        u_ini = u_ini.astimezone().replace(tzinfo=None) if u_ini else None
+        ag = {'editavel': AG.editavel(sel), 'fixa': AG.FIXAS.get(sel), 'atual': atual, 'propria': bool(fr.get('agenda')), 'descricao': AG.descrever(atual),
+              'vezes': AG.vezes_por_dia(atual), 'proximas': AG.proximas(atual, datetime.now(), u_ini, 5) if AG.editavel(sel) else [],
+              'minimo': AG._txt_min(AG.MINIMO.get(sel, 60)), 'padrao': AG.descrever(AG.padrao(sel)), 'dias': AG.DIAS}
+    return T('integracoes', request, u, fontes=fs, sel=sel, ult=ult, cp=painel_completo(o, sel) if sel else None, aviso_tv=avisos.transmissoes(o, modulos_do_orgao(o)), ag=ag)
+
+@r.post('/integracoes/{fonte}/agenda')
+async def integracao_agenda(request: Request, fonte: str):
+    """Agenda de execução escolhida pelo órgão (dias, horários e quantas vezes). Gravada em fontes.agenda; o worker lê a cada minuto."""
+    u = exige(request, 'config'); o = request.state.orgao
+    form = await request.form()
+    if form.get('csrf') != request.session.get('csrf'):
+        raise HTTPException(400, 'Formulário expirado. Volte e tente de novo.')
+    from . import agenda as AG
+    from psycopg.types.json import Jsonb
+    volta = f'/admin/integracoes?fonte={fonte}#agenda'
+    f = CS.fonte_do(o, fonte)
+    if not f:
+        raise HTTPException(404)
+    antes = AG.descrever(AG.da_fonte(dict(f, fonte=fonte)))
+    if form.get('acao') == 'padrao':
+        db.exe(db.PLATAFORMA, 'UPDATE fontes SET agenda=NULL WHERE orgao_id=%s AND fonte=%s', (o['id'], fonte))
+        auditar(request, f'Integrações: agenda da fonte {fonte} voltou ao padrão ({antes} → {AG.descrever(AG.padrao(fonte))})')
+        return ir(volta, 'Agenda voltou ao padrão do sistema.', request)
+    ag, erros = AG.validar(fonte, form)
+    if erros:
+        return ir(volta, 'Agenda não salva: ' + ' '.join(erros), request)
+    db.exe(db.PLATAFORMA, 'UPDATE fontes SET agenda=%s WHERE orgao_id=%s AND fonte=%s', (Jsonb(ag), o['id'], fonte))
+    auditar(request, f'Integrações: agenda da fonte {fonte} alterada ({antes} → {AG.descrever(ag)})')
+    return ir(volta, f'Agenda salva: {AG.descrever(ag)}. Vale a partir da próxima verificação do coletor (a cada minuto).', request)
 
 @r.post('/integracoes/{fonte}')
 async def integracao_post(request: Request, fonte: str):

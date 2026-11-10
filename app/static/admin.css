@@ -180,3 +180,7 @@ caption.titulo-lista{caption-side:top;text-align:left;font-weight:700;font-size:
 .acesso-volta{margin:18px 0 0;padding-top:14px;border-top:1px solid var(--bd);text-align:center}.acesso-volta a{color:var(--cor);font-weight:600}
 @media (min-width:821px){.casca{background:linear-gradient(to right,#17212B 256px,transparent 256px)}}
 .form-tela form.campos{max-width:none}
+/* Integrações: agenda de execução */
+.form-agenda fieldset{margin:0 0 4px}.form-agenda .sub-campo{margin-left:28px}
+.form-agenda fieldset.opcoes label{min-height:40px}
+.form-agenda fieldset.opcoes{display:flex;flex-wrap:wrap;gap:4px 18px}.form-agenda fieldset.opcoes legend{width:100%}
