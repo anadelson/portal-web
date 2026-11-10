@@ -16,9 +16,10 @@
 
 {% macro bloco(b) %}
 {% if b.chave == 'atalhos' %}
-{% if d.atalhos %}{% call fileira_cartoes(d.atalhos|length, 'Acesso direto', 'fil-atalhos', tag='nav', classe='atalhos' ~ (' leg' if leg else ''), fora='fil-atalhos') %}
+{# atalhos do topo: exceção à regra da fileira — grupo centralizado, cartões de 230 a 280 px, metade sobre a foto #}
+{% if d.atalhos %}<nav class="atalhos{{ ' leg' if leg }}" aria-label="Acesso direto">
 {% for a in d.atalhos %}<a href="{{ a.destino }}"><span class="ico">{{ icone(a.icone, 26) }}</span><span><strong>{{ a.titulo }}</strong>{% if a.descricao %}<span class="d">{{ a.descricao }}</span>{% endif %}</span></a>{% endfor %}
-{% endcall %}{% endif %}
+</nav>{% endif %}
 
 {% elif b.chave == 'comunicados' %}
 <div class="duas faixa-com">

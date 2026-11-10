@@ -1,0 +1,279 @@
+{
+ "inicio-1920": {
+  "scrollW": 1920,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "barra institucional": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 9
+   },
+   "menu do brasão": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "600",
+    "n": 6
+   },
+   "hero h1": {
+    "moda": 50,
+    "min": 50,
+    "max": 50,
+    "peso": "700",
+    "n": 1
+   },
+   "hero subtítulo": {
+    "moda": 19,
+    "min": 19,
+    "max": 19,
+    "peso": "400",
+    "n": 1
+   },
+   "h2 seção": {
+    "moda": 22,
+    "min": 22,
+    "max": 30,
+    "peso": "700",
+    "n": 7
+   },
+   "h3 cartão": {
+    "moda": 20,
+    "min": 20,
+    "max": 20,
+    "peso": "700",
+    "n": 1
+   },
+   "subtítulo/descrição (.sub, .d, p em cartão)": {
+    "moda": 13,
+    "min": 13,
+    "max": 14,
+    "peso": "400",
+    "n": 12
+   },
+   "metadados (small, time)": {
+    "moda": 13,
+    "min": 11.7,
+    "max": 14.2,
+    "peso": "400",
+    "n": 13
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 2
+   },
+   "botões": {
+    "moda": 17,
+    "min": 17,
+    "max": 24,
+    "peso": "700",
+    "n": 10
+   }
+  },
+  "atalhos": {
+   "n": 4,
+   "larguras": [
+    398,
+    398,
+    398,
+    398
+   ],
+   "altura": 145,
+   "grupo": 1632,
+   "esq": 144,
+   "dir": 144,
+   "sobre_foto_pct": 0,
+   "setas": false
+  }
+ },
+ "inicio-1366": {
+  "scrollW": 1366,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "barra institucional": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 9
+   },
+   "menu do brasão": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "600",
+    "n": 6
+   },
+   "hero h1": {
+    "moda": 50,
+    "min": 50,
+    "max": 50,
+    "peso": "700",
+    "n": 1
+   },
+   "hero subtítulo": {
+    "moda": 19,
+    "min": 19,
+    "max": 19,
+    "peso": "400",
+    "n": 1
+   },
+   "h2 seção": {
+    "moda": 22,
+    "min": 22,
+    "max": 30,
+    "peso": "700",
+    "n": 7
+   },
+   "h3 cartão": {
+    "moda": 20,
+    "min": 20,
+    "max": 20,
+    "peso": "700",
+    "n": 1
+   },
+   "subtítulo/descrição (.sub, .d, p em cartão)": {
+    "moda": 13,
+    "min": 13,
+    "max": 14,
+    "peso": "400",
+    "n": 12
+   },
+   "metadados (small, time)": {
+    "moda": 13,
+    "min": 11.7,
+    "max": 14.2,
+    "peso": "400",
+    "n": 13
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 2
+   },
+   "botões": {
+    "moda": 17,
+    "min": 17,
+    "max": 24,
+    "peso": "700",
+    "n": 10
+   }
+  },
+  "atalhos": {
+   "n": 4,
+   "larguras": [
+    307,
+    307,
+    307,
+    307
+   ],
+   "altura": 145,
+   "grupo": 1270,
+   "esq": 48,
+   "dir": 48,
+   "sobre_foto_pct": 0,
+   "setas": false
+  }
+ },
+ "inicio-390": {
+  "scrollW": 390,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "hero h1": {
+    "moda": 34,
+    "min": 34,
+    "max": 34,
+    "peso": "700",
+    "n": 1
+   },
+   "hero subtítulo": {
+    "moda": 19,
+    "min": 19,
+    "max": 19,
+    "peso": "400",
+    "n": 1
+   },
+   "h2 seção": {
+    "moda": 22,
+    "min": 21,
+    "max": 24,
+    "peso": "700",
+    "n": 7
+   },
+   "h3 cartão": {
+    "moda": 20,
+    "min": 20,
+    "max": 20,
+    "peso": "700",
+    "n": 1
+   },
+   "subtítulo/descrição (.sub, .d, p em cartão)": {
+    "moda": 13,
+    "min": 13,
+    "max": 14,
+    "peso": "400",
+    "n": 12
+   },
+   "metadados (small, time)": {
+    "moda": 13,
+    "min": 11.7,
+    "max": 14.2,
+    "peso": "400",
+    "n": 13
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 2
+   },
+   "botões": {
+    "moda": 17,
+    "min": 17,
+    "max": 24,
+    "peso": "400",
+    "n": 12
+   }
+  },
+  "atalhos": {
+   "n": 4,
+   "larguras": [
+    229,
+    229,
+    229,
+    229
+   ],
+   "altura": 171,
+   "grupo": 959,
+   "esq": 16,
+   "dir": -585,
+   "sobre_foto_pct": 0,
+   "setas": true
+  }
+ }
+}

@@ -1097,3 +1097,15 @@ Próximos passos dependem das pessoas:
   - axe sem violações em 8 combinações;
   - CSS v=20 e JS v=6 servidos; Câmara 200, console 303 (login); logs sem erro.
 - `largura-fluida` mesclada em `main` com a tag `largura-fluida`.
+
+## Atalhos do topo e escala tipográfica (10/11/2026, `Docs/PEDIDO-ATALHOS-E-FONTES.md`, branch `atalhos-fontes`, nada aplicado na VPS)
+- **1) Atalhos do topo (feito, exceção à fileira):**
+  - Saíram do componente de fileira.
+  - Grupo centralizado até 1200 px; cada cartão entre 230 e 280 px (`repeat(auto-fit, minmax(230px, 280px))`, `justify-content: center`, espaço de 14 px).
+  - Cerca de 55% do cartão fica sobre a foto: `margin-top` −72 px no computador e −48 px no celular; padding inferior do hero de 96 px.
+  - No celular, empilhados na largura do conteúdo.
+  - Câmara: mesmo grupo centralizado, abaixo da foto, como antes, porque o hero dela tem o cartão da próxima sessão.
+  - Medido na prévia: 4 × 280 px em 1920 e 1366 (grupo de 1162 px centralizado); 55% sobre a foto em 1920, 1366 e 390; sem rolagem horizontal.
+- **2) Fontes: PARADO para aprovação.**
+  - Tabela "elemento | atual | protótipo" do painel e do console (e do portal, para referência) em `Docs/avaliacao-atalhos-fontes/TABELA-FONTES.md`.
+  - Medição em ambiente de TESTE (removido com `rm -fv`). Capturas "antes" em `Docs/avaliacao-atalhos-fontes/antes/`.

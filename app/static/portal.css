@@ -65,12 +65,15 @@ main.home{padding-top:0}
 .prox{flex:2 1 300px;background:#fff;color:var(--tx);border-radius:18px;padding:22px;box-shadow:0 12px 30px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:10px;text-shadow:none}
 .prox .rotulo{font-size:13px}.prox h2{font-size:24px;margin:0}.prox p{margin:0}
 .botoes{display:flex;flex-wrap:wrap;gap:8px}
-.atalhos{position:relative;z-index:2;margin:-108px 0 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}
+/* atalhos do topo (exceção à fileira): grupo centralizado até 1200 px, cartões de 230 a 280 px; ~55% do cartão sobre a foto */
+.atalhos{position:relative;z-index:2;max-width:1200px;margin:-72px auto 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,280px));justify-content:center;gap:14px}
+.hero:not(.leg) .int{padding-bottom:96px}
+@media (max-width:600px){.atalhos{grid-template-columns:1fr;max-width:none;margin-top:-48px}}
 .atalhos a{display:flex;gap:14px;align-items:center;background:#fff;border-radius:16px;padding:18px 20px;color:var(--tx);text-decoration:none;box-shadow:0 10px 30px rgba(11,22,32,.16)}
 .atalhos a:hover{box-shadow:0 14px 34px rgba(11,22,32,.24)}
 .atalhos .ico{width:52px;height:52px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;background:var(--cor-clara);color:var(--cor)}
 .atalhos strong{display:block;font-size:17px;line-height:1.25}.atalhos span.d{font-size:14px;color:var(--sub)}
-.atalhos.leg{margin-top:28px}.atalhos.leg a{box-shadow:none;border:1px solid var(--bd);border-top:4px solid var(--cor);flex-direction:column;align-items:flex-start;gap:4px}
+.atalhos.leg{margin-top:28px;margin-bottom:40px}.atalhos.leg a{box-shadow:none;border:1px solid var(--bd);border-top:4px solid var(--cor);flex-direction:column;align-items:flex-start;gap:4px}
 
 /* Fluxo de blocos da página inicial */
 .fluxo{display:flex;flex-wrap:wrap;gap:24px;align-items:stretch}
@@ -541,9 +544,6 @@ h1{font-weight:700}main>h1,main h1:first-of-type{font-size:clamp(28px,4.2vw,36px
 /* cartões com a mesma altura e o botão no rodapé */
 .fileira .pub-c .btn{margin-top:auto;align-self:flex-start}.fileira .atos-ult>li,.fileira .tv-ultimas>li,.fileira .feed>li,.fileira .gov-grade>li{display:flex}.fileira .atos-ult a,.fileira .tv-ultimas a,.fileira .feed a{flex:1}
 .fileira .icard{height:100%}
-/* atalhos sobre o hero: a sobreposição vai para o invólucro; a sombra larga precisa de mais respiro no trilho */
-.fil-atalhos{position:relative;z-index:2;margin:-108px 0 40px}.fil-atalhos>.atalhos{margin:-24px -12px -36px;padding:24px 12px 36px;scroll-padding:0 12px}
-.fil-atalhos:has(.leg){margin-top:28px}
 /* vereadores em fileira: o cartão da presidência ocupa uma posição, como os demais */
 .fileira>ul.vers>li.pres{grid-row:auto;grid-column:auto}.fileira .vcard.pres .retrato{width:110px}.fileira .vcard.pres{padding:16px;gap:12px}.fileira .vcard.pres .info{flex-basis:100%}
 /* larguras de leitura: corpo de texto até 70ch */

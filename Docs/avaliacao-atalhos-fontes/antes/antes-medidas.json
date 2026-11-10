@@ -1,0 +1,638 @@
+{
+ "inicio-1920": {
+  "scrollW": 1920,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "barra institucional": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 9
+   },
+   "menu do brasão": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "600",
+    "n": 5
+   },
+   "hero h1": {
+    "moda": 50,
+    "min": 50,
+    "max": 50,
+    "peso": "700",
+    "n": 1
+   },
+   "hero subtítulo": {
+    "moda": 19,
+    "min": 19,
+    "max": 19,
+    "peso": "400",
+    "n": 1
+   },
+   "h2 seção": {
+    "moda": 22,
+    "min": 18,
+    "max": 30,
+    "peso": "700",
+    "n": 9
+   },
+   "h3 cartão": {
+    "moda": 18,
+    "min": 18,
+    "max": 20,
+    "peso": "700",
+    "n": 5
+   },
+   "subtítulo/descrição (.sub, .d, p em cartão)": {
+    "moda": 14,
+    "min": 13,
+    "max": 17,
+    "peso": "400",
+    "n": 13
+   },
+   "metadados (small, time)": {
+    "moda": 13,
+    "min": 13,
+    "max": 15,
+    "peso": "400",
+    "n": 5
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 11,
+    "min": 11,
+    "max": 12,
+    "peso": "700",
+    "n": 6
+   },
+   "botões": {
+    "moda": 17,
+    "min": 14,
+    "max": 17,
+    "peso": "700",
+    "n": 22
+   },
+   "número de indicador": {
+    "moda": 28,
+    "min": 28,
+    "max": 28,
+    "peso": "700",
+    "n": 4
+   }
+  },
+  "atalhos": {
+   "n": 4,
+   "larguras": [
+    398,
+    398,
+    398,
+    398
+   ],
+   "altura": 88,
+   "grupo": 1632,
+   "esq": 144,
+   "dir": 144,
+   "sobre_foto_pct": 100,
+   "setas": false
+  }
+ },
+ "noticias-1920": {
+  "scrollW": 1920,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "barra institucional": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 9
+   },
+   "menu do brasão": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "600",
+    "n": 5
+   },
+   "h1 interna": {
+    "moda": 36,
+    "min": 36,
+    "max": 36,
+    "peso": "700",
+    "n": 1
+   },
+   "introdução": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "400",
+    "n": 1
+   },
+   "metadados (small, time)": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "400",
+    "n": 1
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 11,
+    "min": 11,
+    "max": 12,
+    "peso": "400",
+    "n": 2
+   },
+   "botões": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "700",
+    "n": 2
+   }
+  }
+ },
+ "transparencia-1920": {
+  "scrollW": 1920,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "barra institucional": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 9
+   },
+   "menu do brasão": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "600",
+    "n": 5
+   },
+   "h1 interna": {
+    "moda": 36,
+    "min": 36,
+    "max": 36,
+    "peso": "700",
+    "n": 1
+   },
+   "introdução": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "400",
+    "n": 1
+   },
+   "subtítulo/descrição (.sub, .d, p em cartão)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 13
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 1
+   },
+   "botões": {
+    "moda": 17,
+    "min": 17,
+    "max": 24,
+    "peso": "400",
+    "n": 4
+   }
+  }
+ },
+ "inicio-1366": {
+  "scrollW": 1366,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "barra institucional": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 9
+   },
+   "menu do brasão": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "600",
+    "n": 5
+   },
+   "hero h1": {
+    "moda": 50,
+    "min": 50,
+    "max": 50,
+    "peso": "700",
+    "n": 1
+   },
+   "hero subtítulo": {
+    "moda": 19,
+    "min": 19,
+    "max": 19,
+    "peso": "400",
+    "n": 1
+   },
+   "h2 seção": {
+    "moda": 22,
+    "min": 18,
+    "max": 30,
+    "peso": "700",
+    "n": 9
+   },
+   "h3 cartão": {
+    "moda": 18,
+    "min": 18,
+    "max": 20,
+    "peso": "700",
+    "n": 5
+   },
+   "subtítulo/descrição (.sub, .d, p em cartão)": {
+    "moda": 14,
+    "min": 13,
+    "max": 17,
+    "peso": "400",
+    "n": 13
+   },
+   "metadados (small, time)": {
+    "moda": 13,
+    "min": 13,
+    "max": 15,
+    "peso": "400",
+    "n": 5
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 11,
+    "min": 11,
+    "max": 12,
+    "peso": "700",
+    "n": 6
+   },
+   "botões": {
+    "moda": 17,
+    "min": 14,
+    "max": 17,
+    "peso": "700",
+    "n": 22
+   },
+   "número de indicador": {
+    "moda": 28,
+    "min": 28,
+    "max": 28,
+    "peso": "700",
+    "n": 4
+   }
+  },
+  "atalhos": {
+   "n": 4,
+   "larguras": [
+    307,
+    307,
+    307,
+    307
+   ],
+   "altura": 110,
+   "grupo": 1270,
+   "esq": 48,
+   "dir": 48,
+   "sobre_foto_pct": 98,
+   "setas": false
+  }
+ },
+ "noticias-1366": {
+  "scrollW": 1366,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "barra institucional": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 9
+   },
+   "menu do brasão": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "600",
+    "n": 5
+   },
+   "h1 interna": {
+    "moda": 36,
+    "min": 36,
+    "max": 36,
+    "peso": "700",
+    "n": 1
+   },
+   "introdução": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "400",
+    "n": 1
+   },
+   "metadados (small, time)": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "400",
+    "n": 1
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 11,
+    "min": 11,
+    "max": 12,
+    "peso": "400",
+    "n": 2
+   },
+   "botões": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "700",
+    "n": 2
+   }
+  }
+ },
+ "transparencia-1366": {
+  "scrollW": 1366,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "barra institucional": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 9
+   },
+   "menu do brasão": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "600",
+    "n": 5
+   },
+   "h1 interna": {
+    "moda": 36,
+    "min": 36,
+    "max": 36,
+    "peso": "700",
+    "n": 1
+   },
+   "introdução": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "400",
+    "n": 1
+   },
+   "subtítulo/descrição (.sub, .d, p em cartão)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 13
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 1
+   },
+   "botões": {
+    "moda": 17,
+    "min": 17,
+    "max": 24,
+    "peso": "400",
+    "n": 4
+   }
+  }
+ },
+ "inicio-390": {
+  "scrollW": 390,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "hero h1": {
+    "moda": 34,
+    "min": 34,
+    "max": 34,
+    "peso": "700",
+    "n": 1
+   },
+   "hero subtítulo": {
+    "moda": 19,
+    "min": 19,
+    "max": 19,
+    "peso": "400",
+    "n": 1
+   },
+   "h2 seção": {
+    "moda": 22,
+    "min": 18,
+    "max": 30,
+    "peso": "700",
+    "n": 9
+   },
+   "h3 cartão": {
+    "moda": 18,
+    "min": 18,
+    "max": 20,
+    "peso": "700",
+    "n": 5
+   },
+   "subtítulo/descrição (.sub, .d, p em cartão)": {
+    "moda": 14,
+    "min": 13,
+    "max": 17,
+    "peso": "400",
+    "n": 13
+   },
+   "metadados (small, time)": {
+    "moda": 13,
+    "min": 13,
+    "max": 15,
+    "peso": "400",
+    "n": 5
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 11,
+    "min": 11,
+    "max": 12,
+    "peso": "700",
+    "n": 6
+   },
+   "botões": {
+    "moda": 17,
+    "min": 14,
+    "max": 24,
+    "peso": "400",
+    "n": 28
+   },
+   "número de indicador": {
+    "moda": 28,
+    "min": 28,
+    "max": 28,
+    "peso": "700",
+    "n": 4
+   }
+  },
+  "atalhos": {
+   "n": 4,
+   "larguras": [
+    229,
+    229,
+    229,
+    229
+   ],
+   "altura": 158,
+   "grupo": 959,
+   "esq": 16,
+   "dir": -585,
+   "sobre_foto_pct": 69,
+   "setas": true
+  }
+ },
+ "noticias-390": {
+  "scrollW": 390,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "h1 interna": {
+    "moda": 28,
+    "min": 28,
+    "max": 28,
+    "peso": "700",
+    "n": 1
+   },
+   "introdução": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "400",
+    "n": 1
+   },
+   "metadados (small, time)": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "400",
+    "n": 1
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 11,
+    "min": 11,
+    "max": 12,
+    "peso": "400",
+    "n": 2
+   },
+   "botões": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "700",
+    "n": 2
+   }
+  }
+ },
+ "transparencia-390": {
+  "scrollW": 390,
+  "fontes": {
+   "body": {
+    "moda": 17,
+    "min": 17,
+    "max": 17,
+    "peso": "400",
+    "n": 1
+   },
+   "h1 interna": {
+    "moda": 28,
+    "min": 28,
+    "max": 28,
+    "peso": "700",
+    "n": 1
+   },
+   "introdução": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "400",
+    "n": 1
+   },
+   "subtítulo/descrição (.sub, .d, p em cartão)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 13
+   },
+   "etiquetas (.etq, .exemplo, .legal)": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 1
+   },
+   "botões": {
+    "moda": 17,
+    "min": 17,
+    "max": 24,
+    "peso": "400",
+    "n": 4
+   }
+  }
+ }
+}
