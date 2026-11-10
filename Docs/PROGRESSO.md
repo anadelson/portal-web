@@ -1191,3 +1191,15 @@ Próximos passos dependem das pessoas:
   - capturas em `Docs/avaliacao-painel-admin/index.html`.
 - **Testes:** novo `tests/teste_painel_admin.py`. Ajustadas 2 verificações que dependiam do HTML antigo (`teste_fluxos`: grade de imagens; `teste_fase10`: designação na tela da secretaria).
 - **Onde parou:** aguardando aprovação para implantar (sem migração de banco).
+
+### Implantação do painel reorganizado (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 16h16 UTC.
+- **Build e testes:** as **14 suítes** com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida:** `up -d` de app e worker; app saudável. Sem migração de banco. Disco em 72%.
+- **Conferência no domínio**, só leitura, sem entrar no painel (`Docs/avaliacao-painel-admin/implantado/`):
+  - login novo da Prefeitura, da Câmara e do console ("Entrar no painel", "Área restrita", "Voltar ao portal");
+  - admin.css v=9 e admin.js v=4 servidos, com o menu do celular e a correção do editor;
+  - axe sem violações nos 3 logins em 1366 e 390 px;
+  - portais 200, console 303 (login); logs sem erro.
+- **Pendente do lado do usuário:** entrar no painel e conferir as telas no uso real, em especial salvar um comunicado e um perfil do Conheça pelo botão Salvar. Essas telas tinham o defeito do formulário aninhado no ar desde 09/11.
+- `painel-admin` mesclado em `main` com a tag `painel-admin`.
