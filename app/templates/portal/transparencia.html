@@ -10,7 +10,7 @@
 {% for c in cards %}<a class="serv sem-foto" href="/transparencia/{{ c.chave }}">
 <span class="tema"><span class="ico">{{ icone(c.icone, 26) }}</span>{{ '%d registros'|format(c.n) if c.n else 'sem dados ainda' }}</span>
 <span class="t">{{ c.titulo }}</span><span class="d">{{ c.desc }}</span>
-<span style="margin-top:auto;font-size:13px;color:var(--sub)">{% if c.atualizado %}Atualizado em {{ c.atualizado|br }}{% else %}Aguardando a primeira coleta{% endif %}{% if c.falhou %} · <span class="chip alerta">última coleta falhou</span>{% endif %}</span>
+<span style="margin-top:auto;font-size:var(--fs-meta);color:var(--sub)">{% if c.atualizado %}Atualizado em {{ c.atualizado|br }}{% else %}Aguardando a primeira coleta{% endif %}{% if c.falhou %} · <span class="chip alerta">última coleta falhou</span>{% endif %}</span>
 </a>{% endfor %}
 {% if leg and mods.emend %}<a class="serv sem-foto" href="/emendas"><span class="tema"><span class="ico">{{ icone('emendas', 26) }}</span>Prefeitura → Câmara</span><span class="t">Emendas impositivas</span><span class="d">Empenho, liquidação e pagamento de cada emenda, lidos da Prefeitura.</span></a>{% endif %}
 <a class="serv sem-foto" href="/dados-abertos"><span class="tema"><span class="ico">{{ icone('bases', 26) }}</span>CSV · JSON · API</span><span class="t">Dados abertos</span><span class="d">Todas as bases em formato aberto, com a mesma filtragem das telas.</span></a>

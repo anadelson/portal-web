@@ -2,16 +2,16 @@
 {% block titulo_pag %}Segundo fator — {{ tela.titulo }}{% endblock %}
 {% block corpo %}
 {% if codigos %}
-<h2 style="font-size:18px">Guarde seus códigos de recuperação</h2>
+<h2>Guarde seus códigos de recuperação</h2>
 <p>Cada código vale <strong>uma vez</strong>, para entrar se você perder o celular. Eles <strong>não aparecem de novo</strong>: anote ou imprima e guarde em lugar seguro.</p>
-<ul style="font-family:monospace;font-size:17px;columns:2">{% for c in codigos %}<li>{{ c }}</li>{% endfor %}</ul>
+<ul class="codigos-rec">{% for c in codigos %}<li>{{ c }}</li>{% endfor %}</ul>
 <p><a class="btn" href="{{ continuar }}">Já guardei, continuar</a></p>
 {% elif cadastro %}
-<h2 style="font-size:18px">Ative o segundo fator (obrigatório)</h2>
+<h2>Ative o segundo fator (obrigatório)</h2>
 <ol><li>Instale um aplicativo autenticador no celular (ex.: Google Authenticator, Microsoft Authenticator, FreeOTP, Authy).</li>
 <li>Leia o QR code abaixo com o aplicativo (ou digite a chave manualmente).</li><li>Digite o código de 6 dígitos que aparece no aplicativo.</li></ol>
 <div class="qr" role="img" aria-label="QR code para cadastrar o autenticador. Se não puder ler, use a chave escrita abaixo.">{{ cadastro.qr|safe }}</div>
-<p>Chave para digitar: <code style="font-size:16px">{{ cadastro.segredo }}</code></p>
+<p>Chave para digitar: <code class="chave-2fa">{{ cadastro.segredo }}</code></p>
 <form class="campos" method="post" action="{{ acao }}"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><label>Código do aplicativo (6 dígitos)<input name="codigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" required></label><button class="btn">Ativar e entrar</button></form>
 {% else %}
 <p>Digite o código de 6 dígitos do seu aplicativo autenticador.</p>
