@@ -8,3 +8,4 @@ Docs/diagnostico-*.txt
 Docs/*.tgz
 app/static/img/*.webp
 /segredos/
+logs/
