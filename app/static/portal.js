@@ -31,10 +31,18 @@
       var era = aberto === b; fecharBalao(false);
       if (era) return;
       var bal = document.getElementById(b.getAttribute('aria-controls')); bal.hidden = false; b.setAttribute('aria-expanded', 'true'); aberto = b;
+      // dentro de uma fileira (trilho rolável) o balão seria cortado: fica fixo, logo abaixo do botão
+      if (bal.closest('.fil-trilho') && window.innerWidth > 760) {
+        var r = b.getBoundingClientRect();
+        bal.style.position = 'fixed'; bal.style.right = 'auto'; bal.style.width = '320px';
+        bal.style.top = Math.round(r.bottom + 8) + 'px';
+        bal.style.left = Math.round(Math.max(8, Math.min(r.right - 320, window.innerWidth - 328))) + 'px';
+      }
     });
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && aberto) fecharBalao(true); });
   document.addEventListener('click', function (e) { if (aberto && !e.target.closest('.balao')) fecharBalao(false); });
+  window.addEventListener('scroll', function () { if (aberto && document.getElementById(aberto.getAttribute('aria-controls')).style.position === 'fixed') fecharBalao(false); }, { passive: true, capture: true });
   // ---- Libras: abre/fecha o avatar do VLibras pelo botão da barra ----
   var lb = document.querySelector('[data-libras]');
   if (lb) lb.addEventListener('click', function () {
@@ -103,5 +111,50 @@
       .then(function (r) { return r.json(); })
       .then(function (d) { msg.textContent = d.msg; msg.hidden = false; f.remove(); })
       .catch(function () { msg.textContent = 'Não foi possível enviar agora. Tente de novo.'; msg.hidden = false; f.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); });
+  });
+})();
+
+/* Fileira de cartões: setas e "1–5 de 8" só quando o trilho transborda; setas do teclado só com o foco dentro do trilho.
+   Sem rolagem automática; com "reduzir movimento", sem animação. Sem JS, o trilho continua rolável (setas ficam ocultas). */
+(function () {
+  var reduz = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-fileira]').forEach(function (f) {
+    var t = f.querySelector('.fil-trilho'), nav = f.querySelector('[data-fil-nav]');
+    if (!t || !nav) return;
+    var cards = [].slice.call(t.children), n = cards.length, cont = nav.querySelector('.fil-cont');
+    var bts = nav.querySelectorAll('[data-fil]');
+    function passo() { var g = parseFloat(getComputedStyle(t).columnGap) || 0; return cards[0].getBoundingClientRect().width + g; }
+    function porVez() { var p = passo(), pl = parseFloat(getComputedStyle(t).paddingLeft) || 0; return Math.max(1, Math.floor((t.clientWidth - 2 * pl + (parseFloat(getComputedStyle(t).columnGap) || 0)) / p + 0.02)); }
+    function atualiza() {
+      var rola = t.scrollWidth > t.clientWidth + 2;
+      nav.hidden = !rola;
+      if (!rola) return;
+      var i = Math.round(t.scrollLeft / passo()), v = porVez();
+      var ate = Math.min(n, i + v); cont.textContent = (ate > i + 1 ? (i + 1) + '–' + ate : (i + 1)) + ' de ' + n;
+      bts[0].disabled = t.scrollLeft <= 2;
+      bts[1].disabled = t.scrollLeft >= t.scrollWidth - t.clientWidth - 2;
+    }
+    bts.forEach(function (b) {
+      b.addEventListener('click', function () {
+        t.scrollBy({ left: parseInt(b.getAttribute('data-fil'), 10) * porVez() * passo(), behavior: reduz ? 'auto' : 'smooth' });
+      });
+    });
+    var pend = null;
+    t.addEventListener('scroll', function () { if (pend) return; pend = requestAnimationFrame(function () { pend = null; atualiza(); }); }, { passive: true });
+    if (window.ResizeObserver) new ResizeObserver(atualiza).observe(t); else window.addEventListener('resize', atualiza);
+    t.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+      var atual = cards.findIndex(function (c) { return c.contains(e.target); });
+      if (atual < 0) return;
+      var alvo = cards[atual + (e.key === 'ArrowRight' ? 1 : -1)];
+      var foco = alvo && alvo.querySelector('a[href],button:not([disabled]),select,input');
+      if (!foco && alvo && alvo.matches('a[href]')) foco = alvo;
+      if (!foco) return;
+      e.preventDefault();
+      foco.focus({ preventScroll: true });
+      alvo.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduz ? 'auto' : 'smooth' });
+    });
+    atualiza();
   });
 })();

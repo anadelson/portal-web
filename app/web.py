@@ -198,8 +198,11 @@ def vizinhos(o):
     orgao_por_dominio(o['dominio'])
     return [x for x in _cache['orgaos'].values() if x['ibge'] == o['ibge'] and x['id'] != o['id']]
 
-LARGURAS = (1200, 1320, 1440)  # largura máxima do conteúdo do portal (Identidade > Tema)
-LARGURA_PADRAO = 1320
+LARGURAS = (1320, 1600, 1760, 'tela')  # largura máxima do conteúdo (Identidade > Tema); 'tela' = tela toda
+LARGURA_PADRAO = 1760
+
+def largura_css(v):
+    return 'none' if v == 'tela' else f'{int(v)}px'
 
 def ctx_orgao(request: Request, **extra):
     o = request.state.orgao
@@ -209,6 +212,7 @@ def ctx_orgao(request: Request, **extra):
     tokens = {'cor': cor, 'cor_escura': mistura(cor, '#000000', .3), 'cor_clara': mistura(cor, '#FFFFFF', .88),
               'destaque': ident.get('cor_destaque') or '#F0B429',
               'largura': ident.get('largura') if ident.get('largura') in LARGURAS else LARGURA_PADRAO}
+    tokens['largura_css'] = largura_css(tokens['largura'])
     ao_vivo = db.um(o['banco'], 'SELECT id, titulo, tipo, iniciada_em FROM transmissoes WHERE ao_vivo ORDER BY iniciada_em DESC LIMIT 1') if (mods.get('transm') or mods.get('audiencias')) else None
     defeso = mods.get('eleicao') and eleicao.em_defeso(o['banco'])
     from . import menus

@@ -1,0 +1,394 @@
+{
+ "inicio-1920": {
+  "main": 1760,
+  "scrollW": 1920,
+  "fileiras": [
+   {
+    "sel": ".atalhos",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 398,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": ".pub-cartoes",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 398,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 384,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   }
+  ]
+ },
+ "transparencia-1920": {
+  "main": 1760,
+  "scrollW": 1920,
+  "fileiras": [
+   {
+    "sel": ".servicos",
+    "n": 13,
+    "por_fileira": 13,
+    "visiveis": 5,
+    "largura": 315,
+    "setas": true,
+    "cont": "1–5 de 13",
+    "sobra_dir": null
+   }
+  ]
+ },
+ "painel-1920": {
+  "main": 1760,
+  "scrollW": 1920,
+  "fileiras": [
+   {
+    "sel": ".ics",
+    "n": 6,
+    "por_fileira": 6,
+    "visiveis": 5,
+    "largura": 315,
+    "setas": true,
+    "cont": "1–5 de 6",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 398,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 398,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": ".ics",
+    "n": 3,
+    "por_fileira": 3,
+    "visiveis": 3,
+    "largura": 535,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   }
+  ]
+ },
+ "inicio-1366": {
+  "main": 1366,
+  "scrollW": 1366,
+  "fileiras": [
+   {
+    "sel": ".atalhos",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 307,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": ".pub-cartoes",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 307,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 294,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   }
+  ]
+ },
+ "transparencia-1366": {
+  "main": 1366,
+  "scrollW": 1366,
+  "fileiras": [
+   {
+    "sel": ".servicos",
+    "n": 13,
+    "por_fileira": 13,
+    "visiveis": 5,
+    "largura": 243,
+    "setas": true,
+    "cont": "1–5 de 13",
+    "sobra_dir": null
+   }
+  ]
+ },
+ "painel-1366": {
+  "main": 1366,
+  "scrollW": 1366,
+  "fileiras": [
+   {
+    "sel": ".ics",
+    "n": 6,
+    "por_fileira": 6,
+    "visiveis": 5,
+    "largura": 243,
+    "setas": true,
+    "cont": "1–5 de 6",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 307,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 307,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": ".ics",
+    "n": 3,
+    "por_fileira": 3,
+    "visiveis": 3,
+    "largura": 414,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   }
+  ]
+ },
+ "inicio-768": {
+  "main": 768,
+  "scrollW": 768,
+  "fileiras": [
+   {
+    "sel": ".atalhos",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 3,
+    "largura": 229,
+    "setas": true,
+    "cont": "1–3 de 4",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".pub-cartoes",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 3,
+    "largura": 229,
+    "setas": true,
+    "cont": "1–3 de 4",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 2,
+    "largura": 323,
+    "setas": true,
+    "cont": "1–2 de 4",
+    "sobra_dir": null
+   }
+  ]
+ },
+ "transparencia-768": {
+  "main": 768,
+  "scrollW": 768,
+  "fileiras": [
+   {
+    "sel": ".servicos",
+    "n": 13,
+    "por_fileira": 13,
+    "visiveis": 3,
+    "largura": 229,
+    "setas": true,
+    "cont": "1–3 de 13",
+    "sobra_dir": null
+   }
+  ]
+ },
+ "painel-768": {
+  "main": 768,
+  "scrollW": 768,
+  "fileiras": [
+   {
+    "sel": ".ics",
+    "n": 6,
+    "por_fileira": 6,
+    "visiveis": 3,
+    "largura": 229,
+    "setas": true,
+    "cont": "1–3 de 6",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 3,
+    "largura": 229,
+    "setas": true,
+    "cont": "1–3 de 4",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 3,
+    "largura": 229,
+    "setas": true,
+    "cont": "1–3 de 4",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".ics",
+    "n": 3,
+    "por_fileira": 3,
+    "visiveis": 3,
+    "largura": 229,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   }
+  ]
+ },
+ "inicio-390": {
+  "main": 390,
+  "scrollW": 390,
+  "fileiras": [
+   {
+    "sel": ".atalhos",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 1,
+    "largura": 229,
+    "setas": true,
+    "cont": "1 de 4",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".pub-cartoes",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 1,
+    "largura": 229,
+    "setas": true,
+    "cont": "1 de 4",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 1,
+    "largura": 201,
+    "setas": true,
+    "cont": "1 de 4",
+    "sobra_dir": null
+   }
+  ]
+ },
+ "transparencia-390": {
+  "main": 390,
+  "scrollW": 390,
+  "fileiras": [
+   {
+    "sel": ".servicos",
+    "n": 13,
+    "por_fileira": 13,
+    "visiveis": 1,
+    "largura": 229,
+    "setas": true,
+    "cont": "1 de 13",
+    "sobra_dir": null
+   }
+  ]
+ },
+ "painel-390": {
+  "main": 390,
+  "scrollW": 390,
+  "fileiras": [
+   {
+    "sel": ".ics",
+    "n": 6,
+    "por_fileira": 6,
+    "visiveis": 1,
+    "largura": 229,
+    "setas": true,
+    "cont": "1 de 6",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 1,
+    "largura": 229,
+    "setas": true,
+    "cont": "1 de 4",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".ics",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 1,
+    "largura": 229,
+    "setas": true,
+    "cont": "1 de 4",
+    "sobra_dir": null
+   },
+   {
+    "sel": ".ics",
+    "n": 3,
+    "por_fileira": 3,
+    "visiveis": 1,
+    "largura": 229,
+    "setas": true,
+    "cont": "1 de 3",
+    "sobra_dir": null
+   }
+  ]
+ }
+}

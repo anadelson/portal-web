@@ -5,9 +5,9 @@
 <title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/portal.css?v=17">
+<link rel="stylesheet" href="/static/portal.css?v=20">
 {% if ident.favicon %}{% if ident.favicon.svg %}<link rel="icon" type="image/svg+xml" href="{{ ident.favicon.svg }}">{% endif %}<link rel="icon" type="image/png" sizes="32x32" href="{{ ident.favicon['32'] }}"><link rel="icon" type="image/png" sizes="16x16" href="{{ ident.favicon['16'] }}"><link rel="apple-touch-icon" sizes="180x180" href="{{ ident.favicon['180'] }}"><link rel="icon" type="image/png" sizes="512x512" href="{{ ident.favicon['512'] }}">{% endif %}
-<style>:root{--largura:{{ tokens.largura }}px;--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
+<style>:root{--largura-max:{{ tokens.largura_css }};--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
 <script>document.documentElement.classList.add('js');try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
 </head>
 <body class="{{ orgao.tipo }}">
@@ -112,7 +112,7 @@
 var p=ler();document.querySelectorAll('[data-acess]').forEach(function(b){var k=b.getAttribute('data-acess');b.setAttribute('aria-pressed',p[k]?'true':'false');b.addEventListener('click',function(){p[k]=!p[k];h.classList.toggle(k,!!p[k]);b.setAttribute('aria-pressed',p[k]?'true':'false');gravar(p)})});
 document.querySelectorAll('[data-fonte]').forEach(function(b){b.addEventListener('click',function(){var d=parseInt(b.getAttribute('data-fonte'),10);p.fonte=d===0?0:Math.min(150,Math.max(80,(p.fonte||100)+d));h.style.fontSize=p.fonte?p.fonte+'%':'';gravar(p)})});})();
 </script>
-<script src="/static/portal.js?v=5" defer></script>
+<script src="/static/portal.js?v=6" defer></script>
 {% if vlibras %}<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>
 <script src="https://vlibras.gov.br/app/vlibras-plugin.js" defer></script><script src="/static/vlibras-iniciar.js" defer></script>{% endif %}
 </body>

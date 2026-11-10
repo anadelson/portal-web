@@ -1036,3 +1036,64 @@ Próximos passos dependem das pessoas:
   - `/painel` com as barras do cabeçalho preenchidas (9 itens na institucional);
   - Câmara e console respondem 200; logs sem erro.
 - `largura-portal` mesclado em `main` com a tag `largura-portal`.
+
+## Largura fluida: até 1760 px (10/11/2026, branch `largura-fluida`, nada aplicado na VPS)
+- **Pedido (chat):** largura fluida em todo o portal; `--largura-max: 1760px` e `--margem: clamp(16px, 3.5vw, 64px)` no `:root`; larguras de leitura mantidas; grades da página inicial aproveitando a largura, com no máximo 4 a 5 colunas; Identidade > Tema com 1320, 1600, 1760 ou "tela toda" (padrão 1760). Substitui o pedido de 1320 px.
+- **Feito:**
+  - `main` e `.int` (cabeçalho, barras, destaque e rodapé): `width:100%; max-width:var(--largura-max); margin:0 auto; box-sizing:border-box`, com padding lateral `var(--margem)`.
+  - O valor do órgão vai no estilo inline do `base.html` (`tokens.largura_css`; "tela toda" vira `none`). Valor inválido volta a 1760.
+  - Painel → Identidade → Tema: grupo "Largura máxima do conteúdo" com 4 opções; o salvamento entra na auditoria.
+  - Corpo de texto limitado a 70ch (`.texto`, `.texto-rico`, ficha de serviço, matéria, páginas de texto); `.intro` 70ch, base legal 110ch e `.materia` 820 px mantidos.
+  - Limite de colunas na página inicial, com `auto-fill` e `minmax(max(mín., (100% − espaços)/N), 1fr)`:
+    - atalhos 4, indicadores 5, serviços 4, publicações 4, atos 4;
+    - gravações e redes 3, trilho 4;
+    - vereadores 6 trilhas (o cartão da presidência ocupa 2, então são 5 cartões por fileira).
+  - As páginas internas crescem livremente (ex.: indicadores do /painel chegam a 6 colunas em 1920).
+  - Defeito que já existia: a caixa "Mesa Diretora" da Câmara usava só uma faixa no meio do cartão. Agora usa a largura toda, com os biênios lado a lado.
+- **Capturas** antes/depois em 1920, 1366 e 390 px: `Docs/avaliacao-largura-fluida/index.html`.
+  - Fonte: prévia com cópia dos bancos, removida com `rm -fv`.
+  - Depois: conteúdo de 1760 px em 1920 (margem 64), 1366 em 1366 (margem ≈ 48) e 390 em 390 (margem 16); sem rolagem horizontal.
+- **Observação:** no celular a margem passa de 24 para 16 px (mínimo do clamp pedido).
+- **Testes:** as 11 suítes (código montado, banco de TESTE) deram ERROS: 0 / tudo ok; nenhum volume solto criado pelos testes. `teste_fase9` testa a largura: padrão 1760, "tela toda" → none, 1600 aplicada, inválida → 1760.
+- **Onde parou:** aguardando aprovação para implantar (sem migração de banco).
+- **Encontrado depois:** `Docs/PEDIDO-LARGURA-E-CARDS.md` (11h44). O usuário confirmou que esse é o pedido (ver a seção seguinte).
+
+## Fileiras de cartões (10/11/2026, `Docs/PEDIDO-LARGURA-E-CARDS.md`, mesma branch `largura-fluida`, nada aplicado na VPS)
+- **Parte 1, largura fluida:** já feita (seção anterior).
+- **Parte 2, componente único `fileira_cartoes`** (`app/templates/partials/fileira.html` + CSS + `portal.js`):
+  - 1 a 5 cartões: N colunas iguais em 100% (`grid-auto-columns`), sem sobra e com a mesma altura.
+  - 6 ou mais: carrossel de 5 por vez, com scroll-snap e setas (`aria-label` + `aria-controls`). As setas só aparecem quando o trilho transborda.
+  - Contagem "1–5 de 8" (aria-live). Setas do teclado só com o foco num cartão (não em campos). Sem rolagem automática; com "reduzir movimento", sem animação.
+  - Sem JavaScript: o trilho continua rolável e as setas ficam ocultas.
+  - Responsivo: mínimo de 220 px por cartão, por container query (1920 e 1366 → 5; 768 → 3; abaixo de 454 px → 1 e meio, com o próximo aparecendo pela metade).
+- **Inventário — onde o componente passou a ser usado:**
+  - **Início:** atalhos, publicações, indicadores, números, atos/edições do Diário, transmissões, serviços, redes e vereadores (Câmara).
+  - **Páginas internas:** hub da Transparência (dois órgãos), cada grupo do Painel e secretarias em Governo.
+- **Ficaram fora:**
+  - mosaico do Conheça (aprovado nos ajustes 8);
+  - listas completas com filtro (/conheca, /fotos, /vereadores, /noticias);
+  - números dentro de cartões (Quanto custa a Câmara, Emendas);
+  - listas de Comunicados e Serviços.
+- **Mudanças de layout que vieram junto:**
+  - **Vereadores:** carrossel de 5 por vez; o cartão da presidência ocupa uma posição. A Mesa Diretora virou caixa própria abaixo da fileira.
+  - **Hub da Transparência:** 13 cartões, então mostra 5 por vez em carrossel.
+  - **Balão ⓘ:** dentro do trilho fica fixo na tela (senão seria cortado) e fecha ao rolar.
+- **Acessibilidade:**
+  - Os limites de colunas da etapa anterior foram removidos; o componente os substitui.
+  - Corrigido no /painel: o gráfico rolável (`.prola`) não era focável. A falha já existia em 390 px na produção e, com a largura nova, aparecia também em 1920. Agora tem `tabindex`, `role=region` e rótulo.
+  - axe sem violações nas 8 combinações (início, transparência e painel da Prefeitura, mais o início da Câmara, em 1920 e 390).
+- **Testes:**
+  - `tests/teste_fileira.py`: HTML do componente com 1, 2, 3, 5 e 8 cartões; uso nos templates.
+  - `tests/fileira_navegador.js`: larguras e alturas iguais, sem sobra, setas só quando transborda, "4–8 de 8" depois de "Próximos" e seta do teclado em 1920, 1366, 768 e 390. Ambos deram tudo ok.
+- **Capturas** antes (produção) e depois (prévia com cópia dos bancos, removida com `rm -fv`) em 1920, 1366, 768 e 390 px: `Docs/avaliacao-largura-cards/index.html`, com a tabela de medidas e o inventário.
+
+### Implantação da largura fluida e das fileiras de cartões (10/11/2026, aprovada: "Aprovo os 6 passos" + "sim existe e pode prosseguir")
+- Snapshot confirmado pelo usuário. Backup às 12h21 UTC.
+- **Build e testes:** as **12 suítes** com a imagem nova deram ERROS: 0 / tudo ok (11 de antes + `teste_fileira`). Nenhum volume solto.
+- **Subida:** `up -d` de app e worker; app saudável. Sem migração de banco. Disco em 71%.
+- **Conferência no domínio** (`Docs/avaliacao-largura-cards/implantado/`, 1920, 1366, 768 e 390 px):
+  - conteúdo de 1760 px em 1920; sem rolagem horizontal da página;
+  - fileiras de até 5 sem sobra; carrosséis com "1–5 de 13" (Transparência), "1–5 de 6" (Painel) e "1–5 de 9" (vereadores);
+  - axe sem violações em 8 combinações;
+  - CSS v=20 e JS v=6 servidos; Câmara 200, console 303 (login); logs sem erro.
+- `largura-fluida` mesclada em `main` com a tag `largura-fluida`.

@@ -1,0 +1,14 @@
+{# Fileira de cartões (regra única, 10/11/2026): de 1 a 5 cartões, N colunas iguais ocupando 100% da largura;
+   com mais de 5, carrossel com 5 por vez (setas, "1–5 de 8", scroll-snap, sem rolagem automática).
+   Em telas estreitas, o número por vez cai pelo mínimo de 220 px por cartão (container query); abaixo de 456 px,
+   1 por vez com o próximo aparecendo pela metade. Sem JavaScript, o trilho continua rolável na horizontal
+   e as setas ficam ocultas (o JS as mostra só quando o trilho transborda).
+   Uso: {% call fileira_cartoes(n, 'Rótulo acessível', 'id-unico', tag='ul', classe='tv-ultimas') %}<li>…</li>{% endcall %} #}
+{% macro fileira_cartoes(n, rotulo, fid, tag='div', classe='', fora='') %}
+<div class="fileira{{ ' ' ~ fora if fora }}" data-fileira data-n="{{ n }}" style="--n:{{ n if n < 5 else 5 }}">
+<{{ tag }} class="fil-trilho{{ ' ' ~ classe if classe }}" id="{{ fid }}" aria-label="{{ rotulo }}"{% if tag == 'div' %} role="group"{% endif %}>{{ caller() }}</{{ tag }}>
+{% if n > 1 %}<div class="fil-nav" data-fil-nav{% if n > 5 %} data-carrossel{% endif %} hidden><span class="fil-cont" aria-live="polite">1–{{ n if n < 5 else 5 }} de {{ n }}</span>
+<button type="button" class="fil-bt" data-fil="-1" aria-controls="{{ fid }}" aria-label="Anteriores: {{ rotulo }}"><span aria-hidden="true">‹</span></button>
+<button type="button" class="fil-bt" data-fil="1" aria-controls="{{ fid }}" aria-label="Próximos: {{ rotulo }}"><span aria-hidden="true">›</span></button></div>{% endif %}
+</div>
+{% endmacro %}

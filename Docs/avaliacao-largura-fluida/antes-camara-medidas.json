@@ -1,0 +1,23 @@
+{
+ "inicio-1920": {
+  "main": 1320,
+  "cab": 1320,
+  "pad_lat": "24px",
+  "scrollW": 1920,
+  "var_largura": "1320px"
+ },
+ "inicio-1366": {
+  "main": 1320,
+  "cab": 1320,
+  "pad_lat": "24px",
+  "scrollW": 1366,
+  "var_largura": "1320px"
+ },
+ "inicio-390": {
+  "main": 390,
+  "cab": 390,
+  "pad_lat": "24px",
+  "scrollW": 390,
+  "var_largura": "1320px"
+ }
+}
