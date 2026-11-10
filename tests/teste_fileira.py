@@ -39,7 +39,7 @@ for t, minimo in (('home.html', 8), ('governo.html', 1), ('transparencia.html', 
 css = (RAIZ / 'app' / 'static' / 'portal.css').read_text()
 home = (RAIZ / 'app' / 'templates' / 'portal' / 'home.html').read_text()
 checa('fil-atalhos' not in home and '<nav class="atalhos' in home, 'atalhos do topo fora da fileira (exceção)')
-checa('grid-template-columns:repeat(auto-fit,minmax(230px,280px));justify-content:center' in css and 'max-width:1200px;margin:-72px auto' in css, 'atalhos: 230–280 px, centralizados, sobre a foto')
+checa('grid-template-columns:repeat(auto-fit,minmax(230px,280px));justify-content:center' in css and 'max-width:1200px;margin:-94px auto' in css, 'atalhos: 230–280 px, centralizados, sobre a foto')
 checa('grid-auto-columns:calc((100% - (var(--v) - 1) * var(--gap)) / var(--v))' in css and 'scroll-snap-type:x mandatory' in css, 'CSS: colunas iguais e scroll-snap')
 checa(not re.search(r'animation[^;]*fil|setInterval', (RAIZ / 'app' / 'static' / 'portal.js').read_text()), 'JS: sem rolagem automática')
 

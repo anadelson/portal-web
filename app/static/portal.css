@@ -68,14 +68,16 @@ main.home{padding-top:0}
 .prox .rotulo{font-size:var(--fs-meta)}.prox h2{font-size:var(--fs-h2-sec);margin:0}.prox p{margin:0}
 .botoes{display:flex;flex-wrap:wrap;gap:8px}
 /* atalhos do topo (exceção à fileira): grupo centralizado até 1200 px, cartões de 230 a 280 px; ~55% do cartão sobre a foto */
-.atalhos{position:relative;z-index:2;max-width:1200px;margin:-72px auto 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,280px));justify-content:center;gap:14px}
+.atalhos{position:relative;z-index:2;max-width:1200px;margin:-94px auto 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,280px));justify-content:center;gap:14px}
 .hero:not(.leg) .int{padding-bottom:96px}
-@media (max-width:600px){.atalhos{grid-template-columns:1fr;max-width:none;margin-top:-48px}}
+@media (max-width:600px){.atalhos{grid-template-columns:1fr;max-width:none;margin-top:-80px}}
 .atalhos a{display:flex;gap:14px;align-items:center;background:#fff;border-radius:16px;padding:18px 20px;color:var(--tx);text-decoration:none;box-shadow:0 10px 30px rgba(11,22,32,.16)}
 .atalhos a:hover{box-shadow:0 14px 34px rgba(11,22,32,.24)}
 .atalhos .ico{width:52px;height:52px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;background:var(--cor-clara);color:var(--cor)}
 .atalhos strong{display:block;font-size:var(--fs-h3-p);line-height:1.25}.atalhos span.d{font-size:var(--fs-desc);color:var(--sub)}
-.atalhos.leg{margin-top:28px;margin-bottom:40px}.atalhos.leg a{box-shadow:none;border:1px solid var(--bd);border-top:4px solid var(--cor);flex-direction:column;align-items:flex-start;gap:4px}
+.atalhos.leg{margin-top:28px;margin-bottom:40px}
+/* cartões de atalho no padrão da Câmara para os dois órgãos (10/11/2026): ícone em cima, borda superior na cor do órgão */
+.atalhos a{box-shadow:none;border:1px solid var(--bd);border-top:4px solid var(--cor);flex-direction:column;align-items:flex-start;gap:4px}
 
 /* Fluxo de blocos da página inicial */
 .fluxo{display:flex;flex-wrap:wrap;gap:24px;align-items:stretch}
@@ -427,7 +429,7 @@ nav.menu{flex:1 1 auto;min-width:0}nav.menu ul{flex-wrap:nowrap;justify-content:
  .topo.cheio .busca-topo:focus-within{position:absolute;right:16px;top:50%;transform:translateY(-50%);z-index:30;padding-left:14px;box-shadow:0 8px 24px rgba(11,22,32,.18)}
  .topo.cheio .busca-topo:focus-within input{width:min(320px,50vw);opacity:1}
 }
-@media (min-width:1367px){.topo.cheio .int{column-gap:16px}.topo.cheio .marca strong{font-size:var(--fs-marca-m)}.topo.cheio nav.menu a{padding:8px 10px}}
+@media (min-width:1367px){.topo.cheio .int{column-gap:16px}.marca strong{font-size:var(--fs-marca-m)}.topo.cheio nav.menu a{padding:8px 10px}}
 /* Fase 9 — avaliação: resposta no próprio bloco */
 div.avaliar{margin-top:32px}div.avaliar form.aval-form{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--bd);border-radius:14px;padding:14px 18px}
 div.avaliar form.aval-form details{flex:1 1 100%}div.avaliar form.aval-form textarea{width:100%;font:inherit;padding:8px;border:1px solid #6B7684;border-radius:8px;margin-top:6px}

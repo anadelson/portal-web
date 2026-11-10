@@ -1255,3 +1255,30 @@ Próximos passos dependem das pessoas:
   - admin.css v=11 servido; portais 200, console 303 (login).
 - `agenda-integracoes` mesclada em `main` com a tag `agenda-integracoes`.
 - **Para o usuário:** em Painel → Integrações → cada fonte → "Agenda de execução", escolher os dias e os horários de cada integração.
+
+## Visual da Prefeitura igual ao da Câmara (10/11/2026, branch `visual-prefeitura`, nada aplicado na VPS)
+- **Pedido:** a letra e o visual do portal da Prefeitura devem ser iguais aos da Câmara, que é o padrão. Esclarecido: "visual geral (letras e cartões)".
+- **Medição no ar** (26 elementos, 1920 e 390 px): mesma família (Public Sans), mesmos tamanhos e pesos. Só duas coisas diferiam:
+  1. o nome no cabeçalho em tela grande: Prefeitura 25 px, Câmara 22 px (regra do cabeçalho "cheio");
+  2. os cartões de atalho: na Câmara, ícone em cima, borda superior na cor do órgão e sem sombra; na Prefeitura, ícone ao lado e sombra.
+- **Feito:**
+  - nome do cabeçalho com 22 px em tela grande para os dois órgãos (21 px até 1366 e 25 px no celular, como já era);
+  - cartões de atalho no padrão da Câmara para os dois;
+  - na Prefeitura os cartões continuam sobre a foto: sobreposição ajustada para −94 px no computador e −80 px no celular (55% do cartão sobre a foto, como aprovado antes);
+  - portal.css v=23.
+- **Conferência** na prévia com cópia dos bancos (removida com `rm -fv`):
+  - nome e cartões idênticos nos dois portais em 1920, 1366 e 390;
+  - sem rolagem horizontal; axe sem violações em 8 combinações.
+  - Capturas em `Docs/avaliacao-visual-prefeitura/`.
+- **Testes:** as 15 suítes deram ERROS: 0 / tudo ok no banco de TESTE; nenhum volume solto.
+- **Onde parou:** aguardando aprovação para implantar (sem migração de banco).
+
+### Implantação do visual da Prefeitura no padrão da Câmara (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 19h36 UTC.
+- **Build e testes:** as 15 suítes com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida:** `up -d` de app e worker; app saudável. Sem migração. Disco em 72%.
+- **Conferência no domínio** (`Docs/avaliacao-visual-prefeitura/implantado/`):
+  - Prefeitura e Câmara idênticas no nome do cabeçalho (22 px em 1920, 21 em 1366, 25 no celular) e nos cartões de atalho (280×171 px, ícone em cima, borda superior de 4 px, sem sombra);
+  - na Prefeitura, 55% do cartão sobre a foto; sem rolagem horizontal;
+  - portal.css v=23 servido; portais 200, console 303 (login); logs sem erro.
+- `visual-prefeitura` mesclado em `main` com a tag `visual-prefeitura`.
