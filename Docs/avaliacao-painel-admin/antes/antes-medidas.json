@@ -1,0 +1,876 @@
+{
+ "pm-inicio-1366": {
+  "status": 200,
+  "m": {
+   "textos": 51,
+   "abaixo14": 14,
+   "pct14": 27,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Visão geral",
+   "h2": [
+    "Transmissões: o que falta para aparecer no portal",
+    "Últimas ações"
+   ]
+  }
+ },
+ "pm-conteudos-1366": {
+  "status": 200,
+  "m": {
+   "textos": 86,
+   "abaixo14": 34,
+   "pct14": 40,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Conteúdos",
+   "h2": []
+  }
+ },
+ "pm-conteudos-novo-1366": {
+  "status": 200,
+  "m": {
+   "textos": 66,
+   "abaixo14": 18,
+   "pct14": 27,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 1774,
+   "h1": "Novo conteúdo",
+   "h2": []
+  }
+ },
+ "pm-comunicados-1366": {
+  "status": 200,
+  "m": {
+   "textos": 72,
+   "abaixo14": 22,
+   "pct14": 31,
+   "forms": 4,
+   "ordem": "form acima",
+   "altura": 1241,
+   "h1": "Comunicados",
+   "h2": [
+    "Novo comunicado",
+    "Tipos de comunicado"
+   ]
+  }
+ },
+ "pm-conheca-1366": {
+  "status": 200,
+  "m": {
+   "textos": 75,
+   "abaixo14": 25,
+   "pct14": 33,
+   "forms": 1,
+   "ordem": "lista acima",
+   "altura": 1170,
+   "h1": "Conheça Borá",
+   "h2": [
+    "Novo perfil"
+   ]
+  }
+ },
+ "pm-pagina-inicial-1366": {
+  "status": 200,
+  "m": {
+   "textos": 120,
+   "abaixo14": 48,
+   "pct14": 40,
+   "forms": 1,
+   "ordem": "form acima",
+   "altura": 1470,
+   "h1": "Página inicial (blocos)",
+   "h2": [
+    "Onde fica no portal"
+   ]
+  }
+ },
+ "pm-menus-1366": {
+  "status": 200,
+  "m": {
+   "textos": 224,
+   "abaixo14": 30,
+   "pct14": 13,
+   "forms": 25,
+   "ordem": "lista acima",
+   "altura": 3760,
+   "h1": "Menus e atalhos",
+   "h2": [
+    "Barra “Transparência e governo”",
+    "Barra “Portal”",
+    "Novo item",
+    "Acesso direto (botões sob o destaque da página inicial)",
+    "Links úteis (página no rodapé)",
+    "Faixa de aviso (abaixo do cabeçalho)",
+    "Legislação: acervo anterior ao Diário eletrônico",
+    "VLibras (tradução para Libras)"
+   ]
+  }
+ },
+ "pm-importar-1366": {
+  "status": 200,
+  "m": {
+   "textos": 45,
+   "abaixo14": 15,
+   "pct14": 33,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Importar dados antigos (CSV)",
+   "h2": [
+    "Histórico"
+   ]
+  }
+ },
+ "pm-diario-1366": {
+  "status": 200,
+  "m": {
+   "textos": 56,
+   "abaixo14": 21,
+   "pct14": 38,
+   "forms": 2,
+   "ordem": "form acima",
+   "altura": 1796,
+   "h1": "Diário Oficial Eletrônico",
+   "h2": [
+    "Edição em andamento",
+    "Atos aguardando publicação",
+    "Enviar ato",
+    "Últimas edições"
+   ]
+  }
+ },
+ "pm-diario-config-1366": {
+  "status": 200,
+  "m": {
+   "textos": 55,
+   "abaixo14": 21,
+   "pct14": 38,
+   "forms": 3,
+   "ordem": "lista acima",
+   "altura": 1128,
+   "h1": "Diário: signatários, calendário e lei",
+   "h2": [
+    "Signatários designados (Lei 910, art. 7º, § 1º)",
+    "Calendário: feriados e dias sem expediente",
+    "Lei de instituição (capa, art. 6º)"
+   ]
+  }
+ },
+ "pm-participacao-1366": {
+  "status": 200,
+  "m": {
+   "textos": 53,
+   "abaixo14": 22,
+   "pct14": 42,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Participação",
+   "h2": [
+    "Avaliação do portal (“Avalie esta página”)"
+   ]
+  }
+ },
+ "pm-carta-1366": {
+  "status": 200,
+  "m": {
+   "textos": 58,
+   "abaixo14": 20,
+   "pct14": 34,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Carta de Serviços",
+   "h2": []
+  }
+ },
+ "pm-carta-monitoramento-1366": {
+  "status": 200,
+  "m": {
+   "textos": 72,
+   "abaixo14": 27,
+   "pct14": 38,
+   "forms": 1,
+   "ordem": "lista acima",
+   "altura": 1182,
+   "h1": "Carta de Serviços — monitoramento",
+   "h2": [
+    "Comentários das avaliações (moderação)",
+    "Configuração"
+   ]
+  }
+ },
+ "pm-carta-secretarias-1366": {
+  "status": 200,
+  "m": {
+   "textos": 45,
+   "abaixo14": 15,
+   "pct14": 33,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 1025,
+   "h1": "Carta de Serviços — secretarias e responsáveisOrganograma (página Governo)\nSem organograma: o botão “Organograma” não aparece na página Governo.\n\nArquivo (PDF até 10 MB, ou PNG/JPG/WEBP até 3 MB)\nPublicar organograma\n",
+   "h2": [
+    "Nova secretaria"
+   ]
+  }
+ },
+ "pm-atendimento-1366": {
+  "status": 200,
+  "m": {
+   "textos": 46,
+   "abaixo14": 21,
+   "pct14": 46,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "e-SIC e Ouvidoria",
+   "h2": []
+  }
+ },
+ "pm-identidade-1366": {
+  "status": 200,
+  "m": {
+   "textos": 53,
+   "abaixo14": 16,
+   "pct14": 30,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 1543,
+   "h1": "Identidade e imagens",
+   "h2": [
+    "Dados e textos do portal"
+   ]
+  }
+ },
+ "pm-identidade-aba-tema-1366": {
+  "status": 200,
+  "m": {
+   "textos": 61,
+   "abaixo14": 19,
+   "pct14": 31,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Identidade e imagens",
+   "h2": [
+    "Tema e cores"
+   ]
+  }
+ },
+ "pm-identidade-aba-imagens-1366": {
+  "status": 200,
+  "m": {
+   "textos": 78,
+   "abaixo14": 25,
+   "pct14": 32,
+   "forms": 9,
+   "ordem": "—",
+   "altura": 3035,
+   "h1": "Identidade e imagens",
+   "h2": [
+    "Brasão, mascote e imagens de fundo"
+   ]
+  }
+ },
+ "pm-identidade-aba-favicon-1366": {
+  "status": 200,
+  "m": {
+   "textos": 50,
+   "abaixo14": 16,
+   "pct14": 32,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Identidade e imagens",
+   "h2": [
+    "Favicon (ícone da aba do navegador)"
+   ]
+  }
+ },
+ "pm-identidade-aba-redes-1366": {
+  "status": 200,
+  "m": {
+   "textos": 63,
+   "abaixo14": 20,
+   "pct14": 32,
+   "forms": 1,
+   "ordem": "form acima",
+   "altura": 900,
+   "h1": "Identidade e imagens",
+   "h2": [
+    "Redes sociais"
+   ]
+  }
+ },
+ "pm-identidade-aba-municipio-1366": {
+  "status": 200,
+  "m": {
+   "textos": 61,
+   "abaixo14": 24,
+   "pct14": 39,
+   "forms": 1,
+   "ordem": "lista acima",
+   "altura": 900,
+   "h1": "Identidade e imagens",
+   "h2": [
+    "Dados do município"
+   ]
+  }
+ },
+ "pm-identidade-aba-fotos-1366": {
+  "status": 200,
+  "m": {
+   "textos": 59,
+   "abaixo14": 19,
+   "pct14": 32,
+   "forms": 2,
+   "ordem": "form acima",
+   "altura": 900,
+   "h1": "Identidade e imagens",
+   "h2": [
+    "Fotos e álbuns"
+   ]
+  }
+ },
+ "pm-integracoes-1366": {
+  "status": 200,
+  "m": {
+   "textos": 81,
+   "abaixo14": 24,
+   "pct14": 30,
+   "forms": 1,
+   "ordem": "lista acima",
+   "altura": 1102,
+   "h1": "Integrações",
+   "h2": [
+    "Como a consulta é montada — CNES (Ministério da Saúde)"
+   ]
+  }
+ },
+ "pm-funcionalidades-1366": {
+  "status": 200,
+  "m": {
+   "textos": 98,
+   "abaixo14": 43,
+   "pct14": 44,
+   "forms": 4,
+   "ordem": "lista acima",
+   "altura": 1016,
+   "h1": "Funcionalidades",
+   "h2": []
+  }
+ },
+ "pm-usuarios-1366": {
+  "status": 200,
+  "m": {
+   "textos": 50,
+   "abaixo14": 22,
+   "pct14": 44,
+   "forms": 1,
+   "ordem": "lista acima",
+   "altura": 972,
+   "h1": "Usuários e perfis",
+   "h2": [
+    "Cadastrar usuário"
+   ]
+  }
+ },
+ "pm-auditoria-1366": {
+  "status": 200,
+  "m": {
+   "textos": 50,
+   "abaixo14": 18,
+   "pct14": 36,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Registro de ações",
+   "h2": []
+  }
+ },
+ "pm-senha-1366": {
+  "status": 200,
+  "m": {
+   "textos": 39,
+   "abaixo14": 14,
+   "pct14": 36,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Trocar senha",
+   "h2": []
+  }
+ },
+ "pm-inicio-390": {
+  "status": 200,
+  "m": {
+   "textos": 51,
+   "abaixo14": 14,
+   "pct14": 27,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 2632,
+   "h1": "Visão geral",
+   "h2": [
+    "Transmissões: o que falta para aparecer no portal",
+    "Últimas ações"
+   ]
+  }
+ },
+ "pm-conteudos-390": {
+  "status": 200,
+  "m": {
+   "textos": 86,
+   "abaixo14": 34,
+   "pct14": 40,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 2462,
+   "h1": "Conteúdos",
+   "h2": []
+  }
+ },
+ "pm-comunicados-390": {
+  "status": 200,
+  "m": {
+   "textos": 72,
+   "abaixo14": 22,
+   "pct14": 31,
+   "forms": 4,
+   "ordem": "form acima",
+   "altura": 2994,
+   "h1": "Comunicados",
+   "h2": [
+    "Novo comunicado",
+    "Tipos de comunicado"
+   ]
+  }
+ },
+ "pm-conheca-390": {
+  "status": 200,
+  "m": {
+   "textos": 75,
+   "abaixo14": 25,
+   "pct14": 33,
+   "forms": 1,
+   "ordem": "lista acima",
+   "altura": 2922,
+   "h1": "Conheça Borá",
+   "h2": [
+    "Novo perfil"
+   ]
+  }
+ },
+ "pm-identidade-390": {
+  "status": 200,
+  "m": {
+   "textos": 53,
+   "abaixo14": 16,
+   "pct14": 30,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 3570,
+   "h1": "Identidade e imagens",
+   "h2": [
+    "Dados e textos do portal"
+   ]
+  }
+ },
+ "cm-inicio-1366": {
+  "status": 200,
+  "m": {
+   "textos": 58,
+   "abaixo14": 14,
+   "pct14": 24,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Visão geral",
+   "h2": [
+    "Transmissões: o que falta para aparecer no portal",
+    "Últimas ações"
+   ]
+  }
+ },
+ "cm-sessoes-1366": {
+  "status": 200,
+  "m": {
+   "textos": 119,
+   "abaixo14": 58,
+   "pct14": 49,
+   "forms": 1,
+   "ordem": "form acima",
+   "altura": 900,
+   "h1": "Sessões e votações",
+   "h2": [
+    "Nova sessão"
+   ]
+  }
+ },
+ "cm-proposicoes-1366": {
+  "status": 200,
+  "m": {
+   "textos": 255,
+   "abaixo14": 60,
+   "pct14": 24,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 2776,
+   "h1": "Proposições",
+   "h2": []
+  }
+ },
+ "cm-comissoes-1366": {
+  "status": 200,
+  "m": {
+   "textos": 53,
+   "abaixo14": 19,
+   "pct14": 36,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Comissões",
+   "h2": []
+  }
+ },
+ "cm-vereadores-1366": {
+  "status": 200,
+  "m": {
+   "textos": 105,
+   "abaixo14": 41,
+   "pct14": 39,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Vereadores",
+   "h2": []
+  }
+ },
+ "cm-legislaturas-1366": {
+  "status": 200,
+  "m": {
+   "textos": 105,
+   "abaixo14": 21,
+   "pct14": 20,
+   "forms": 4,
+   "ordem": "form acima",
+   "altura": 2004,
+   "h1": "Legislaturas e Mesas",
+   "h2": [
+    "Nova legislatura ou atualizar dados",
+    "Incluir vereador na 15ª Legislatura",
+    "Vereadores da 15ª Legislatura (9)",
+    "Mesa Diretora · biênio 2025–2026",
+    "Mesa Diretora · biênio 2027–2028"
+   ]
+  }
+ },
+ "cm-remessas-1366": {
+  "status": 200,
+  "m": {
+   "textos": 57,
+   "abaixo14": 20,
+   "pct14": 35,
+   "forms": 1,
+   "ordem": "form acima",
+   "altura": 900,
+   "h1": "Enviar ao Diário Oficial",
+   "h2": [
+    "Nova remessa"
+   ]
+  }
+ },
+ "cm-pntp-1366": {
+  "status": 200,
+  "m": {
+   "textos": 109,
+   "abaixo14": 31,
+   "pct14": 28,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Autoavaliação PNTP — dimensão 20 (Legislativo)",
+   "h2": []
+  }
+ },
+ "cm-contas-1366": {
+  "status": 200,
+  "m": {
+   "textos": 49,
+   "abaixo14": 15,
+   "pct14": 31,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Julgamento das contas do Prefeito",
+   "h2": [
+    "Novo exercício ou atualizar"
+   ]
+  }
+ },
+ "cm-diarias-1366": {
+  "status": 200,
+  "m": {
+   "textos": 61,
+   "abaixo14": 23,
+   "pct14": 38,
+   "forms": 2,
+   "ordem": "form acima",
+   "altura": 900,
+   "h1": "Diárias e verbas",
+   "h2": [
+    "Novo lançamento",
+    "Sem diárias no ano?"
+   ]
+  }
+ },
+ "cm-emendas-1366": {
+  "status": 200,
+  "m": {
+   "textos": 199,
+   "abaixo14": 78,
+   "pct14": 39,
+   "forms": 2,
+   "ordem": "lista acima",
+   "altura": 2095,
+   "h1": "Emendas impositivas — conferência",
+   "h2": []
+  }
+ },
+ "cm-comunicados-1366": {
+  "status": 200,
+  "m": {
+   "textos": 71,
+   "abaixo14": 20,
+   "pct14": 28,
+   "forms": 2,
+   "ordem": "form acima",
+   "altura": 1163,
+   "h1": "Comunicados",
+   "h2": [
+    "Novo comunicado",
+    "Tipos de comunicado"
+   ]
+  }
+ },
+ "cm-identidade-1366": {
+  "status": 200,
+  "m": {
+   "textos": 58,
+   "abaixo14": 15,
+   "pct14": 26,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 1175,
+   "h1": "Identidade e imagens",
+   "h2": [
+    "Dados e textos do portal"
+   ]
+  }
+ },
+ "cm-inicio-390": {
+  "status": 200,
+  "m": {
+   "textos": 58,
+   "abaixo14": 14,
+   "pct14": 24,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 2900,
+   "h1": "Visão geral",
+   "h2": [
+    "Transmissões: o que falta para aparecer no portal",
+    "Últimas ações"
+   ]
+  }
+ },
+ "cm-comunicados-390": {
+  "status": 200,
+  "m": {
+   "textos": 71,
+   "abaixo14": 20,
+   "pct14": 28,
+   "forms": 2,
+   "ordem": "form acima",
+   "altura": 3165,
+   "h1": "Comunicados",
+   "h2": [
+    "Novo comunicado",
+    "Tipos de comunicado"
+   ]
+  }
+ },
+ "cm-identidade-390": {
+  "status": 200,
+  "m": {
+   "textos": 58,
+   "abaixo14": 15,
+   "pct14": 26,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 3542,
+   "h1": "Identidade e imagens",
+   "h2": [
+    "Dados e textos do portal"
+   ]
+  }
+ },
+ "console-inicio-1366": {
+  "status": 200,
+  "m": {
+   "textos": 33,
+   "abaixo14": 14,
+   "pct14": 42,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Órgãos e licenças",
+   "h2": []
+  }
+ },
+ "console-orgao-1-1366": {
+  "status": 200,
+  "m": {
+   "textos": 35,
+   "abaixo14": 15,
+   "pct14": 43,
+   "forms": 5,
+   "ordem": "form acima",
+   "altura": 1043,
+   "h1": "Prefeitura Municipal de Borá",
+   "h2": [
+    "Licença: Em implantação",
+    "Módulos opcionais do contrato"
+   ]
+  }
+ },
+ "console-catalogo-1366": {
+  "status": 200,
+  "m": {
+   "textos": 123,
+   "abaixo14": 30,
+   "pct14": 24,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 1371,
+   "h1": "Catálogo de módulos",
+   "h2": []
+  }
+ },
+ "console-aparencia-1366": {
+  "status": 200,
+  "m": {
+   "textos": 14,
+   "abaixo14": 5,
+   "pct14": 36,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Aparência da tela de login do console",
+   "h2": []
+  }
+ },
+ "console-credenciais-1366": {
+  "status": 200,
+  "m": {
+   "textos": 33,
+   "abaixo14": 17,
+   "pct14": 52,
+   "forms": 3,
+   "ordem": "—",
+   "altura": 1350,
+   "h1": "Credenciais de fontes",
+   "h2": [
+    "IEG-M do TCESP (painel público, Pentaho CDA) (fonte iegm)",
+    "YouTube Data API v3 (transmissões) (fonte youtube)",
+    "Meta Graph API (Instagram e Facebook) (fonte meta)"
+   ]
+  }
+ },
+ "console-log-1366": {
+  "status": 200,
+  "m": {
+   "textos": 35,
+   "abaixo14": 19,
+   "pct14": 54,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Registro e coletas",
+   "h2": [
+    "Situação por fonte",
+    "Últimas coletas",
+    "Ações no console"
+   ]
+  }
+ },
+ "console-inicio-390": {
+  "status": 200,
+  "m": {
+   "textos": 33,
+   "abaixo14": 14,
+   "pct14": 42,
+   "forms": 0,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Órgãos e licenças",
+   "h2": []
+  }
+ },
+ "login-admin-login-1366": {
+  "status": 200,
+  "m": {
+   "textos": 7,
+   "abaixo14": 3,
+   "pct14": 43,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Área restrita — Prefeitura Municipal de Borá",
+   "h2": []
+  }
+ },
+ "login-console-login-1366": {
+  "status": 200,
+  "m": {
+   "textos": 7,
+   "abaixo14": 3,
+   "pct14": 43,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Console do gestor",
+   "h2": []
+  }
+ },
+ "login-admin-login-390": {
+  "status": 200,
+  "m": {
+   "textos": 7,
+   "abaixo14": 3,
+   "pct14": 43,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Área restrita — Prefeitura Municipal de Borá",
+   "h2": []
+  }
+ },
+ "login-console-login-390": {
+  "status": 200,
+  "m": {
+   "textos": 7,
+   "abaixo14": 3,
+   "pct14": 43,
+   "forms": 1,
+   "ordem": "—",
+   "altura": 900,
+   "h1": "Console do gestor",
+   "h2": []
+  }
+ }
+}

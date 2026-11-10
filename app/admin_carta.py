@@ -219,10 +219,10 @@ async def secretarias_post(request: Request):
         ident = db.cfg(b, 'identidade', {}) or {}
         if f.get('remover') == '1':
             ident.pop('organograma', None); db.set_cfg(b, 'identidade', ident); auditar(request, 'Governo: organograma removido')
-            return ir('/admin/carta-secretarias#organograma', 'Organograma removido.', request)
+            return ir('/admin/carta-secretarias?aba=organograma', 'Organograma removido.', request)
         arq = f.get('arquivo')
         if arq is None or not getattr(arq, 'filename', ''):
-            return ir('/admin/carta-secretarias#organograma', 'Escolha o arquivo do organograma (PDF, PNG, JPG ou WEBP).', request)
+            return ir('/admin/carta-secretarias?aba=organograma', 'Escolha o arquivo do organograma (PDF, PNG, JPG ou WEBP).', request)
         dados = await arq.read(10 * 1024 * 1024 + 1)
         if dados[:5] == b'%PDF-' and len(dados) <= 10 * 1024 * 1024:
             ext = 'pdf'
@@ -230,14 +230,14 @@ async def secretarias_post(request: Request):
             try:
                 ext = validar_upload(dados)
             except ValueError as e:
-                return ir('/admin/carta-secretarias#organograma', f'Organograma: {e} (ou envie um PDF de até 10 MB).', request)
+                return ir('/admin/carta-secretarias?aba=organograma', f'Organograma: {e} (ou envie um PDF de até 10 MB).', request)
         o = request.state.orgao
         pasta = Path(config.DADOS_DIR) / o['slug'] / 'midia'; pasta.mkdir(parents=True, exist_ok=True)
         nome = f'{_s.token_hex(16)}.{ext}'
         (pasta / nome).write_bytes(dados)
         ident['organograma'] = {'url': f'/midia/{nome}', 'tipo': ext}
         db.set_cfg(b, 'identidade', ident); auditar(request, 'Governo: organograma publicado')
-        return ir('/admin/carta-secretarias#organograma', 'Organograma publicado: o botão aparece na página Governo.', request)
+        return ir('/admin/carta-secretarias?aba=organograma', 'Organograma publicado: o botão aparece na página Governo.', request)
     sec = db.um(b, 'SELECT * FROM secretarias WHERE id=%s', (int(f.get('secretaria_id') or 0),))
     if not sec:
         raise HTTPException(400)

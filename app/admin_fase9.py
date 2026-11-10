@@ -215,7 +215,8 @@ async def ident_municipio(request: Request):
     m = {k: (f.get(k) or '').strip()[:60] for k, _ in municipio.MANUAIS}
     db.set_cfg(b, 'municipio_manual', m)
     auditar(request, 'Identidade: dados manuais do município atualizados')
-    return ir('/admin/identidade?aba=municipio', 'Dados do município salvos.', request)
+    from .web import volta_segura
+    return ir(volta_segura(f, '/admin/identidade?aba=municipio'), 'Dados do município salvos.', request)
 
 # ---------- Fotos e álbuns ----------
 def _int(v):

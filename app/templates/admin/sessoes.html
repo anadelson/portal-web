@@ -1,6 +1,11 @@
-{% extends 'admin/base.html' %}{% block h1 %}Sessões e votações{% endblock %}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}{% if request.query_params.get('novo') %}Nova sessão{% else %}Sessões e votações{% endif %}{% endblock %}
 {% block conteudo %}
-<section class="cx"><h2>Nova sessão</h2><form class="inline" method="post" action="/admin/sessoes/nova" style="flex-wrap:wrap"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><label>Nome <input name="nome" required placeholder="19ª Sessão Ordinária de 2026"></label> <label>Data <input type="date" name="data" required></label> <label>Hora <input name="hora" value="19h" size="5"></label> <label>Tipo <select name="tipo"><option>Ordinária</option><option>Extraordinária</option><option>Solene</option><option>Especial</option></select></label> <button class="btn" name="acao" value="criar">Criar</button></form></section>
+{% if request.query_params.get('novo') %}
+{{ voltar('/admin/sessoes') }}
+<section class="cx form-tela"><form class="campos" method="post" action="/admin/sessoes/nova"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><label>Nome <input name="nome" required placeholder="19ª Sessão Ordinária de 2026"></label> <label>Data <input type="date" name="data" required></label> <label>Hora <input name="hora" value="19h" size="5"></label> <label>Tipo <select name="tipo"><option>Ordinária</option><option>Extraordinária</option><option>Solene</option><option>Especial</option></select></label> <button class="btn" name="acao" value="criar">Criar</button></form></section>
+{% else %}
+<div class="tela-cab"><p>Sessões ordinárias, extraordinárias e solenes, com pauta, presença, votação e ata.</p><div class="tela-acoes"><a class="btn" href="/admin/sessoes?novo=1">+ Nova sessão</a></div></div>
 <div class="tabela"><table><thead><tr><th scope="col">Sessão</th><th scope="col">Data</th><th scope="col">Itens</th><th scope="col">Pauta</th><th scope="col">Presença</th><th scope="col">Votação</th><th scope="col">Ata</th></tr></thead><tbody>
 {% for s in itens %}<tr><td><a href="/admin/sessoes/{{ s.id }}">{{ s.nome }}</a>{% if s.origem == 'importacao' %} <span class="chip">importada</span>{% endif %}</td><td>{{ s.data|br }} · {{ s.hora }}</td><td>{{ s.n_itens }}</td>{% for c in (s.pauta_publicada, s.presenca_publicada, s.votacao_publicada, s.ata_publicada) %}<td><span class="chip {{ 'ok' if c else '' }}">{{ 'Publicada' if c else '—' }}</span></td>{% endfor %}</tr>{% endfor %}
-</tbody></table></div><p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.sessoes }}</p>{% endblock %}
+</tbody></table></div><p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.sessoes }}</p>
+{% endif %}{% endblock %}

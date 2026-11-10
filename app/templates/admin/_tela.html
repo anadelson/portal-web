@@ -1,0 +1,7 @@
+{# Padrão único das telas do painel (10/11/2026): lista primeiro → "+ Novo" → tela de edição própria.
+   Uso: {% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %} #}
+{% macro cab(desc, novo=None, novo_rotulo=None, extra=[]) %}<div class="tela-cab"><p>{{ desc }}</p>{% if novo or extra %}<div class="tela-acoes">{% for h, r in extra %}<a class="btn sec" href="{{ h }}">{{ r }}</a>{% endfor %}{% if novo %}<a class="btn" href="{{ novo }}">+ {{ novo_rotulo }}</a>{% endif %}</div>{% endif %}</div>{% endmacro %}
+{% macro abas_tela(rotulo, itens) %}<nav class="abas" aria-label="{{ rotulo }}">{% for h, n, on in itens %}<a href="{{ h }}"{% if on %} aria-current="page"{% endif %}>{{ n }}</a>{% endfor %}</nav>{% endmacro %}
+{% macro voltar(href, rotulo='Voltar à lista') %}<a class="voltar" href="{{ href }}"><span aria-hidden="true">←</span> {{ rotulo }}</a>{% endmacro %}
+{% macro acoes(salvar='Salvar', cancelar=None) %}<div class="acoes-form"><button class="btn">{{ salvar }}</button>{% if cancelar %}<a class="btn sec" href="{{ cancelar }}">Cancelar</a>{% endif %}</div>{% endmacro %}
+{% macro vazio(txt, novo=None, novo_rotulo=None) %}<div class="vazio-tela"><p>{{ txt }}</p>{% if novo %}<a class="btn" href="{{ novo }}">+ {{ novo_rotulo }}</a>{% endif %}</div>{% endmacro %}

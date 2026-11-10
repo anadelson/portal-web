@@ -1,6 +1,8 @@
-{% extends 'admin/base.html' %}{% block h1 %}Menus e atalhos{% endblock %}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}Menus e atalhos{% endblock %}
 {% block conteudo %}{% set C = csrf_token(request) %}
-<p>Itens das duas barras do cabeçalho do portal. <strong>Cada destino aparece em uma única barra</strong>: o painel recusa salvar um endereço que já está em outra barra. O rodapé (mapa do site) pode repetir links.</p>
+<div class="tela-cab"><p>Itens das duas barras do cabeçalho do portal. <strong>Cada destino aparece em uma única barra</strong>: o painel recusa salvar um endereço que já está em outra barra. O rodapé (mapa do site) pode repetir links.</p></div>
+{% set aba = request.query_params.get('aba', 'barras') %}{{ abas_tela('Menus e atalhos', [('/admin/menus?aba=barras', 'Barras do cabeçalho', aba == 'barras'), ('/admin/menus?aba=atalhos', 'Acesso direto', aba == 'atalhos'), ('/admin/menus?aba=links', 'Links úteis', aba == 'links'), ('/admin/menus?aba=aviso', 'Faixa de aviso', aba == 'aviso'), ('/admin/menus?aba=acervo', 'Legislação antiga', aba == 'acervo'), ('/admin/menus?aba=vlibras', 'VLibras', aba == 'vlibras')]) }}
+{% if aba == 'barras' %}
 {% for bk, bn in barras.items() %}
 <section class="cx"><h2>Barra “{{ bn }}”</h2>
 <div class="tabela"><table><caption class="sr">Itens da barra {{ bn }}</caption><thead><tr><th scope="col">Rótulo</th><th scope="col">Destino</th><th scope="col">Ordem</th><th scope="col">Módulo</th><th scope="col">Classe</th><th scope="col">Ativo</th><th scope="col"><span class="sr">Ações</span></th></tr></thead><tbody>
@@ -18,7 +20,7 @@
 <div class="grade2"><label>Barra<select name="barra">{% for k, n in barras.items() %}<option value="{{ k }}">{{ n }}</option>{% endfor %}</select></label><label>Rótulo<input name="rotulo" maxlength="60" required></label></div>
 <div class="grade2"><label>Destino (ex.: /legislacao ou https://…)<input name="destino" required></label><label>Ordem<input name="ordem" type="number" value="100"></label></div>
 <input type="hidden" name="ativo" value="1"><button class="btn">Incluir</button></form></section>
-
+{% elif aba == 'atalhos' %}
 <section class="cx" id="atalhos"><h2>Acesso direto (botões sob o destaque da página inicial)</h2>
 <div class="tabela"><table><caption class="sr">Botões de acesso direto</caption><thead><tr><th scope="col">Botão</th></tr></thead><tbody>
 {% for a in atalhos %}<tr><td><form class="inline linha-menu" method="post" action="/admin/menus"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="atalho"><input type="hidden" name="id" value="{{ a.id }}">
@@ -29,19 +31,20 @@
 <tr><td><form class="inline linha-menu" method="post" action="/admin/menus"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="atalho"><input type="hidden" name="ativo" value="1">
 <label class="sr" for="at-novo">Título do novo botão</label><input id="at-novo" name="titulo" placeholder="Título do novo botão" maxlength="60"><label class="sr" for="ad-novo">Descrição</label><input id="ad-novo" name="descricao" placeholder="Descrição curta" maxlength="120"><label class="sr" for="ae-novo">Destino</label><input id="ae-novo" name="destino" placeholder="/servicos"><button class="btn">Incluir botão</button></form></td></tr>
 </tbody></table></div><p class="legal">Ícones disponíveis: atendimento, grafico, diario, participacao, sessoes, proposicoes, saude, educacao, tributos, empresas, cidade, social, lista.</p></section>
-
+{% elif aba == 'links' %}
 <section class="cx" id="links"><h2>Links úteis (página no rodapé)</h2><form class="campos" method="post" action="/admin/menus"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="links">
 <label>Um link por linha: Título | https://endereço | descrição (opcional)<textarea name="links" rows="6">{% for l in links %}{{ l.titulo }} | {{ l.url }}{% if l.descricao %} | {{ l.descricao }}{% endif %}
 {% endfor %}</textarea></label><button class="btn">Salvar links</button></form></section>
-
+{% elif aba == 'aviso' %}
 <section class="cx" id="aviso"><h2>Faixa de aviso (abaixo do cabeçalho)</h2><form class="campos" method="post" action="/admin/menus"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="aviso">
 <label>Texto (vazio = sem faixa)<input name="texto" value="{{ aviso.texto or '' }}" maxlength="240"></label><div class="grade2"><label>Link (opcional)<input name="link" value="{{ aviso.link or '' }}"></label><label>Texto do botão<input name="rotulo" value="{{ aviso.rotulo or '' }}" maxlength="40"></label></div>
 <label>Mostrar até (opcional)<input type="date" name="ate" value="{{ aviso.ate or '' }}"></label><button class="btn">Salvar aviso</button></form></section>
-
+{% elif aba == 'acervo' %}
 <section class="cx" id="acervo"><h2>Legislação: acervo anterior ao Diário eletrônico</h2><form class="campos" method="post" action="/admin/menus"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="acervo">
 <label>Endereço da página de legislação do site atual (o botão só aparece com o endereço preenchido)<input name="url" value="{{ acervo }}" placeholder="https://"></label><button class="btn">Salvar</button></form></section>
-
+{% elif aba == 'vlibras' %}
 <section class="cx" id="vlibras"><h2>VLibras (tradução para Libras)</h2><form class="campos" method="post" action="/admin/menus"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="vlibras">
 <p>Widget oficial e gratuito do Governo Federal (vlibras.gov.br). Mostra o botão “Libras” na barra de acessibilidade e o avatar intérprete.</p>
 <label style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="vlibras" value="1" {{ 'checked' if vlibras }}> Ligado em todas as páginas do portal</label><button class="btn">Salvar</button></form></section>
+{% endif %}
 {% endblock %}

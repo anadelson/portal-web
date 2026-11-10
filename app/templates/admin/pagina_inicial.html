@@ -22,5 +22,5 @@
 {% for b in blocos if b.regiao != 'topo' %}<div class="r {{ largura.get(b.chave, '') }}{{ ' off' if not b.visivel }}{{ ' rod' if b.regiao == 'rodape' }}{{ ' hero' if b.chave == 'hero' }}" data-id="{{ b.id }}">{{ b.info[0] }}</div>{% endfor %}
 </div></section></details>
 </div>
-<script src="/static/admin.js?v=2" defer></script>
+
 {% endblock %}

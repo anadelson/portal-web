@@ -1,5 +1,6 @@
-{% extends 'admin/base.html' %}{% block h1 %}Diário: signatários, calendário e lei{% endblock %}
-{% block conteudo %}{% set C = csrf_token(request) %}<p><a href="/admin/diario">‹ Diário Oficial</a></p>
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}Diário Oficial{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_tela('Diário Oficial', [('/admin/diario', 'Edições e atos', False), ('/admin/diario/config', 'Signatários, calendário e lei', True)]) }}
+
 {% if modo_teste %}<p class="msg" style="background:#FBE4D8;color:#9B1C1C">MODO TESTE: as designações abaixo são registradas, mas as assinaturas usam certificados de teste.</p>{% endif %}
 <section class="cx"><h2>Signatários designados (Lei 910, art. 7º, § 1º)</h2>
 <div class="tabela"><table><thead><tr><th scope="col">Etapa</th><th scope="col">Signatário</th><th scope="col">Ato de designação</th><th scope="col">Provedor</th><th scope="col">Situação</th></tr></thead><tbody>

@@ -1148,3 +1148,58 @@ Próximos passos dependem das pessoas:
   - axe sem violações em 8 combinações;
   - portal.css v=22, portal.js v=6 e admin.css v=8 servidos; Câmara 200, console 303 (login); logs sem erro.
 - `atalhos-fontes` mesclado em `main` com a tag `atalhos-fontes`.
+
+## Painel administrativo reorganizado (10/11/2026, branch `painel-admin`, nada aplicado na VPS)
+- **Pedido:** painel limpo, padronizado e fácil de achar, sem quebrar nada, incluindo o login.
+  - Queixas: lista ora acima, ora abaixo do formulário; fontes pequenas; "Conheça" espalhado.
+- **Diagnóstico e decisões:** `Docs/avaliacao-painel-admin/DIAGNOSTICO-E-PROPOSTA.md`. Decisões do usuário:
+  - padrão "lista → tela de edição";
+  - menu por tarefa aprovado;
+  - **manter a escala de fontes** aprovada hoje;
+  - entrega única.
+- **Feito:**
+  - **Menu por tarefa**, mesmo código para os dois órgãos, conforme o tipo de órgão e os módulos contratados:
+    - grupos: Publicar, Legislativo, Cidade, Atendimento, Transparência, Aparência do portal e Administração;
+    - nome dos grupos em 13 px, sem caixa alta; o menu lembra quais grupos estavam abertos;
+    - no celular, botão "Menu" com o menu por cima da tela (foco preso, Esc fecha);
+    - topo de cada tela com título e "Ver portal"; domínio e banco foram para a Visão geral.
+  - **Padrão lista → tela de edição** (só nos templates; as rotas e os envios POST não mudaram). Lista primeiro com "+ Novo …"; criar e editar por `?novo=1` / `?id=` com "← Voltar", rótulo em cima e barra de ações no rodapé:
+    - Comunicados, com os tipos numa aba;
+    - Conheça, Usuários ("Gerenciar") e Secretarias da Carta, com o organograma numa aba;
+    - Diário (Enviar ato) e Fotos e álbuns, com as categorias numa aba;
+    - Câmara: Sessões, Remessas, Diárias, Contas, Transmissões (canal numa aba) e Legislaturas.
+  - **Abas:**
+    - Menus e atalhos: 6 abas, no lugar de uma tela de 3.760 px;
+    - Diário: edições | signatários e calendário;
+    - Carta: fichas | secretarias | monitoramento;
+    - Vereadores e Mesas: perfis | legislaturas.
+  - **Identidade dividida** (o POST só grava os campos enviados, então nada é apagado):
+    - Identidade visual: tema, imagens e favicon; as imagens viraram grade de miniaturas, e cada imagem abre a própria edição;
+    - Dados do órgão: campos em grupos (órgão, atendimento, LGPD, textos do portal) e redes sociais;
+    - Fotos e álbuns: item próprio no menu.
+  - **Conheça reunido:** perfis, bloco da página inicial (texto e as fotos que estavam em "Brasão, mascote e fundos") e números do município.
+  - **Retorno seguro:** campo `volta` só aceito se for uma tela `/admin/…` (`volta_segura`). Os redirecionamentos de Menus e do organograma levam à aba certa.
+  - **Login:** brasão centralizado, nome do órgão uma vez só, "Área restrita" como rótulo, título "Entrar no painel", ajuda em 14 px e "← Voltar ao portal". Sem foto cadastrada, o fundo usa a cor do tema. Segurança sem mudança.
+  - **Defeitos encontrados e corrigidos:**
+    - **Formulário dentro de formulário no editor de texto (desde a Fase 9):** no navegador, datas, "Publicado/Destaque" e o botão Salvar de Comunicados, Conheça e Conteúdos ficavam fora do formulário. Agora a caixa de imagem é um `<div>`. Teste ponta a ponta no navegador: salvar comunicado e perfil funciona.
+    - O quadro do Organograma estava dentro do título (`h1`) da tela de Secretarias.
+    - Os ícones `cor` e `estrutura` não existiam (Comissões mostrava o ícone genérico).
+- **Conferência** (ambiente de TESTE, removido com `rm -fv`):
+  - 74 telas e modos sem erro;
+  - telas com formulário de cadastro acima da lista: de 13 para 4 (tabelas editáveis e a edição em andamento do Diário);
+  - axe sem violações em 24 combinações;
+  - capturas em `Docs/avaliacao-painel-admin/index.html`.
+- **Testes:** novo `tests/teste_painel_admin.py`. Ajustadas 2 verificações que dependiam do HTML antigo (`teste_fluxos`: grade de imagens; `teste_fase10`: designação na tela da secretaria).
+- **Onde parou:** aguardando aprovação para implantar (sem migração de banco).
+
+### Implantação do painel reorganizado (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 16h16 UTC.
+- **Build e testes:** as **14 suítes** com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida:** `up -d` de app e worker; app saudável. Sem migração de banco. Disco em 72%.
+- **Conferência no domínio**, só leitura, sem entrar no painel (`Docs/avaliacao-painel-admin/implantado/`):
+  - login novo da Prefeitura, da Câmara e do console ("Entrar no painel", "Área restrita", "Voltar ao portal");
+  - admin.css v=9 e admin.js v=4 servidos, com o menu do celular e a correção do editor;
+  - axe sem violações nos 3 logins em 1366 e 390 px;
+  - portais 200, console 303 (login); logs sem erro.
+- **Pendente do lado do usuário:** entrar no painel e conferir as telas no uso real, em especial salvar um comunicado e um perfil do Conheça pelo botão Salvar. Essas telas tinham o defeito do formulário aninhado no ar desde 09/11.
+- `painel-admin` mesclado em `main` com a tag `painel-admin`.
