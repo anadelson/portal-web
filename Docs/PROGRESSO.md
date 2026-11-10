@@ -1203,3 +1203,10 @@ Próximos passos dependem das pessoas:
   - portais 200, console 303 (login); logs sem erro.
 - **Pendente do lado do usuário:** entrar no painel e conferir as telas no uso real, em especial salvar um comunicado e um perfil do Conheça pelo botão Salvar. Essas telas tinham o defeito do formulário aninhado no ar desde 09/11.
 - `painel-admin` mesclado em `main` com a tag `painel-admin`.
+
+## Ajuste: formulários do painel na largura toda (10/11/2026, branch `form-largura`, nada aplicado na VPS)
+- **Pedido:** o formulário "Dados do órgão" não ocupava a largura toda como os demais quadros.
+- **Causa:** a classe `.form-tela` limitava as telas de edição a 860 px, enquanto título, abas e listas usam a largura toda.
+- **Feito:** `.form-tela{max-width:none}` (vale para todas as telas de edição); admin.css v=10.
+- **Conferência** em ambiente de TESTE: o cartão do formulário tem a mesma largura das abas e das listas (1062 px em 1366, 1616 em 1920, 342 no celular), sem rolagem horizontal. Capturas em `Docs/avaliacao-painel-admin/form-largura/`.
+- **Onde parou:** aguardando aprovação para implantar (sem migração de banco).
