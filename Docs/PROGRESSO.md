@@ -1086,3 +1086,14 @@ Próximos passos dependem das pessoas:
   - `tests/teste_fileira.py`: HTML do componente com 1, 2, 3, 5 e 8 cartões; uso nos templates.
   - `tests/fileira_navegador.js`: larguras e alturas iguais, sem sobra, setas só quando transborda, "4–8 de 8" depois de "Próximos" e seta do teclado em 1920, 1366, 768 e 390. Ambos deram tudo ok.
 - **Capturas** antes (produção) e depois (prévia com cópia dos bancos, removida com `rm -fv`) em 1920, 1366, 768 e 390 px: `Docs/avaliacao-largura-cards/index.html`, com a tabela de medidas e o inventário.
+
+### Implantação da largura fluida e das fileiras de cartões (10/11/2026, aprovada: "Aprovo os 6 passos" + "sim existe e pode prosseguir")
+- Snapshot confirmado pelo usuário. Backup às 12h21 UTC.
+- **Build e testes:** as **12 suítes** com a imagem nova deram ERROS: 0 / tudo ok (11 de antes + `teste_fileira`). Nenhum volume solto.
+- **Subida:** `up -d` de app e worker; app saudável. Sem migração de banco. Disco em 71%.
+- **Conferência no domínio** (`Docs/avaliacao-largura-cards/implantado/`, 1920, 1366, 768 e 390 px):
+  - conteúdo de 1760 px em 1920; sem rolagem horizontal da página;
+  - fileiras de até 5 sem sobra; carrosséis com "1–5 de 13" (Transparência), "1–5 de 6" (Painel) e "1–5 de 9" (vereadores);
+  - axe sem violações em 8 combinações;
+  - CSS v=20 e JS v=6 servidos; Câmara 200, console 303 (login); logs sem erro.
+- `largura-fluida` mesclada em `main` com a tag `largura-fluida`.
