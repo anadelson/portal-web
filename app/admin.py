@@ -510,7 +510,9 @@ def identidade(request: Request, aba: str = 'dados', album: int = 0):
     extra = {}
     if aba == 'tema':
         cor, dest = ident.get('cor') or o['cor'], ident.get('cor_destaque') or '#F0B429'
-        extra = dict(cor=cor, dest=dest, c_cor=F9.contraste(cor, '#FFFFFF'), c_dest=F9.contraste(dest, F9.TEXTO_ESCURO), erros_cor=F9.checar_cores(cor.upper(), dest.upper()))
+        from .web import LARGURAS, LARGURA_PADRAO
+        extra = dict(cor=cor, dest=dest, c_cor=F9.contraste(cor, '#FFFFFF'), c_dest=F9.contraste(dest, F9.TEXTO_ESCURO), erros_cor=F9.checar_cores(cor.upper(), dest.upper()),
+                     larguras=LARGURAS, largura=ident.get('largura') if ident.get('largura') in LARGURAS else LARGURA_PADRAO)
     elif aba == 'redes':
         redes = ident.get('redes_v2') or [{'tipo': next((k for k, v in F9.REDES.items() if v.lower() == n.lower()), 'outra'), 'url': url, 'ordem': (i + 1) * 10, 'conta': ''} for i, (n, url) in enumerate(ident.get('redes', []))]
         extra = dict(redes=redes, tipos_rede=F9.REDES)
