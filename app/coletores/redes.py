@@ -19,7 +19,7 @@ def _get(fonte, url, params):
     import time
     t0 = time.monotonic()
     try:
-        with httpx.Client(timeout=30, headers={'User-Agent': 'PortaisBora-coletor/1.0', 'Accept': 'application/json'}) as c:
+        with httpx.Client(timeout=30, headers={'User-Agent': config.USER_AGENT, 'Accept': 'application/json'}) as c:
             r = c.get(url, params=params)
     except Exception as e:
         anotar(fonte, url, params, 0, int((time.monotonic() - t0) * 1000), erro=type(e).__name__)
@@ -40,7 +40,7 @@ def _miniatura(o, url):
         return ''
     from ..imagens import validar_upload, LIMITE_UPLOAD
     try:
-        with httpx.Client(timeout=30, follow_redirects=True, headers={'User-Agent': 'PortaisBora-coletor/1.0'}) as c:
+        with httpx.Client(timeout=30, follow_redirects=True, headers={'User-Agent': config.USER_AGENT}) as c:
             r = c.get(url)
         dados = r.content[:LIMITE_UPLOAD + 1]
         ext = validar_upload(dados)

@@ -5,8 +5,6 @@ def env(k, padrao=''):
     return os.environ.get(k, padrao).strip()
 
 DOMINIO_GESTAO = env('DOMINIO_GESTAO', 'gestao.localhost')
-DOMINIO_PM = env('DOMINIO_PM', 'pmbora.localhost')
-DOMINIO_CM = env('DOMINIO_CM', 'cmbora.localhost')
 PG_USER = env('PG_USER', 'portal')
 PG_PASSWORD = env('PG_PASSWORD', '')
 PG_HOST = env('PG_HOST', 'localhost')
@@ -16,7 +14,9 @@ SENHA_INICIAL_GESTOR = env('SENHA_INICIAL_GESTOR', 'troque-agora')
 SENHA_INICIAL_ADMIN = env('SENHA_INICIAL_ADMIN', 'troque-agora')
 DADOS_DIR = env('DADOS_DIR', '/srv/dados')
 COOKIE_SEGURO = env('COOKIE_SEGURO', '1') not in ('0', 'false', 'nao')
-IBGE_BORA = '3507209'
+# Nome da plataforma (console e título) e identificação dos coletores nas fontes de dados; configuráveis no .env
+NOME_PLATAFORMA = env('NOME_PLATAFORMA', 'Portais Municipais')
+USER_AGENT = env('USER_AGENT', 'PortaisMunicipais-coletor/1.0')
 
 def hoje() -> date:
     """Data de referência. DATA_SIMULADA (AAAA-MM-DD ou AAAA-MM-DDTHH:MM) permite testar período eleitoral, Diário etc."""

@@ -211,23 +211,48 @@ async def orgao_post(request: Request, oid: int):
 @r.get('/orgaos/novo')
 def novo(request: Request):
     gestor(request)
-    return T('novo', request)
+    from . import cadastro as CD
+    return T('novo', request, f={}, erros=[], ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO)
+
+@r.get('/orgaos/ibge/{codigo}')
+def ibge(request: Request, codigo: str):
+    """Município e UF pelo código IBGE (para o formulário de cadastro). Só para gestor logado."""
+    from fastapi.responses import JSONResponse
+    from . import cadastro as CD
+    gestor(request)
+    d = CD.consultar_ibge(codigo)
+    if not d:
+        return JSONResponse({'erro': 'Código IBGE não encontrado (ou o IBGE não respondeu). Confira o código ou preencha o município e a UF.'}, status_code=404)
+    return JSONResponse(dict(d, slug_pm=CD.slug_sugerido('executivo', d['municipio']), slug_cm=CD.slug_sugerido('legislativo', d['municipio']),
+                             nome_pm=CD.nome_sugerido('executivo', d['municipio']), nome_cm=CD.nome_sugerido('legislativo', d['municipio']), tcesp=CD.slug_municipio(d['municipio'])))
 
 @r.post('/orgaos/novo')
 async def novo_post(request: Request):
+    """Cadastra o órgão: banco próprio, esquema, identidade, integrações, menus, layout e administrador inicial.
+    A senha inicial do administrador é única, aparece UMA vez nesta resposta e não fica gravada em lugar nenhum (só o hash)."""
     g = gestor(request); f = await ler_form(request)
-    slug = f.get('slug', '').lower()
-    if not re.fullmatch(r'[a-z0-9-]{3,30}', slug) or not f.get('nome') or not f.get('dominio') or f.get('tipo') not in ('executivo', 'legislativo'):
-        return ir('/orgaos/novo', 'Preencha nome, tipo, domínio e um identificador (3 a 30 letras minúsculas, números ou hífen).', request)
-    banco = 'bd_' + slug.replace('-', '_')
+    from . import cadastro as CD
+    ocupados = {x['slug'] for x in db.todos(db.PLATAFORMA, 'SELECT slug FROM orgaos')} | {x['dominio'] for x in db.todos(db.PLATAFORMA, 'SELECT dominio FROM orgaos')}
+    api = CD.consultar_ibge(re.sub(r'\D', '', f.get('ibge', '')))  # o IBGE manda; sem resposta, valem o município e a UF digitados
+    dados, erros = CD.montar(f, api, ocupados)
+    if erros:
+        return T('novo', request, f=f, erros=erros, ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO)
+    senha = CD.senha_inicial()
     try:
-        provision.registrar_orgao(slug, f['nome'], f['tipo'], f['dominio'].lower(), banco, 'Executivo' if f['tipo'] == 'executivo' else 'Legislativo',
-                                  '#1D4E89' if f['tipo'] == 'executivo' else '#2F5233', {}, municipio=f.get('municipio', ''), ibge=f.get('ibge', ''))
+        oid = provision.registrar_orgao(dados['slug'], dados['nome'], dados['tipo'], dados['dominio'], dados['banco'], dados['plano'], dados['cor'], dados['opcionais'],
+                                        dados['municipio'], dados['ibge'], identidade=dados['identidade'], fontes=dados['fontes'],
+                                        email_admin=dados['email_admin'], senha_admin=senha)
+        from . import remessa
+        remessa.configurar_pares()
     except Exception as e:
-        return ir('/orgaos/novo', f'Não foi possível criar: {e}', request)
+        return T('novo', request, f=f, erros=[f'Não foi possível criar: {type(e).__name__}: {e}'], ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO)
     limpar_cache()
-    log(g, f"Cadastrou o órgão {f['nome']} ({f['dominio']}, banco {banco})")
-    return ir('/', f"Órgão criado em implantação. Aponte o DNS de {f["dominio"]} para a VPS, emita o certificado e inclua o domínio no vhost do nginx (Docs/PROGRESSO.md).", request)
+    log(g, f"Cadastrou o órgão {dados['nome']} ({dados['dominio']}, banco {dados['banco']}, IBGE {dados['ibge']}, integrações: {', '.join(sorted(dados['fontes']))})")
+    o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    vizinhos = db.todos(db.PLATAFORMA, 'SELECT nome, dominio FROM orgaos WHERE ibge=%s AND id<>%s', (o['ibge'], oid))
+    resp = T('criado', request, o=o, dados=dados, senha=senha, vizinhos=vizinhos, sistemas=CD.SISTEMAS)
+    resp.headers['Cache-Control'] = 'no-store'
+    return resp
 
 @r.get('/catalogo')
 def catalogo(request: Request):

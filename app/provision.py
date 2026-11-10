@@ -33,11 +33,6 @@ def aplicar(banco: str, migracoes):
         for m in migracoes:
             c.execute(m.read_text(encoding='utf-8'))
 
-IDENT = {
-    'pm-bora': {'nome': 'Prefeitura Municipal de Borá', 'endereco': 'Praça Santo Antonio, 10 · Borá (SP) · CEP 19740-005', 'telefone': '(18) 3367-1103', 'email': 'pmbora@bora.sp.gov.br', 'cnpj': '44.544.906/0001-42', 'horario': 'Segunda a sexta, 8h às 17h', 'encarregado': '[nome do encarregado de dados]', 'encarregado_email': '[e-mail do encarregado]', 'cor': '#1D4E89'},
-    'cm-bora': {'nome': 'Câmara Municipal de Borá', 'endereco': 'Rua Vereador Herculano Azevedo, 10 · Centro · Borá (SP) · CEP 19740-000', 'telefone': '(18) 3367-1146', 'email': 'camara@camarabora.sp.gov.br', 'cnpj': '[CNPJ da Câmara]', 'horario': 'Segunda a sexta, 9h às 11h e 13h às 17h', 'encarregado': '[nome do encarregado de dados]', 'encarregado_email': '[e-mail do encarregado]', 'cor': '#2F5233'},
-}
-
 # Identidade visual (Fase 3): valores padrão por tipo de órgão; cada órgão pode trocar tudo em /admin/identidade.
 VISUAL_PADRAO = {
     'executivo': {'prefixo': 'Prefeitura Municipal de', 'cor_destaque': '#F0B429', 'hero_rotulo': 'Portal oficial da Prefeitura',
@@ -47,46 +42,29 @@ VISUAL_PADRAO = {
                     'hero_titulo': 'Acompanhe o trabalho dos vereadores', 'hero_texto': 'Sessões, projetos, votações e gastos da Câmara, num só lugar e em linguagem simples.',
                     'busca_dica': 'Busque projeto, indicação ou vereador', 'mais_buscados': []},
 }
-_CREDITO_PM = 'Foto: Prefeitura Municipal de Borá'
-IDENT_VISUAL = {
-    'pm-bora': {
-        'nome_curto': 'Borá', 'subtitulo': 'Estado de São Paulo', 'cor_antiga': '#1D4E89', 'cor': '#0E4D64',
-        'brasao': {'url': '/static/img/brasao.webp', 'alt': 'Brasão do Município de Borá'},
-        'hero': {'url': '/static/img/vista-aerea.webp', 'alt': 'Vista aérea de Borá, com a praça central, a Igreja Matriz e as ruas arborizadas', 'credito': _CREDITO_PM},
-        'conheca': {'rotulo': 'Conheça Borá', 'titulo': 'Pequena, tranquila e acolhedora',
-                    'texto': 'O segundo menor município do Brasil em população (IBGE, Censo 2022), com praça arborizada no centro, a Igreja Matriz como cartão-postal e a agroindústria da cana-de-açúcar movimentando a economia.',
-                    'numeros': [['Habitantes (Censo 2022)', '907'], ['Área territorial', '119 km²'], ['Distância da capital', '~500 km'], ['IDHM (2010)', '0,746']],
-                    'fonte': 'IBGE: Censo 2022, área territorial e IDHM 2010.',
-                    'fotos': [{'url': '/static/img/praca-aerea.webp', 'alt': 'Vista aérea da praça central com a Igreja Matriz, o chafariz, o coreto e as ruas arborizadas', 'legenda': 'Praça e Igreja Matriz, vistas do alto', 'credito': _CREDITO_PM},
-                              {'url': '/static/img/igreja-matriz.webp', 'alt': 'Igreja Matriz branca de torre pontiaguda, cercada de palmeiras e árvores', 'legenda': 'Igreja Matriz', 'credito': _CREDITO_PM},
-                              {'url': '/static/img/usina.webp', 'alt': 'Portaria de uma usina de açúcar e etanol, com caminhão na entrada', 'legenda': 'Agroindústria da cana-de-açúcar', 'credito': _CREDITO_PM}]},
-        'sede': {'titulo': 'Paço Municipal', 'foto': {'url': '/static/img/paco-municipal.webp', 'alt': 'Fachada do Paço Municipal, prédio branco arredondado com jardim de roseiras na frente', 'credito': _CREDITO_PM}},
-        'creditos': 'Fotos da cidade: Prefeitura Municipal de Borá. Fotos dos cartões de serviços: Unsplash e Rawpixel, CC0, via Wikimedia Commons.',
-    },
-    'cm-bora': {
-        'nome_curto': 'Câmara Municipal de Borá', 'subtitulo': 'Estado de São Paulo',
-        'brasao': {'url': '/static/img/brasao.webp', 'alt': 'Brasão do Município de Borá'},
-        'hero': {'url': '/static/img/paco-municipal.webp', 'alt': 'Fachada do Paço Municipal de Borá, prédio branco arredondado com jardim na frente', 'credito': _CREDITO_PM},
-        'sede': {'titulo': 'Sede da Câmara', 'foto': {}},
-        'creditos': 'Foto do destaque: Prefeitura Municipal de Borá.',
-    },
-}
+# Dados do piloto (Prefeitura e Câmara de Borá): ficam em seeds/piloto_bora.json, não no código.
+# O código é neutro: um órgão novo nasce só com o que vier do cadastro no console e com os padrões por tipo de órgão.
+PILOTO = json.loads((AQUI / 'seeds' / 'piloto_bora.json').read_text(encoding='utf-8'))['orgaos']
+IDENT = {o['slug']: o['identidade'] for o in PILOTO}
+IDENT_VISUAL = {o['slug']: o['identidade_visual'] for o in PILOTO}
+FONTES_PADRAO = {o['slug']: o['fontes'] for o in PILOTO}
+DIARIO_PADRAO = {o['slug']: o['diario'] for o in PILOTO if o.get('diario')}
 
-# Fontes de dados por órgão (Fase 4). Só valores padrão de configuração: ficam na tabela `fontes` e podem ser trocados.
-FIORILLI_BORA = 'https://borasp.dcfiorilli.com.br:879/transparencia/VersaoJson/'
-FONTES_PADRAO = {
-    'pm-bora': {'fiorilli': {'base': FIORILLI_BORA, 'empresa': '2', 'bases': ['receitas', 'despesas_unidade', 'empenhos', 'diarias', 'restos_pagar', 'ordem_cronologica', 'licitacoes', 'contratos', 'transferencias', 'servidores']},
-                'pncp': {'ibge': '3507209', 'cnpj': '44.544.906/0001-42'},
-                'siconfi': {'ibge': '3507209', 'rreo': True, 'rgf_poder': 'E'},
-                'tcesp': {'municipio': 'bora', 'anos': [2025]}},
-    'cm-bora': {'fiorilli': {'base': FIORILLI_BORA, 'empresa': '2', 'bases': ['transferencias', 'emendas'], 'recebedora': 'Câmara Municipal'},
-                'siconfi': {'ibge': '3507209', 'rgf_poder': 'L'}},
-}
+def completar_diario(banco, slug):
+    """Lei de instituição e base legal do Diário do piloto (arquivo de dados), sem sobrescrever o que o órgão salvou."""
+    novo = DIARIO_PADRAO.get(slug)
+    if not novo:
+        return
+    conf = db.cfg(banco, 'diario', {}) or {}
+    falta = {k: v for k, v in novo.items() if not conf.get(k)}
+    if falta:
+        db.set_cfg(banco, 'diario', dict(conf, **falta))
 
-def configurar_fontes(oid, slug):
-    """Cadastra as fontes padrão do órgão se ainda não existirem (nunca sobrescreve a configuração feita)."""
+def configurar_fontes(oid, slug, fontes=None):
+    """Cadastra as fontes do órgão (as do cadastro no console ou, para o piloto, as do arquivo de dados) se ainda não
+    existirem — nunca sobrescreve a configuração feita."""
     n = 0
-    for fonte, params in FONTES_PADRAO.get(slug, {}).items():
+    for fonte, params in (fontes if fontes is not None else FONTES_PADRAO.get(slug, {})).items():
         r = db.exe(db.PLATAFORMA, 'INSERT INTO fontes (orgao_id, fonte, params) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING RETURNING 1', (oid, fonte, Jsonb(params)))
         n += 1 if r else 0
     return n
@@ -158,12 +136,13 @@ def atualizar_layout(banco, tipo):
         db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES ('home',%s,%s,%s) ON CONFLICT DO NOTHING", (k, reg, mx))
     return f"{len(novos)} bloco(s) novo(s) acrescentado(s)" if novos else 'sem blocos novos'
 
-ORGAOS = [
-    ('pm-bora', 'Prefeitura Municipal de Borá', 'executivo', lambda: config.DOMINIO_PM, 'bd_pm_bora', 'Executivo', '#1D4E89', {'diario': True, 'bi': False, 'tema3': False}),
-    ('cm-bora', 'Câmara Municipal de Borá', 'legislativo', lambda: config.DOMINIO_CM, 'bd_cm_bora', 'Legislativo', '#2F5233', {'integpref': True, 'emend': True, 'tema3': False}),
-]
+ORGAOS = [(o['slug'], o['nome'], o['tipo'], (lambda o=o: config.env(o['dominio_env'], o['dominio_padrao'])), o['banco'], o['plano'], o['cor'], o['opcionais'])
+          for o in PILOTO]
 
-def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, municipio='Borá (SP)', ibge=config.IBGE_BORA, inicio=None, fim=None):
+def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, municipio, ibge, inicio=None, fim=None,
+                    identidade=None, fontes=None, email_admin=None, senha_admin=None):
+    """Cadastra o órgão no banco de controle e prepara o banco dele (esquema, identidade, fontes, menus, layout e
+    usuário administrador inicial). Idempotente para o piloto; para órgão novo, os dados vêm do cadastro no console."""
     r = db.um(db.PLATAFORMA, 'SELECT id FROM orgaos WHERE slug=%s', (slug,))
     if r:
         db.exe(db.PLATAFORMA, 'UPDATE orgaos SET dominio=%s WHERE id=%s', (dominio, r['id']))
@@ -177,9 +156,10 @@ def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, mun
     criar_banco(banco)
     aplicar(banco, MIG_ORGAO)
     if not db.cfg(banco, 'identidade'):
-        db.set_cfg(banco, 'identidade', IDENT.get(slug, {'nome': nome, 'cor': cor}))
+        db.set_cfg(banco, 'identidade', IDENT.get(slug) or identidade or {'nome': nome, 'cor': cor})
     completar_identidade(banco, slug, tipo)
-    configurar_fontes(oid, slug)
+    completar_diario(banco, slug)
+    configurar_fontes(oid, slug, fontes)
     configurar_painel(db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,)))
     configurar_youtube(db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,)))
     from . import menus as MN, fase8 as F8
@@ -189,15 +169,17 @@ def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, mun
         for i, (k, reg) in enumerate(LAYOUT_PADRAO[tipo]):
             db.exe(banco, 'INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING', ('home', k, reg, i))
     if not db.um(banco, 'SELECT 1 FROM usuarios LIMIT 1'):
-        email = f'admin@{dominio}'
-        db.exe(banco, "INSERT INTO usuarios (nome, email, setor, perfil, escopo, senha_hash) VALUES (%s,%s,%s,'admin','Órgão inteiro',%s)", ('Administrador do órgão', email, 'Administração', hash_senha(config.SENHA_INICIAL_ADMIN)))
-        print(f'  usuário inicial: {email} (senha = SENHA_INICIAL_ADMIN; troque no primeiro acesso)')
+        email = email_admin or f'admin@{dominio}'
+        db.exe(banco, "INSERT INTO usuarios (nome, email, setor, perfil, escopo, senha_hash) VALUES (%s,%s,%s,'admin','Órgão inteiro',%s)", ('Administrador do órgão', email, 'Administração', hash_senha(senha_admin or config.SENHA_INICIAL_ADMIN)))
+        if not senha_admin:
+            print(f'  usuário inicial: {email} (senha = SENHA_INICIAL_ADMIN; troque no primeiro acesso)')
     return oid
 
-def seed_camara(banco):
+def seed_camara(banco, arquivo):
+    """Dados reais da Câmara do piloto (legislaturas, vereadores, proposições, sessões), do arquivo em seeds/."""
     if db.um(banco, 'SELECT 1 FROM vereadores LIMIT 1'):
         return
-    d = json.loads((AQUI / 'seeds' / 'camara_bora.json').read_text(encoding='utf-8'))
+    d = json.loads((AQUI / 'seeds' / arquivo).read_text(encoding='utf-8'))
     for L in d['LEGIS']:
         db.exe(banco, 'INSERT INTO legislaturas VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING', (L['n'], L['anos'], L['prefeito'], L['vice']))
         for v in L['ver']:
@@ -234,17 +216,11 @@ def seed_camara(banco):
     db.set_cfg(banco, 'financas', {'dtp': d['DTP_CM'], 'rgf': d['RGF_CM'], 'duodecimo_2026': 1458400, 'fonte': 'Siconfi (RGF do Legislativo) e cadastro da Câmara, consulta de 05/11/2026'})
     print('  dados reais da Câmara carregados')
 
-def seed_prefeitura(banco):
+def seed_prefeitura(banco, itens):
+    """Conteúdos-exemplo do piloto (marcados como exemplo), do arquivo de dados."""
     if db.um(banco, 'SELECT 1 FROM conteudos LIMIT 1'):
         return
     hoje = config.hoje()
-    itens = [
-        ('Aviso', 'Serviços', 'Vacinação contra a gripe nas unidades de saúde', 'Doses para idosos, gestantes e crianças, de segunda a sexta, 8h às 16h.', 'util', 'publicado'),
-        ('Notícia', 'Notícias', '[Prefeito] entrega a reforma da quadra do Balneário', 'Exemplo de notícia com nome de agente político (sai no defeso).', 'agente', 'publicado'),
-        ('Página', 'Serviços', 'IPTU 2027: como emitir a guia e pedir isenção', 'Prazos, documentos e canais de atendimento.', 'serv', 'rascunho'),
-        ('Notícia', 'Notícias', 'Recapeamento da Rua 31 de Agosto começa em dezembro', 'Exemplo de divulgação de obra (publicidade institucional).', 'pub', 'revisao'),
-        ('Documento', 'Transparência', 'Edital de concurso público nº [1]/2026', 'Edital, cronograma e anexos.', 'ato', 'publicado'),
-    ]
     for tipo, sec, tit, res, cl, sit in itens:
         db.exe(banco, 'INSERT INTO conteudos (tipo, secao, titulo, resumo, texto, classe, situacao, exemplo, autor, publicar_em) VALUES (%s,%s,%s,%s,%s,%s,%s,TRUE,%s,%s)',
                (tipo, sec, tit, res, res, cl, sit, 'Administrador do órgão', hoje if sit == 'publicado' else None))
@@ -259,11 +235,13 @@ def init():
         email = f'gestor@{config.DOMINIO_GESTAO}'
         db.exe(db.PLATAFORMA, 'INSERT INTO gestores (nome, email, senha_hash) VALUES (%s,%s,%s)', ('Gestor do projeto', email, hash_senha(config.SENHA_INICIAL_GESTOR)))
         print(f'gestor inicial: {email} (senha = SENHA_INICIAL_GESTOR; troque no primeiro acesso)')
-    for slug, nome, tipo, dom, banco, plano, cor, opc in ORGAOS:
-        print('órgão:', slug)
-        registrar_orgao(slug, nome, tipo, dom(), banco, plano, cor, opc)
-    seed_prefeitura('bd_pm_bora')
-    seed_camara('bd_cm_bora')
+    for o in PILOTO:
+        print('órgão:', o['slug'])
+        registrar_orgao(o['slug'], o['nome'], o['tipo'], config.env(o['dominio_env'], o['dominio_padrao']), o['banco'], o['plano'], o['cor'], o['opcionais'], o['municipio'], o['ibge'])
+        if o.get('conteudos_exemplo'):
+            seed_prefeitura(o['banco'], o['conteudos_exemplo'])
+        if o.get('dados_camara'):
+            seed_camara(o['banco'], o['dados_camara'])
     from . import remessa
     np = remessa.configurar_pares()
     if np:
@@ -280,6 +258,7 @@ def atualizar():
     for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos ORDER BY id'):
         aplicar(o['banco'], MIG_ORGAO)
         ident = 'identidade completada' if completar_identidade(o['banco'], o['slug'], o['tipo']) else 'identidade sem mudança'
+        completar_diario(o['banco'], o['slug'])
         nf = configurar_fontes(o['id'], o['slug'])
         from . import menus as MN, fase8 as F8
         nm = MN.semear(o['banco'], o['tipo'], (db.cfg(o['banco'], 'identidade', {}) or {}).get('nome_curto', ''))

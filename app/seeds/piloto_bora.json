@@ -1,0 +1,244 @@
+{
+ "_sobre": "Dados do piloto de Borá (Prefeitura e Câmara). Só lidos por \"python -m app.provision init/atualizar\" para os órgãos do piloto; o código não depende deles.",
+ "orgaos": [
+  {
+   "slug": "pm-bora",
+   "nome": "Prefeitura Municipal de Borá",
+   "tipo": "executivo",
+   "dominio_env": "DOMINIO_PM",
+   "dominio_padrao": "pmbora.localhost",
+   "banco": "bd_pm_bora",
+   "plano": "Executivo",
+   "cor": "#1D4E89",
+   "opcionais": {
+    "diario": true,
+    "bi": false,
+    "tema3": false
+   },
+   "municipio": "Borá (SP)",
+   "uf": "SP",
+   "ibge": "3507209",
+   "identidade": {
+    "nome": "Prefeitura Municipal de Borá",
+    "endereco": "Praça Santo Antonio, 10 · Borá (SP) · CEP 19740-005",
+    "telefone": "(18) 3367-1103",
+    "email": "pmbora@bora.sp.gov.br",
+    "cnpj": "44.544.906/0001-42",
+    "horario": "Segunda a sexta, 8h às 17h",
+    "encarregado": "[nome do encarregado de dados]",
+    "encarregado_email": "[e-mail do encarregado]",
+    "cor": "#1D4E89"
+   },
+   "identidade_visual": {
+    "nome_curto": "Borá",
+    "subtitulo": "Estado de São Paulo",
+    "cor_antiga": "#1D4E89",
+    "cor": "#0E4D64",
+    "brasao": {
+     "url": "/static/img/brasao.webp",
+     "alt": "Brasão do Município de Borá"
+    },
+    "hero": {
+     "url": "/static/img/vista-aerea.webp",
+     "alt": "Vista aérea de Borá, com a praça central, a Igreja Matriz e as ruas arborizadas",
+     "credito": "Foto: Prefeitura Municipal de Borá"
+    },
+    "conheca": {
+     "rotulo": "Conheça Borá",
+     "titulo": "Pequena, tranquila e acolhedora",
+     "texto": "O segundo menor município do Brasil em população (IBGE, Censo 2022), com praça arborizada no centro, a Igreja Matriz como cartão-postal e a agroindústria da cana-de-açúcar movimentando a economia.",
+     "numeros": [
+      [
+       "Habitantes (Censo 2022)",
+       "907"
+      ],
+      [
+       "Área territorial",
+       "119 km²"
+      ],
+      [
+       "Distância da capital",
+       "~500 km"
+      ],
+      [
+       "IDHM (2010)",
+       "0,746"
+      ]
+     ],
+     "fonte": "IBGE: Censo 2022, área territorial e IDHM 2010.",
+     "fotos": [
+      {
+       "url": "/static/img/praca-aerea.webp",
+       "alt": "Vista aérea da praça central com a Igreja Matriz, o chafariz, o coreto e as ruas arborizadas",
+       "legenda": "Praça e Igreja Matriz, vistas do alto",
+       "credito": "Foto: Prefeitura Municipal de Borá"
+      },
+      {
+       "url": "/static/img/igreja-matriz.webp",
+       "alt": "Igreja Matriz branca de torre pontiaguda, cercada de palmeiras e árvores",
+       "legenda": "Igreja Matriz",
+       "credito": "Foto: Prefeitura Municipal de Borá"
+      },
+      {
+       "url": "/static/img/usina.webp",
+       "alt": "Portaria de uma usina de açúcar e etanol, com caminhão na entrada",
+       "legenda": "Agroindústria da cana-de-açúcar",
+       "credito": "Foto: Prefeitura Municipal de Borá"
+      }
+     ]
+    },
+    "sede": {
+     "titulo": "Paço Municipal",
+     "foto": {
+      "url": "/static/img/paco-municipal.webp",
+      "alt": "Fachada do Paço Municipal, prédio branco arredondado com jardim de roseiras na frente",
+      "credito": "Foto: Prefeitura Municipal de Borá"
+     }
+    },
+    "creditos": "Fotos da cidade: Prefeitura Municipal de Borá. Fotos dos cartões de serviços: Unsplash e Rawpixel, CC0, via Wikimedia Commons."
+   },
+   "fontes": {
+    "fiorilli": {
+     "base": "https://borasp.dcfiorilli.com.br:879/transparencia/VersaoJson/",
+     "empresa": "2",
+     "bases": [
+      "receitas",
+      "despesas_unidade",
+      "empenhos",
+      "diarias",
+      "restos_pagar",
+      "ordem_cronologica",
+      "licitacoes",
+      "contratos",
+      "transferencias",
+      "servidores"
+     ]
+    },
+    "pncp": {
+     "ibge": "3507209",
+     "cnpj": "44.544.906/0001-42"
+    },
+    "siconfi": {
+     "ibge": "3507209",
+     "rreo": true,
+     "rgf_poder": "E"
+    },
+    "tcesp": {
+     "municipio": "bora",
+     "anos": [
+      2025
+     ]
+    }
+   },
+   "conteudos_exemplo": [
+    [
+     "Aviso",
+     "Serviços",
+     "Vacinação contra a gripe nas unidades de saúde",
+     "Doses para idosos, gestantes e crianças, de segunda a sexta, 8h às 16h.",
+     "util",
+     "publicado"
+    ],
+    [
+     "Notícia",
+     "Notícias",
+     "[Prefeito] entrega a reforma da quadra do Balneário",
+     "Exemplo de notícia com nome de agente político (sai no defeso).",
+     "agente",
+     "publicado"
+    ],
+    [
+     "Página",
+     "Serviços",
+     "IPTU 2027: como emitir a guia e pedir isenção",
+     "Prazos, documentos e canais de atendimento.",
+     "serv",
+     "rascunho"
+    ],
+    [
+     "Notícia",
+     "Notícias",
+     "Recapeamento da Rua 31 de Agosto começa em dezembro",
+     "Exemplo de divulgação de obra (publicidade institucional).",
+     "pub",
+     "revisao"
+    ],
+    [
+     "Documento",
+     "Transparência",
+     "Edital de concurso público nº [1]/2026",
+     "Edital, cronograma e anexos.",
+     "ato",
+     "publicado"
+    ]
+   ],
+   "diario": {
+    "lei": "Lei Municipal nº 910/2026",
+    "base_legal": "Lei Municipal 910/2026 e decreto de 25/03/2026; MP 2.200-2/2001 (ICP-Brasil); Lei 14.063/2020."
+   }
+  },
+  {
+   "slug": "cm-bora",
+   "nome": "Câmara Municipal de Borá",
+   "tipo": "legislativo",
+   "dominio_env": "DOMINIO_CM",
+   "dominio_padrao": "cmbora.localhost",
+   "banco": "bd_cm_bora",
+   "plano": "Legislativo",
+   "cor": "#2F5233",
+   "opcionais": {
+    "integpref": true,
+    "emend": true,
+    "tema3": false
+   },
+   "municipio": "Borá (SP)",
+   "uf": "SP",
+   "ibge": "3507209",
+   "identidade": {
+    "nome": "Câmara Municipal de Borá",
+    "endereco": "Rua Vereador Herculano Azevedo, 10 · Centro · Borá (SP) · CEP 19740-000",
+    "telefone": "(18) 3367-1146",
+    "email": "camara@camarabora.sp.gov.br",
+    "cnpj": "[CNPJ da Câmara]",
+    "horario": "Segunda a sexta, 9h às 11h e 13h às 17h",
+    "encarregado": "[nome do encarregado de dados]",
+    "encarregado_email": "[e-mail do encarregado]",
+    "cor": "#2F5233"
+   },
+   "identidade_visual": {
+    "nome_curto": "Câmara Municipal de Borá",
+    "subtitulo": "Estado de São Paulo",
+    "brasao": {
+     "url": "/static/img/brasao.webp",
+     "alt": "Brasão do Município de Borá"
+    },
+    "hero": {
+     "url": "/static/img/paco-municipal.webp",
+     "alt": "Fachada do Paço Municipal de Borá, prédio branco arredondado com jardim na frente",
+     "credito": "Foto: Prefeitura Municipal de Borá"
+    },
+    "sede": {
+     "titulo": "Sede da Câmara",
+     "foto": {}
+    },
+    "creditos": "Foto do destaque: Prefeitura Municipal de Borá."
+   },
+   "fontes": {
+    "fiorilli": {
+     "base": "https://borasp.dcfiorilli.com.br:879/transparencia/VersaoJson/",
+     "empresa": "2",
+     "bases": [
+      "transferencias",
+      "emendas"
+     ],
+     "recebedora": "Câmara Municipal"
+    },
+    "siconfi": {
+     "ibge": "3507209",
+     "rgf_poder": "L"
+    }
+   },
+   "dados_camara": "camara_bora.json"
+  }
+ ]
+}

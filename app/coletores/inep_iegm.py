@@ -70,7 +70,7 @@ def cabecalho(url):
     """HEAD do arquivo: (status, last-modified, tamanho)."""
     def f():
         t0 = time.monotonic()
-        with httpx.Client(timeout=60, verify=contexto_tls(), headers={'User-Agent': 'PortaisBora-coletor/1.0'}) as c:
+        with httpx.Client(timeout=60, verify=contexto_tls(), headers={'User-Agent': config.USER_AGENT}) as c:
             r = c.head(url)
         res = r.status_code, r.headers.get('last-modified', ''), int(r.headers.get('content-length') or 0)
         anotar('inep', url, None, res[0], int((time.monotonic() - t0) * 1000), {'last-modified': res[1], 'tamanho_bytes': res[2]}, metodo='HEAD')
@@ -81,7 +81,7 @@ def baixar(url, destino):
     """Baixa em fluxo para um arquivo temporário (limite de tamanho), com verificação TLS completa."""
     def f():
         n = 0
-        with httpx.Client(timeout=300, verify=contexto_tls(), headers={'User-Agent': 'PortaisBora-coletor/1.0'}) as c:
+        with httpx.Client(timeout=300, verify=contexto_tls(), headers={'User-Agent': config.USER_AGENT}) as c:
             with c.stream('GET', url) as r:
                 r.raise_for_status()
                 with open(destino, 'wb') as fx:

@@ -1,6 +1,6 @@
 """Coletor do TCESP (Transparência Municipal / Audesp): receitas mensais por alínea.
 
-Usado para 2025, porque a API da Prefeitura devolve 2025 zerado. Parâmetros (fonte='tcesp'): municipio (ex.: 'bora'), anos."""
+Usado para 2025, porque a API da Prefeitura devolve 2025 zerado. Parâmetros (fonte='tcesp'): municipio (nome no TCESP, ex.: 'nome-do-municipio'), anos."""
 from .comum import buscar, num, txt, chave, gravar
 
 FONTE = 'tcesp'

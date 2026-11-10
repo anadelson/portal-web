@@ -16,7 +16,7 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Flowable, Image
 from . import config, db
 
-LEI_PADRAO = 'Lei Municipal nº 910/2026'
+LEI_PADRAO = 'lei municipal'  # o órgão informa a lei em Diário Oficial → Signatários, calendário e lei
 
 # ---------- calendário ----------
 def dia_util(b, d: date) -> bool:

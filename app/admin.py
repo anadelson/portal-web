@@ -472,10 +472,10 @@ def auditoria(request: Request):
     return T('auditoria', request, u, itens=db.todos(request.state.orgao['banco'], 'SELECT * FROM auditoria ORDER BY id DESC LIMIT 300'))
 
 # ---------- identidade ----------
-CAMPOS_ID = [('nome', 'Nome do órgão'), ('prefixo', 'Linha acima do nome no cabeçalho (ex.: Prefeitura Municipal de)'), ('nome_curto', 'Nome curto no cabeçalho (ex.: Borá)'),
+CAMPOS_ID = [('nome', 'Nome do órgão'), ('prefixo', 'Linha acima do nome no cabeçalho (ex.: Prefeitura Municipal de)'), ('nome_curto', 'Nome curto no cabeçalho (ex.: nome do município)'),
              ('subtitulo', 'Linha abaixo do nome (ex.: Estado de São Paulo)'), ('cnpj', 'CNPJ'), ('endereco', 'Endereço'), ('telefone', 'Telefone'), ('whatsapp', 'WhatsApp'),
              ('email', 'E-mail de atendimento'), ('horario', 'Horário'), ('encarregado', 'Encarregado de dados (LGPD)'), ('encarregado_email', 'E-mail do encarregado'),
-             ('login_titulo', 'Título da tela de login (ex.: Área restrita da Prefeitura de Borá)'), ('hero_rotulo', 'Destaque: rótulo'), ('hero_titulo', 'Destaque: título'),
+             ('login_titulo', 'Título da tela de login (vazio = “Entrar no painel”)'), ('hero_rotulo', 'Destaque: rótulo'), ('hero_titulo', 'Destaque: título'),
              ('hero_texto', 'Destaque: texto'), ('busca_dica', 'Destaque: exemplo na busca'), ('creditos', 'Créditos das fotos (rodapé)')]
 COR = re.compile(r'^#[0-9A-Fa-f]{6}$')
 USOS = {'brasao': 'Brasão', 'mascote': 'Mascote', 'hero': 'Imagem de fundo do destaque (página inicial)', 'login': 'Imagem de fundo da tela de login', 'sede': 'Foto da sede', 'conheca': 'Foto do “Conheça a cidade”'}

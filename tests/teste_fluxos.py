@@ -85,7 +85,9 @@ t = token(g, '/orgao/2'); g.post('/orgao/2', data={'csrf': t, 'acao': 'modulo', 
 t = token(g, '/orgao/2'); g.post('/orgao/2', data={'csrf': t, 'acao': 'modulo', 'chave': 'emend'})
 ok(cm.get('/emendas'), nome='emendas volta')
 t = token(g, '/orgaos/novo')
-ok(g.post('/orgaos/novo', data={'csrf': t, 'nome': 'Câmara Teste', 'tipo': 'legislativo', 'slug': 'cm-teste', 'dominio': 'cmteste.localhost', 'municipio': 'X', 'ibge': '1'}, follow_redirects=True), txt='Órgão criado', nome='novo orgao')
+# cadastro completo (etapa 1 do modelo multi-órgão): município fictício, e-mail do administrador obrigatório
+ok(g.post('/orgaos/novo', data={'csrf': t, 'nome': 'Câmara Teste', 'tipo': 'legislativo', 'slug': 'cm-teste', 'dominio': 'cmteste.localhost', 'municipio': 'Município X', 'uf': 'SP', 'ibge': '3599911',
+                                 'email_admin': 'admin@cmteste.localhost', 'sistema': 'nenhum'}, follow_redirects=True), txt='Órgão criado', nome='novo orgao')
 ok(cli('cmteste.localhost').get('/'), nome='novo orgao portal')
 
 # ---------- Fase 3: identidade visual ----------
