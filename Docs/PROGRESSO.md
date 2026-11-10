@@ -1210,3 +1210,10 @@ Próximos passos dependem das pessoas:
 - **Feito:** `.form-tela{max-width:none}` (vale para todas as telas de edição); admin.css v=10.
 - **Conferência** em ambiente de TESTE: o cartão do formulário tem a mesma largura das abas e das listas (1062 px em 1366, 1616 em 1920, 342 no celular), sem rolagem horizontal. Capturas em `Docs/avaliacao-painel-admin/form-largura/`.
 - **Onde parou:** aguardando aprovação para implantar (sem migração de banco).
+
+### Implantação do ajuste de largura dos formulários (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 17h26 UTC.
+- **Build e testes:** as 14 suítes com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida:** `up -d` de app e worker; app saudável. Sem migração de banco. Disco em 72%.
+- **Conferência no domínio:** admin.css v=10 servido, com `.form-tela{max-width:none}`; portais 200, console 303 (login); logs sem erro.
+- `form-largura` mesclado em `main` com a tag `form-largura`.
