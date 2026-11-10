@@ -522,16 +522,30 @@ h1{font-weight:700}main>h1,main h1:first-of-type{font-size:clamp(28px,4.2vw,36px
 
 /* Largura fluida (10/11/2026): containers em 100% até --largura-max (1760 px; configurável), margem lateral fluida.
    Grades da página inicial aproveitam a largura extra, mas com no máximo 3 a 5 colunas (sem cartões gigantes nem colunas demais). */
-.atalhos{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,230px),calc((100% - 3 * 14px) / 4)),1fr))}
-.home dl.kpis{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,210px),calc((100% - 4 * 12px) / 5)),1fr))}
-.servicos{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,250px),calc((100% - 3 * 16px) / 4)),1fr))}
-.home .ics{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,220px),calc((100% - 4 * 12px) / 5)),1fr))}
-.pub-cartoes{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,230px),calc((100% - 3 * 12px) / 4)),1fr))}
-.atos-ult{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,200px),calc((100% - 3 * 8px) / 4)),1fr))}
-.tv-ultimas{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,260px),calc((100% - 2 * 14px) / 3)),1fr))}
-.redes-feed .feed{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,220px),calc((100% - 2 * 14px) / 3)),1fr))}
-.home ul.vers{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,176px),calc((100% - 5 * 14px) / 6)),1fr))}
-li.mesa{flex-direction:column}li.mesa .bienios{width:100%}
-.home .trilho{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,240px),calc((100% - 3 * 16px) / 4)),1fr))}
+.mesa{margin-top:14px}
+/* Fileira de cartões (partials/fileira.html): 1 a 5 cartões = N colunas iguais em 100%; 6+ = carrossel com 5 por vez.
+   Cartão mínimo de 220 px: o número por vez cai com a largura (container query); abaixo de 456 px, 1 por vez e meio. */
+.fileira{--gap:14px;container-type:inline-size;min-width:0}
+.fileira>.fil-trilho{--v:var(--n);display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:calc((100% - (var(--v) - 1) * var(--gap)) / var(--v));gap:var(--gap);align-items:stretch;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:thin;list-style:none;margin:-8px -8px -22px;padding:8px 8px 22px;scroll-padding:0 8px}
+.fileira>.fil-trilho>*{min-width:0;scroll-snap-align:start}
+.fileira>dl.fil-trilho>div{margin:0}
+@container (max-width:1155px){.fileira>.fil-trilho{--v:min(var(--n),4)}}
+@container (max-width:921px){.fileira>.fil-trilho{--v:min(var(--n),3)}}
+@container (max-width:687px){.fileira>.fil-trilho{--v:min(var(--n),2)}}
+@container (max-width:453px){.fileira:not([data-n="1"])>.fil-trilho{grid-auto-columns:calc((100% - var(--gap)) / 1.5)}}
+.fil-nav{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:10px}.fil-nav[hidden]{display:none}
+.fil-cont{font-size:14px;color:var(--sub);margin-right:4px}
+.fil-bt{width:44px;height:44px;border-radius:999px;border:1px solid var(--bd);background:#fff;color:var(--tx);font-size:24px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.fil-bt:hover:not(:disabled){border-color:var(--cor);color:var(--cor)}.fil-bt:disabled{opacity:.45;cursor:default}
+.fil-bt:focus-visible{outline:3px solid var(--foco,#1d4ed8);outline-offset:2px}
+/* cartões com a mesma altura e o botão no rodapé */
+.fileira .pub-c .btn{margin-top:auto;align-self:flex-start}.fileira .atos-ult>li,.fileira .tv-ultimas>li,.fileira .feed>li,.fileira .gov-grade>li{display:flex}.fileira .atos-ult a,.fileira .tv-ultimas a,.fileira .feed a{flex:1}
+.fileira .icard{height:100%}
+/* atalhos sobre o hero: a sobreposição vai para o invólucro; a sombra larga precisa de mais respiro no trilho */
+.fil-atalhos{position:relative;z-index:2;margin:-108px 0 40px}.fil-atalhos>.atalhos{margin:-24px -12px -36px;padding:24px 12px 36px;scroll-padding:0 12px}
+.fil-atalhos:has(.leg){margin-top:28px}
+/* vereadores em fileira: o cartão da presidência ocupa uma posição, como os demais */
+.fileira>ul.vers>li.pres{grid-row:auto;grid-column:auto}.fileira .vcard.pres .retrato{width:110px}.fileira .vcard.pres{padding:16px;gap:12px}.fileira .vcard.pres .info{flex-basis:100%}
 /* larguras de leitura: corpo de texto até 70ch */
 .texto,.texto-rico,.ficha-sec p,.ficha-sec ul,.ficha-sec ol,.materia .m-corpo>p,.atend-info,.pagina-txt{max-width:70ch}
+.prola:focus-visible{outline:3px solid var(--cor);outline-offset:2px}

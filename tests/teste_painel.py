@@ -211,7 +211,7 @@ ok(cm.get('/painel'), 404, nome='Câmara sem painel próprio')
 rp = pm.get('/painel'); _c = rp.text[rp.text.find('class="b-inst"'):]; _c = _c[:_c.find('</nav>')]
 if _c.count('<li') < 5: falha('/painel: barra institucional vazia (conflito de nome com a macro de gráfico)')
 if re.search(r'<p class="intro"[^>]*margin-bottom:6px', rp.text) and 'legal-topo' not in rp.text: falha('/painel: base legal fora do casco')
-r = ok(pm.get('/'), txt='class="ics"', nome='home com destaques')
+r = ok(pm.get('/'), txt='class="fil-trilho ics"', nome='home com destaques')
 if r.text.count('/painel/') < 4 or 'Borá em números' not in r.text: falha('bloco "Indicadores em números" com os destaques')
 ok(pm.get('/transparencia'), txt='href="/painel"', nome='atalho na central de transparência')
 

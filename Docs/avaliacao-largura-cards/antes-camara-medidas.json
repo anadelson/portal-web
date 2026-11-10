@@ -1,0 +1,250 @@
+{
+ "inicio-1920": {
+  "main": 1320,
+  "scrollW": 1920,
+  "fileiras": [
+   {
+    "sel": ".atalhos",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 308,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": "dl.kpis",
+    "n": 3,
+    "por_fileira": 3,
+    "visiveis": 3,
+    "largura": 211,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": "dl.kpis",
+    "n": 3,
+    "por_fileira": 2,
+    "visiveis": 3,
+    "largura": 238,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 250
+   },
+   {
+    "sel": "ul.vers",
+    "n": 10,
+    "por_fileira": 5,
+    "visiveis": 10,
+    "largura": 415,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   }
+  ]
+ },
+ "transparencia-1920": {
+  "main": 1320,
+  "scrollW": 1920,
+  "fileiras": [
+   {
+    "sel": ".servicos",
+    "n": 5,
+    "por_fileira": 4,
+    "visiveis": 5,
+    "largura": 306,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 966
+   }
+  ]
+ },
+ "inicio-1366": {
+  "main": 1320,
+  "scrollW": 1366,
+  "fileiras": [
+   {
+    "sel": ".atalhos",
+    "n": 4,
+    "por_fileira": 4,
+    "visiveis": 4,
+    "largura": 308,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": "dl.kpis",
+    "n": 3,
+    "por_fileira": 3,
+    "visiveis": 3,
+    "largura": 211,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": "dl.kpis",
+    "n": 3,
+    "por_fileira": 2,
+    "visiveis": 3,
+    "largura": 238,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 250
+   },
+   {
+    "sel": "ul.vers",
+    "n": 10,
+    "por_fileira": 5,
+    "visiveis": 10,
+    "largura": 415,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   }
+  ]
+ },
+ "transparencia-1366": {
+  "main": 1320,
+  "scrollW": 1366,
+  "fileiras": [
+   {
+    "sel": ".servicos",
+    "n": 5,
+    "por_fileira": 4,
+    "visiveis": 5,
+    "largura": 306,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 966
+   }
+  ]
+ },
+ "inicio-768": {
+  "main": 768,
+  "scrollW": 768,
+  "fileiras": [
+   {
+    "sel": ".atalhos",
+    "n": 4,
+    "por_fileira": 3,
+    "visiveis": 4,
+    "largura": 231,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 489
+   },
+   {
+    "sel": "dl.kpis",
+    "n": 3,
+    "por_fileira": 3,
+    "visiveis": 3,
+    "largura": 214,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": "dl.kpis",
+    "n": 3,
+    "por_fileira": 3,
+    "visiveis": 3,
+    "largura": 216,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": "ul.vers",
+    "n": 10,
+    "por_fileira": 2,
+    "visiveis": 10,
+    "largura": 475,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   }
+  ]
+ },
+ "transparencia-768": {
+  "main": 768,
+  "scrollW": 768,
+  "fileiras": [
+   {
+    "sel": ".servicos",
+    "n": 5,
+    "por_fileira": 2,
+    "visiveis": 5,
+    "largura": 352,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 368
+   }
+  ]
+ },
+ "inicio-390": {
+  "main": 390,
+  "scrollW": 390,
+  "fileiras": [
+   {
+    "sel": ".atalhos",
+    "n": 4,
+    "por_fileira": 1,
+    "visiveis": 4,
+    "largura": 342,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": "dl.kpis",
+    "n": 3,
+    "por_fileira": 1,
+    "visiveis": 3,
+    "largura": 300,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": "dl.kpis",
+    "n": 3,
+    "por_fileira": 1,
+    "visiveis": 3,
+    "largura": 294,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   },
+   {
+    "sel": "ul.vers",
+    "n": 10,
+    "por_fileira": 1,
+    "visiveis": 10,
+    "largura": 342,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   }
+  ]
+ },
+ "transparencia-390": {
+  "main": 390,
+  "scrollW": 390,
+  "fileiras": [
+   {
+    "sel": ".servicos",
+    "n": 5,
+    "por_fileira": 1,
+    "visiveis": 5,
+    "largura": 342,
+    "setas": false,
+    "cont": null,
+    "sobra_dir": 0
+   }
+  ]
+ }
+}

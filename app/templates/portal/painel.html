@@ -1,7 +1,8 @@
 {% extends 'portal/base.html' %}
+{% from 'partials/fileira.html' import fileira_cartoes %}
 {% block titulo %}Painel de indicadores — {{ ident.nome }}{% endblock %}
 {% from 'partials/cartoes.html' import cartao %}
-{% macro kpis(lista, rotulo) %}{% if lista %}<div class="ics" role="group" aria-label="{{ rotulo }}">{% for k in lista %}{{ cartao(k, rotulo|replace(' ', '-')|lower ~ '-' ~ loop.index) }}{% endfor %}</div>{% endif %}{% endmacro %}
+{% macro kpis(lista, rotulo) %}{% if lista %}{% set fid = 'fil-' ~ rotulo|lower|replace(' ', '-') %}{% call fileira_cartoes(lista|length, rotulo, fid, classe='ics') %}{% for k in lista %}{{ cartao(k, rotulo|replace(' ', '-')|lower ~ '-' ~ loop.index) }}{% endfor %}{% endcall %}{% endif %}{% endmacro %}
 {% macro fonte(txt, quando) %}<p class="pfonte">Fonte: {{ txt }}{% if quando %} Consulta em {{ quando|br }}.{% endif %}</p>{% endmacro %}
 {% macro grafico_barras(itens, rotulo, val='v', pct='p') %}<div class="pbarras-g" role="img" aria-label="{{ rotulo }}: {% for x in itens %}{{ x.area or x.l or x.nome }} {{ x[val] }} ({{ x[pct] }}){{ '; ' if not loop.last }}{% endfor %}."><ul class="pbarras">{% for x in itens %}<li><span class="t">{{ x.area or x.l or x.nome }}</span><span class="n">{{ x[pct] }} · {{ x[val] }}</span><span class="b" aria-hidden="true"><span style="width:{{ x.w }}%"></span></span></li>{% endfor %}</ul></div>{% endmacro %}
 {% macro links(lst) %}{% if lst %}<nav class="plinks" aria-label="Indicadores desta área"><span>Série histórica e downloads:</span>{% for x in lst %}<a href="/painel/{{ x.chave }}">{{ x.nome }}</a>{% endfor %}</nav>{% endif %}{% endmacro %}
@@ -28,7 +29,7 @@
 <div class="pgrade">
 {% if f.mensal %}<section class="pcard" aria-labelledby="h-mes"><h3 id="h-mes">Receita e despesa paga, mês a mês</h3><p class="sub">{{ f.mensal.frase }}</p>
 <p class="pleg"><span><i style="background:var(--cor)"></i>Receita arrecadada</span><span><i style="background:#E8A33D"></i>Despesa paga</span></p>
-<div class="prola">{{ f.mensal.grafico }}</div>
+<div class="prola" tabindex="0" role="region" aria-label="Gráfico: receita e despesa paga, mês a mês (role para os lados)">{{ f.mensal.grafico }}</div>
 <details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Receita e despesa paga por mês, {{ f.ano }}</caption><thead><tr><th scope="col">Mês</th><th scope="col" class="num">Receita arrecadada</th><th scope="col" class="num">Despesa paga</th></tr></thead><tbody>
 {% for m in f.mensal.meses %}<tr><th scope="row">{{ ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][m.mes - 1] }}{% if m.parcial %} (em andamento){% endif %}</th><td class="num">{{ m.receita|moeda }}</td><td class="num">{{ m.despesa_paga|moeda }}</td></tr>{% endfor %}</tbody></table></div></details>
 {{ fonte('dados abertos do sistema contábil da Prefeitura (consulta mês a mês). Receita já descontado o FUNDEB.', f.mensal.coletado) }}</section>{% endif %}
@@ -62,7 +63,7 @@
 {% if s.minimos %}<section class="pcard"><h3>Mínimo exigido por lei</h3><p class="sub">A linha tracejada marca o mínimo legal. Barra além da linha: obrigação cumprida.</p>{{ minimos(s.minimos) }}
 {{ fonte('Siconfi (Tesouro Nacional), RREO, Anexo 14, declarado pela Prefeitura. O ano em andamento aparece como parcial.', s.minimos[0].coletado) }}</section>{% endif %}
 {% if t == 'edu' and s.ideb %}{% set ib = s.ideb %}<section class="pcard"><h3><a href="/painel/edu_ideb_ai">IDEB: qualidade do ensino, anos iniciais</a></h3><p class="sub">Nota de 0 a 10 que combina aprendizado (Saeb) e aprovação. Rede pública{% if ib.resp %} — {{ ib.resp }}{% endif %}, 1º ao 5º ano.</p>
-<div class="prola">{{ ib.grafico }}</div>
+<div class="prola" tabindex="0" role="region" aria-label="Gráfico do IDEB (role para os lados)">{{ ib.grafico }}</div>
 {% if ib.comp %}<p class="d">Comparação em {{ ib.per }}, mesma etapa e mesma rede: {% for c in ib.comp %}{{ c.l }} {{ c.v }}{{ '; ' if not loop.last }}{% endfor %}.</p>{% endif %}
 {% if ib.saeb %}<ul class="plista">{% for x in ib.saeb %}<li><span><a href="{{ x.href }}">Saeb {{ x.l }}</a> ({{ x.per }})</span><strong>{{ x.v }}</strong><small>escala Saeb</small></li>{% endfor %}</ul>{% endif %}
 <p class="d">“Não divulgado”: o INEP não publica o resultado quando a participação na prova fica abaixo do mínimo exigido. Losangos verdes: metas projetadas pelo INEP até 2021 (referência histórica, não são meta atual).</p>
