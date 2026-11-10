@@ -1312,3 +1312,14 @@ Próximos passos dependem das pessoas:
 - **Teste novo:** `tests/teste_anexos.py` (detecção e recusas, envio, auditoria, rascunho × publicado, tipo e nome do download, caminhos inválidos, remoção do arquivo, remoção só do próprio comunicado, sem login).
 - **Testes:** as 16 suítes (15 de antes + `teste_anexos`) deram ERROS: 0 / tudo ok no banco de TESTE; nenhum volume solto.
 - **Onde parou:** aguardando aprovação para implantar. **Tem migração** (022, banco de cada órgão): aplicar `provision atualizar` logo depois de subir o app e antes de reiniciar o worker (lição da implantação da agenda).
+
+### Implantação dos anexos nos comunicados (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 21h13 UTC.
+- **Build e testes:** as 16 suítes com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida na ordem certa** (lição da implantação anterior): `up -d app` → `provision atualizar` (aplicou a `022_orgao_anexos.sql` em bd_pm_bora e bd_cm_bora) → `up -d worker`. Worker sem nenhum erro. Disco em 75%.
+- **Conferência no domínio:**
+  - tabela `comunicado_anexos` criada nos dois órgãos (vazia);
+  - /comunicados 200; `/anexo/` inexistente 404; caminho malicioso recusado (400);
+  - portal.css v=24 servido; portais 200, console 303 (login); logs sem erro.
+- `anexos-comunicados` mesclado em `main` com a tag `anexos-comunicados`.
+- **Para o usuário:** em Painel → Comunicados → editar, usar o quadro "Arquivos anexos". Os arquivos aparecem no portal quando o comunicado é publicado.
