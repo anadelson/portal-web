@@ -70,10 +70,17 @@ certificado() {
   [ "${DRY_RUN:-}" = 1 ] || [ -s "$CERTS_DIR/live/$d/fullchain.pem" ]
 }
 
-no_ar() {  # HTTPS responde pelo nginx local com certificado válido para o domínio (o curl confere a cadeia e o nome)
-  local cod
-  cod=$($CURL -sS -o /dev/null -w '%{http_code}' --max-time 20 --resolve "$1:443:127.0.0.1" "https://$1/" 2>>"$LOG") || return 1
-  [[ "$cod" =~ ^[234][0-9][0-9]$ ]]
+no_ar() {  # HTTPS responde pelo nginx local com certificado válido para o domínio (o curl confere a cadeia e o nome).
+  # A recarga do nginx é gradual (processos antigos terminam o que atendem): tenta algumas vezes antes de dar como falha.
+  local cod i
+  for ((i = 1; i <= ${TENTATIVAS:-5}; i++)); do
+    if cod=$($CURL -sS -o /dev/null -w '%{http_code}' --max-time 20 --resolve "$1:443:127.0.0.1" "https://$1/" 2>>"$LOG") && [[ "$cod" =~ ^[234][0-9][0-9]$ ]]; then
+      return 0
+    fi
+    log "conferência do HTTPS de $1: tentativa $i sem sucesso"
+    [ "$i" -lt "${TENTATIVAS:-5}" ] && sleep "${ESPERA:-2}"
+  done
+  return 1
 }
 
 ativar() {
