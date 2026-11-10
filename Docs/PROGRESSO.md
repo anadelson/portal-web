@@ -945,3 +945,13 @@ Depois do deploy: o administrador cadastra as secretarias e os responsáveis; as
 Próximos passos dependem das pessoas:
 - **Carta de Serviços:** o administrador de cada órgão cadastra secretarias, responsáveis, designações e redatores; as secretarias fazem o inventário; a minuta do decreto vai para a Procuradoria.
 - **Pendências anteriores:** módulo de audiências (Prefeitura), endereço do acervo de legislação, chave do YouTube e canais, token da Meta (opcional) e teste com NVDA.
+
+## Ajustes da Fase 8 — portal × protótipo (branch `fase-8-ajustes`)
+### Conferência "antes" (10/11/2026, só leitura)
+- `Docs/PEDIDO-FASE8-AJUSTES.md` versionado. O `Main.dc.html` da VPS é de 09/11 às 14h26 (BRT), a versão certa.
+- Capturas e medidas do portal real em `Docs/avaliacao-fase8/conferencia/antes/`. Confirmação item a item em `Docs/avaliacao-fase8/CONFERENCIA-ANTES.md`:
+  - **Confirmados:** itens 1, 2, 5, 6, 7, 8 e 9.
+  - **Item 3:** transmissões ausentes por falta de módulo, canal e chave.
+  - **Item 4:** já está OK.
+  - **Diferenças com o pedido:** /fale-conosco não tem introdução; /acessibilidade e a página da notícia não têm base legal; não existem páginas de secretaria; o "Voltar" do protótipo é link.
+- **Parado aguardando** aprovação e as decisões D1 a D5.
