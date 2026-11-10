@@ -2,7 +2,7 @@
 {% block titulo %}{{ p.titulo }} — Conheça {{ ident.nome_curto or '' }} — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/conheca">Conheça {{ ident.nome_curto or 'a cidade' }}</a><span aria-hidden="true">›</span><span aria-current="page">{{ p.titulo }}</span></nav>
-<p class="rotulo">{{ p.categoria }}</p><h1>{{ p.titulo }}</h1>
+<p class="rotulo">{{ p.categoria }}</p><h1>{{ p.titulo }}</h1>{{ legal_topo(legal) }}
 {% if fotos %}<figure class="perfil-capa"><img src="{{ fotos[0].url }}" alt="{{ fotos[0].alt }}"><figcaption>{{ fotos[0].legenda }}{% if fotos[0].credito %} · {{ fotos[0].credito }}{% endif %}</figcaption></figure>{% endif %}
 {% if p.html %}<div class="texto texto-rico">{{ p.html|safe }}</div>{% elif p.descricao %}<div class="texto">{% for par in p.descricao.split('\n') if par.strip() %}<p>{{ par }}</p>{% endfor %}</div>{% endif %}
 {% if fotos|length > 1 %}<section aria-labelledby="h-gal" class="secao"><h2 id="h-gal">Galeria de fotos</h2>

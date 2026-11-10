@@ -3,7 +3,7 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Comissões</span></nav>
 <h1>Comissões</h1><p class="intro" style="margin-bottom:6px">Composição, pautas das reuniões e pareceres das comissões permanentes e temporárias.</p>
-<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.comissoes }}</p>
+<p class="legal legal-topo"><strong>Base legal:</strong> {{ BASE_LEGAL.comissoes }}</p>
 {% for c in comissoes %}<section class="caixa" style="margin-bottom:16px" aria-labelledby="h-c{{ c.id }}"><h2 id="h-c{{ c.id }}">{{ c.nome }}</h2><p class="sub">{{ 'Permanente' if c.tipo == 'permanente' else 'Temporária' }}{% if not c.ativa %} · encerrada{% endif %}{% if c.finalidade %} · {{ c.finalidade }}{% endif %}</p>
 <div class="duas-col" style="margin:0"><div><h3>Membros</h3>{% if c.membros %}<ul>{% for m in c.membros %}<li><a href="/vereador/{{ m.id }}">{{ m.nome }}</a> · {{ m.cargo }}</li>{% endfor %}</ul>{% else %}<p class="vazio">Composição a cadastrar.</p>{% endif %}</div>
 <div><h3>Pautas das reuniões</h3>{% if c.reunioes %}<ul>{% for r in c.reunioes %}<li><strong>{{ r.data|br }} {{ r.hora }}</strong><div style="white-space:pre-line;font-size:15px">{{ r.pauta }}</div></li>{% endfor %}</ul>{% else %}<p class="vazio">Nenhuma pauta publicada.</p>{% endif %}</div></div>

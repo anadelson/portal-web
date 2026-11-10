@@ -4,7 +4,7 @@
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">{{ titulo }}</span></nav>
 <h1>{{ titulo }}</h1>
 {% if pagina == 'privacidade' %}
-<p class="intro">Como o portal trata dados pessoais, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018).</p>
+<p class="intro">Como o portal trata dados pessoais, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018).</p>{{ legal_topo(legal) }}
 <div class="duas-col">
 <section class="caixa"><h2>O que o portal guarda</h2><ul>
 <li>Pedidos de informação e manifestações de ouvidoria: nome e e-mail de quem pediu, só para responder. Esses dados <strong>nunca</strong> aparecem no portal.</li>
@@ -23,7 +23,7 @@
 <p>{{ ident.encarregado or '[a designar]' }}{% if ident.encarregado_email %} · <a href="mailto:{{ ident.encarregado_email }}">{{ ident.encarregado_email }}</a>{% endif %}</p>
 <p>Para pedir acesso, correção ou exclusão dos seus dados, use o <a href="/e-sic">e-SIC</a> ou a <a href="/ouvidoria">Ouvidoria</a> ou escreva ao encarregado.</p></section>
 {% elif pagina == 'acessibilidade' %}
-<p class="intro">Este portal segue o Modelo de Acessibilidade em Governo Eletrônico (eMAG) e as diretrizes WCAG 2.1, nível AA.</p>
+<p class="intro">Este portal segue o Modelo de Acessibilidade em Governo Eletrônico (eMAG) e as diretrizes WCAG 2.1, nível AA.</p>{{ legal_topo(legal) }}
 <div class="duas-col">
 <section class="caixa"><h2>Atalhos de teclado</h2><ul>
 <li><kbd>Alt</kbd> + <kbd>1</kbd>: ir para o conteúdo</li><li><kbd>Alt</kbd> + <kbd>2</kbd>: ir para o menu</li><li><kbd>Alt</kbd> + <kbd>3</kbd>: ir para a busca</li><li><kbd>Alt</kbd> + <kbd>4</kbd>: ir para o rodapé</li></ul>
@@ -40,6 +40,7 @@
 <p class="legal">Referência: <a href="https://emag.governoeletronico.gov.br/">eMAG — Modelo de Acessibilidade em Governo Eletrônico</a>, versão 3.1; Lei 13.146/2015 (Estatuto da Pessoa com Deficiência), art. 63.</p></section>
 <section class="caixa"><h2>Encontrou uma barreira?</h2><p>Conte para nós pela <a href="/ouvidoria">Ouvidoria</a>, informando a página e o que aconteceu.</p></section>
 {% else %}
+<p class="intro">Todas as páginas do portal, organizadas por assunto.</p>
 <div class="duas-col">
 <section class="caixa"><h2>Portal</h2><ul>
 <li><a href="/">Início</a></li>

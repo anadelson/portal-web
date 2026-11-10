@@ -184,7 +184,8 @@ def secretarias(request: Request):
     for x in secs:
         x['designacoes'] = db.todos(b, 'SELECT d.*, u.nome FROM designacoes_carta d JOIN usuarios u ON u.id=d.usuario_id WHERE d.secretaria_id=%s ORDER BY d.id DESC', (x['id'],))
         x['membros'] = db.todos(b, "SELECT id, nome, perfil FROM usuarios WHERE secretaria_id=%s ORDER BY nome", (x['id'],))
-    return T('carta_secretarias', request, u, secs=secs, usuarios=db.todos(b, "SELECT id, nome, perfil FROM usuarios WHERE situacao='ativo' ORDER BY nome"),
+    from . import fase8 as F8
+    return T('carta_secretarias', request, u, secs=secs, icones=F8.ICONES_EDITORIA, usuarios=db.todos(b, "SELECT id, nome, perfil FROM usuarios WHERE situacao='ativo' ORDER BY nome"),
              unidades=db.todos(b, 'SELECT codigo, unidade FROM areas_unidades ORDER BY codigo') if db.um(b, "SELECT 1 FROM information_schema.tables WHERE table_name='areas_unidades'") else [])
 
 @r.post('/carta-secretarias')
@@ -197,18 +198,46 @@ async def secretarias_post(request: Request):
             return ir('/admin/carta-secretarias', 'Informe o nome oficial da secretaria.', request)
         resp = int(f['responsavel_id']) if str(f.get('responsavel_id', '')).isdigit() else None
         sid = int(f['id']) if str(f.get('id', '')).isdigit() else None
-        vals = (nome, f.get('sigla', '').strip()[:20], resp, f.get('unidades', '').strip()[:300])
+        from . import fase8 as F8
+        icone = f.get('icone') if f.get('icone') in F8.ICONES_EDITORIA else 'predio'
+        vals = (nome, f.get('sigla', '').strip()[:20], resp, f.get('unidades', '').strip()[:300], f.get('resumo', '').strip()[:400], icone)
         try:
             if sid:
-                db.exe(b, 'UPDATE secretarias SET nome=%s, sigla=%s, responsavel_id=%s, unidades=%s WHERE id=%s', vals + (sid,))
+                db.exe(b, 'UPDATE secretarias SET nome=%s, sigla=%s, responsavel_id=%s, unidades=%s, resumo=%s, icone=%s WHERE id=%s', vals + (sid,))
             else:
-                sid = db.exe(b, 'INSERT INTO secretarias (nome, sigla, responsavel_id, unidades) VALUES (%s,%s,%s,%s) RETURNING id', vals)['id']
+                sid = db.exe(b, 'INSERT INTO secretarias (nome, sigla, responsavel_id, unidades, resumo, icone) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id', vals)['id']
         except Exception:
             return ir('/admin/carta-secretarias', 'Já existe uma secretaria com esse nome.', request)
         if resp:  # o responsável passa a ser validador desta secretaria
             db.exe(b, "UPDATE usuarios SET secretaria_id=%s, perfil=CASE WHEN perfil IN ('admin','publicador') THEN perfil ELSE 'validador' END WHERE id=%s", (sid, resp))
         auditar(request, f'Carta: secretaria “{nome}” salva' + (' com responsável' if resp else ''))
         return ir('/admin/carta-secretarias', 'Secretaria salva.', request)
+    if acao == 'organograma':  # PDF ou imagem; o botão "Organograma" do /governo só aparece com o arquivo
+        import secrets as _s
+        from pathlib import Path
+        from .imagens import validar_upload
+        ident = db.cfg(b, 'identidade', {}) or {}
+        if f.get('remover') == '1':
+            ident.pop('organograma', None); db.set_cfg(b, 'identidade', ident); auditar(request, 'Governo: organograma removido')
+            return ir('/admin/carta-secretarias#organograma', 'Organograma removido.', request)
+        arq = f.get('arquivo')
+        if arq is None or not getattr(arq, 'filename', ''):
+            return ir('/admin/carta-secretarias#organograma', 'Escolha o arquivo do organograma (PDF, PNG, JPG ou WEBP).', request)
+        dados = await arq.read(10 * 1024 * 1024 + 1)
+        if dados[:5] == b'%PDF-' and len(dados) <= 10 * 1024 * 1024:
+            ext = 'pdf'
+        else:
+            try:
+                ext = validar_upload(dados)
+            except ValueError as e:
+                return ir('/admin/carta-secretarias#organograma', f'Organograma: {e} (ou envie um PDF de até 10 MB).', request)
+        o = request.state.orgao
+        pasta = Path(config.DADOS_DIR) / o['slug'] / 'midia'; pasta.mkdir(parents=True, exist_ok=True)
+        nome = f'{_s.token_hex(16)}.{ext}'
+        (pasta / nome).write_bytes(dados)
+        ident['organograma'] = {'url': f'/midia/{nome}', 'tipo': ext}
+        db.set_cfg(b, 'identidade', ident); auditar(request, 'Governo: organograma publicado')
+        return ir('/admin/carta-secretarias#organograma', 'Organograma publicado: o botão aparece na página Governo.', request)
     sec = db.um(b, 'SELECT * FROM secretarias WHERE id=%s', (int(f.get('secretaria_id') or 0),))
     if not sec:
         raise HTTPException(400)

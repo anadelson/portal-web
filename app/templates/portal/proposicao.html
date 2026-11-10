@@ -3,7 +3,7 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/proposicoes">Projetos e proposições</a><span aria-hidden="true">›</span><span aria-current="page">{{ rotulo }}</span></nav>
 <h1>{{ rotulo }}</h1>
-<p class="intro" style="margin-bottom:10px">{{ p.ementa }}</p>
+<p class="intro" style="margin-bottom:10px">{{ p.ementa }}</p>{{ legal_topo(legal) }}
 <div class="tags" style="margin-bottom:16px"><span class="tag forte">{{ p.situacao }}</span>{% if p.apresentada %}<span class="tag">Apresentada em {{ p.apresentada|br }}</span>{% endif %}</div>
 <dl class="campos" style="margin-bottom:20px">
 <div><dt>Autoria</dt><dd>{% for a in autores %}{% if a.vereador_id %}<a href="/vereador/{{ a.vereador_id }}">{{ a.nome }}</a>{% else %}{{ a.nome }}{% endif %}{% if not loop.last %}, {% endif %}{% else %}{{ p.autor }}{% endfor %}</dd></div>

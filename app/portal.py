@@ -86,6 +86,14 @@ def home(request: Request):
     dados['servicos_top'] = CT.mais_acessados(b, 6) if ctx['mods'].get('carta') else []
     dados['noticias8'] = F8.noticias_home(b) if ctx['mods'].get('noticias') else None
     dados['perfis'] = F8.perfis(b, destaque=True)[:3]
+    eds = F8.editorias(b)
+    nome_org = 'Câmara' if o['tipo'] == 'legislativo' else 'Prefeitura'
+    if dados.get('noticias8'):
+        n8 = dados['noticias8']
+        for c in [n8['destaque']] + n8['secundarias'] + n8['lista']:
+            c['ed'] = F8.editoria_de(c, eds, nome_org, ctx['tokens']['cor'])
+    vis = [x['chave'] for x in blocos]
+    dados['sede_junto'] = bool(dados.get('noticias8')) and 'noticias' in vis and 'sede' in vis
     dados['redes_feed'] = (db.cfg(b, 'redes_feed', {}) or {}).get('itens', [])
     from . import municipio
     try:
@@ -112,7 +120,25 @@ def home(request: Request):
 @r.get('/noticias')
 def noticias(request: Request):
     ctx = ctx_orgao(request); precisa(ctx, 'noticias')
-    return templates.TemplateResponse(request, 'portal/lista.html', dict(ctx, titulo='Notícias e avisos', itens=conteudos_publicos(ctx['orgao']['banco'], None), legal='noticias'))
+    b = ctx['orgao']['banco']; o = ctx['orgao']
+    from . import fase8 as F8
+    sel = request.query_params.get('secretaria', '')
+    agora = config.agora()
+    def ja_publicada(c):
+        t = c.get('publicado_em')
+        if not t:
+            return True
+        return (t.astimezone().replace(tzinfo=None) if agora.tzinfo is None else t) <= agora
+    itens = [c for c in conteudos_publicos(b, 'Notícias', 200) if c['tipo'] == 'Notícia' and ja_publicada(c)]
+    if ctx['defeso']:
+        itens = []  # notícias são publicidade institucional: fora do ar no defeso (como na página inicial)
+    eds = F8.editorias(b)
+    nome_org = 'Câmara' if o['tipo'] == 'legislativo' else 'Prefeitura'
+    for c in itens:
+        c['ed'] = F8.editoria_de(c, eds, nome_org, ctx['tokens']['cor'])
+    if sel.isdigit():
+        itens = [c for c in itens if c.get('secretaria_id') == int(sel)]
+    return templates.TemplateResponse(request, 'portal/noticias.html', dict(ctx, itens=itens, editorias=list(eds.values()), sel=sel, quando=F8.quando, legal='noticias'))
 
 # /servicos (Carta de Serviços) fica em portal_carta.py (Fase 10)
 
@@ -127,7 +153,12 @@ def conteudo(request: Request, cid: int):
     if c['secao'] == 'Serviços':
         from . import fase8
         fase8.contar_acesso(ctx['orgao']['banco'], c['id'])
-    return templates.TemplateResponse(request, 'portal/conteudo.html', dict(ctx, c=c))
+    from . import fase8 as F8
+    o = ctx['orgao']
+    c['ed'] = F8.editoria_de(c, F8.editorias(o['banco']), 'Câmara' if o['tipo'] == 'legislativo' else 'Prefeitura', ctx['tokens']['cor'])
+    noticia = c['tipo'] == 'Notícia'
+    pai = ('Notícias', '/noticias') if noticia else {'Serviços': ('Carta de Serviços', '/servicos'), 'Transparência': ('Transparência', '/transparencia'), 'Governo': ('Governo', '/governo')}.get(c['secao'])
+    return templates.TemplateResponse(request, 'portal/conteudo.html', dict(ctx, c=c, pai=pai, noticia=noticia, quando=F8.quando, legal='noticias' if noticia else None))
 
 # ---------- Câmara ----------
 def _norm(s):
@@ -243,8 +274,8 @@ def diario_verificar(request: Request, codigo: str = ''):
     return templates.TemplateResponse(request, 'portal/diario_verificar.html', dict(ctx, e=e, codigo=codigo, sigs=sigs, etapas=A.ETAPAS, legal='diario'))
 
 # ---------- Páginas institucionais e mídia ----------
-MIDIA_OK = re.compile(r'^([0-9a-f]{32}|favicon-[0-9a-f]{16}(-\d{2,3})?)\.(png|jpg|webp|svg)$')
-TIPOS = {'png': 'image/png', 'jpg': 'image/jpeg', 'webp': 'image/webp', 'svg': 'image/svg+xml'}
+MIDIA_OK = re.compile(r'^([0-9a-f]{32}|favicon-[0-9a-f]{16}(-\d{2,3})?)\.(png|jpg|webp|svg|pdf)$')
+TIPOS = {'png': 'image/png', 'jpg': 'image/jpeg', 'webp': 'image/webp', 'svg': 'image/svg+xml', 'pdf': 'application/pdf'}
 
 @r.get('/midia/{arquivo}')
 def midia(request: Request, arquivo: str):
@@ -265,7 +296,7 @@ def privacidade(request: Request):
 
 @r.get('/acessibilidade')
 def acessibilidade(request: Request):
-    return templates.TemplateResponse(request, 'portal/pagina.html', dict(ctx_orgao(request), pagina='acessibilidade', titulo='Acessibilidade'))
+    return templates.TemplateResponse(request, 'portal/pagina.html', dict(ctx_orgao(request), pagina='acessibilidade', titulo='Acessibilidade', legal='acessibilidade'))
 
 @r.get('/mapa-do-site')
 def mapa(request: Request):
@@ -279,7 +310,7 @@ def acesso(request: Request, protocolo: str = ''):
         return RedirectResponse('/fale-conosco', status_code=301)
     ctx = ctx_orgao(request)
     p = db.um(ctx['orgao']['banco'], 'SELECT protocolo, tipo, categoria, assunto, recebido, situacao, resposta, respondido FROM esic WHERE protocolo=%s', (protocolo.strip().upper(),)) if protocolo else None
-    return templates.TemplateResponse(request, 'portal/acesso.html', dict(ctx, consulta=p, protocolo=protocolo, legal='acesso'))
+    return templates.TemplateResponse(request, 'portal/acesso.html', dict(ctx, consulta=p, protocolo=protocolo, legal='acesso', titulo_pag='Acompanhar protocolo', intro_pag='Consulte a situação do seu pedido de informação ou manifestação pelo número do protocolo.'))
 
 @r.post('/acesso')
 async def acesso_enviar(request: Request):

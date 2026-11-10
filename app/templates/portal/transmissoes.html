@@ -4,7 +4,7 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Transmissões</span></nav>
 <h1>Transmissões</h1><p class="intro" style="margin-bottom:6px">{{ 'Sessões e audiências' if leg else 'Audiências públicas' }} ao vivo e gravadas{% if conf.canal_url %}. Canal oficial: <a href="{{ conf.canal_url }}">{{ conf.canal_url }}</a>{% endif %}.</p>
-<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.transmissoes }}</p>
+<p class="legal legal-topo"><strong>Base legal:</strong> {{ BASE_LEGAL.transmissoes }}</p>
 {% if sel %}<section class="caixa" style="margin-bottom:20px" aria-labelledby="h-player">{% if sel.ao_vivo %}<span class="chip erro">● AO VIVO</span>{% endif %}<h2 id="h-player" style="margin-top:6px">{{ sel.titulo }}</h2>
 <p class="sub">{{ sel.tipo }}{% if sel.sessao %} · {{ sel.sessao }}{% endif %}{% if sel.legendas %} · com legendas{% endif %}{% if sel.libras %} · com janela de Libras{% endif %}{% if not sel.legendas and not sel.libras %} · sem legendas ou Libras informadas{% endif %}</p>
 {{ player(sel) }}

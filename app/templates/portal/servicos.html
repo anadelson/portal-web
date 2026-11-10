@@ -2,7 +2,7 @@
 {% block titulo %}Carta de Serviços — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Carta de Serviços</span></nav>
-<h1>Carta de Serviços</h1><p class="intro">Encontre o serviço e veja quem pode pedir, o que levar, quanto custa, o prazo e onde ser atendido.</p>
+<h1>Carta de Serviços</h1><p class="intro">Encontre o serviço e veja quem pode pedir, o que levar, quanto custa, o prazo e onde ser atendido.</p>{{ legal_topo(legal) }}
 <form class="carta-busca" role="search" action="/servicos"><label class="sr" for="q-serv">O que você precisa?</label><input id="q-serv" name="q" value="{{ f.q }}" placeholder="Ex.: 2ª via, matrícula, certidão"><button class="btn">Buscar</button></form>
 <nav class="carta-pub" aria-label="Público">{% for k, n in publicos.items() %}<a href="/servicos?publico={{ k }}"{% if f.publico == k %} aria-current="page"{% endif %}>{{ 'Para você' if k == 'cidadao' else 'Para ' ~ n|lower ~ ('s' if k in ('empresa', 'servidor') else '') if k != 'orgaos' else 'Para outros órgãos' }}</a>{% endfor %}</nav>
 {% if todos %}<form class="carta-filtros" action="/servicos"><input type="hidden" name="q" value="{{ f.q }}">

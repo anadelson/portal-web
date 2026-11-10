@@ -4,7 +4,7 @@
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/painel">Painel de indicadores</a><span aria-hidden="true">›</span><a href="/painel?tema={{ i.tema }}">{{ i.tema_nome }}</a><span aria-hidden="true">›</span><span aria-current="page">{{ i.nome }}</span></nav>
 <h1>{{ i.nome }}</h1>
 <p class="intro" style="margin-bottom:6px">{{ i.descricao }}</p>
-<p class="legal"><strong>Base legal:</strong> {{ i.base_legal or legal_txt }}{% if i.meta_base_legal %} Meta: {{ i.meta_base_legal }}{% endif %}</p>
+<p class="legal legal-topo"><strong>Base legal:</strong> {{ i.base_legal or legal_txt }}{% if i.meta_base_legal %} Meta: {{ i.meta_base_legal }}{% endif %}</p>
 
 <div class="ind-topo">
 <div class="ind-cartao grande">

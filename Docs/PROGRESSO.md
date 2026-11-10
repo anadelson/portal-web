@@ -955,3 +955,17 @@ Próximos passos dependem das pessoas:
   - **Item 4:** já está OK.
   - **Diferenças com o pedido:** /fale-conosco não tem introdução; /acessibilidade e a página da notícia não têm base legal; não existem páginas de secretaria; o "Voltar" do protótipo é link.
 - **Parado aguardando** aprovação e as decisões D1 a D5.
+
+### INCIDENTE — disco cheio e portal fora do ar (10/11/2026)
+- **O que aconteceu:**
+  - O disco da VPS (48 GB) encheu (0 MB livres). O contêiner do app do portal parou, e o portal respondeu **502** nos três domínios.
+  - Dois contêineres do sistema **hotspot** (`hotspot-backend` e `hotspot-backend-casemaster`) também pararam, às 10h11 UTC, com código 127.
+- **Causa (minha):** cada execução das suítes de teste e das prévias criava um PostgreSQL descartável, removido com `docker rm -f`, que **não apaga o volume anônimo**. Acumularam **199 volumes de ~74 MB (~14 GB)** entre 07 e 10/11, mais as imagens antigas dos builds e o cache de build.
+- **Correção, com aprovação do usuário a cada passo:**
+  1. Limpeza segura: `docker builder prune -f`, `docker image prune -f` e remoção dos contêineres de teste que sobraram.
+  2. Remoção **só** dos 199 volumes anônimos de teste criados entre 07 e 10/11. Os 9 volumes nomeados de outros sistemas (`pmuinix-central_*`, `wg-config`) foram preservados.
+  3. Disco de 99% para 69% (15 GB livres).
+  4. O app não voltava com `up -d` ("unable to find user portal": a camada de escrita do contêiner se corrompeu com o disco cheio). Foi recriado com `docker compose up -d --force-recreate app`, a mesma imagem, sem build. Depois disso, os três domínios responderam 200.
+  5. Hotspot: os dois serviços foram recriados com `docker compose up -d --no-build --no-deps --force-recreate` e ficaram saudáveis.
+  6. Banco e worker do portal não registraram erro de escrita.
+- **Prevenção:** os scripts de teste e prévia passaram a usar `docker rm -fv` (apaga o volume junto). Antes de cada rodada de testes, conferir `df -h`.

@@ -117,7 +117,8 @@ def _acesso(request, tipo):
         sc = CT.publicados(ctx['orgao']['banco']) if tipo == 'manifestacao' and ctx['mods'].get('carta') else []
     except Exception:
         sc = []
-    return templates.TemplateResponse(request, 'portal/acesso.html', dict(ctx, consulta=None, protocolo='', legal='acesso', tipo_fixo=tipo, servicos_carta=sc, servico_sel=request.query_params.get('servico', '')))
+    return templates.TemplateResponse(request, 'portal/acesso.html', dict(ctx, consulta=None, protocolo='', legal='acesso', tipo_fixo=tipo, servicos_carta=sc, titulo_pag='Ouvidoria' if tipo == 'manifestacao' else 'Acesso à informação (e-SIC)',
+        intro_pag='Reclamações, sugestões, elogios, denúncias e solicitações sobre os serviços públicos.' if tipo == 'manifestacao' else 'Peça qualquer informação pública. Você não precisa explicar o motivo do pedido.', servico_sel=request.query_params.get('servico', '')))
 
 @r.get('/ouvidoria')
 def ouvidoria(request: Request):
@@ -130,10 +131,16 @@ def esic(request: Request):
 # ---------- governo e links úteis (rodapé) ----------
 @r.get('/governo')
 def governo(request: Request):
-    from .portal import conteudos_publicos
-    ctx = ctx_orgao(request)
-    return templates.TemplateResponse(request, 'portal/lista.html', dict(ctx, titulo='Governo', itens=conteudos_publicos(ctx['orgao']['banco'], 'Governo', 100), legal='acesso',
-        vazio='A estrutura do governo (secretarias, responsáveis e competências) ainda não foi publicada.'))
+    ctx = ctx_orgao(request); b = ctx['orgao']['banco']
+    eds = F.editorias(b)
+    secs = []
+    try:
+        rows = db.todos(b, "SELECT s.*, (SELECT count(*) FROM servicos v WHERE v.secretaria_id=s.id AND v.publicado_dados IS NOT NULL AND v.situacao<>'arquivado') servicos FROM secretarias s WHERE ativa ORDER BY nome")
+    except Exception:
+        rows = []
+    for x in rows:
+        secs.append(dict(x, ed=eds.get(x['id']) or {'cor': ctx['tokens']['cor'], 'icone': 'predio'}))
+    return templates.TemplateResponse(request, 'portal/governo.html', dict(ctx, secretarias=secs, legal='acesso'))
 
 @r.get('/links-uteis')
 def links_uteis(request: Request):
