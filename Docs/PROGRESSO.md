@@ -992,3 +992,18 @@ Próximos passos dependem das pessoas:
   - As 10 suítes anteriores passam. Ajustes nos testes antigos: o conteúdo 1 virou comunicado (D1), e a estrutura do bloco de notícias mudou.
 - **Conferência:** `Docs/avaliacao-fase8/conferencia/index.html` (portal × reconstrução do protótipo, 10 páginas, 1280/390 px) e `Docs/avaliacao-fase8/CONFERENCIA.md` (tabela item | estava | ficou | ok?). axe sem violações em 12 páginas; sem rolagem horizontal.
 - **Onde parou:** aguardando aprovação do deploy: snapshot, backup, build, 11 suítes, `up -d`, `provision atualizar` (migração 020 e D1), conferência no domínio, merge e tag `fase-8-ajustes`.
+
+### Implantação dos ajustes da Fase 8 (10/11/2026, aprovada: "Aprovo os 6 passos" + "Snapshot ok")
+- Snapshot confirmado pelo usuário. Disco antes: 69%. Backup às 11h02 UTC.
+- **Build e testes:** as **11 suítes** com a imagem nova deram ERROS: 0 / tudo ok, sem nenhum volume solto.
+- **Subida:** `up -d` de app e worker, app saudável. `provision atualizar` aplicou a migração 020; o D1 transformou 2 conteúdos-exemplo em comunicados-exemplo.
+- **Limpeza:** imagem antiga removida (`docker image prune -f`). Disco depois: 70%.
+- **Conferência no domínio** (`Docs/avaliacao-fase8/conferencia/implantado/`):
+  - axe sem violações; sem violação de CSP; sem rolagem horizontal; sem destino repetido;
+  - todas as páginas internas com trilha e com a base legal logo abaixo da introdução;
+  - página inicial com o Conheça em cartão e mosaico (fotos reais) e a fileira Notícias + Paço;
+  - /noticias só com notícias; comunicados-exemplo em /comunicados e na página inicial;
+  - Ouvidoria/e-SIC com pílulas e "Outros canais";
+  - /governo mostra "ainda não foi publicada" até as secretarias serem cadastradas;
+  - logs sem erro.
+- `fase-8-ajustes` mesclada em `main` com a tag `fase-8-ajustes`.
