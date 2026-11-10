@@ -1,0 +1,213 @@
+{
+ "medidas": [
+  {
+   "largura": 1280,
+   "pagina": "inicio",
+   "scrollW": 1280,
+   "altura": 4495
+  },
+  {
+   "largura": 1280,
+   "pagina": "painel",
+   "scrollW": 1280,
+   "altura": 8078
+  },
+  {
+   "largura": 1280,
+   "pagina": "interna-receitas",
+   "scrollW": 1280,
+   "altura": 4833
+  },
+  {
+   "largura": 1280,
+   "pagina": "interna-diario",
+   "scrollW": 1280,
+   "altura": 1653
+  },
+  {
+   "largura": 1280,
+   "pagina": "legislacao",
+   "scrollW": 1280,
+   "altura": 1613
+  },
+  {
+   "largura": 1280,
+   "pagina": "comunicados",
+   "scrollW": 1280,
+   "altura": 1697
+  },
+  {
+   "largura": 1280,
+   "pagina": "conheca",
+   "scrollW": 1280,
+   "altura": 1763
+  },
+  {
+   "largura": 1280,
+   "pagina": "fale-conosco",
+   "scrollW": 1280,
+   "altura": 2004
+  },
+  {
+   "largura": 1280,
+   "pagina": "acessibilidade",
+   "scrollW": 1280,
+   "altura": 2105
+  },
+  {
+   "largura": 1280,
+   "pagina": "camara-inicio",
+   "scrollW": 1280,
+   "altura": 4331
+  },
+  {
+   "largura": 1280,
+   "pagina": "camara-legislacao",
+   "scrollW": 1280,
+   "altura": 1615
+  },
+  {
+   "largura": 1280,
+   "pagina": "camara-transmissoes",
+   "scrollW": 1280,
+   "altura": 1545
+  },
+  {
+   "largura": 390,
+   "pagina": "inicio",
+   "scrollW": 390,
+   "altura": 9041
+  },
+  {
+   "largura": 390,
+   "pagina": "painel",
+   "scrollW": 390,
+   "altura": 17065
+  },
+  {
+   "largura": 390,
+   "pagina": "interna-receitas",
+   "scrollW": 390,
+   "altura": 10031
+  },
+  {
+   "largura": 390,
+   "pagina": "interna-diario",
+   "scrollW": 390,
+   "altura": 2834
+  },
+  {
+   "largura": 390,
+   "pagina": "legislacao",
+   "scrollW": 390,
+   "altura": 3077
+  },
+  {
+   "largura": 390,
+   "pagina": "comunicados",
+   "scrollW": 390,
+   "altura": 3054
+  },
+  {
+   "largura": 390,
+   "pagina": "conheca",
+   "scrollW": 390,
+   "altura": 3596
+  },
+  {
+   "largura": 390,
+   "pagina": "fale-conosco",
+   "scrollW": 390,
+   "altura": 3476
+  },
+  {
+   "largura": 390,
+   "pagina": "acessibilidade",
+   "scrollW": 390,
+   "altura": 4128
+  },
+  {
+   "largura": 390,
+   "pagina": "camara-inicio",
+   "scrollW": 390,
+   "altura": 11409
+  },
+  {
+   "largura": 390,
+   "pagina": "camara-legislacao",
+   "scrollW": 390,
+   "altura": 3104
+  },
+  {
+   "largura": 390,
+   "pagina": "camara-transmissoes",
+   "scrollW": 390,
+   "altura": 2795
+  }
+ ],
+ "teclado": {
+  "info": {
+   "botoes": 17,
+   "abre_enter": true,
+   "esc_fecha": true,
+   "clique_fora_fecha": true
+  },
+  "menu_celular": {
+   "botao_visivel": true,
+   "painel_aberto": true,
+   "foco_no_painel": true,
+   "foco_preso": true,
+   "esc_fecha": true,
+   "foco_volta": true
+  },
+  "info_celular_inferior": true
+ },
+ "csp": [],
+ "vlibras": {
+  "objeto": "object",
+  "botao": true,
+  "plugin": true,
+  "csp": [],
+  "csp_apos_abrir": []
+ },
+ "axe": {
+  "inicio": [],
+  "painel": [],
+  "interna-receitas": [],
+  "interna-diario": [],
+  "legislacao": [],
+  "comunicados": [],
+  "conheca": [],
+  "fale-conosco": [],
+  "acessibilidade": [],
+  "camara-inicio": [],
+  "camara-legislacao": [],
+  "camara-transmissoes": []
+ },
+ "alturas": [
+  {
+   "pagina": "inicio",
+   "linhas_iguais": true,
+   "grupos": 1
+  },
+  {
+   "pagina": "painel",
+   "linhas_iguais": true,
+   "grupos": 4
+  }
+ ],
+ "duplicados": {
+  "inicio": [],
+  "painel": [],
+  "interna-receitas": [],
+  "interna-diario": [],
+  "legislacao": [],
+  "comunicados": [],
+  "conheca": [],
+  "fale-conosco": [],
+  "acessibilidade": [],
+  "camara-inicio": [],
+  "camara-legislacao": [],
+  "camara-transmissoes": []
+ }
+}

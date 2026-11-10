@@ -1025,3 +1025,14 @@ Próximos passos dependem das pessoas:
   - Depois: conteúdo de 1320 px em 1920 e 1366, margem de 24 px e sem rolagem horizontal.
 - **Testes:** as 11 suítes deram ERROS: 0 / tudo ok; `teste_fase9` agora testa a largura (padrão, 1440 aplicada, valor inválido volta a 1320).
 - **Onde parou:** aguardando aprovação para implantar.
+
+### Implantação da largura do portal (10/11/2026, aprovada: "Aprovo os 6 passos" + "Snapshot ok")
+- Snapshot confirmado pelo usuário. Backup às 11h28 UTC.
+- **Build e testes:** as **11 suítes** com a imagem nova deram ERROS: 0 / tudo ok, sem volume solto.
+- **Subida:** `up -d` de app e worker, app saudável. Imagem antiga removida. Disco em 70%. Sem migração de banco.
+- **Conferência no domínio** (`Docs/avaliacao-largura/implantado/`):
+  - conteúdo de 1320 px em 1920 e 1366; margem de 24 px; sem rolagem horizontal;
+  - axe sem violações; sem violação de CSP; sem destino repetido;
+  - `/painel` com as barras do cabeçalho preenchidas (9 itens na institucional);
+  - Câmara e console respondem 200; logs sem erro.
+- `largura-portal` mesclado em `main` com a tag `largura-portal`.
