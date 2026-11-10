@@ -1415,3 +1415,20 @@ Próximos passos dependem das pessoas:
   1. `up -d app` → `provision atualizar` → `up -d worker`;
   2. copiar as unidades para `/etc/systemd/system`, `daemon-reload`, `enable --now portal-ativador.timer`;
   3. com o DNS de teste no ar: `DRY_RUN=1 ativador.sh --teste teste-ativacao.conectatech.tech` e depois o teste real.
+
+### Implantação da etapa 2 (10/11/2026, aprovada: "Aprovo a implantação" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 23h45 UTC.
+- **Build e testes:** as 18 suítes com a imagem nova deram ERROS: 0 / tudo ok; `teste_ativador.sh` tudo ok; nenhum volume solto.
+- **Subida:** `up -d app` → `provision atualizar` (aplicou a `023_plataforma_ativacoes.sql`) → `up -d worker`. Worker sem erros.
+- **Instalação no sistema** (comandos mostrados antes):
+  - `install` das unidades em `/etc/systemd/system`;
+  - `systemctl daemon-reload`;
+  - `systemctl enable --now portal-ativador.timer`.
+- **Conferência:**
+  - timer ativo, a cada minuto;
+  - primeira execução com sucesso: só criou a marca de renovação em `/var/lib/portal-ativador`; **nenhum arquivo do nginx criado nem recarga** (fila vazia);
+  - portais do piloto e sites do hotspot respondendo normalmente; logs sem erro.
+- **Pendente:** teste real de certificado com `teste-ativacao.conectatech.tech`. Em 10/11 às 23h55 UTC o DNS ainda não resolvia. Quando resolver:
+  1. `DRY_RUN=1 deploy/ativador.sh --teste teste-ativacao.conectatech.tech` (ensaio);
+  2. o teste real (publica, confere o HTTPS e retira).
+- `ativacao-dominio` mesclado em `main` com a tag `ativacao-dominio`.
