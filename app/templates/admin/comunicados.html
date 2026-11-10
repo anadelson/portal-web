@@ -10,14 +10,28 @@
 <div class="grade2"><label>Data e hora da publicação (vazio = ao publicar)<input type="datetime-local" name="publicado_em" value="{{ c.publicado_em.astimezone().strftime('%Y-%m-%dT%H:%M') if c and c.publicado_em else '' }}"></label>
 <label>Válido até (opcional)<input type="date" name="valido_ate" value="{{ c.valido_ate or '' if c else '' }}"></label></div>
 {{ acoes('Salvar', '/admin/comunicados') }}</form></section>
+<section class="cx form-tela" id="anexos" aria-labelledby="h-anexos"><h2 id="h-anexos">Arquivos anexos{% if c %} ({{ anexos|length }}){% endif %}</h2>
+{% if not c %}<p class="vazio-tela">Salve o comunicado primeiro; depois desta tela você anexa o edital, a planilha, as imagens e os demais arquivos.</p>
+{% else %}
+<p class="legal">Aceita {{ aceitos }}, até 20 MB cada, no máximo {{ max_anexos }} por comunicado. O tipo é conferido pelo conteúdo do arquivo; documento com macro e formatos antigos (.doc, .xls) não são aceitos. Não anexe documento com CPF completo ou outros dados pessoais (LGPD).</p>
+{% if anexos %}<div class="tabela"><table><caption class="sr">Arquivos anexos</caption><thead><tr><th scope="col">Arquivo</th><th scope="col">Tipo</th><th scope="col">Tamanho</th><th scope="col"><span class="sr">Ações</span></th></tr></thead><tbody>
+{% for a in anexos %}<tr><td>{% if a.imagem %}<img src="/anexo/{{ a.arquivo }}" alt="" width="64" height="48" style="object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px">{% endif %}<a href="/anexo/{{ a.arquivo }}" target="_blank" rel="noopener">{{ a.titulo }}</a><br><small>{{ a.nome_original }} · enviado por {{ a.enviado_por }} em {{ a.criado_em|br }}</small></td><td>{{ a.rotulo }}</td><td>{{ a.tamanho }}</td>
+<td class="acoes-linha"><form class="inline" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="anexo_remover"><input type="hidden" name="id" value="{{ c.id }}"><input type="hidden" name="anexo_id" value="{{ a.id }}"><button class="btn perigo" aria-label="Remover o anexo {{ a.titulo }}">Remover</button></form></td></tr>{% endfor %}
+</tbody></table></div>{% endif %}
+{% if anexos|length < max_anexos %}<form class="campos" method="post" action="/admin/comunicados" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="anexo"><input type="hidden" name="id" value="{{ c.id }}">
+<h3>Anexar arquivo</h3>
+<div class="grade2"><label>Arquivo<input type="file" name="arquivo" required accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx,.odt,.ods,.csv,application/pdf,image/png,image/jpeg,image/webp"></label>
+<label>O que é este arquivo (aparece no link)<input name="titulo_anexo" required minlength="3" maxlength="200" placeholder="Ex.: Edital completo; Anexo I — Planilha de preços"></label></div>
+<div class="acoes-form"><button class="btn">Enviar anexo</button></div></form>{% endif %}
+{% endif %}</section>
 {% else %}
 {{ cab('Avisos, convocações, convites, notas oficiais e editais de chamamento. Notícias ficam em “Notícias e páginas”. Com validade, o comunicado sai da página inicial depois da data.', '/admin/comunicados?novo=1', 'Novo comunicado') }}
 {{ abas_tela('Comunicados', [('/admin/comunicados', 'Comunicados', aba != 'config'), ('/admin/comunicados?aba=config', 'Tipos de comunicado', aba == 'config')]) }}
 {% if aba == 'config' %}
 <section class="cx form-tela"><h2>Tipos de comunicado</h2><form class="campos" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="tipos"><label>Tipos, separados por vírgula (notícia não é aceita)<input name="tipos" value="{{ tipos|join(', ') }}"></label>{{ acoes('Salvar tipos') }}</form></section>
 {% elif itens %}
-<div class="tabela"><table><caption class="sr">Comunicados</caption><thead><tr><th scope="col">Tipo</th><th scope="col">Título</th><th scope="col">Publicação</th><th scope="col">Situação</th><th scope="col"><span class="sr">Ações</span></th></tr></thead><tbody>
-{% for x in itens %}<tr><td>{{ x.tipo }}</td><td><a href="/admin/comunicados?id={{ x.id }}">{{ x.titulo }}</a>{% if x.valido_ate %}<br><small>válido até {{ x.valido_ate|br }}</small>{% endif %}</td><td>{{ x.publicado_em|br if x.publicado_em else '—' }}</td><td><span class="chip {{ 'ok' if x.situacao == 'publicado' else '' }}">{{ x.situacao }}</span></td>
+<div class="tabela"><table><caption class="sr">Comunicados</caption><thead><tr><th scope="col">Tipo</th><th scope="col">Título</th><th scope="col">Publicação</th><th scope="col">Situação</th><th scope="col">Anexos</th><th scope="col"><span class="sr">Ações</span></th></tr></thead><tbody>
+{% for x in itens %}<tr><td>{{ x.tipo }}</td><td><a href="/admin/comunicados?id={{ x.id }}">{{ x.titulo }}</a>{% if x.valido_ate %}<br><small>válido até {{ x.valido_ate|br }}</small>{% endif %}</td><td>{{ x.publicado_em|br if x.publicado_em else '—' }}</td><td><span class="chip {{ 'ok' if x.situacao == 'publicado' else '' }}">{{ x.situacao }}</span></td><td>{{ n_anexos.get(x.id, 0) or '—' }}</td>
 <td class="acoes-linha"><a class="btn sec" href="/admin/comunicados?id={{ x.id }}">Editar</a><form class="inline" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="situacao"><input type="hidden" name="id" value="{{ x.id }}">{% if x.situacao != 'publicado' %}<button class="btn sec" name="situacao" value="publicado">Publicar</button>{% else %}<button class="btn sec" name="situacao" value="arquivado">Tirar do ar</button>{% endif %}</form></td></tr>{% endfor %}
 </tbody></table></div>
 {% else %}{{ vazio('Nenhum comunicado cadastrado.', '/admin/comunicados?novo=1', 'Novo comunicado') }}{% endif %}

@@ -1,5 +1,5 @@
 """Páginas públicas da Fase 8."""
-import csv, io
+import csv, io, re
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse, Response, JSONResponse
 from . import config, db, fase8 as F
@@ -14,7 +14,9 @@ def comunicados(request: Request, tipo: str = '', ano: str = ''):
     ctx = ctx_orgao(request); b = ctx['orgao']['banco']
     anos = [x['a'] for x in db.todos(b, "SELECT DISTINCT extract(year FROM coalesce(publicado_em, criado_em))::int a FROM comunicados WHERE situacao='publicado' ORDER BY 1 DESC")]
     itens = F.comunicados(b, 200, tipo if tipo in F.tipos_comunicado(b) else '', int(ano) if ano.isdigit() else None, so_validos=False)
-    return templates.TemplateResponse(request, 'portal/comunicados.html', dict(ctx, itens=itens, tipos=F.tipos_comunicado(b), tipo=tipo, ano=ano, anos=anos, quando=F.quando, legal='comunicados'))
+    from . import anexos as AX
+    return templates.TemplateResponse(request, 'portal/comunicados.html', dict(ctx, itens=itens, tipos=F.tipos_comunicado(b), tipo=tipo, ano=ano, anos=anos, quando=F.quando, legal='comunicados',
+                                      n_anexos=AX.contagem(b, [x['id'] for x in itens])))
 
 @r.get('/comunicados/{cid}')
 def comunicado(request: Request, cid: int):
@@ -22,7 +24,31 @@ def comunicado(request: Request, cid: int):
     c = next((x for x in F.comunicados(b, 1000, so_validos=False) if x['id'] == cid), None)
     if not c:
         raise HTTPException(404, 'Comunicado não encontrado.')
-    return templates.TemplateResponse(request, 'portal/comunicado.html', dict(ctx, c=c, quando=F.quando, legal='comunicados'))
+    from . import anexos as AX
+    return templates.TemplateResponse(request, 'portal/comunicado.html', dict(ctx, c=c, quando=F.quando, legal='comunicados', anexos=AX.listar(b, c['id'])))
+
+@r.get('/anexo/{arquivo}')
+def anexo(request: Request, arquivo: str):
+    """Arquivo anexo de comunicado. Só sai se o comunicado estiver publicado e visível (fora do defeso, se vedado),
+    ou para quem está no painel do próprio órgão (pré-visualização)."""
+    from fastapi.responses import FileResponse
+    from . import anexos as AX
+    if not AX.ARQ_OK.match(arquivo):
+        raise HTTPException(404)
+    o = request.state.orgao; b = o['banco']
+    a = db.um(b, 'SELECT * FROM comunicado_anexos WHERE arquivo=%s', (arquivo,))
+    f = AX.pasta(o) / arquivo
+    if not a or not f.is_file():
+        raise HTTPException(404)
+    u = request.session.get('u') or {}
+    visivel = any(x['id'] == a['comunicado_id'] for x in F.comunicados(b, 1000, so_validos=False))
+    if not visivel and u.get('orgao') != o['slug']:
+        raise HTTPException(404)
+    mime, _, inline = AX.TIPOS[a['ext']]
+    nome = re.sub(r'[^\w.-]+', '-', a['titulo']).strip('-')[:80] or 'anexo'
+    disp = 'inline' if inline else 'attachment'
+    return FileResponse(f, media_type=mime, filename=f'{nome}.{a["ext"]}', content_disposition_type=disp,
+                        headers={'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, max-age=300'})
 
 # ---------- Conheça ----------
 @r.get('/conheca')
