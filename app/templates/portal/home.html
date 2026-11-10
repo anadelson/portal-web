@@ -16,9 +16,10 @@
 
 {% macro bloco(b) %}
 {% if b.chave == 'atalhos' %}
-{% if d.atalhos %}{% call fileira_cartoes(d.atalhos|length, 'Acesso direto', 'fil-atalhos', tag='nav', classe='atalhos' ~ (' leg' if leg else ''), fora='fil-atalhos') %}
+{# atalhos do topo: exceção à regra da fileira — grupo centralizado, cartões de 230 a 280 px, metade sobre a foto #}
+{% if d.atalhos %}<nav class="atalhos{{ ' leg' if leg }}" aria-label="Acesso direto">
 {% for a in d.atalhos %}<a href="{{ a.destino }}"><span class="ico">{{ icone(a.icone, 26) }}</span><span><strong>{{ a.titulo }}</strong>{% if a.descricao %}<span class="d">{{ a.descricao }}</span>{% endif %}</span></a>{% endfor %}
-{% endcall %}{% endif %}
+</nav>{% endif %}
 
 {% elif b.chave == 'comunicados' %}
 <div class="duas faixa-com">
@@ -135,24 +136,24 @@
 {% endfor %}
 
 {% endcall %}{% endif %}
-{% if d.mesas %}<div class="mesa"><div class="cab" style="margin-bottom:12px"><h3 style="font-size:20px;margin:0">Mesa Diretora da {{ d.legislatura }}ª Legislatura</h3><small style="color:var(--sub)">Eleita para dois biênios · Regimento Interno</small></div>
+{% if d.mesas %}<div class="mesa"><div class="cab" style="margin-bottom:12px"><h3 style="font-size:var(--fs-h2-bloco);margin:0">Mesa Diretora da {{ d.legislatura }}ª Legislatura</h3><small style="color:var(--sub)">Eleita para dois biênios · Regimento Interno</small></div>
 <div class="bienios">{% for g in d.mesas %}<div class="bienio"><div class="cab"><strong>Biênio {{ g.bienio }}</strong><span class="chip {{ 'ok' if g.atual else '' }}">{{ 'Em exercício' if g.atual else ('A eleger' if not g.membros else 'Eleita') }}</span></div>
 {% if g.membros %}<ul>{% for m in g.membros %}<li>{% if m.vid %}<a href="/vereador/{{ m.vid }}">{% else %}<span class="p">{% endif %}<span class="mini-ini" aria-hidden="true">{% if m.foto %}<img src="{{ m.foto }}" alt="">{% else %}{{ m.nome|iniciais }}{% endif %}</span><span><small style="display:block;color:var(--sub)">{{ m.cargo }}</small>{{ m.nome }}</span>{% if m.vid %}</a>{% else %}</span>{% endif %}</li>{% endfor %}</ul>
-{% else %}<p style="margin:0;font-size:14px;color:var(--sub)">Eleição da Mesa para este biênio ainda não realizada.</p>{% endif %}</div>{% endfor %}</div></div>{% endif %}
+{% else %}<p style="margin:0;font-size:var(--fs-peq);color:var(--sub)">Eleição da Mesa para este biênio ainda não realizada.</p>{% endif %}</div>{% endfor %}</div></div>{% endif %}
 <p class="legal" style="margin-top:10px">Sem foto oficial cadastrada, o cartão mostra as iniciais. As fotos oficiais entram pelo painel administrativo.</p>
 </section>
 
 {% elif b.chave == 'contas' %}
 {% set f = d.financas or {} %}{% set dtp = f.dtp or [] %}
 <section class="painel contas" aria-labelledby="h-contas" style="display:flex;flex-direction:column;gap:16px">
-<div class="cab" style="margin:0"><div><p class="rotulo" style="font-size:13px">Prestação de contas</p><h2 id="h-contas" style="font-size:clamp(24px,3vw,30px)">Quanto custa a Câmara</h2></div>{% if f.fonte %}<span class="atualizado" style="font-size:13px">Dados do Siconfi e do cadastro</span>{% endif %}</div>
+<div class="cab" style="margin:0"><div><p class="rotulo" style="font-size:var(--fs-meta)">Prestação de contas</p><h2 id="h-contas" style="font-size:var(--fs-h2-gestao)">Quanto custa a Câmara</h2></div>{% if f.fonte %}<span class="atualizado" style="font-size:var(--fs-meta)">Dados do Siconfi e do cadastro</span>{% endif %}</div>
 {% if dtp or f.duodecimo_2026 %}
 <dl class="kpis">
 {% if f.duodecimo_2026 %}<div><dt>Duodécimo {{ hoje.year }}</dt><dd class="v">{{ f.duodecimo_2026|moeda }}</dd><dd class="d">Repasse anual da Prefeitura</dd></div>{% endif %}
 {% if dtp %}{% set u = dtp[-1] %}<div style="border-top-color:#146C43"><dt>Despesa com pessoal</dt><dd class="v">{{ u[2]|moeda }}</dd><dd class="d">{{ u[1] }} de {{ u[0] }} (12 meses)</dd></div>
 <div style="border-top-color:#7A4A00"><dt>% da receita corrente líquida</dt><dd class="v">{{ '%.2f'|format(u[3])|replace('.', ',') }}%</dd><dd class="d">Limite legal: 6% (LRF, art. 20)</dd></div>{% endif %}
 </dl>
-{% if dtp %}{% set u = dtp[-1] %}<div><p style="margin:0;font-size:14px"><strong>Despesa com pessoal:</strong> {{ '%.2f'|format(u[3])|replace('.', ',') }}% da receita corrente líquida · limite legal 6%</p>
+{% if dtp %}{% set u = dtp[-1] %}<div><p style="margin:0;font-size:var(--fs-peq)"><strong>Despesa com pessoal:</strong> {{ '%.2f'|format(u[3])|replace('.', ',') }}% da receita corrente líquida · limite legal 6%</p>
 <div class="barra" role="img" aria-label="{{ '%.2f'|format(u[3])|replace('.', ',') }}% de um limite de 6%; alerta em 5,4%"><span style="width:{{ [u[3] / 6 * 100, 100]|min }}%"></span><i style="left:90%"></i></div>
 <p class="legal" style="margin:0">Linha tracejada: limite de alerta (5,4%). Fonte: {{ f.fonte }}.</p></div>{% endif %}
 {% else %}<p class="vazio">Dados financeiros a carregar.</p>{% endif %}
@@ -162,25 +163,25 @@
 {% elif b.chave == 'emendas' %}
 {% set em = d.emendas %}
 <section class="emendas-dest" aria-labelledby="h-em">
-<div><span class="selo">Destaque · Orçamento {{ hoje.year }}</span><h2 id="h-em" style="font-size:24px">Emendas impositivas dos vereadores</h2><p>Parte do orçamento que cada vereador direcionou para a cidade. A Prefeitura é obrigada a executar.</p></div>
+<div><span class="selo">Destaque · Orçamento {{ hoje.year }}</span><h2 id="h-em" style="font-size:var(--fs-h2-sec)">Emendas impositivas dos vereadores</h2><p>Parte do orçamento que cada vereador direcionou para a cidade. A Prefeitura é obrigada a executar.</p></div>
 <dl class="kpis">
 <div><dt>Emendas</dt><dd class="v">{{ em.n }}</dd><dd class="d">cadastradas</dd></div>
 <div><dt>Valor indicado</dt><dd class="v">{{ em.total|moeda }}</dd><dd class="d">soma das emendas</dd></div>
 <div><dt>Pago (empenhos)</dt><dd class="v">{{ em.pago_emp|moeda }}</dd><dd class="d">cadastro: {{ em.pago|moeda }}</dd></div>
 </dl>
 {% set pct = (em.pago_emp / em.total * 100) if em.total else 0 %}
-<div><p style="margin:0 0 6px;font-size:14px">Execução: {{ '%.1f'|format(pct)|replace('.', ',') }}% pago</p><div class="barra" role="img" aria-label="{{ '%.1f'|format(pct)|replace('.', ',') }}% do valor indicado já foi pago"><span style="width:{{ [pct, 100]|min }}%;min-width:4px"></span></div>
-{% if em.divergentes %}<p style="font-size:13px;margin:6px 0 0">{{ em.divergentes }} emenda(s) com divergência entre o cadastro e os empenhos.</p>{% endif %}</div>
+<div><p style="margin:0 0 6px;font-size:var(--fs-peq)">Execução: {{ '%.1f'|format(pct)|replace('.', ',') }}% pago</p><div class="barra" role="img" aria-label="{{ '%.1f'|format(pct)|replace('.', ',') }}% do valor indicado já foi pago"><span style="width:{{ [pct, 100]|min }}%;min-width:4px"></span></div>
+{% if em.divergentes %}<p style="font-size:var(--fs-meta);margin:6px 0 0">{{ em.divergentes }} emenda(s) com divergência entre o cadastro e os empenhos.</p>{% endif %}</div>
 <a class="btn-claro" href="/emendas">+ detalhes das emendas</a>
 </section>
 
 {% elif b.chave == 'sessoes' %}
-<section class="lista-cartao" aria-labelledby="h-ses"><h2 id="h-ses" style="font-size:22px">Últimas sessões</h2>
+<section class="lista-cartao" aria-labelledby="h-ses"><h2 id="h-ses" style="font-size:var(--fs-h2-cartao)">Últimas sessões</h2>
 <ul>{% for s in d.sessoes %}<li><div style="flex-direction:row;justify-content:space-between;gap:12px"><span><strong>{{ s.nome }}</strong><small style="display:block">{{ s.data|br }} · {{ s.hora }}</small></span><span class="chip {{ 'ok' if s.ata_publicada else '' }}" style="align-self:center">{{ 'Ata publicada' if s.ata_publicada else ('Pauta publicada' if s.pauta_publicada else 'Realizada') }}</span></div></li>{% else %}<li><div><strong>Nenhuma sessão registrada.</strong></div></li>{% endfor %}</ul>
 <div class="acoes"><a class="btn sec" href="/sessoes">Todas as sessões {{ icone('seta', 18, 'seta') }}</a></div></section>
 
 {% elif b.chave == 'projetos' %}
-<section class="lista-cartao" aria-labelledby="h-proj"><h2 id="h-proj" style="font-size:22px">Projetos e proposições</h2>
+<section class="lista-cartao" aria-labelledby="h-proj"><h2 id="h-proj" style="font-size:var(--fs-h2-cartao)">Projetos e proposições</h2>
 <ul>{% for p in d.projetos %}<li><div><span><strong>{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</strong> <span class="chip ok">{{ p.situacao }}</span></span><span>{{ p.ementa }}</span><small>Autoria: {{ p.autor }}</small></div></li>{% else %}<li><div><strong>Nenhuma proposição registrada.</strong></div></li>{% endfor %}</ul>
 <div class="acoes"><a class="btn sec" href="/proposicoes">Todos os projetos {{ icone('seta', 18, 'seta') }}</a></div></section>
 {% endif %}
@@ -200,9 +201,9 @@
 </div>
 {% if leg %}<aside class="prox" aria-labelledby="h-prox"><p class="rotulo">Próxima sessão</p>
 {% if d.proxima %}<h2 id="h-prox">{{ d.proxima.nome }}</h2><p><strong>{{ d.proxima.data|br }}</strong>, às {{ d.proxima.hora }}{% if ident.endereco %} · {{ ident.endereco.split(' · ')[0] }}{% endif %}</p>
-<p style="font-size:14px;color:var(--sub)">Sessões são públicas. A pauta é publicada antes da sessão.</p>
+<p style="font-size:var(--fs-peq);color:var(--sub)">Sessões são públicas. A pauta é publicada antes da sessão.</p>
 <div class="botoes"><a class="btn" href="/sessoes">Ver a pauta</a><a class="btn sec" href="/proposicoes">Projetos em tramitação</a></div>
-{% else %}<h2 id="h-prox">Nenhuma sessão agendada</h2><p style="font-size:15px;color:var(--sub)">O calendário é publicado pela Mesa Diretora.</p><div class="botoes"><a class="btn sec" href="/sessoes">Sessões anteriores</a></div>{% endif %}
+{% else %}<h2 id="h-prox">Nenhuma sessão agendada</h2><p style="font-size:var(--fs-desc);color:var(--sub)">O calendário é publicado pela Mesa Diretora.</p><div class="botoes"><a class="btn sec" href="/sessoes">Sessões anteriores</a></div>{% endif %}
 </aside>{% endif %}
 </div>
 {% if hr.credito %}<p class="cred">{{ hr.credito }}</p>{% endif %}

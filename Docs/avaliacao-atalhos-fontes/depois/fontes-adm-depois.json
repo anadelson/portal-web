@@ -1,0 +1,756 @@
+{
+ "painel/inicio": {
+  "status": 200,
+  "url": "http://pmbora.localhost:8000/admin/",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Título de seção/cartão (h2)": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "700",
+    "n": 2
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 23
+   },
+   "Ajuda/nota": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 1
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ },
+ "painel/pagina-inicial": {
+  "status": 200,
+  "url": "http://pmbora.localhost:8000/admin/pagina-inicial",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Parágrafos do conteúdo": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 2
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Título de seção/cartão (h2)": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "700",
+    "n": 1
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 23
+   },
+   "Rótulos de campo": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "400",
+    "n": 12
+   },
+   "Ajuda/nota": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 17
+   },
+   "Botões": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 31,
+    "hmin": 40
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ },
+ "painel/indicadores": {
+  "status": 404,
+  "url": "http://pmbora.localhost:8000/admin/indicadores",
+  "m": {
+   "Texto base (body)": {
+    "moda": 16,
+    "min": 16,
+    "max": 16,
+    "peso": "400",
+    "n": 1,
+    "lh": "normal"
+   },
+   "fonte": "system-ui",
+   "menor": {
+    "px": 16,
+    "ex": []
+   }
+  }
+ },
+ "painel/identidade": {
+  "status": 200,
+  "url": "http://pmbora.localhost:8000/admin/identidade",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Título de seção/cartão (h2)": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "700",
+    "n": 1
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 23
+   },
+   "Rótulos de campo": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "600",
+    "n": 22
+   },
+   "Campos (input/select)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 22,
+    "hmin": 41
+   },
+   "Ajuda/nota": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 3
+   },
+   "Botões": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 1,
+    "hmin": 40
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ },
+ "painel/conteudo": {
+  "status": 200,
+  "url": "http://pmbora.localhost:8000/admin/conteudos",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 23
+   },
+   "Cabeçalho de tabela": {
+    "moda": 13,
+    "min": 13,
+    "max": 13,
+    "peso": "700",
+    "n": 5
+   },
+   "Célula de tabela": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "400",
+    "n": 25
+   },
+   "Ajuda/nota": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 6
+   },
+   "Botões": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 8,
+    "hmin": 40
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ },
+ "painel/conteudo-novo": {
+  "status": 200,
+  "url": "http://pmbora.localhost:8000/admin/conteudos/novo",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 23
+   },
+   "Rótulos de campo": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "600",
+    "n": 22
+   },
+   "Campos (input/select)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 13,
+    "hmin": 40
+   },
+   "Ajuda/nota": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 5
+   },
+   "Botões": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 14,
+    "hmin": 40
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ },
+ "painel/usuarios": {
+  "status": 200,
+  "url": "http://pmbora.localhost:8000/admin/usuarios",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Título de seção/cartão (h2)": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "700",
+    "n": 1
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 23
+   },
+   "Rótulos de campo": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "600",
+    "n": 8
+   },
+   "Campos (input/select)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 8,
+    "hmin": 40
+   },
+   "Cabeçalho de tabela": {
+    "moda": 13,
+    "min": 13,
+    "max": 13,
+    "peso": "700",
+    "n": 4
+   },
+   "Célula de tabela": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "400",
+    "n": 4
+   },
+   "Ajuda/nota": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 3
+   },
+   "Botões": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 1,
+    "hmin": 40
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ },
+ "console/inicio": {
+  "status": 200,
+  "url": "http://gestao.localhost:8000/",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 8
+   },
+   "Cabeçalho de tabela": {
+    "moda": 13,
+    "min": 13,
+    "max": 13,
+    "peso": "700",
+    "n": 5
+   },
+   "Célula de tabela": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "400",
+    "n": 12
+   },
+   "Ajuda/nota": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 2
+   },
+   "Botões": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 4,
+    "hmin": 40
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ },
+ "console/orgao": {
+  "status": 200,
+  "url": "http://gestao.localhost:8000/orgao/1",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Parágrafos do conteúdo": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Título de seção/cartão (h2)": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "700",
+    "n": 2
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 8
+   },
+   "Rótulos de campo": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "600",
+    "n": 5
+   },
+   "Campos (input/select)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 5,
+    "hmin": 41
+   },
+   "Célula de tabela": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "400",
+    "n": 12
+   },
+   "Ajuda/nota": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 5
+   },
+   "Botões": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 7,
+    "hmin": 40
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ },
+ "console/catalogo": {
+  "status": 200,
+  "url": "http://gestao.localhost:8000/catalogo",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 8
+   },
+   "Cabeçalho de tabela": {
+    "moda": 13,
+    "min": 13,
+    "max": 13,
+    "peso": "700",
+    "n": 5
+   },
+   "Célula de tabela": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "400",
+    "n": 86
+   },
+   "Ajuda/nota": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 20
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ },
+ "console/aparencia": {
+  "status": 200,
+  "url": "http://gestao.localhost:8000/aparencia",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Parágrafos do conteúdo": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 8
+   },
+   "Rótulos de campo": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "600",
+    "n": 5
+   },
+   "Campos (input/select)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 5,
+    "hmin": 40
+   },
+   "Botões": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 1,
+    "hmin": 40
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ },
+ "console/credenciais": {
+  "status": 200,
+  "url": "http://gestao.localhost:8000/credenciais",
+  "m": {
+   "Texto base (body)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 1,
+    "lh": "22.5px"
+   },
+   "Parágrafos do conteúdo": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 5
+   },
+   "Título da tela (h1)": {
+    "moda": 23,
+    "min": 23,
+    "max": 23,
+    "peso": "700",
+    "n": 1
+   },
+   "Título de seção/cartão (h2)": {
+    "moda": 18,
+    "min": 18,
+    "max": 18,
+    "peso": "700",
+    "n": 3
+   },
+   "Menu lateral": {
+    "moda": 15,
+    "min": 13,
+    "max": 15,
+    "peso": "600",
+    "n": 8
+   },
+   "Rótulos de campo": {
+    "moda": 14,
+    "min": 14,
+    "max": 14,
+    "peso": "600",
+    "n": 4
+   },
+   "Campos (input/select)": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "400",
+    "n": 4,
+    "hmin": 41
+   },
+   "Ajuda/nota": {
+    "moda": 12,
+    "min": 12,
+    "max": 12,
+    "peso": "400",
+    "n": 9
+   },
+   "Botões": {
+    "moda": 15,
+    "min": 15,
+    "max": 15,
+    "peso": "600",
+    "n": 3,
+    "hmin": 40
+   },
+   "fonte": "\"Public Sans\"",
+   "menor": {
+    "px": 12,
+    "ex": []
+   }
+  }
+ }
+}

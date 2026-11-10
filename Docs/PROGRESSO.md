@@ -1097,3 +1097,54 @@ Próximos passos dependem das pessoas:
   - axe sem violações em 8 combinações;
   - CSS v=20 e JS v=6 servidos; Câmara 200, console 303 (login); logs sem erro.
 - `largura-fluida` mesclada em `main` com a tag `largura-fluida`.
+
+## Atalhos do topo e escala tipográfica (10/11/2026, `Docs/PEDIDO-ATALHOS-E-FONTES.md`, branch `atalhos-fontes`, nada aplicado na VPS)
+- **1) Atalhos do topo (feito, exceção à fileira):**
+  - Saíram do componente de fileira.
+  - Grupo centralizado até 1200 px; cada cartão entre 230 e 280 px (`repeat(auto-fit, minmax(230px, 280px))`, `justify-content: center`, espaço de 14 px).
+  - Cerca de 55% do cartão fica sobre a foto: `margin-top` −72 px no computador e −48 px no celular; padding inferior do hero de 96 px.
+  - No celular, empilhados na largura do conteúdo.
+  - Câmara: mesmo grupo centralizado, abaixo da foto, como antes, porque o hero dela tem o cartão da próxima sessão.
+  - Medido na prévia: 4 × 280 px em 1920 e 1366 (grupo de 1162 px centralizado); 55% sobre a foto em 1920, 1366 e 390; sem rolagem horizontal.
+- **2) Fontes:** a tabela foi aprovada ("Aprovo a escala"); ver a seção seguinte.
+- **Fontes (histórico): PARADO para aprovação.**
+  - Tabela "elemento | atual | protótipo" do painel e do console (e do portal, para referência) em `Docs/avaliacao-atalhos-fontes/TABELA-FONTES.md`.
+  - Medição em ambiente de TESTE (removido com `rm -fv`). Capturas "antes" em `Docs/avaliacao-atalhos-fontes/antes/`.
+
+### Escala tipográfica aplicada (10/11/2026, aprovada: "Aprovo a escala"; mesma branch, nada aplicado na VPS)
+- **Portal (`portal.css`):**
+  - escala em variáveis no `:root` (`--fs-base` 17/1,55, `--fs-h2` 26, `--fs-h2-gestao` 28, `--fs-h2-destaque` 30, `--fs-h2-cartao` 22, `--fs-desc` 15, `--fs-meta` 13, `--fs-etq` 12, `--fs-exemplo` 11, `--fs-btn` 17, `--fs-num` 28 …);
+  - os 191 `font-size` da folha e os 31 inline dos templates passaram a usar as variáveis.
+- **Correções do pedido no portal:**
+  - títulos de seção da página inicial: 22 → 26 px (Acompanhe a gestão 28; Conheça 30; Notícias e Paço continuam 22, como no protótipo);
+  - descrições e subtítulos: 13–14 → 15 px;
+  - menu da barra do brasão: 17 → 16 px;
+  - etiquetas: no mínimo 12 px;
+  - botões com peso 600; `.btn.mini` com 16 px e 44 px de altura;
+  - cargo da Mesa Diretora: 11,7 → 12 px.
+- **Painel e console (`admin.css`):**
+  - escala no `:root` (título da tela 23, seção 18, rótulo 14, campo 15, tabela 14 com cabeçalho 13, nota 12, botão 15/600, altura 40);
+  - os campos deixaram de herdar os 13 px do rótulo;
+  - os `<small>` não ficam mais abaixo de 12 px;
+  - os 5 `font-size` inline viraram classes.
+- **Conferência:**
+  - menor texto visível de 12 px em todas as telas medidas (portal 1920/1366/390, painel e console 1366); sem rolagem horizontal;
+  - atalhos com 55% sobre a foto nas três larguras;
+  - axe sem violações em 8 combinações;
+  - a tela de Indicadores do painel deu 404 no banco de teste (módulo de BI não contratado lá) e usa a mesma folha.
+- **Teste novo:** `tests/teste_escala.py` acusa `font-size` em px nos templates e nas folhas, e variáveis abaixo de 12 px (exceto "exemplo").
+- **Capturas** antes/depois: `Docs/avaliacao-atalhos-fontes/index.html`.
+- **Testes:** as 13 suítes (11 de antes + `teste_fileira` + `teste_escala`) deram ERROS: 0 / tudo ok no banco de TESTE; nenhum volume solto.
+- **Onde parou:** aguardando aprovação para implantar (sem migração de banco).
+
+### Implantação dos atalhos do topo e da escala tipográfica (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 15h15 UTC.
+- **Build e testes:** as **13 suítes** com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida:** `up -d` de app e worker; app saudável. Sem migração de banco. Disco em 72%.
+- **Conferência no domínio** (`Docs/avaliacao-atalhos-fontes/implantado/`, 1920, 1366 e 390 px):
+  - menor texto visível de 12 px; sem rolagem horizontal;
+  - atalhos de 280 px com 55% sobre a foto (no celular, 358 px empilhados);
+  - títulos de seção com 26 px, descrições com 15, menu com 16;
+  - axe sem violações em 8 combinações;
+  - portal.css v=22, portal.js v=6 e admin.css v=8 servidos; Câmara 200, console 303 (login); logs sem erro.
+- `atalhos-fontes` mesclado em `main` com a tag `atalhos-fontes`.

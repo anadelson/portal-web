@@ -2,7 +2,7 @@
 {% block conteudo %}
 <p><a href="/admin/vereadores?leg={{ v.legislatura }}">‹ Vereadores da {{ v.legislatura }}ª Legislatura</a> · <a href="/vereador/{{ v.id }}">ver no portal ↗</a></p>
 <form class="campos" method="post" action="/admin/vereadores/{{ v.id }}" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
-<div class="midia" style="border:0;padding:0"><div class="prev">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt }}">{% else %}<span style="font-size:28px;font-weight:800">{{ v.nome|iniciais }}</span>{% endif %}</div>
+<div class="midia" style="border:0;padding:0"><div class="prev">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt }}">{% else %}<span class="ini-grande">{{ v.nome|iniciais }}</span>{% endif %}</div>
 <div class="campos-m"><strong>Foto oficial</strong>
 <label>Arquivo (PNG, JPG ou WEBP, até 3 MB)<input type="file" name="foto" accept="image/png,image/jpeg,image/webp" {{ 'disabled' if not pode('editar') }}></label>
 <label>Texto alternativo (obrigatório com foto)<input name="foto_alt" value="{{ v.foto_alt }}" placeholder="Ex.: Retrato oficial de {{ v.nome }}, de terno escuro" {{ 'disabled' if not pode('editar') }}></label>

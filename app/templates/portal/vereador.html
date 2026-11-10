@@ -24,10 +24,10 @@
 
 {% if emendas %}
 <section class="emendas-dest" aria-labelledby="h-pf-em" style="margin-bottom:20px">
-<div class="cab" style="margin:0"><h2 id="h-pf-em" style="margin:0;font-size:22px">Emendas impositivas {{ emendas[0].numero.split('/')[1] }}</h2><span style="font-size:14px;color:#E3EADF">{{ emendas|sum(attribute='valor')|moeda }} indicados · {{ emendas|map(attribute='pago_empenho')|map('default', 0, true)|sum|moeda }} pagos nos empenhos</span></div>
+<div class="cab" style="margin:0"><h2 id="h-pf-em" style="margin:0;font-size:var(--fs-h2-cartao)">Emendas impositivas {{ emendas[0].numero.split('/')[1] }}</h2><span style="font-size:var(--fs-peq);color:#E3EADF">{{ emendas|sum(attribute='valor')|moeda }} indicados · {{ emendas|map(attribute='pago_empenho')|map('default', 0, true)|sum|moeda }} pagos nos empenhos</span></div>
 <ul style="list-style:none;margin:0;padding:0;display:grid;gap:8px">{% for e in emendas %}<li><a href="/emendas/{{ e.numero.split('/')[1] }}/{{ e.numero.split('/')[0] }}" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.1);color:#fff;text-decoration:none"><span><strong>{{ e.numero }}</strong> · {{ e.objeto }}</span><span style="font-variant-numeric:tabular-nums;white-space:nowrap">{{ e.valor|moeda }} · <span style="color:var(--destaque)">{{ e.pago_empenho|moeda if e.pago_empenho is not none else 'sem pagamento' }}</span></span></a></li>{% endfor %}</ul>
 <a class="btn-claro" href="/emendas">Ver o caminho de cada emenda na Prefeitura</a>
-<p style="font-size:12px">Fonte: cadastro de emendas e empenhos do sistema contábil da Prefeitura (Fiorilli).</p>
+<p style="font-size:var(--fs-etq)">Fonte: cadastro de emendas e empenhos do sistema contábil da Prefeitura (Fiorilli).</p>
 </section>
 {% endif %}
 
@@ -39,7 +39,7 @@
 <div class="duas-col">
 {% for titulo, sub, itens in grupos %}
 <section class="caixa"><h2>{{ titulo }}</h2><p class="sub">{{ sub }}</p>
-{% if itens %}<ul class="itens">{% for p in itens %}<li><a href="/proposicoes/{{ p.id }}"><strong style="font-size:14px">{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</strong></a><span style="display:block">{{ p.ementa }}</span><small style="color:var(--sub)">{{ p.situacao }}</small></li>{% endfor %}</ul>
+{% if itens %}<ul class="itens">{% for p in itens %}<li><a href="/proposicoes/{{ p.id }}"><strong style="font-size:var(--fs-peq)">{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</strong></a><span style="display:block">{{ p.ementa }}</span><small style="color:var(--sub)">{{ p.situacao }}</small></li>{% endfor %}</ul>
 {% else %}<p class="vazio"><strong>A carregar.</strong> Nenhum registro importado nesta categoria.</p>{% endif %}
 </section>
 {% endfor %}

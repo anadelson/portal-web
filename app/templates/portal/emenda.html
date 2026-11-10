@@ -3,8 +3,8 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/emendas">Emendas impositivas</a><span aria-hidden="true">›</span><span aria-current="page">Emenda {{ e.numero }}</span></nav>
 <section class="caminho" aria-labelledby="h-cam">
-<p class="rotulo" style="font-size:13px">Caminho da emenda na Prefeitura</p>
-<h1 id="h-cam" style="font-size:clamp(24px,3vw,30px)">Emenda {{ e.numero }} · {{ e.autor }}</h1>{{ legal_topo(legal) }}
+<p class="rotulo" style="font-size:var(--fs-meta)">Caminho da emenda na Prefeitura</p>
+<h1 id="h-cam" style="font-size:var(--fs-h2-destaque)">Emenda {{ e.numero }} · {{ e.autor }}</h1>{{ legal_topo(legal) }}
 <p style="margin:0;color:var(--sub)">{{ e.objeto }}</p>
 <dl class="kpis" style="margin:16px 0 10px">
 <div><dt>Valor indicado</dt><dd class="v">{{ tot.indicado|moeda }}</dd></div>
@@ -13,7 +13,7 @@
 <div style="border-top-color:#146C43"><dt>Pago nos empenhos</dt><dd class="v">{{ tot.pago|moeda }}</dd></div>
 <div style="border-top-color:#7A4A00"><dt>Pago segundo o cadastro</dt><dd class="v">{{ tot.pago_cadastro|moeda }}</dd>{% if e.empenhado_cadastro is not none %}<dd class="d">cadastro: empenhado {{ e.empenhado_cadastro|moeda }} · liquidado {{ e.liquidado_cadastro|moeda }}</dd>{% endif %}</div>
 </dl>
-<p style="margin:0 0 6px;font-size:14px;color:var(--sub)">Executado: {{ '%.1f'|format(tot.pct)|replace('.', ',') }}% do valor indicado</p>
+<p style="margin:0 0 6px;font-size:var(--fs-peq);color:var(--sub)">Executado: {{ '%.1f'|format(tot.pct)|replace('.', ',') }}% do valor indicado</p>
 <div class="barra" role="img" aria-label="{{ '%.1f'|format(tot.pct)|replace('.', ',') }}% do valor indicado foi pago" style="height:10px;margin-bottom:18px"><span style="width:{{ [tot.pct, 100]|min }}%;min-width:3px;background:#146C43"></span></div>
 {% if e.conferencia == 'nao_atribuivel' %}<p class="nota" role="note">O vereador tem mais de uma emenda e os empenhos com o vínculo dele não indicam a qual emenda pertencem. A execução aparece no cadastro; o caminho por empenho aguarda a identificação pela Prefeitura.</p>{% endif %}
 {% if e.conferencia == 'divergente' %}<p class="nota" role="note"><strong>Divergência:</strong> o valor pago no cadastro de emendas ({{ e.pago_cadastro|moeda }}) é diferente do valor pago nos empenhos ({{ (e.pago_empenho or 0)|moeda }}). As duas fontes são mostradas.</p>{% endif %}
@@ -25,8 +25,8 @@
 <div><dt>Credor</dt><dd>{{ d.credor }}</dd></div>{% if d.destinacao %}<div><dt>Destinação</dt><dd>{{ d.destinacao }}</dd></div>{% endif %}
 </dl>
 {% endif %}
-<h2 style="font-size:20px">Etapas da execução</h2>
-<ol class="passos">{% for x in passos %}<li><span class="n {{ x.tipo }}" aria-hidden="true">{{ x.n }}</span><span><strong>{{ x.t }}</strong><span style="display:block;font-size:14px;color:#374151">{{ x.d }}</span></span><span class="q"><span>{{ x.data }}</span>{% if x.v is not none %}<strong>{{ x.v|moeda }}</strong>{% endif %}</span></li>{% endfor %}</ol>
+<h2 style="font-size:var(--fs-h2-bloco)">Etapas da execução</h2>
+<ol class="passos">{% for x in passos %}<li><span class="n {{ x.tipo }}" aria-hidden="true">{{ x.n }}</span><span><strong>{{ x.t }}</strong><span style="display:block;font-size:var(--fs-peq);color:#374151">{{ x.d }}</span></span><span class="q"><span>{{ x.data }}</span>{% if x.v is not none %}<strong>{{ x.v|moeda }}</strong>{% endif %}</span></li>{% endfor %}</ol>
 {% if not d %}<p class="vazio">Nenhum empenho localizado para esta emenda até a última leitura do sistema contábil.</p>{% endif %}
 <p class="legal" style="margin:6px 0 0">Fonte: {{ e.fonte }}. Base legal da execução: Lei 4.320/1964, arts. 58 a 65 (empenho, liquidação e pagamento).</p>
 </section>

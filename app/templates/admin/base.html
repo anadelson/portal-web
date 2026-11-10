@@ -2,7 +2,7 @@
 <title>{% block titulo %}Painel{% endblock %} — {{ ident.nome }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/admin.css?v=7"><style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }}}</style></head>
+<link rel="stylesheet" href="/static/admin.css?v=8"><style>:root{--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }}}</style></head>
 <body><a class="pular" href="#conteudo">Ir para o conteúdo</a><div class="casca">
 {% macro item(href, ic, rotulo, badge=0) %}<a href="/admin{{ href }}"{% if atual == href or (href != '/' and atual.startswith(href)) %} aria-current="page"{% endif %}>{{ icone(ic, 20) }}<span>{{ rotulo }}</span>{% if badge %}<span class="badge" aria-label="{{ badge }} pendente(s)">{{ badge }}</span>{% endif %}</a>{% endmacro %}
 {% macro grupo(nome, chave, hrefs) %}<details class="grupo" open><summary>{{ nome }}</summary>{{ caller() }}</details>{% endmacro %}
