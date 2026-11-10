@@ -1136,3 +1136,15 @@ Próximos passos dependem das pessoas:
 - **Capturas** antes/depois: `Docs/avaliacao-atalhos-fontes/index.html`.
 - **Testes:** as 13 suítes (11 de antes + `teste_fileira` + `teste_escala`) deram ERROS: 0 / tudo ok no banco de TESTE; nenhum volume solto.
 - **Onde parou:** aguardando aprovação para implantar (sem migração de banco).
+
+### Implantação dos atalhos do topo e da escala tipográfica (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 15h15 UTC.
+- **Build e testes:** as **13 suítes** com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida:** `up -d` de app e worker; app saudável. Sem migração de banco. Disco em 72%.
+- **Conferência no domínio** (`Docs/avaliacao-atalhos-fontes/implantado/`, 1920, 1366 e 390 px):
+  - menor texto visível de 12 px; sem rolagem horizontal;
+  - atalhos de 280 px com 55% sobre a foto (no celular, 358 px empilhados);
+  - títulos de seção com 26 px, descrições com 15, menu com 16;
+  - axe sem violações em 8 combinações;
+  - portal.css v=22, portal.js v=6 e admin.css v=8 servidos; Câmara 200, console 303 (login); logs sem erro.
+- `atalhos-fontes` mesclado em `main` com a tag `atalhos-fontes`.
