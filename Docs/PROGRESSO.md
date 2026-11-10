@@ -1036,3 +1036,24 @@ Próximos passos dependem das pessoas:
   - `/painel` com as barras do cabeçalho preenchidas (9 itens na institucional);
   - Câmara e console respondem 200; logs sem erro.
 - `largura-portal` mesclado em `main` com a tag `largura-portal`.
+
+## Largura fluida: até 1760 px (10/11/2026, branch `largura-fluida`, nada aplicado na VPS)
+- **Pedido (chat):** largura fluida em todo o portal; `--largura-max: 1760px` e `--margem: clamp(16px, 3.5vw, 64px)` no `:root`; larguras de leitura mantidas; grades da página inicial aproveitando a largura, com no máximo 4 a 5 colunas; Identidade > Tema com 1320, 1600, 1760 ou "tela toda" (padrão 1760). Substitui o pedido de 1320 px.
+- **Feito:**
+  - `main` e `.int` (cabeçalho, barras, destaque e rodapé): `width:100%; max-width:var(--largura-max); margin:0 auto; box-sizing:border-box`, com padding lateral `var(--margem)`.
+  - O valor do órgão vai no estilo inline do `base.html` (`tokens.largura_css`; "tela toda" vira `none`). Valor inválido volta a 1760.
+  - Painel → Identidade → Tema: grupo "Largura máxima do conteúdo" com 4 opções; o salvamento entra na auditoria.
+  - Corpo de texto limitado a 70ch (`.texto`, `.texto-rico`, ficha de serviço, matéria, páginas de texto); `.intro` 70ch, base legal 110ch e `.materia` 820 px mantidos.
+  - Limite de colunas na página inicial, com `auto-fill` e `minmax(max(mín., (100% − espaços)/N), 1fr)`:
+    - atalhos 4, indicadores 5, serviços 4, publicações 4, atos 4;
+    - gravações e redes 3, trilho 4;
+    - vereadores 6 trilhas (o cartão da presidência ocupa 2, então são 5 cartões por fileira).
+  - As páginas internas crescem livremente (ex.: indicadores do /painel chegam a 6 colunas em 1920).
+  - Defeito que já existia: a caixa "Mesa Diretora" da Câmara usava só uma faixa no meio do cartão. Agora usa a largura toda, com os biênios lado a lado.
+- **Capturas** antes/depois em 1920, 1366 e 390 px: `Docs/avaliacao-largura-fluida/index.html`.
+  - Fonte: prévia com cópia dos bancos, removida com `rm -fv`.
+  - Depois: conteúdo de 1760 px em 1920 (margem 64), 1366 em 1366 (margem ≈ 48) e 390 em 390 (margem 16); sem rolagem horizontal.
+- **Observação:** no celular a margem passa de 24 para 16 px (mínimo do clamp pedido).
+- **Testes:** as 11 suítes (código montado, banco de TESTE) deram ERROS: 0 / tudo ok; nenhum volume solto criado pelos testes. `teste_fase9` testa a largura: padrão 1760, "tela toda" → none, 1600 aplicada, inválida → 1760.
+- **Onde parou:** aguardando aprovação para implantar (sem migração de banco).
+- **Encontrado e não tratado:** `Docs/PEDIDO-LARGURA-E-CARDS.md` (11h44), com componente de carrossel e capturas em 768 px. A mudança em `Docs/referencia/prototipos/Main.dc.html` também não foi commitada. Aguardando o usuário dizer se esse pedido entra.

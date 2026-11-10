@@ -1,12 +1,12 @@
 /* Portais — tema base (Fase 3). Tokens por órgão vêm do <style> do template: --cor, --cor-escura, --cor-clara, --destaque */
-:root{--largura:1320px;--margem:24px;--cor:#0E4D64;--cor-escura:#0A3646;--cor-clara:#E7F0F3;--destaque:#F0B429;--tx:#17212B;--sub:#4B5563;--bd:#DCE1E6;--fd:#F5F7F9;--fd2:#F4F7F9;--ok:#146C43;--ok-fd:#E3F2E9;--al:#7A4A00;--al-fd:#FCEFD9;--er:#9B1C1C;--er-fd:#FBE4D8;--escuro:#17212B}
+:root{--largura-max:1760px;--margem:clamp(16px,3.5vw,64px);--cor:#0E4D64;--cor-escura:#0A3646;--cor-clara:#E7F0F3;--destaque:#F0B429;--tx:#17212B;--sub:#4B5563;--bd:#DCE1E6;--fd:#F5F7F9;--fd2:#F4F7F9;--ok:#146C43;--ok-fd:#E3F2E9;--al:#7A4A00;--al-fd:#FCEFD9;--er:#9B1C1C;--er-fd:#FBE4D8;--escuro:#17212B}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
 body{margin:0;font-family:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.55;color:var(--tx);background:var(--fd)}
 img{max-width:100%}
 a{color:var(--cor)}a:hover{color:var(--cor-escura)}
 :focus-visible{outline:3px solid #F0B429;outline-offset:2px;box-shadow:0 0 0 2px #fff,0 0 0 7px #17212B}
-.int{max-width:var(--largura);margin:0 auto;padding-left:var(--margem);padding-right:var(--margem)}
+.int{width:100%;max-width:var(--largura-max);margin:0 auto;box-sizing:border-box;padding-left:var(--margem);padding-right:var(--margem)}
 .sr,.pular{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .pular:focus{left:16px;top:8px;width:auto;height:auto;background:#fff;color:var(--tx);padding:8px 12px;border-radius:6px;z-index:20}
 .ic{flex:0 0 auto;vertical-align:middle}
@@ -41,7 +41,7 @@ nav.menu a:hover{color:var(--cor)}nav.menu a[aria-current=page]{color:var(--cor)
 .busca-topo input{border:0;background:none;font:inherit;font-size:15px;width:140px;min-height:42px;color:var(--tx)}
 .busca-topo button{border:0;background:none;color:var(--tx);min-width:40px;min-height:40px;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .aviso-defeso{background:#7A2E0E;color:#fff}.aviso-defeso p{margin:0 auto;padding:10px 20px;font-size:15px}
-main{max-width:var(--largura);margin:0 auto;padding:32px var(--margem) 64px}
+main{width:100%;max-width:var(--largura-max);margin:0 auto;box-sizing:border-box;padding:32px var(--margem) 64px}
 main.home{padding-top:0}
 
 /* Destaque (hero) */
@@ -519,3 +519,19 @@ h1{font-weight:700}main>h1,main h1:first-of-type{font-size:clamp(28px,4.2vw,36px
 
 /* base legal logo abaixo da introdução, sem sobrepor (mesmo quando a introdução tem margem própria) */
 .legal-topo{margin:4px 0 24px!important}.intro:has(+ .legal-topo){margin-bottom:4px!important}h1+.legal-topo{margin-top:4px!important}
+
+/* Largura fluida (10/11/2026): containers em 100% até --largura-max (1760 px; configurável), margem lateral fluida.
+   Grades da página inicial aproveitam a largura extra, mas com no máximo 3 a 5 colunas (sem cartões gigantes nem colunas demais). */
+.atalhos{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,230px),calc((100% - 3 * 14px) / 4)),1fr))}
+.home dl.kpis{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,210px),calc((100% - 4 * 12px) / 5)),1fr))}
+.servicos{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,250px),calc((100% - 3 * 16px) / 4)),1fr))}
+.home .ics{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,220px),calc((100% - 4 * 12px) / 5)),1fr))}
+.pub-cartoes{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,230px),calc((100% - 3 * 12px) / 4)),1fr))}
+.atos-ult{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,200px),calc((100% - 3 * 8px) / 4)),1fr))}
+.tv-ultimas{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,260px),calc((100% - 2 * 14px) / 3)),1fr))}
+.redes-feed .feed{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,220px),calc((100% - 2 * 14px) / 3)),1fr))}
+.home ul.vers{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,176px),calc((100% - 5 * 14px) / 6)),1fr))}
+li.mesa{flex-direction:column}li.mesa .bienios{width:100%}
+.home .trilho{grid-template-columns:repeat(auto-fill,minmax(max(min(100%,240px),calc((100% - 3 * 16px) / 4)),1fr))}
+/* larguras de leitura: corpo de texto até 70ch */
+.texto,.texto-rico,.ficha-sec p,.ficha-sec ul,.ficha-sec ol,.materia .m-corpo>p,.atend-info,.pagina-txt{max-width:70ch}

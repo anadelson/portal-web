@@ -169,12 +169,15 @@ r = pm.post('/admin/identidade/cores', data={'csrf': tok(pm, '/admin/identidade?
 checa('Recusado' in r.text and (db.cfg(PM, 'identidade') or {}).get('cor') != '#7FB7C9', 'cor sem contraste AA é recusada')
 r = pm.post('/admin/identidade/cores', data={'csrf': tok(pm, '/admin/identidade?aba=tema'), 'cor': '#0e4d64', 'cor_destaque': '#F0B429'}, follow_redirects=True)
 checa('Tema salvo' in r.text and db.cfg(PM, 'identidade')['cor'] == '#0E4D64', 'cor com contraste AA é aceita')
-# largura máxima do conteúdo (Identidade > Tema): padrão 1320; 1200/1320/1440; valor fora da lista volta ao padrão
-checa('--largura:1320px' in pm.get('/').text and '--largura:1320px' in open('app/static/portal.css').read(), 'largura padrão 1320 px')
-pm.post('/admin/identidade/cores', data={'csrf': tok(pm, '/admin/identidade?aba=tema'), 'cor': '#0E4D64', 'cor_destaque': '#F0B429', 'largura': '1440'})
-checa(db.cfg(PM, 'identidade')['largura'] == 1440 and '--largura:1440px' in pm.get('/').text, 'largura 1440 px aplicada no portal')
-pm.post('/admin/identidade/cores', data={'csrf': tok(pm, '/admin/identidade?aba=tema'), 'cor': '#0E4D64', 'cor_destaque': '#F0B429', 'largura': '9999'})
-checa(db.cfg(PM, 'identidade')['largura'] == 1320, 'largura fora da lista volta ao padrão')
+# largura máxima do conteúdo (Identidade > Tema): fluida até 1760 px por padrão; 1320/1600/1760/tela toda; valor fora da lista volta ao padrão
+css = open('app/static/portal.css').read()
+checa('--largura-max:1760px' in pm.get('/').text and '--margem:clamp(16px,3.5vw,64px)' in css and 'max-width:var(--largura-max)' in css, 'largura padrão 1760 px e margem fluida')
+pm.post('/admin/identidade/cores', data={'csrf': tok(pm, '/admin/identidade?aba=tema'), 'cor': '#0E4D64', 'cor_destaque': '#F0B429', 'largura': 'tela'})
+checa(db.cfg(PM, 'identidade')['largura'] == 'tela' and '--largura-max:none' in pm.get('/').text, 'opção "tela toda"')
+pm.post('/admin/identidade/cores', data={'csrf': tok(pm, '/admin/identidade?aba=tema'), 'cor': '#0E4D64', 'cor_destaque': '#F0B429', 'largura': '1600'})
+checa(db.cfg(PM, 'identidade')['largura'] == 1600 and '--largura-max:1600px' in pm.get('/').text, 'largura 1600 px aplicada')
+pm.post('/admin/identidade/cores', data={'csrf': tok(pm, '/admin/identidade?aba=tema'), 'cor': '#0E4D64', 'cor_destaque': '#F0B429', 'largura': '1200'})
+checa(db.cfg(PM, 'identidade')['largura'] == 1760, 'largura fora da lista volta ao padrão (1760)')
 ok(pm.get('/admin/identidade?aba=tema'), txt='Largura máxima do conteúdo', nome='opção de largura no Tema')
 r = pm.post('/admin/identidade/favicon', data={'csrf': tok(pm, '/admin/identidade?aba=favicon'), 'acao': 'enviar'}, files={'png': ('f.png', png(512, 512), 'image/png')}, follow_redirects=True)
 fav = (db.cfg(PM, 'identidade') or {}).get('favicon') or {}
