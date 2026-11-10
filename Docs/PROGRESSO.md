@@ -1272,3 +1272,13 @@ Próximos passos dependem das pessoas:
   - Capturas em `Docs/avaliacao-visual-prefeitura/`.
 - **Testes:** as 15 suítes deram ERROS: 0 / tudo ok no banco de TESTE; nenhum volume solto.
 - **Onde parou:** aguardando aprovação para implantar (sem migração de banco).
+
+### Implantação do visual da Prefeitura no padrão da Câmara (10/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 19h36 UTC.
+- **Build e testes:** as 15 suítes com a imagem nova deram ERROS: 0 / tudo ok. Nenhum volume solto.
+- **Subida:** `up -d` de app e worker; app saudável. Sem migração. Disco em 72%.
+- **Conferência no domínio** (`Docs/avaliacao-visual-prefeitura/implantado/`):
+  - Prefeitura e Câmara idênticas no nome do cabeçalho (22 px em 1920, 21 em 1366, 25 no celular) e nos cartões de atalho (280×171 px, ícone em cima, borda superior de 4 px, sem sombra);
+  - na Prefeitura, 55% do cartão sobre a foto; sem rolagem horizontal;
+  - portal.css v=23 servido; portais 200, console 303 (login); logs sem erro.
+- `visual-prefeitura` mesclado em `main` com a tag `visual-prefeitura`.
