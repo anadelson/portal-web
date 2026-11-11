@@ -1764,3 +1764,12 @@ Próximos passos dependem das pessoas:
   - nome do nó;
   - janela da virada;
   - cópia dos segredos (`.env`, chave do nó, certificado do Diário) feita por ele.
+
+### Separação gestão × portais — fase 1: preparo desta VPS antes da VPS nova (11/11/2026, ramo `separacao-f1-preparo`)
+- **Usuário:** "finalize o que necessita nessa vps sem derrubar os pilotos instalados, em outro momento vou iniciar a nova vps e informo aki".
+- **Feito:**
+  - **Domínios do piloto:** nesta VPS, pmbora e cmbora continuam no `portal-bora.conf` (fora do ativador), como antes. Quando estiverem hospedados num nó, o console libera a publicação pelo ativador do nó, como qualquer órgão (necessário na virada).
+  - **Backup** (`deploy/backup.sh`): a lista de bancos passa a ser a do próprio servidor PostgreSQL, sem depender do banco de controle, que o nó não tem. Nesta VPS a lista é a mesma de hoje (plataforma, bd_pm_bora, bd_cm_bora); no nó, banco local e bancos dos órgãos. Sem nenhum banco: erro e saída.
+- **Testes:** `tests/teste_relatorio.py` ganhou o caso do piloto (bloqueado aqui; liberado e enviado ao nó quando hospedado lá). As 24 suítes e `teste_ativador.sh` passaram com o código montado. Prévia com cópia dos bancos: as 12 páginas **idênticas**.
+- **Implantação:** sem migração. O backup do primeiro passo já usa o script novo e serve de conferência. Ordem: `up -d app` → `up -d worker`.
+- **Onde parou:** aguardando aprovação para implantar a fase 1. Depois disso, **nada mais falta nesta VPS antes da VPS nova**. O resto (cadastrar o nó, exportar, virada) acontece junto com as fases 2 a 4.

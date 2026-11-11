@@ -130,6 +130,21 @@ RL.enviar()
 gestao_mode()
 checa(not db.um(db.PLATAFORMA, 'SELECT vhost_ativo FROM orgaos WHERE id=%s', (o['id'],))['vhost_ativo'], 'console marca como fora do ar')
 
+# ---------- 3b. piloto: nesta VPS fica no portal-bora.conf; hospedado num nó, segue o caminho normal ----------
+PM = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE slug='pm-bora'")
+UP = f"/orgao/{PM['id']}"
+r = con.post(f'{UP}/dominio', data={'csrf': tok(con, UP), 'acao': 'ativar'}, follow_redirects=True)
+checa('publicados pelo portal-bora.conf' in r.text and 'portal-bora.conf' in con.get(UP).text, 'piloto nesta VPS: fora do ativador, como antes')
+db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=%s WHERE id=%s', (no['id'], PM['id']))
+DNS[PM['dominio']] = [NO_IP]
+t = con.get(UP).text
+checa('portal-bora.conf' not in t and 'Publicar domínio' in t, 'piloto hospedado no nó: console oferece publicar pelo ativador do nó')
+r = con.post(f'{UP}/dominio', data={'csrf': tok(con, UP), 'acao': 'ativar'}, follow_redirects=True)
+checa('Pedido enviado ao nó' in r.text and db.um(db.PLATAFORMA, "SELECT 1 FROM ordens WHERE tipo='dominio' AND orgao_id=%s", (PM['id'],)), 'piloto no nó: pedido de domínio vai para o nó')
+db.exe(db.PLATAFORMA, "DELETE FROM ordens WHERE orgao_id=%s AND tipo='dominio'", (PM['id'],))
+db.exe(db.PLATAFORMA, 'DELETE FROM ativacoes WHERE orgao_id=%s', (PM['id'],))
+db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=NULL WHERE id=%s', (PM['id'],))
+
 # ---------- 4. papel "tudo": ativação desta VPS igual a antes ----------
 del os.environ['VPS_IP']
 checa(TestClient(app, base_url='http://pmbora.localhost').get('/').status_code == 200, 'papel "tudo" de volta')

@@ -179,7 +179,8 @@ async def orgao_dominio(request: Request, oid: int):
     o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
     if not o:
         raise HTTPException(404)
-    if o['slug'] in {x['slug'] for x in provision.PILOTO}:
+    if o['slug'] in {x['slug'] for x in provision.PILOTO} and not o.get('no_id'):
+        # nesta VPS o piloto segue no portal-bora.conf (feito à mão); hospedado num nó, é publicado pelo ativador do nó como qualquer órgão
         return ir(f'/orgao/{oid}#publicacao', 'Os domínios do piloto são publicados pelo portal-bora.conf, fora do ativador.', request)
     from . import ativacao as AT
     ok, msg = AT.pedir(o, f.get('acao', ''), g['nome'])
