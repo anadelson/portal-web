@@ -1701,3 +1701,13 @@ Próximos passos dependem das pessoas:
   - prévia com cópia dos bancos: as 12 páginas do piloto **idênticas** ao ar; 16 fontes ativas; migração 026 aplicada sem erro.
 - **Implantação:** tem migração (026). Ordem: `up -d app` → `provision atualizar` → `up -d worker`.
 - **Onde parou:** aguardando aprovação para implantar A3.
+
+### Implantação da etapa A3 — fila de ordens (11/11/2026, aprovada: "Aprovo os passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 16h13 UTC.
+- **Build e testes:** as 23 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** `up -d app` → `provision atualizar` (migração 026 aplicada) → `up -d worker` → `image prune`. O `provision atualizar` rodou uma segunda vez só para conferir a migração na saída; é idempotente e não mudou nada. Sem reinícios nem erros no log.
+- **Conferência:**
+  - portais, transparência, Diário e login dos dois painéis 200; console 303 (login); API de ordens sem token 401;
+  - 16 fontes ativas; tabela de ordens vazia; nenhum nó; timer do ativador ativo.
+- `separacao-a3-ordens` mesclado em `main` com a tag `separacao-a3`.
+- **Próximo:** A4 — relatório do nó (saúde, coletas e espaço) e publicação de domínio de órgão hospedado em nó, com os passos voltando para o console.
