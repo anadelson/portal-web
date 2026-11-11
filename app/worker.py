@@ -91,10 +91,24 @@ def diario_tick(agora):
             comum.registrar(o['slug'], 'diario:rotina', False, 0, f'{type(e).__name__}: {e}')
             traceback.print_exc()
 
+def licencas_tick(estado):
+    """Papel "no": busca as licenças na gestão a cada 5 minutos. Falha só é registrada: o portal segue com a última licença válida."""
+    if config.PAPEL != 'no' or time.monotonic() - estado.get('t', -1e9) < 300:
+        return
+    estado['t'] = time.monotonic()
+    from . import licenca
+    try:
+        msg = licenca.puxar()
+        comum.registrar('', 'licencas:gestao', 'RECUSADA' not in msg, 0, msg)
+    except Exception as e:
+        comum.registrar('', 'licencas:gestao', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
+
 def main():
     ultimo = ultimas_execucoes()
+    lic = {}
     print('worker iniciado', flush=True)
     while True:
+        licencas_tick(lic)
         agora = datetime.now()
         try:
             for f in fontes_ativas():

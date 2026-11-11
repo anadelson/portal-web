@@ -1592,3 +1592,31 @@ Próximos passos dependem das pessoas:
 - **Avisar a GOVBR:**
   - a rota de despesas da API de Pato Branco devolve erro do banco deles;
   - as descrições das receitas perdem a letra "o".
+
+### Separação gestão × portais — análise e etapa A1: licença assinada (11/11/2026, ramo `separacao-a1-licenca`)
+- **Análise** em `Docs/ANALISE-SEPARACAO-VPS.md`. A gestão fica na VPS atual; portais e painéis vão para uma VPS nova (o "nó"). O nó busca licenças assinadas na gestão; a gestão nunca acessa o nó.
+  - O plano muda três decisões do `Docs/CLAUDE.md` (dois PostgreSQL, nginx próprio no nó, uma VPS a mais) e depende da confirmação do usuário antes das etapas B a E.
+- **Usuário:** "inicie, é somente piloto pode reiniciar a qualquer momento" (etapa A aceita).
+- **A1 feito:**
+  - `PAPEL` no .env: `tudo` (padrão, igual a antes), `gestao` ou `no`.
+  - `app/licenca.py`:
+    - par Ed25519 da gestão, com a privada cifrada no banco de controle (chave derivada da SECRET_KEY);
+    - documento por órgão: domínio, banco, tipo, módulos contratados, contrato e "válida até" (15 dias, `LICENCA_VALIDADE_DIAS`).
+  - **Papel `tudo`:** o documento é montado na hora, sem cache, e o resultado é idêntico ao de antes.
+  - **Papel `no`:** vale só a licença do cache com assinatura conferida.
+    - licença vencida → carência (só o obrigatório; portal e transparência seguem no ar);
+    - licença adulterada → recusada.
+  - `modulos_do_orgao` e Funcionalidades leem a licença.
+  - O roteamento por domínio no nó usa as licenças.
+  - O nó não serve o console, e a gestão sozinha não serve portais.
+  - Worker do nó: busca as licenças a cada 5 min, e a falha fica registrada.
+  - Console:
+    - "Nós e licenças": chave pública e impressão digital; cadastro de nó com o token mostrado uma vez (a gestão guarda o hash); troca de token com confirmação;
+    - página do órgão: "Hospedagem e licença" (onde está hospedado, quando o nó buscou, o que está contratado).
+  - API `GET /api/no/licencas` (gestão; só com o token do nó).
+  - Migração `025_plataforma_licencas.sql` (`licenca_chaves`, `nos`, `orgaos.no_id`, `licencas_emitidas`, `licencas_cache`). O `provision atualizar` cria o par de chaves e mostra só a impressão digital.
+- **Testes:**
+  - `tests/teste_licenca.py`: papel "tudo" igual ao código antigo (inclusive mudança direta no banco); assinatura e adulteração; token uma vez; API 401; nó simulado (busca, gestão fora do ar, vencida → carência, adulterada, licença antiga não sobrescreve); papel "gestao";
+  - as 21 suítes e `teste_ativador.sh` passaram com o código montado;
+  - prévia com cópia dos bancos: as 12 páginas do piloto **idênticas** ao ar.
+- **Onde parou:** aguardando aprovação para implantar A1. Tem migração. Ordem: `up -d app` → `provision atualizar` → `up -d worker`.

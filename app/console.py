@@ -161,7 +161,11 @@ def orgao(request: Request, oid: int):
     anos = (c['fim'] - c['inicio']).days / 365.25
     from . import ativacao as AT
     pub = {'dns': AT.dns(o['dominio']), 'ultima': AT.ultima(oid), 'pilotos': {x['slug'] for x in provision.PILOTO}}
-    return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub)
+    from . import licenca
+    lic = licenca.situacao(o)
+    lic['doc'] = licenca.documento(o)
+    nos_ = db.todos(db.PLATAFORMA, 'SELECT id, nome, ultimo_contato FROM nos WHERE ativo ORDER BY nome')
+    return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub, lic=lic, nos=nos_, validade=config.LICENCA_VALIDADE_DIAS)
 
 @r.post('/orgao/{oid}/dominio')
 async def orgao_dominio(request: Request, oid: int):
@@ -224,6 +228,77 @@ async def orgao_post(request: Request, oid: int):
         raise HTTPException(400)
     log(g, f"{o['nome']}: {msg}")
     return ir(f'/orgao/{oid}', msg, request)
+
+# ---------- nós (VPS de portais) e licenças — separação gestão × portais, etapa A1 ----------
+@r.get('/api/no/licencas')
+def api_licencas(request: Request):
+    """API para os nós: licenças assinadas dos órgãos hospedados no nó do token. Sem sessão; só o token do nó."""
+    from fastapi.responses import JSONResponse
+    from . import licenca
+    if config.PAPEL == 'no':
+        raise HTTPException(404)
+    a = request.headers.get('authorization', '')
+    no = licenca.no_do_token(a[7:].strip() if a[:7].lower() == 'bearer ' else '')
+    if not no:
+        return JSONResponse({'erro': 'não autorizado'}, status_code=401, headers={'Cache-Control': 'no-store'})
+    d = licenca.entregar(no, ip=(request.headers.get('x-forwarded-for') or (request.client.host if request.client else '')).split(',')[0].strip(),
+                         versao=request.headers.get('x-versao', ''))
+    return JSONResponse(d, headers={'Cache-Control': 'no-store'})
+
+@r.get('/nos')
+def nos(request: Request):
+    gestor(request)
+    from . import licenca
+    imp, pub = licenca.garantir_chaves()
+    lista = db.todos(db.PLATAFORMA, 'SELECT n.*, (SELECT count(*) FROM orgaos o WHERE o.no_id=n.id) orgaos FROM nos n ORDER BY n.id')
+    return T('nos', request, nos=lista, impressao=imp, publica=pub, validade=config.LICENCA_VALIDADE_DIAS)
+
+@r.post('/nos')
+async def nos_post(request: Request):
+    g = gestor(request); f = await ler_form(request)
+    from . import licenca
+    acao = f.get('acao')
+    if acao == 'criar':
+        nome = (f.get('nome') or '').strip().lower()
+        if not re.fullmatch(r'[a-z0-9][a-z0-9.-]{1,60}', nome):
+            return ir('/nos', 'Nome do nó: letras minúsculas, números, ponto e hífen (ex.: no1.conectatech.tech).', request)
+        if db.um(db.PLATAFORMA, 'SELECT 1 FROM nos WHERE nome=%s', (nome,)):
+            return ir('/nos', 'Já existe um nó com este nome.', request)
+        token = licenca.criar_no(nome)
+        log(g, f'Nó {nome} criado (token mostrado uma vez)')
+        n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE nome=%s', (nome,))
+    elif acao == 'token':
+        n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (int(f.get('id') or 0),))
+        if not n:
+            raise HTTPException(404)
+        if f.get('confirmo') != '1':
+            return ir('/nos', 'Marque a confirmação: o token antigo deixa de valer na hora e o nó para de receber licenças até o .env ser atualizado.', request)
+        token = licenca.novo_token(n['id'])
+        log(g, f"Nó {n['nome']}: token trocado (o anterior deixou de valer)")
+    else:
+        raise HTTPException(400)
+    imp, pub = licenca.garantir_chaves()
+    r = T('no_token', request, n=n, token=token, gestao=f'https://{config.DOMINIO_GESTAO}', publica=pub, impressao=imp)
+    r.headers['Cache-Control'] = 'no-store'
+    return r
+
+@r.post('/orgao/{oid}/hospedagem')
+async def orgao_hospedagem(request: Request, oid: int):
+    g = gestor(request); f = await ler_form(request)
+    o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    if not o:
+        raise HTTPException(404)
+    novo = int(f['no_id']) if (f.get('no_id') or '').isdigit() else None
+    n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (novo,)) if novo else None
+    if novo and not n:
+        raise HTTPException(400)
+    if f.get('confirmo') != '1':
+        return ir(f'/orgao/{oid}#hospedagem', 'Marque a confirmação para mudar a hospedagem.', request)
+    db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=%s WHERE id=%s', (novo, oid))
+    limpar_cache()
+    msg = f"Hospedagem: {'nó ' + n['nome'] if n else 'esta VPS'}. As licenças passam a ser entregues a quem hospeda o órgão."
+    log(g, f"{o['nome']}: {msg}")
+    return ir(f'/orgao/{oid}#hospedagem', msg, request)
 
 @r.get('/orgaos/novo')
 def novo(request: Request):
