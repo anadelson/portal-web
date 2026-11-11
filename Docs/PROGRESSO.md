@@ -1745,3 +1745,22 @@ Próximos passos dependem das pessoas:
 - **Com a A4, a etapa A (código) fica completa.** As etapas B a E (VPS nova, ensaio, virada) dependem das decisões listadas em `Docs/ANALISE-SEPARACAO-VPS.md` (plano da VPS, validade da licença, nome do nó, janela) e da confirmação das três mudanças de decisão do `Docs/CLAUDE.md`.
 - **Implantação:** tem migração (027). Ordem: `up -d app` → `provision atualizar` → `up -d worker`.
 - **Onde parou:** aguardando aprovação para implantar A4.
+
+### Implantação da etapa A4 — relatório do nó e domínio em nó (11/11/2026, aprovada: "Aprovo os passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 17h19 UTC.
+- **Build e testes:** as 24 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** `up -d app` → `provision atualizar` (migração 027 aplicada) → `up -d worker` → `image prune`. Sem reinícios nem erros no log.
+- **Conferência:**
+  - portais, transparência, Diário e login dos dois painéis 200; console 303 (login);
+  - APIs de licenças e de relatório sem token: 401;
+  - 16 fontes ativas; vhost gerado pelo ativador sem blocos, igual ao do ar;
+  - o timer do ativador rodou com o código novo às 17h30 UTC e saiu com sucesso.
+- `separacao-a4-relatorio` mesclado em `main` com a tag `separacao-a4`.
+- **Etapa A (código) completa:** licença assinada (A1), banco local do nó (A2), fila de ordens (A3), relatório e domínio em nó (A4). Tudo no papel "tudo", sem mudança para o piloto.
+- **Próximo (B a E):** depende do usuário:
+  - confirmar as três mudanças de decisão do `Docs/CLAUDE.md`;
+  - plano e região da VPS nova;
+  - validade da licença sem contato (sugestão: 15 dias);
+  - nome do nó;
+  - janela da virada;
+  - cópia dos segredos (`.env`, chave do nó, certificado do Diário) feita por ele.
