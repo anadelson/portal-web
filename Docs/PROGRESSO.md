@@ -1658,3 +1658,14 @@ Próximos passos dependem das pessoas:
   - prévia com cópia dos bancos: as 12 páginas do piloto **idênticas** ao ar, e o worker vê as mesmas 16 fontes ativas.
 - **Implantação:** sem migração no banco de controle e sem `provision atualizar` (o banco local só nasce no nó). Ordem: `up -d app` → `up -d worker`.
 - **Onde parou:** aguardando aprovação para implantar A2.
+
+### Implantação da etapa A2 — banco local do nó (11/11/2026, aprovada: "Aprovo os passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 15h36 UTC.
+- **Build e testes:** as 22 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** `up -d app` → `up -d worker` → `image prune` (sem migração no controle). Sem reinícios nem erros no log.
+- **Conferência:**
+  - portais, transparência, Diário e login dos dois painéis 200; console 303 (login); API de licenças sem token 401;
+  - worker com as mesmas 16 fontes ativas; banco local = `plataforma` (papel "tudo"), órgãos pm-bora e cm-bora;
+  - timer do ativador ativo.
+- `separacao-a2-local` mesclado em `main` com a tag `separacao-a2`.
+- **Próximo:** A3 — fila de ordens (o console deixa de escrever direto nos bancos dos órgãos).
