@@ -17,48 +17,48 @@ MAX_EXPORT = 50000
 # campo: (rótulo, formato)  — formatos: t (texto), m (moeda), d (data), n (número), mes, link
 BASES = {
     'receitas': dict(titulo='Receitas', icone='grafico', desc='Previsão e arrecadação por natureza da receita.', tipos=('executivo',),
-        legal=f'{LRF}, arts. 48 e 48-A, II; {LAI}, art. 8º, § 1º, II.', fontes={'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)', 'tcesp': 'TCESP — Transparência Municipal (2025)'},
-        coletas=['fiorilli:receitas', 'tcesp:receitas_2025'], ordem='ano DESC, mes, codigo, id',
+        legal=f'{LRF}, arts. 48 e 48-A, II; {LAI}, art. 8º, § 1º, II.', fontes={'govbr': 'Portal da transparência (GOVBR)', 'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)', 'tcesp': 'TCESP — Transparência Municipal (2025)'},
+        coletas=['fiorilli:receitas', 'govbr:receitas', 'tcesp:receitas_2025'], ordem='ano DESC, mes, codigo, id',
         colunas=[('ano', 'Ano', 'n'), ('mes', 'Mês', 'mes'), ('codigo', 'Código', 't'), ('nome', 'Receita', 't'), ('fonte_recurso', 'Fonte de recurso', 't'),
                  ('previsto', 'Previsto', 'm'), ('atualizado', 'Previsão atualizada', 'm'), ('arrecadado', 'Arrecadado', 'm')],
         mes='mes', unidade=None, credor=None, texto=['nome', 'codigo', 'fonte_recurso'], totais=['arrecadado'], total_onde='soma',
         nota='Total arrecadado: soma das receitas correntes e de capital, menos as deduções (sem dupla contagem). 2026: Fiorilli acumulado no ano (Mês = acumulado). 2025: TCESP, mês a mês, porque a API da Prefeitura devolve 2025 zerado.'),
     'despesas': dict(titulo='Despesas por unidade', icone='lista', desc='Dotação, empenhado, liquidado e pago por unidade orçamentária.', tipos=('executivo',), tabela='despesas_unidade',
-        legal=f'{LRF}, arts. 48 e 48-A, I; {LAI}, art. 8º, § 1º, III.', fontes={'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:despesas_unidade'],
+        legal=f'{LRF}, arts. 48 e 48-A, I; {LAI}, art. 8º, § 1º, III.', fontes={'govbr': 'Portal da transparência (GOVBR)', 'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:despesas_unidade', 'govbr:despesas_unidade'],
         ordem='ano DESC, codigo', colunas=[('codigo', 'Código', 't'), ('unidade', 'Unidade orçamentária', 't'), ('dotacao_atualizada', 'Dotação atualizada', 'm'),
                                           ('empenhado', 'Empenhado', 'm'), ('liquidado', 'Liquidado', 'm'), ('pago', 'Pago', 'm')],
         mes=None, unidade=None, credor=None, texto=['unidade'], totais=['dotacao_atualizada', 'empenhado', 'liquidado', 'pago']),
     'empenhos': dict(titulo='Despesas — empenhos', icone='lista', desc='Cada empenho com credor, unidade, ação, liquidado e pago.', tipos=('executivo',),
-        legal=f'{LRF}, art. 48-A, I; {LAI}, art. 8º, § 1º, III; Lei 4.320/1964, arts. 58 a 65.', fontes={'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:empenhos'],
+        legal=f'{LRF}, art. 48-A, I; {LAI}, art. 8º, § 1º, III; Lei 4.320/1964, arts. 58 a 65.', fontes={'govbr': 'Portal da transparência (GOVBR)', 'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:empenhos', 'govbr:empenhos'],
         ordem='data DESC NULLS LAST, id DESC', colunas=[('data', 'Data', 'd'), ('numero', 'Empenho', 't'), ('tipo', 'Tipo', 't'), ('credor', 'Credor', 't'), ('credor_cnpj', 'CNPJ', 't'),
                                                      ('unidade', 'Unidade', 't'), ('acao', 'Ação', 't'), ('natureza', 'Natureza', 't'), ('modalidade', 'Modalidade', 't'),
                                                      ('empenhado', 'Empenhado', 'm'), ('liquidado', 'Liquidado', 'm'), ('pago', 'Pago', 'm')],
         mes='data', unidade='unidade', credor='credor', texto=['credor', 'acao', 'programa', 'natureza', 'vinculo_nome', 'numero'], totais=['empenhado', 'liquidado', 'pago'],
         nota='Empenhado já líquido das anulações (linhas do tipo AN aparecem com valor negativo). Pessoa física aparece sem documento.'),
     'licitacoes': dict(titulo='Licitações', icone='proposicoes', desc='Processos de compra do sistema da Prefeitura e publicações no PNCP.', tipos=('executivo',),
-        legal=f'{L14133}, arts. 54, 94 e 174; {LAI}, art. 8º, § 1º, IV.', fontes={'fiorilli': 'Sistema de compras da Prefeitura (Fiorilli)', 'pncp': 'Portal Nacional de Contratações Públicas (PNCP)'},
-        coletas=['fiorilli:licitacoes', 'pncp:licitacoes_pncp'], ordem='data DESC NULLS LAST, id DESC',
+        legal=f'{L14133}, arts. 54, 94 e 174; {LAI}, art. 8º, § 1º, IV.', fontes={'govbr': 'Portal da transparência (GOVBR)', 'fiorilli': 'Sistema de compras da Prefeitura (Fiorilli)', 'pncp': 'Portal Nacional de Contratações Públicas (PNCP)'},
+        coletas=['fiorilli:licitacoes', 'govbr:licitacoes', 'pncp:licitacoes_pncp'], ordem='data DESC NULLS LAST, id DESC',
         colunas=[('data', 'Data', 'd'), ('numero', 'Processo / nº PNCP', 't'), ('modalidade', 'Modalidade', 't'), ('objeto', 'Objeto', 't'), ('situacao', 'Situação', 't'),
                  ('valor', 'Valor', 'm'), ('fonte', 'Fonte', 'fonte'), ('link', 'Ver', 'link')],
         mes='data', unidade='modalidade', unidade_rotulo='Modalidade', credor=None, texto=['objeto', 'numero', 'situacao'], totais=['valor']),
     'contratos': dict(titulo='Contratos', icone='diario', desc='Contratos publicados, com vigência, valor e execução.', tipos=('executivo',),
-        legal=f'{L14133}, arts. 94 e 174; {LAI}, art. 8º, § 1º, IV.', fontes={'fiorilli': 'Sistema de compras da Prefeitura (Fiorilli)'}, coletas=['fiorilli:contratos'],
+        legal=f'{L14133}, arts. 94 e 174; {LAI}, art. 8º, § 1º, IV.', fontes={'govbr': 'Portal da transparência (GOVBR)', 'fiorilli': 'Sistema de compras da Prefeitura (Fiorilli)'}, coletas=['fiorilli:contratos', 'govbr:contratos'],
         ordem='assinatura DESC NULLS LAST, id DESC', colunas=[('assinatura', 'Assinatura', 'd'), ('numero', 'Contrato', 't'), ('fornecedor', 'Contratado', 't'), ('objeto', 'Objeto', 't'),
                                                               ('modalidade', 'Modalidade', 't'), ('inicio', 'Início', 'd'), ('fim', 'Fim', 'd'), ('valor', 'Valor', 'm'), ('empenhado', 'Empenhado', 'm')],
         mes='assinatura', unidade='unidade', credor='fornecedor', texto=['objeto', 'fornecedor', 'numero'], totais=['valor', 'empenhado']),
     'servidores': dict(titulo='Pessoal e remuneração', icone='users', desc='Servidores com cargo, vínculo, lotação e remuneração bruta do mês.', tipos=('executivo',),
-        legal=f'{LAI}, art. 8º; STF, ARE 652.777 (Tema 483); LGPD, art. 7º, II e III.', fontes={'fiorilli': 'Folha de pagamento (Fiorilli)'}, coletas=['fiorilli:servidores'],
+        legal=f'{LAI}, art. 8º; STF, ARE 652.777 (Tema 483); LGPD, art. 7º, II e III.', fontes={'govbr': 'Portal da transparência (GOVBR)', 'fiorilli': 'Folha de pagamento (Fiorilli)'}, coletas=['fiorilli:servidores', 'govbr:servidores'],
         ordem='ano DESC, mes DESC, nome', colunas=[('mes', 'Mês', 'mes'), ('nome', 'Nome', 't'), ('cargo', 'Cargo', 't'), ('vinculo', 'Vínculo', 't'), ('lotacao', 'Lotação', 't'),
                                                    ('admissao', 'Admissão', 'd'), ('proventos', 'Remuneração bruta', 'm')],
         mes='mes', unidade='lotacao', unidade_rotulo='Lotação', credor='nome', credor_rotulo='Nome', texto=['nome', 'cargo', 'vinculo', 'lotacao'], totais=['proventos'],
         nota='LGPD: o portal não mostra CPF, descontos pessoais nem valor líquido. Quando houver nome social, ele é usado.'),
     'diarias': dict(titulo='Diárias', icone='relogio', desc='Diárias pagas, com favorecido, cargo, motivo e valor.', tipos=('executivo',),
-        legal=f'{LAI}, art. 8º; {LRF}, art. 48-A, I.', fontes={'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:diarias'],
+        legal=f'{LAI}, art. 8º; {LRF}, art. 48-A, I.', fontes={'govbr': 'Portal da transparência (GOVBR)', 'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:diarias', 'govbr:diarias'],
         ordem='data DESC NULLS LAST, id DESC', colunas=[('data', 'Data', 'd'), ('empenho', 'Empenho', 't'), ('favorecido', 'Favorecido', 't'), ('cargo', 'Cargo', 't'),
                                                        ('unidade', 'Unidade', 't'), ('motivo', 'Motivo', 't'), ('valor', 'Valor', 'm')],
         mes='data', unidade='unidade', credor='favorecido', credor_rotulo='Favorecido', texto=['favorecido', 'motivo', 'cargo'], totais=['valor']),
     'transferencias': dict(titulo='Repasses e transferências', icone='integ', desc='Repasses entre órgãos (ex.: duodécimo da Câmara).', tipos=('executivo', 'legislativo'),
-        legal=f'{LRF}, art. 48-A, I; Constituição, art. 168 (duodécimo).', fontes={'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:transferencias'],
+        legal=f'{LRF}, art. 48-A, I; Constituição, art. 168 (duodécimo).', fontes={'govbr': 'Portal da transparência (GOVBR)', 'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:transferencias', 'govbr:transferencias'],
         ordem='data DESC NULLS LAST, id DESC', colunas=[('data', 'Data', 'd'), ('mes', 'Mês', 'mes'), ('pagadora', 'Pagadora', 't'), ('recebedora', 'Recebedora', 't'),
                                                        ('previsto', 'Previsto', 'm'), ('repasse', 'Repasse', 'm'), ('devolucao', 'Devolução', 'm')],
         mes='mes', unidade=None, credor='recebedora', credor_rotulo='Recebedora', texto=['pagadora', 'recebedora'], totais=['repasse', 'devolucao']),
@@ -69,7 +69,7 @@ BASES = {
         mes='pagamento', unidade='unidade', credor='fornecedor', credor_rotulo='Fornecedor', texto=['fornecedor', 'empenho', 'justificativa'], totais=['valor'],
         nota='Pessoas físicas ficam fora desta lista (LGPD).'),
     'restos-a-pagar': dict(titulo='Restos a pagar', icone='bases', desc='Despesas de anos anteriores ainda a pagar.', tipos=('executivo',), tabela='restos_pagar',
-        legal=f'{LRF}, arts. 42 e 48-A; Lei 4.320/1964, art. 36.', fontes={'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:restos_pagar'],
+        legal=f'{LRF}, arts. 42 e 48-A; Lei 4.320/1964, art. 36.', fontes={'govbr': 'Portal da transparência (GOVBR)', 'fiorilli': 'Sistema contábil da Prefeitura (Fiorilli)'}, coletas=['fiorilli:restos_pagar', 'govbr:restos_pagar'],
         ordem='ano DESC, credor', colunas=[('codigo', 'Código', 't'), ('credor', 'Credor', 't'), ('empenhado', 'Inscrito', 'm'), ('liquidado', 'Liquidado', 'm'), ('pago', 'Pago', 'm')],
         mes=None, unidade=None, credor='credor', texto=['credor'], totais=['empenhado', 'liquidado', 'pago'], nota='Pessoas físicas ficam fora desta lista (LGPD).'),
     'diarias-camara': dict(titulo='Diárias e verbas dos vereadores', icone='relogio', desc='Diárias, adiantamentos e verbas pagos a vereadores e servidores da Câmara.', tipos=('legislativo',), tabela='diarias_legislativo',
@@ -87,8 +87,15 @@ for k, v in BASES.items():
     v.setdefault('tabela', k)
 MESES = ['acumulado', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
+SISTEMAS = ('fiorilli', 'govbr')  # sistemas da transparência: cada órgão usa um; o rótulo mostrado é o do sistema que ele usa
+
+def _fontes_visiveis(fontes, do_orgao):
+    vis = {k: v for k, v in fontes.items() if k not in SISTEMAS or k in do_orgao}
+    return vis or {k: v for k, v in fontes.items() if k != 'govbr'}
+
 def bases_do(o):
-    return {k: v for k, v in BASES.items() if o['tipo'] in v['tipos']}
+    do_orgao = {f['fonte'] for f in db.todos(db.PLATAFORMA, 'SELECT fonte FROM fontes WHERE orgao_id=%s', (o['id'],))} if o.get('id') else set()
+    return {k: dict(v, fontes=_fontes_visiveis(v['fontes'], do_orgao)) for k, v in BASES.items() if o['tipo'] in v['tipos']}
 
 def _base(request, nome):
     o = request.state.orgao

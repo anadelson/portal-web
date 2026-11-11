@@ -12,6 +12,15 @@ FIORILLI_BASES = {'receitas': 'Receitas', 'despesas_unidade': 'Despesas por unid
                   'restos_pagar': 'Restos a pagar', 'ordem_cronologica': 'Ordem cronológica de pagamentos', 'licitacoes': 'Licitações',
                   'contratos': 'Contratos', 'transferencias': 'Transferências', 'servidores': 'Pessoal (servidores)', 'emendas': 'Emendas impositivas'}
 
+def _govbr():
+    from .coletores import govbr
+    return govbr
+
+GOVBR_BASES = {'receitas': 'Receitas (arrecadação)', 'despesas_unidade': 'Despesas por unidade', 'empenhos': 'Empenhos', 'diarias': 'Diárias',
+               'restos_pagar': 'Restos a pagar', 'licitacoes': 'Licitações', 'contratos': 'Contratos', 'servidores': 'Pessoal (folha)',
+               'transferencias': 'Transferências (duodécimo)'}
+OPCOES_BASES = {'fiorilli': FIORILLI_BASES, 'govbr': GOVBR_BASES}
+
 # Campo: (nome, rótulo, tipo, de onde vem o valor). Tipos: url, ibge, int, texto, slug, sn (sim/não), poder, anos, bases
 _IBGE = ('ibge', 'Código IBGE do município', 'ibge', 'código IBGE do órgão (cadastro no console)')
 ESQUEMA = {
@@ -19,6 +28,12 @@ ESQUEMA = {
                  ('empresa', 'Código da entidade (Empresa)', 'int', 'cadastro da entidade no sistema contábil'),
                  ('bases', 'Bases coletadas', 'bases', 'escolha do órgão'),
                  ('recebedora', 'Nome da recebedora nas transferências (opcional)', 'texto', 'usado pela Câmara para achar os repasses')],
+    'govbr': [('base', 'Endereço do portal TransparênciaBR (Pronim TB)', 'url', 'endereço público do portal da transparência (termina em /pronimtb/)'),
+              ('unidades', 'Unidade gestora no XML (vírgula separa; vazio = todas)', 'texto', 'nome exatamente como aparece em UnidadeGestora, ex.: PREFEITURA MUNICIPAL'),
+              ('bases', 'Bases coletadas', 'bases', 'escolha do órgão'),
+              ('meses_recentes', 'Meses relidos nas execuções rápidas (1 a 3)', 'int', 'uma execução a cada 24 h relê o ano inteiro'),
+              ('pessoal', 'Entidades de pessoal (códigos, vírgula separa; vazio = todas)', 'texto', 'combo “Entidade” da tela Exportar Dados › Folha de Pagamento, ex.: DW_LC131_AP_3'),
+              ('recebedora', 'Órgão recebedor nas transferências (opcional)', 'texto', 'usado pela Câmara, ex.: PODER LEGISLATIVO')],
     'financas': [('base', 'Endereço da API de dados abertos', 'url', 'o mesmo da fonte Fiorilli do órgão'),
                  ('empresa', 'Código da entidade (Empresa)', 'int', 'o mesmo da fonte Fiorilli do órgão')],
     'pncp': [_IBGE, ('cnpj', 'CNPJ do órgão', 'texto', 'cadastro do órgão')],
@@ -27,11 +42,11 @@ ESQUEMA = {
     'ibge': [_IBGE], 'cnes': [_IBGE], 'inep': [_IBGE], 'iegm': [_IBGE], 'mds': [_IBGE], 'pni': [_IBGE], 'painel': [_IBGE],
     'youtube': [], 'redes': [],
 }
-NOMES = {'fiorilli': 'Sistema contábil (Fiorilli)', 'financas': 'Sistema contábil — série mensal (Fiorilli)', 'pncp': 'PNCP (contratações públicas)',
+NOMES = {'fiorilli': 'Sistema contábil (Fiorilli)', 'govbr': 'Portal da transparência (GOVBR — TransparênciaBR)', 'financas': 'Sistema contábil — série mensal (Fiorilli)', 'pncp': 'PNCP (contratações públicas)',
          'siconfi': 'Siconfi (Tesouro Nacional)', 'tcesp': 'TCESP — Transparência', 'ibge': 'IBGE', 'cnes': 'CNES (Ministério da Saúde)', 'inep': 'INEP',
          'iegm': 'TCESP — IEG-M', 'mds': 'MDS', 'pni': 'Ministério da Saúde (vacinação)', 'painel': 'Cálculo do painel (dados já coletados + Siconfi)',
          'youtube': 'YouTube (transmissões)', 'redes': 'Redes sociais (últimas publicações)', 'portal': 'Este portal (e-SIC e Ouvidoria)', 'manual': 'Lançamento manual'}
-FORMATO = {'inep': 'planilha (ZIP com XLSX)', 'painel': 'cálculo interno + JSON', 'portal': 'banco do próprio portal', 'manual': '—'}
+FORMATO = {'govbr': 'XML dentro de ZIP (exportação do portal; sem login e sem captcha)', 'inep': 'planilha (ZIP com XLSX)', 'painel': 'cálculo interno + JSON', 'portal': 'banco do próprio portal', 'manual': '—'}
 CREDENCIAL = {'iegm': 'iegm', 'youtube': 'youtube', 'redes': 'meta'}
 
 # Como a consulta é montada (endpoints), com o significado de cada parâmetro
@@ -57,6 +72,8 @@ def endpoints(fonte, p):
             if caminho:
                 out.append((FIORILLI_BASES.get(k, k), 'GET', f'{base}/{caminho}', q, k))
         return out
+    if fonte == 'govbr':
+        return _govbr().endpoints(p)
     if fonte == 'financas':
         return [('Receitas do mês', 'GET', f'{base}/Receitas/', dict(per, Listagem='ReceitaOrcamentaria', MesFinalPeriodo='{cada mês}'), ''),
                 ('Despesas do mês', 'GET', f'{base}/Despesas/', dict(per, Listagem='DespesasPorUnidade', MesFinalPeriodo='{cada mês}'), '')]
@@ -102,6 +119,7 @@ MAPEAMENTO = {
                  ('Empenho, fornecedor (CNPJ; pessoa física sem CPF), valores', 'Empenhos'), ('Beneficiário, destino, motivo, período, valor', 'Diárias'),
                  ('Licitação, modalidade, objeto, situação', 'Licitações'), ('Contrato, fornecedor, vigência, valor', 'Contratos'),
                  ('Servidor, cargo, vínculo, remuneração', 'Pessoal'), ('Arrecadado e pago acumulados', 'Indicadores de Dinheiro público')],
+    'govbr': [('cada base, coluna por coluna, em “Como cada tela do portal é montada”', 'telas da transparência')],
     'financas': [('ARRECADADO_TOTAL e PAGO por mês', 'Série mensal do painel (receita × despesa)')],
     'pncp': [('título, modalidade, valor, data, situação, item_url', 'Contratações publicadas no PNCP (indicadores de Contratações)')],
     'siconfi': [('RREO Anexo 14 / RGF Anexo 01 (conta, coluna, valor)', 'Relatórios fiscais (transparência)')],
@@ -162,7 +180,9 @@ def validar(fonte, form, atual):
         elif tipo == 'int':
             if not v.isdigit():
                 erros.append(f'{rot}: só números.')
-            novo[nome] = v
+            elif nome == 'meses_recentes' and not 1 <= int(v) <= 3:
+                erros.append(f'{rot}: de 1 a 3.')
+            novo[nome] = int(v) if nome == 'meses_recentes' and v.isdigit() else v
         elif tipo == 'slug':
             if not re.fullmatch(r'[a-z0-9-]{2,60}', v):
                 erros.append(f'{rot}: letras minúsculas, números e hífen.')
@@ -179,12 +199,14 @@ def validar(fonte, form, atual):
         elif tipo == 'sn':
             novo[nome] = form.get(f'p_{nome}') == '1'
         elif tipo == 'bases':
-            sel = [b for b in form.getlist(f'p_{nome}') if b in FIORILLI_BASES] if hasattr(form, 'getlist') else []
+            sel = [b for b in form.getlist(f'p_{nome}') if b in OPCOES_BASES.get(fonte, FIORILLI_BASES)] if hasattr(form, 'getlist') else []
             if not sel:
                 erros.append(f'{rot}: escolha ao menos uma.')
             novo[nome] = sel
         elif tipo == 'texto':
-            novo[nome] = v[:120]
+            if fonte == 'govbr' and nome == 'pessoal' and v and not all(re.fullmatch(r'[A-Za-z0-9_]{3,40}', x.strip()) for x in v.split(',') if x.strip()):
+                erros.append(f'{rot}: só códigos como DW_LC131_AP_3, separados por vírgula.')
+            novo[nome] = v[:300] if fonte == 'govbr' else v[:120]
     return novo, erros
 
 def hash_params(p):
@@ -199,7 +221,7 @@ def ensaiar(o, fonte, params, base=None):
     from .worker import MODULOS
     from .coletores import comum
     p = dict(params)
-    if fonte == 'fiorilli' and base:
+    if fonte in ('fiorilli', 'govbr') and base:
         p['bases'] = [base]
     rel = {'fonte': fonte, 'params': p, 'inicio': datetime.now(timezone.utc).isoformat()}
     tok = db.ENSAIO.set(rel); tok2 = comum.ORGAO.set(o['slug'])
@@ -249,4 +271,5 @@ def painel(o, fonte):
             'credencial': ('configurada no console' if CR.situacao(cred) else 'NÃO configurada no console') if cred else 'não usa',
             'amostras': amostras, 'coletas': coletas, 'teste': ultimo_teste(o, fonte),
             'historico': db.todos(db.PLATAFORMA, 'SELECT * FROM fontes_historico WHERE orgao_id=%s AND fonte=%s ORDER BY id DESC LIMIT 10', (o['id'], fonte)),
-            'bases_opcoes': FIORILLI_BASES}
+            'bases_opcoes': OPCOES_BASES.get(fonte, FIORILLI_BASES),
+            'telas': _govbr().telas(p) if fonte == 'govbr' else [], 'fora': _govbr().FORA if fonte == 'govbr' else []}

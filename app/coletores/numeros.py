@@ -10,7 +10,8 @@ def _pct(b, termo):
 
 def atualizar(o):
     b, ano = o['banco'], config.hoje().year
-    rec = db.um(b, "SELECT sum(arrecadado) v, max(coletado_em) t FROM receitas WHERE fonte='fiorilli' AND ano=%s AND soma", (ano,))
+    # sistema da transparência do órgão: Fiorilli ou GOVBR (o que tiver receita do ano)
+    rec = db.um(b, "SELECT fonte, sum(arrecadado) v, max(coletado_em) t FROM receitas WHERE fonte IN ('fiorilli', 'govbr') AND ano=%s AND soma GROUP BY fonte ORDER BY 2 DESC NULLS LAST LIMIT 1", (ano,))
     desp = db.um(b, 'SELECT sum(empenhado) e, sum(pago) p, max(coletado_em) t FROM despesas_unidade WHERE ano=%s', (ano,))
     if not rec or rec['v'] is None:
         return False
@@ -18,7 +19,7 @@ def atualizar(o):
     if desp and desp['e'] is not None:
         kpis += [{'l': 'Despesa empenhada', 'v': moeda(desp['e']), 'd': 'compromissos assumidos no ano'},
                  {'l': 'Despesa paga', 'v': moeda(desp['p']), 'd': 'pagamentos feitos no ano', 'cor': '#7A4A00'}]
-    fontes = ['sistema contábil da Prefeitura (Fiorilli)']
+    fontes = ['sistema contábil da Prefeitura (Fiorilli)' if rec['fonte'] == 'fiorilli' else 'portal da transparência da Prefeitura (GOVBR)']
     s, e = _pct(b, '%Saúde%'), _pct(b, '%Manutenção e Desenv%')
     if s:
         kpis.append({'l': 'Aplicação em saúde', 'v': f"{float(s['valor']):.2f}%".replace('.', ','), 'd': f"mínimo 15% · RREO {s['periodo']}º bim. {s['ano']}", 'cor': '#9B1C1C'})

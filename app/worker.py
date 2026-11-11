@@ -7,14 +7,14 @@ import sys, time, traceback
 from datetime import datetime
 from . import config, db
 from . import agenda as AG
-from .coletores import fiorilli, pncp, siconfi, tcesp, numeros, comum, indicadores, youtube, redes
+from .coletores import fiorilli, govbr, pncp, siconfi, tcesp, numeros, comum, indicadores, youtube, redes
 
-MODULOS = {'fiorilli': fiorilli, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp, 'youtube': youtube, 'redes': redes, **indicadores.MODULOS}
+MODULOS = {'fiorilli': fiorilli, 'govbr': govbr, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp, 'youtube': youtube, 'redes': redes, **indicadores.MODULOS}
 # fontes do painel de indicadores: só rodam para órgão com o módulo "bi" contratado e ligado
 PAINEL = set(indicadores.MODULOS)
 # padrão quando o órgão não escolheu agenda (ver app/agenda.py, que é a referência); o YouTube usa só esta tabela
 # fonte -> (a cada N minutos, horas permitidas)
-FREQ = {'fiorilli': (60, range(7, 20)), 'pncp': (360, range(0, 24)), 'siconfi': (24 * 60, range(0, 24)), 'tcesp': (24 * 60, range(0, 24)),
+FREQ = {'fiorilli': (60, range(7, 20)), 'govbr': (180, range(6, 22)), 'pncp': (360, range(0, 24)), 'siconfi': (24 * 60, range(0, 24)), 'tcesp': (24 * 60, range(0, 24)),
         # painel: dados anuais (IBGE) e mensais (CNES, MDS) consultados uma vez por semana; números do próprio órgão a cada hora
         'ibge': (7 * 24 * 60, range(2, 6)), 'cnes': (7 * 24 * 60, range(2, 6)), 'mds': (7 * 24 * 60, range(2, 6)), 'pni': (7 * 24 * 60, range(2, 6)),
         'painel': (60, range(7, 20)),
@@ -62,7 +62,7 @@ def rodar(o, fonte, p):
     for base, ok, n, msg in res:
         comum.registrar(o['slug'], f'{fonte}:{base}', ok, n, msg, inicio)
         print(datetime.now(), 'OK' if ok else 'FALHA', o['slug'], f'{fonte}:{base}', n, msg, flush=True)
-    if o['tipo'] == 'executivo' and fonte in ('fiorilli', 'siconfi'):
+    if o['tipo'] == 'executivo' and fonte in ('fiorilli', 'govbr', 'siconfi'):
         try:
             numeros.atualizar(o)
         except Exception:

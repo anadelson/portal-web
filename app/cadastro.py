@@ -11,7 +11,8 @@ UFS = {'AC': 'Acre', 'AL': 'Alagoas', 'AP': 'Amapá', 'AM': 'Amazonas', 'BA': 'B
        'PE': 'Pernambuco', 'PI': 'Piauí', 'RJ': 'Rio de Janeiro', 'RN': 'Rio Grande do Norte', 'RS': 'Rio Grande do Sul', 'RO': 'Rondônia', 'RR': 'Roraima',
        'SC': 'Santa Catarina', 'SP': 'São Paulo', 'SE': 'Sergipe', 'TO': 'Tocantins'}
 # sistemas da transparência com coletor pronto; os demais ficam "sem integração" até ganharem adaptador (etapa 4)
-SISTEMAS = {'fiorilli': 'Fiorilli (API pública VersaoJson)', 'nenhum': 'Outro sistema / ainda sem integração'}
+SISTEMAS = {'fiorilli': 'Fiorilli (API pública VersaoJson)', 'govbr': 'GOVBR — TransparênciaBR / Pronim TB (exportação XML)',
+            'nenhum': 'Outro sistema / ainda sem integração'}
 BASES_FIORILLI = {'executivo': ['receitas', 'despesas_unidade', 'empenhos', 'diarias', 'restos_pagar', 'ordem_cronologica', 'licitacoes', 'contratos', 'transferencias', 'servidores'],
                   'legislativo': ['transferencias', 'emendas']}
 COR_PADRAO = {'executivo': '#1D4E89', 'legislativo': '#2F5233'}
@@ -111,8 +112,16 @@ def montar(f, ibge_api=None, ocupados=()):
             erros.append('Fiorilli: informe o endereço https da API (ex.: https://<municipio>.dcfiorilli.com.br:879/transparencia/VersaoJson/).')
         if not re.fullmatch(r'\d{1,4}', fio_emp):
             erros.append('Fiorilli: informe o código da entidade (número, ex.: 2).')
+    gov_base, gov_unid = (f.get('gov_base') or '').strip(), (f.get('gov_unidades') or '').strip()
+    if sistema == 'govbr':
+        if not re.match(r'^https://[^\s/]+(:\d+)?/[\w./-]*$', gov_base):
+            erros.append('GOVBR: informe o endereço https do portal (ex.: https://<municipio>.cidade360.cloud/pronimtb/).')
+        if len(gov_unid) > 300:
+            erros.append('GOVBR: nome da unidade gestora longo demais.')
     if erros:
         return None, erros
+    if gov_base and not gov_base.endswith('/'):
+        gov_base += '/'
     if not fio_base.endswith('/') and fio_base:
         fio_base += '/'
     nome_curto = municipio if tipo == 'executivo' else nome
@@ -130,6 +139,10 @@ def montar(f, ibge_api=None, ocupados=()):
     if sistema == 'fiorilli':
         fontes['fiorilli'] = {'base': fio_base, 'empresa': fio_emp, 'bases': BASES_FIORILLI[tipo],
                               **({'recebedora': (f.get('fio_recebedora') or 'Câmara Municipal').strip()} if tipo == 'legislativo' else {})}
+    if sistema == 'govbr':
+        from .coletores.govbr import PADRAO_BASES
+        fontes['govbr'] = {'base': gov_base, 'unidades': gov_unid or ('PREFEITURA' if tipo == 'executivo' else 'CAMARA'), 'bases': PADRAO_BASES[tipo],
+                           'meses_recentes': 2, 'pessoal': '', **({'recebedora': (f.get('gov_recebedora') or 'PODER LEGISLATIVO').strip()} if tipo == 'legislativo' else {})}
     from .catalogo import MODULOS, serve
     opcionais = {m[0]: f.get(f'mod_{m[0]}') == '1' for m in MODULOS if m[3] == 'opc' and serve(m[0], tipo)}
     return {'slug': slug, 'nome': nome, 'tipo': tipo, 'dominio': dominio, 'banco': 'bd_' + slug.replace('-', '_'), 'plano': 'Executivo' if tipo == 'executivo' else 'Legislativo',
