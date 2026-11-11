@@ -1620,3 +1620,15 @@ Próximos passos dependem das pessoas:
   - as 21 suítes e `teste_ativador.sh` passaram com o código montado;
   - prévia com cópia dos bancos: as 12 páginas do piloto **idênticas** ao ar.
 - **Onde parou:** aguardando aprovação para implantar A1. Tem migração. Ordem: `up -d app` → `provision atualizar` → `up -d worker`.
+
+### Implantação da etapa A1 — licença assinada (11/11/2026, aprovada: "Aprovo os passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 14h47 UTC.
+- **Build e testes:** as 21 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** `up -d app` → `provision atualizar` (migração 025 aplicada; par de chaves da gestão criado, impressão `fd7846e9e9f4a934`) → `up -d worker` → `image prune`. Sem reinícios nem erros no log.
+- **Conferência:**
+  - portais, transparência, Diário e login do painel 200; console 303 (login);
+  - `/api/no/licencas` sem token: 401;
+  - módulos do piloto iguais (Prefeitura com Diário e Painel; Câmara com integração e emendas);
+  - nenhum nó cadastrado; timer do ativador ativo.
+- `separacao-a1-licenca` mesclado em `main` com a tag `separacao-a1`.
+- **Próximo:** A2 — banco local do nó (tabelas operacionais saem do banco de controle).
