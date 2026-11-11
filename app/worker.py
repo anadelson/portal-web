@@ -77,7 +77,7 @@ def ultimas_execucoes():
     return r
 
 def diario_tick(agora):
-    """Rotina do Diário Oficial (Lei 910/2026): edição sem atos, alerta das 16h30 e publicação das 17h, só com edição assinada."""
+    """Rotina do Diário Oficial, nos horários de cada órgão (padrão 16h, 16h30 e 17h): edição sem atos, alerta e publicação, só com edição assinada."""
     from . import diario_servico as DS
     from .web import modulos_do_orgao
     for o in db.todos(db.PLATAFORMA, "SELECT * FROM orgaos WHERE ativo AND tipo='executivo'"):

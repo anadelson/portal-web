@@ -122,6 +122,13 @@ def _conf_diario(ctx):
     return (db.cfg(o['banco'], 'diario', {}) or {}) if o else {}
 
 @pass_context
+def regras_diario(ctx, banco=None):
+    """Regras do Diário (lei, decreto, horários) do órgão da página — ou de outro banco (ex.: a Prefeitura de destino, na Câmara)."""
+    from . import diario as D
+    b = banco or (ctx.get('orgao') or {}).get('banco')
+    return D.regras(b) if b else None
+
+@pass_context
 def lei_diario(ctx):
     """Lei de instituição do Diário Oficial do órgão (Diário → Signatários, calendário e lei); vazio se não informada."""
     return _conf_diario(ctx).get('lei', '')
@@ -133,9 +140,13 @@ def legal_topo(ctx, chave):
     from markupsafe import Markup, escape
     if not chave or chave not in BASE_LEGAL:
         return ''
-    txt = (_conf_diario(ctx).get('base_legal') if chave == 'diario' else '') or BASE_LEGAL[chave]
+    txt = BASE_LEGAL[chave]
+    if chave == 'diario' and ctx.get('orgao'):
+        from . import diario as D
+        txt = D.base_legal(D.regras(ctx['orgao']['banco']), BASE_LEGAL[chave])
     return Markup(f'<p class="legal legal-topo"><strong>Base legal:</strong> {escape(txt)}</p>')
 templates.env.globals['lei_diario'] = lei_diario
+templates.env.globals['regras_diario'] = regras_diario
 templates.env.globals['legal_topo'] = legal_topo
 
 _cache = {'t': 0, 'orgaos': {}}

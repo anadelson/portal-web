@@ -5,7 +5,7 @@
 <section class="cx form-tela"><form class="campos" method="post" action="/admin/remessas"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="enviar">
 <div class="grade2"><label>Tipo<select name="tipo">{% for t in tipos %}<option>{{ t }}</option>{% endfor %}</select></label><label>Número<input name="numero" placeholder="Ex.: 3/2026"></label></div>
 <label>Ementa<input name="ementa" required minlength="5"></label><label>Texto integral<textarea name="texto" rows="8" required minlength="10"></textarea></label>
-<p class="legal">Envio até 16h entra na edição do dia (se aprovado pelo setor responsável do Diário); depois, na do próximo dia útil. Não inclua CPF completo (LGPD).</p><button class="btn">Enviar ao Diário</button></form></section>
+<p class="legal">Envio até {{ regras_diario(destino.banco).corte_txt if destino else 'o horário de corte' }} entra na edição do dia (se aprovado pelo setor responsável do Diário); depois, na do próximo dia útil. Não inclua CPF completo (LGPD).</p><button class="btn">Enviar ao Diário</button></form></section>
 {% else %}
 <div class="tela-cab"><p>Atos da Mesa, resoluções, decretos legislativos e extratos vão para o <strong>caderno do Poder Legislativo</strong> do Diário Oficial de {{ destino.nome }}, pela integração segura entre os órgãos. A Câmara acompanha aqui a situação, o número da edição e a página.</p><div class="tela-acoes"><a class="btn" href="/admin/remessas?novo=1">+ Nova remessa</a></div></div>
 <div class="tabela"><table><caption class="sr">Remessas enviadas</caption><thead><tr><th scope="col">Remessa</th><th scope="col">Enviada</th><th scope="col">Situação</th><th scope="col">Publicação</th><th scope="col"><span class="sr">Ação</span></th></tr></thead><tbody>

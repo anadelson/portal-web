@@ -4,10 +4,10 @@
 - página onde cada ato começa (retorno da remessa da Câmara);
 - MODO TESTE: marca d'água "SEM VALOR OFICIAL — TESTE" em todas as páginas;
 - PDF/A-2b para arquivo permanente (Lei 910, art. 8º; decreto, art. 5º, VI), convertido ANTES de assinar;
-- calendário: sem edição em fins de semana, feriados e dias sem expediente; ponto facultativo conta como dia útil; corte das 16h.
+- calendário: sem edição em fins de semana, feriados e dias sem expediente; ponto facultativo conta como dia útil; corte no horário do órgão (padrão 16h).
 """
 import hashlib, shutil, subprocess, tempfile
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
@@ -31,10 +31,60 @@ def proximo_dia_util(b, d: date) -> date:
         d += timedelta(days=1)
     return d
 
+# ---------- regras do órgão (etapa 3 do modelo multi-órgão): lei, decreto e horários ----------
+# Sem configuração própria, valem os horários do .env (padrão 16h, 16h30 e 17h), os mesmos de antes.
+HORARIOS = ('corte', 'alerta', 'publicacao')
+
+def _padrao():
+    return {'corte': f'{config.DIARIO_CORTE_HORA:02d}:00', 'alerta': config.DIARIO_ALERTA, 'publicacao': f'{config.DIARIO_PUBLICACAO_HORA:02d}:00'}
+
+def _hora(txt):
+    h, m = txt.split(':')
+    return time(int(h), int(m))
+
+def hora_txt(txt):
+    """'16:00' → '16h'; '16:30' → '16h30'."""
+    h, m = txt.split(':')
+    return f'{int(h)}h' + ('' if m == '00' else m)
+
+def regras(b):
+    """Regras do Diário do órgão: lei, decreto, base legal e horários (corte do envio, alerta de assinatura, publicação automática)."""
+    conf = db.cfg(b, 'diario', {}) or {}
+    pad = _padrao()
+    r = {k: conf.get(k) or pad[k] for k in HORARIOS}
+    r.update({f't_{k}': _hora(r[k]) for k in HORARIOS})
+    r.update({f'{k}_txt': hora_txt(r[k]) for k in HORARIOS})
+    r.update(lei=conf.get('lei', ''), decreto=conf.get('decreto', ''), base_legal=conf.get('base_legal', ''), proprios=any(conf.get(k) for k in HORARIOS), padrao=pad)
+    return r
+
+def validar_regras(f):
+    """Lê o formulário de lei, decreto e horários. Devolve (valores, erros)."""
+    erros, v = [], {}
+    for k, rot in (('corte', 'Corte do envio'), ('alerta', 'Alerta de assinatura'), ('publicacao', 'Publicação automática')):
+        t = (f.get(k) or '').strip()
+        try:
+            v[k] = _hora(t).strftime('%H:%M')
+        except (ValueError, AttributeError):
+            erros.append(f'{rot}: use o formato HH:MM.')
+    if not erros:
+        c, a, p = (_hora(v[k]) for k in HORARIOS)
+        if not (time(6, 0) <= c < a < p <= time(23, 0)):
+            erros.append('Os horários precisam estar nesta ordem, entre 6h e 23h: corte do envio, depois o alerta de assinatura, depois a publicação automática.')
+    v.update(lei=(f.get('lei') or '').strip()[:200], decreto=(f.get('decreto') or '').strip()[:200], base_legal=(f.get('base_legal') or '').strip()[:600])
+    return v, erros
+
+def base_legal(r, generica):
+    """Base legal do Diário do órgão: a informada; ou montada com a lei e o decreto; ou a genérica."""
+    if r['base_legal']:
+        return r['base_legal']
+    if r['lei'] or r['decreto']:
+        return '; '.join(x for x in (r['lei'], r['decreto']) if x) + '; MP 2.200-2/2001 (ICP-Brasil); Lei 14.063/2020.'
+    return generica
+
 def data_alvo(b, agora: datetime) -> date:
-    """Ato enviado até o corte (16h) de um dia útil vai para a edição do dia; depois do corte, para o próximo dia útil."""
+    """Ato enviado até o corte do órgão (padrão 16h) de um dia útil vai para a edição do dia; depois do corte, para o próximo dia útil."""
     d = agora.date()
-    if dia_util(b, d) and agora.hour < config.DIARIO_CORTE_HORA:
+    if dia_util(b, d) and agora.time() < regras(b)['t_corte']:
         return d
     return proximo_dia_util(b, d)
 
