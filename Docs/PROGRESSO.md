@@ -1445,3 +1445,33 @@ Próximos passos dependem das pessoas:
 - **2º teste real:** 1ª tentativa sem sucesso, 2ª com certificado válido. Domínio de teste retirado no fim (`portal-orgaos.conf` só com o cabeçalho). Portais e sites do hotspot normais.
 - O certificado de teste ficou guardado; o registro DNS de teste pode ser apagado quando quiser.
 - `ajuste-ativador` mesclado em `main` com a tag `ativacao-dominio-ok`.
+
+## Modelo multi-órgão — etapa 3: Diário Oficial configurável por órgão (11/11/2026, branch `diario-configuravel`, nada aplicado na VPS)
+- **Antes:** os horários do Diário (corte 16h, alerta 16h30, publicação automática 17h) eram globais (.env) e os textos repetiam "16h" fixo. O decreto de Borá só aparecia na base legal.
+- **Feito:**
+  - **Regras por órgão** (`diario.regras`), na configuração `diario` do órgão:
+    - lei, decreto, base legal (vazia = montada com a lei e o decreto) e os três horários;
+    - sem horários próprios, valem os do .env (16h, 16h30 e 17h), os mesmos de antes.
+  - **Usam as regras do órgão:**
+    - a rotina do worker (edição "sem atos" no corte, alerta, publicação automática);
+    - a data prevista do ato (`data_alvo`);
+    - a tela do Diário e a mensagem de envio;
+    - a base legal;
+    - o portal (/diario);
+    - a tela de remessas da Câmara, que usa o corte da Prefeitura de destino.
+  - **Painel → Diário → "Signatários, calendário e lei" → "Lei, decreto e horários":**
+    - campos de lei, decreto, base legal e horários (corte, alerta, publicação), com validação: ordem corte → alerta → publicação, entre 6h e 23h;
+    - opção "usar os horários padrão";
+    - mudança registrada na auditoria (antes → depois).
+  - **Piloto:** o decreto ("Decreto de 25/03/2026") entrou no arquivo de dados e é gravado pelo `provision atualizar`, sem mudar os horários.
+- **Conferência:**
+  - ambiente de TESTE: horários 14h/14h30/15h salvos pelo navegador; ordem errada recusada; portal com "a partir das 14h"; axe sem violações;
+  - prévia com cópia dos bancos: as 12 páginas do piloto **idênticas** ao ar; Borá segue com 16h, 16h30 e 17h, a lei e o decreto.
+  - Capturas em `Docs/avaliacao-diario-regras/`.
+- **Teste novo:** `tests/teste_diario_regras.py`:
+  - padrão e piloto; recusas; horários próprios; auditoria; data da edição antes e depois do corte;
+  - base legal montada; textos do painel, do portal e da Câmara;
+  - rotina do worker gerando a edição "sem atos" às 14h01 e publicando às 15h01;
+  - volta ao padrão; sem login.
+- **Testes:** as 19 suítes (18 de antes + `teste_diario_regras`) deram ERROS: 0 / tudo ok no banco de TESTE, e `teste_ativador.sh` deu tudo ok; nenhum volume solto.
+- **Onde parou:** aguardando aprovação para implantar. Sem migração de banco; precisa de `provision atualizar` (grava o decreto do piloto). Ordem: `up -d app` → `provision atualizar` → `up -d worker`.

@@ -3,7 +3,7 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Diário Oficial</span></nav>
 <h1>Diário Oficial Eletrônico</h1>
-<p class="intro">Edições publicadas em dias úteis, a partir das 16h, assinadas digitalmente com certificado ICP-Brasil e carimbo do tempo{% if lei_diario() %} ({{ lei_diario() }}){% endif %}. A data da edição é a data de publicação; os prazos contam a partir do dia útil seguinte.</p>{{ legal_topo(legal) }}
+{% set rd = regras_diario() %}<p class="intro">Edições publicadas em dias úteis, a partir das {{ rd.corte_txt }}, assinadas digitalmente com certificado ICP-Brasil e carimbo do tempo{% if lei_diario() %} ({{ lei_diario() }}){% endif %}. A data da edição é a data de publicação; os prazos contam a partir do dia útil seguinte.</p>{{ legal_topo(legal) }}
 {% for e in invalidadas %}<div class="nota" role="alert" style="margin-bottom:12px"><strong>Comunicado de indisponibilidade:</strong> a edição nº {{ e.numero }}{{ e.letra }} de {{ e.data|br }} foi invalidada por {{ e.invalidacao.ato }}. {{ e.invalidacao.comunicado }}{% if e.invalidacao.prorrogacao %} <strong>Prorrogação de prazos:</strong> {{ e.invalidacao.prorrogacao }}{% endif %}</div>{% endfor %}
 <form action="/diario/verificar" class="campos" style="max-width:420px;margin:12px 0 20px"><label>Verificar autenticidade (código da edição)<input name="codigo" placeholder="Ex.: 7F3A-91C2-0B5E"></label><button class="btn" type="submit">Verificar</button></form>
 <div class="tabela"><table><caption class="sr">Edições publicadas</caption><thead><tr><th scope="col">Edição</th><th scope="col">Data</th><th scope="col">Código</th><th scope="col">Arquivo</th></tr></thead><tbody>

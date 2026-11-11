@@ -140,14 +140,15 @@ def alerta(b, tipo, msg):
     db.exe(b, 'INSERT INTO diario_alertas (tipo, mensagem) VALUES (%s,%s)', (tipo, msg))
 
 def tick(o, agora: datetime):
-    """Rotina do worker (a cada minuto, só órgãos com Diário):
-    16h  dia útil sem edição e sem atos para hoje → gera, assina (A1 ou teste) a edição "sem atos";
-    16h30 edição do dia sem assinatura completa → alerta ao responsável (painel);
-    17h  edição do dia fechada e totalmente assinada → publica (teste: só como teste, nunca oficial)."""
+    """Rotina do worker (a cada minuto, só órgãos com Diário), nos horários do órgão (padrão 16h, 16h30 e 17h):
+    corte       dia útil sem edição e sem atos para hoje → gera, assina (A1 ou teste) a edição "sem atos";
+    alerta      edição do dia sem assinatura completa → alerta ao responsável (painel);
+    publicação  edição do dia fechada e totalmente assinada → publica (teste: só como teste, nunca oficial)."""
     if A.modo_teste() and not config.DIARIO_AUTOMATICO_TESTE:
         return []  # modo teste em produção: não gasta a numeração oficial com edições automáticas de teste
     b = o['banco']; hoje = agora.date(); res = []
-    if not D.dia_util(b, hoje) or agora.hour < config.DIARIO_CORTE_HORA:
+    r = D.regras(b)
+    if not D.dia_util(b, hoje) or agora.time() < r['t_corte']:
         return res
     ed = db.um(b, "SELECT * FROM diario_edicoes WHERE data=%s AND letra='' AND situacao<>'invalidada' ORDER BY id DESC LIMIT 1", (hoje,))
     if not ed and not em_andamento(b):
@@ -165,12 +166,11 @@ def tick(o, agora: datetime):
                 res.append('edição sem atos gerada; assinatura pendente')
     if ed:
         ed = db.um(b, 'SELECT * FROM diario_edicoes WHERE id=%s', (ed['id'],))
-        hh, mm = [int(x) for x in config.DIARIO_ALERTA.split(':')]
-        if (agora.hour, agora.minute) >= (hh, mm) and ed['situacao'] != 'publicada' and ed['assinatura'] not in ('assinada', 'teste') and not ed['alerta_assinatura']:
-            alerta(b, 'assinatura', f"{config.DIARIO_ALERTA}: a edição nº {ed['numero']} de hoje ainda não está assinada. Sem assinatura ela não será publicada.")
+        if agora.time() >= r['t_alerta'] and ed['situacao'] != 'publicada' and ed['assinatura'] not in ('assinada', 'teste') and not ed['alerta_assinatura']:
+            alerta(b, 'assinatura', f"{r['alerta_txt']}: a edição nº {ed['numero']} de hoje ainda não está assinada. Sem assinatura ela não será publicada.")
             db.exe(b, 'UPDATE diario_edicoes SET alerta_assinatura=TRUE WHERE id=%s', (ed['id'],))
             res.append('alerta de assinatura')
-        if agora.hour >= config.DIARIO_PUBLICACAO_HORA and ed['situacao'] == 'fechada' and ed['assinatura'] in ('assinada', 'teste'):
+        if agora.time() >= r['t_publicacao'] and ed['situacao'] == 'fechada' and ed['assinatura'] in ('assinada', 'teste'):
             publicar(o, ed, 'worker')
             res.append(f"edição nº {ed['numero']} publicada" + (' (TESTE, não oficial)' if ed['modo_teste'] else ''))
     return res

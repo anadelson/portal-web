@@ -691,7 +691,7 @@ def diario(request: Request):
     agora = config.agora()
     return T('diario', request, u, atos=db.todos(b, "SELECT * FROM diario_atos WHERE situacao <> 'publicado' ORDER BY id DESC"),
              eds=db.todos(b, 'SELECT * FROM diario_edicoes ORDER BY id DESC LIMIT 20'), aberta=DS.em_andamento(b), prox=DS.proxima_ordinaria(b),
-             corte=agora.hour >= config.DIARIO_CORTE_HORA, alvo=diario_pdf.data_alvo(b, agora), modo_teste=AS.modo_teste(),
+             corte=agora.time() >= diario_pdf.regras(b)['t_corte'], alvo=diario_pdf.data_alvo(b, agora), modo_teste=AS.modo_teste(),
              alertas=db.todos(b, 'SELECT * FROM diario_alertas WHERE NOT resolvido ORDER BY id DESC LIMIT 10'),
              publicados=db.todos(b, "SELECT a.id, a.tipo, a.numero, a.ementa, e.numero en, e.letra el FROM diario_atos a JOIN diario_edicoes e ON e.id=a.edicao_id WHERE a.situacao='publicado' ORDER BY a.id DESC LIMIT 100"),
              designacoes={d['caderno']: d for d in db.todos(b, 'SELECT * FROM designacoes WHERE ativo ORDER BY id')})
@@ -711,7 +711,7 @@ async def diario_ato(request: Request):
                 if f.get(f'rel_tipo_{i}') in ('altera', 'revoga', 'regulamenta') and f.get(f'rel_alvo_{i}', '').strip()]
         db.exe(b, "INSERT INTO diario_atos (caderno, tipo, numero, orgao, ementa, texto, situacao, autor, retifica_ato_id, data_alvo, relacoes) VALUES (%s,%s,%s,%s,%s,%s,'revisao',%s,%s,%s,%s)",
                (f.get('caderno', 'executivo') if f.get('caderno') in ('executivo', 'legislativo') else 'executivo', f['tipo'], f.get('numero', ''), f.get('orgao', ''), f['ementa'], f['texto'], u["nome"], ret, alvo, Jsonb(rels)))
-        msg = f"Ato enviado para revisão. Edição prevista: {alvo.strftime('%d/%m/%Y')}" + (' (passou do horário de corte das 16h).' if alvo > config.hoje() else '.')
+        msg = f"Ato enviado para revisão. Edição prevista: {alvo.strftime('%d/%m/%Y')}" + (f" (passou do horário de corte das {diario_pdf.regras(b)['corte_txt']})." if alvo > config.hoje() else '.')
     else:
         aid = int(f['id'])
         if acao == 'aprovar' and u['perfil'] in PODE['diario_revisar']:
@@ -794,7 +794,7 @@ def diario_config(request: Request):
     u = exige(request)
     b = request.state.orgao['banco']
     return T('diario_config', request, u, desig=db.todos(b, 'SELECT * FROM designacoes ORDER BY ativo DESC, caderno, id DESC'), etapas=AS.ETAPAS,
-             feriados=db.todos(b, 'SELECT * FROM feriados WHERE data >= %s ORDER BY data', (config.hoje().replace(month=1, day=1),)), conf=db.cfg(b, 'diario', {}) or {}, modo_teste=AS.modo_teste())
+             feriados=db.todos(b, 'SELECT * FROM feriados WHERE data >= %s ORDER BY data', (config.hoje().replace(month=1, day=1),)), conf=db.cfg(b, 'diario', {}) or {}, modo_teste=AS.modo_teste(), rd=diario_pdf.regras(b))
 
 @r.post('/diario/config')
 async def diario_config_post(request: Request):
@@ -822,6 +822,20 @@ async def diario_config_post(request: Request):
             conf = db.cfg(b, 'diario', {}) or {}
             conf['lei'] = f.get('lei', '')[:200]
             db.set_cfg(b, 'diario', conf); msg = 'Texto da lei de instituição salvo.'
+        elif acao == 'regras':  # etapa 3: lei, decreto, base legal e horários do órgão
+            novo, erros = diario_pdf.validar_regras(f)
+            if erros:
+                raise ValueError(' '.join(erros))
+            conf = db.cfg(b, 'diario', {}) or {}
+            antes = diario_pdf.regras(b)
+            if f.get('padrao_horarios') == '1':  # volta aos horários padrão (sem gravar horários próprios)
+                for k in diario_pdf.HORARIOS:
+                    novo.pop(k, None); conf.pop(k, None)
+            conf.update(novo); db.set_cfg(b, 'diario', conf)
+            depois = diario_pdf.regras(b)
+            mud = '; '.join(f'{k}: {antes[k] or "—"} → {depois[k] or "—"}' for k in ('lei', 'decreto', 'base_legal', 'corte', 'alerta', 'publicacao') if antes[k] != depois[k])
+            auditar(request, f'Diário: lei, decreto e horários alterados ({mud[:400] or "sem mudança"})')
+            msg = f"Regras do Diário salvas: envio até {depois['corte_txt']}, alerta às {depois['alerta_txt']}, publicação automática às {depois['publicacao_txt']}." 
         else:
             raise HTTPException(400)
     except ValueError as ex:
