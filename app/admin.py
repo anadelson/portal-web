@@ -308,7 +308,9 @@ async def pagina_inicial_post(request: Request):
 def funcionalidades(request: Request):
     u = exige(request)
     o = request.state.orgao
-    contratados = {x['chave'] for x in db.todos(db.PLATAFORMA, 'SELECT chave FROM orgao_modulos WHERE orgao_id=%s AND contratado', (o['id'],))}
+    from . import licenca
+    doc = licenca.vigente(o)
+    contratados = set(doc['modulos']) if doc else set()
     ligados = db.cfg(o['banco'], 'modulos_ligados', {}) or {}
     lista = []
     for k, m in MOD.items():

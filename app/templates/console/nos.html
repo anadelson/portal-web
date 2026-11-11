@@ -1,0 +1,18 @@
+{% extends 'console/base.html' %}{% block h1 %}Nós e licenças{% endblock %}
+{% block conteudo %}
+<p>Um <strong>nó</strong> é uma VPS que hospeda portais e painéis dos órgãos. O nó busca na gestão, a cada 5 minutos, a <strong>licença assinada</strong> de cada órgão que hospeda (o que foi contratado e a vigência). A gestão nunca acessa o nó. Sem contato por mais de {{ validade }} dias, o órgão entra em carência no nó: só transparência, e-SIC e ouvidoria seguem no ar.</p>
+<section class="cx" aria-labelledby="h-chave"><h2 id="h-chave">Chave da gestão</h2>
+<dl class="dados-senha"><dt>Impressão digital</dt><dd><code>{{ impressao }}</code></dd><dt>Chave pública (vai no .env do nó como <code>LICENCA_CHAVE_PUBLICA</code>)</dt><dd><code class="url">{{ publica }}</code></dd></dl>
+<p class="legal">A chave pública só confere assinaturas; pode ser copiada sem risco. A chave privada fica cifrada no banco de controle e não aparece em tela nenhuma.</p></section>
+<section class="cx" aria-labelledby="h-nos"><h2 id="h-nos">Nós cadastrados</h2>
+<div class="tabela"><table><caption class="sr">Nós</caption><thead><tr><th scope="col">Nó</th><th scope="col">Órgãos</th><th scope="col">Último contato</th><th scope="col">Versão</th><th scope="col">Token</th></tr></thead><tbody>
+{% for n in nos %}<tr><td><strong>{{ n.nome }}</strong>{% if not n.ativo %} <span class="chip">inativo</span>{% endif %}</td><td>{{ n.orgaos }}</td>
+<td>{% if n.ultimo_contato %}{{ n.ultimo_contato|br }}{% if n.ultimo_ip %} <small>({{ n.ultimo_ip }})</small>{% endif %}{% else %}<span class="chip alerta">nunca buscou</span>{% endif %}</td><td>{{ n.versao or '—' }}</td>
+<td><form class="inline" method="post" action="/nos"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="id" value="{{ n.id }}"><label class="opc"><input type="checkbox" name="confirmo" value="1"> confirmo</label> <button class="btn sec" name="acao" value="token">Gerar token novo</button></form></td></tr>
+{% else %}<tr><td colspan="5">Nenhum nó ainda: hoje gestão e portais estão nesta mesma VPS.</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="cx form-tela" aria-labelledby="h-novo"><h2 id="h-novo">Cadastrar nó</h2>
+<form class="campos" method="post" action="/nos"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<label>Nome do nó (ex.: no1.conectatech.tech)<input name="nome" required pattern="[a-z0-9][a-z0-9.\-]{1,60}"></label>
+<div class="acoes-form"><button class="btn" name="acao" value="criar">Cadastrar e gerar token</button></div></form>
+<p class="legal">O token aparece uma vez só. Ele vai no .env do nó (<code>NO_TOKEN</code>) e é copiado por você, nunca por chat ou e-mail aberto.</p></section>
+{% endblock %}

@@ -17,6 +17,15 @@ COOKIE_SEGURO = env('COOKIE_SEGURO', '1') not in ('0', 'false', 'nao')
 # Nome da plataforma (console e título) e identificação dos coletores nas fontes de dados; configuráveis no .env
 NOME_PLATAFORMA = env('NOME_PLATAFORMA', 'Portais Municipais')
 USER_AGENT = env('USER_AGENT', 'PortaisMunicipais-coletor/1.0')
+# Separação gestão × portais (etapa A): papel desta instalação.
+#   tudo   = gestão e portais na mesma VPS (padrão; igual a antes)
+#   gestao = só o console e o emissor de licenças
+#   no     = só portais/painéis/worker; busca as licenças na gestão (GESTAO_URL) com o token do nó (NO_TOKEN)
+PAPEL = env('PAPEL', 'tudo') if env('PAPEL', 'tudo') in ('tudo', 'gestao', 'no') else 'tudo'
+GESTAO_URL = env('GESTAO_URL')                      # ex.: https://gestao.conectatech.tech (só no papel "no")
+NO_TOKEN = env('NO_TOKEN')                          # segredo do nó (só no papel "no"); nunca vai para tela ou log
+LICENCA_CHAVE_PUBLICA = env('LICENCA_CHAVE_PUBLICA')  # chave pública da gestão (base64), conferida em cada licença no papel "no"
+LICENCA_VALIDADE_DIAS = int(env('LICENCA_VALIDADE_DIAS', '15') or 15)  # sem contato com a gestão por mais que isso: carência
 
 def hoje() -> date:
     """Data de referência. DATA_SIMULADA (AAAA-MM-DD ou AAAA-MM-DDTHH:MM) permite testar período eleitoral, Diário etc."""

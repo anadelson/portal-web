@@ -246,6 +246,9 @@ def init():
     np = remessa.configurar_pares()
     if np:
         print(f'{np} integração(ões) entre órgãos criada(s) (token guardado no banco de controle)')
+    if config.PAPEL != 'no':
+        from . import licenca
+        print('licenças: chave da gestão', licenca.garantir_chaves()[0])  # só a impressão digital
     print('pronto.')
 
 def atualizar():
@@ -284,6 +287,9 @@ def atualizar():
     np = remessa.configurar_pares()
     if np:
         print(f'{np} integração(ões) entre órgãos criada(s) (token guardado no banco de controle)')
+    if config.PAPEL != 'no':
+        from . import licenca
+        print('licenças: chave da gestão', licenca.garantir_chaves()[0])  # só a impressão digital
     print('pronto.')
 
 if __name__ == '__main__':

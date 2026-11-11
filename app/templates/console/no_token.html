@@ -1,0 +1,9 @@
+{% extends 'console/base.html' %}{% block h1 %}Nó {{ n.nome }}{% endblock %}
+{% block conteudo %}
+<section class="cx senha-unica" aria-labelledby="h-tok"><h2 id="h-tok">Configuração do nó — anote agora</h2>
+<p>O token aparece <strong>só nesta tela</strong>: a gestão guarda apenas o código dele. Copie para o .env do nó por um canal seguro. Se perder, gere um novo em Nós e licenças.</p>
+<dl class="dados-senha"><dt><code>PAPEL</code></dt><dd><code>no</code></dd><dt><code>GESTAO_URL</code></dt><dd><code>{{ gestao }}</code></dd>
+<dt><code>NO_TOKEN</code></dt><dd><code class="senha">{{ token }}</code></dd><dt><code>LICENCA_CHAVE_PUBLICA</code></dt><dd><code class="url">{{ publica }}</code> <small>(impressão {{ impressao }})</small></dd></dl>
+</section>
+<p><a class="btn sec" href="/nos">Voltar para Nós e licenças</a></p>
+{% endblock %}

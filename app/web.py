@@ -151,10 +151,24 @@ templates.env.globals['legal_topo'] = legal_topo
 
 _cache = {'t': 0, 'orgaos': {}}
 
+def _orgaos_do_no():
+    """Papel "no": os órgãos servidos aqui são os das licenças recebidas (assinatura conferida), mesmo vencidas —
+    licença vencida põe o órgão em carência, mas o portal (transparência) continua no ar."""
+    from . import licenca
+    pub, out = licenca.chave_publica(), {}
+    for r in db.todos(db.PLATAFORMA, 'SELECT pacote FROM licencas_cache'):
+        d = licenca.verificar(r['pacote'], pub)
+        if d and d['orgao'].get('ativo', True):
+            out[d['orgao']['dominio']] = dict(d['orgao'])
+    return out
+
 def orgao_por_dominio(host: str):
     host = (host or '').split(':')[0].lower()
     if time.time() - _cache['t'] > 30:
-        _cache['orgaos'] = {o['dominio']: o for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE ativo')}
+        if config.PAPEL == 'no':
+            _cache['orgaos'] = _orgaos_do_no()
+        else:
+            _cache['orgaos'] = {o['dominio']: o for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE ativo')}
         _cache['t'] = time.time()
     return _cache['orgaos'].get(host)
 
@@ -176,9 +190,9 @@ class RoteadorPorDominio:
             return await self.app(scope, receive, send)
         scope.setdefault('state', {})
         if host == config.DOMINIO_GESTAO.lower():
-            novo = '/_g' + path
+            novo = '/_g' + path if config.PAPEL != 'no' else '/_desconhecido'  # o nó não serve o console
         else:
-            o = orgao_por_dominio(host)
+            o = orgao_por_dominio(host) if config.PAPEL != 'gestao' else None  # a gestão sozinha não serve portais
             if not o:
                 novo = '/_desconhecido'
             else:
@@ -205,10 +219,14 @@ def situacao_contrato(c, hoje=None):
 
 def modulos_do_orgao(o) -> dict:
     """Módulos efetivamente disponíveis: obrigatórios + plano + opcionais contratados, e ligados pelo órgão."""
-    contratados = {r['chave'] for r in db.todos(db.PLATAFORMA, 'SELECT chave FROM orgao_modulos WHERE orgao_id=%s AND contratado', (o['id'],))}
+    # o que foi contratado vem da licença do órgão (papel "tudo": montada na hora do banco de controle, como sempre;
+    # papel "no": licença assinada pela gestão; sem licença válida = carência, só o obrigatório)
+    from . import licenca
+    doc = licenca.vigente(o)
+    contratados = set(doc['modulos']) if doc else set()
     ligados = db.cfg(o['banco'], 'modulos_ligados', {}) or {}
-    c = db.um(db.PLATAFORMA, 'SELECT * FROM contratos WHERE orgao_id=%s ORDER BY id DESC LIMIT 1', (o['id'],))
-    fase = situacao_contrato(c)[1] if c else 'impl'
+    c = licenca.contrato_de(doc)
+    fase = 'carencia' if doc is None else (situacao_contrato(c)[1] if c else 'impl')
     res = {}
     for k, m in MOD.items():
         if not serve(k, o['tipo']):
