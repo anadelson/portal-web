@@ -75,7 +75,7 @@ def documento(o, emitida=None):
     mods = sorted(r['chave'] for r in db.todos(db.PLATAFORMA, 'SELECT chave FROM orgao_modulos WHERE orgao_id=%s AND contratado', (o['id'],)))
     emitida = emitida or datetime.now(timezone.utc)
     return {'v': VERSAO, 'serial': int(emitida.timestamp() * 1000),
-            'orgao': {k: o.get(k) for k in ('id', 'slug', 'nome', 'tipo', 'dominio', 'banco', 'municipio', 'ibge', 'ativo')},
+            'orgao': {k: o.get(k) for k in ('id', 'slug', 'nome', 'tipo', 'dominio', 'banco', 'municipio', 'ibge', 'plano', 'cor', 'ativo')},
             'modulos': mods,
             'contrato': {'inicio': _iso(c['inicio']), 'fim': _iso(c['fim']), 'carencia_dias': c['carencia_dias'], 'suspenso': bool(c['suspenso'])} if c else None,
             'emitida_em': emitida.isoformat(), 'valida_ate': (emitida + timedelta(days=config.LICENCA_VALIDADE_DIAS)).isoformat()}
@@ -147,7 +147,7 @@ def guardar(pacotes, publica):
             ruim += 1
             continue
         o = d['orgao']
-        db.exe(db.PLATAFORMA, """INSERT INTO licencas_cache (orgao_id, slug, dominio, serial, pacote, valida_ate, recebida_em) VALUES (%s,%s,%s,%s,%s,%s,now())
+        db.exe(db.LOCAL, """INSERT INTO licencas_cache (orgao_id, slug, dominio, serial, pacote, valida_ate, recebida_em) VALUES (%s,%s,%s,%s,%s,%s,now())
                                  ON CONFLICT (orgao_id) DO UPDATE SET slug=EXCLUDED.slug, dominio=EXCLUDED.dominio, serial=EXCLUDED.serial, pacote=EXCLUDED.pacote,
                                  valida_ate=EXCLUDED.valida_ate, recebida_em=now() WHERE licencas_cache.serial <= EXCLUDED.serial""",
                (o['id'], o['slug'], o['dominio'], d['serial'], Jsonb(p), d['valida_ate']))
@@ -192,7 +192,7 @@ def vigente(o):
     m = _memo.get(o['id'])
     if m and time.monotonic() - m[0] < MEMO_S:
         return m[1]
-    r = db.um(db.PLATAFORMA, 'SELECT pacote FROM licencas_cache WHERE orgao_id=%s', (o['id'],))
+    r = db.um(db.LOCAL, 'SELECT pacote FROM licencas_cache WHERE orgao_id=%s', (o['id'],))
     d = verificar(r['pacote'], chave_publica()) if r else None
     if d and datetime.fromisoformat(d['valida_ate']) < _agora():
         d = None  # vencida: a gestão está sem contato há mais que a validade
@@ -212,7 +212,7 @@ def situacao(o):
         e = db.um(db.PLATAFORMA, 'SELECT * FROM licencas_emitidas WHERE orgao_id=%s', (o['id'],))
         n = db.um(db.PLATAFORMA, 'SELECT n.* FROM nos n JOIN orgaos o ON o.no_id=n.id WHERE o.id=%s', (o['id'],))
         return {'modo': 'no' if n else 'local', 'no': n, 'emitida': e}
-    r = db.um(db.PLATAFORMA, 'SELECT recebida_em, valida_ate FROM licencas_cache WHERE orgao_id=%s', (o['id'],))
+    r = db.um(db.LOCAL, 'SELECT recebida_em, valida_ate FROM licencas_cache WHERE orgao_id=%s', (o['id'],))
     return {'modo': 'recebida', 'recebida_em': r and r['recebida_em'], 'valida_ate': r and r['valida_ate'], 'valida': bool(vigente(o))}
 
 def main(args):

@@ -39,11 +39,11 @@ def _serie(b, chave):
     return (i, P.serie(b, i['id'])) if i else (None, [])
 
 def _publico(ibge, fonte, chave):
-    r = db.um(db.PLATAFORMA, 'SELECT payload, coletado_em FROM dados_publicos WHERE ibge=%s AND fonte=%s AND chave=%s', (str(ibge), fonte, str(chave)))
+    r = db.um(db.LOCAL, 'SELECT payload, coletado_em FROM dados_publicos WHERE ibge=%s AND fonte=%s AND chave=%s', (str(ibge), fonte, str(chave)))
     return (r['payload'], r['coletado_em']) if r else (None, None)
 
 def selo(o):
-    r = db.um(db.PLATAFORMA, "SELECT max(fim) t FROM coletas WHERE orgao_slug=%s AND fonte LIKE 'fiorilli:%%' AND ok", (o['slug'],))
+    r = db.um(db.LOCAL, "SELECT max(fim) t FROM coletas WHERE orgao_slug=%s AND fonte LIKE 'fiorilli:%%' AND ok", (o['slug'],))
     return r['t'] if r and r['t'] else None
 
 def populacao(b):

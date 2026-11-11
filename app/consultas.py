@@ -224,7 +224,7 @@ def hash_params(p):
     return hashlib.sha256(json.dumps(p, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
 
 def fonte_do(o, fonte):
-    return db.um(db.PLATAFORMA, 'SELECT * FROM fontes WHERE orgao_id=%s AND fonte=%s', (o['id'], fonte))
+    return db.um(db.LOCAL, 'SELECT * FROM fontes WHERE orgao_id=%s AND fonte=%s', (o['id'], fonte))
 
 # ---------- ensaio ----------
 def ensaiar(o, fonte, params, base=None):
@@ -252,36 +252,36 @@ def ensaiar(o, fonte, params, base=None):
     return rel
 
 def registrar_teste(o, fonte, params, rel, quem):
-    db.exe(db.PLATAFORMA, 'INSERT INTO consulta_testes (orgao_id, fonte, params_hash, ok, relatorio, quem) VALUES (%s,%s,%s,%s,%s,%s)',
+    db.exe(db.LOCAL, 'INSERT INTO consulta_testes (orgao_id, fonte, params_hash, ok, relatorio, quem) VALUES (%s,%s,%s,%s,%s,%s)',
            (o['id'], fonte, hash_params(params), rel['ok'], Jsonb(rel), quem))
 
 def teste_valido(o, fonte, params):
     """Teste bem-sucedido com exatamente estes parâmetros nos últimos 30 minutos."""
-    return bool(db.um(db.PLATAFORMA, "SELECT 1 FROM consulta_testes WHERE orgao_id=%s AND fonte=%s AND params_hash=%s AND ok AND em > now() - interval '30 minutes'",
+    return bool(db.um(db.LOCAL, "SELECT 1 FROM consulta_testes WHERE orgao_id=%s AND fonte=%s AND params_hash=%s AND ok AND em > now() - interval '30 minutes'",
                       (o['id'], fonte, hash_params(params))))
 
 def ultimo_teste(o, fonte):
-    return db.um(db.PLATAFORMA, 'SELECT * FROM consulta_testes WHERE orgao_id=%s AND fonte=%s ORDER BY id DESC LIMIT 1', (o['id'], fonte))
+    return db.um(db.LOCAL, 'SELECT * FROM consulta_testes WHERE orgao_id=%s AND fonte=%s ORDER BY id DESC LIMIT 1', (o['id'], fonte))
 
 def salvar(o, fonte, antes, depois, quem):
-    db.exe(db.PLATAFORMA, 'UPDATE fontes SET params=%s WHERE orgao_id=%s AND fonte=%s', (Jsonb(depois), o['id'], fonte))
-    db.exe(db.PLATAFORMA, 'INSERT INTO fontes_historico (orgao_id, fonte, antes, depois, quem) VALUES (%s,%s,%s,%s,%s)', (o['id'], fonte, Jsonb(antes), Jsonb(depois), quem))
+    db.exe(db.LOCAL, 'UPDATE fontes SET params=%s WHERE orgao_id=%s AND fonte=%s', (Jsonb(depois), o['id'], fonte))
+    db.exe(db.LOCAL, 'INSERT INTO fontes_historico (orgao_id, fonte, antes, depois, quem) VALUES (%s,%s,%s,%s,%s)', (o['id'], fonte, Jsonb(antes), Jsonb(depois), quem))
 
 def painel(o, fonte):
     """Tudo o que a tela "Como a consulta é montada" mostra para uma fonte do órgão."""
     from . import credenciais as CR
     f = fonte_do(o, fonte)
     p = (f or {}).get('params') or {}
-    amostras = db.todos(db.PLATAFORMA, "SELECT * FROM consulta_amostras WHERE fonte=%s AND orgao_slug=%s ORDER BY em DESC LIMIT 15",
+    amostras = db.todos(db.LOCAL, "SELECT * FROM consulta_amostras WHERE fonte=%s AND orgao_slug=%s ORDER BY em DESC LIMIT 15",
                         ('fiorilli' if fonte == 'financas' else fonte, o['slug']))
-    coletas = db.todos(db.PLATAFORMA, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1)=%s ORDER BY id DESC LIMIT 8", (o['slug'], fonte))
+    coletas = db.todos(db.LOCAL, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1)=%s ORDER BY id DESC LIMIT 8", (o['slug'], fonte))
     cred = CREDENCIAL.get(fonte)
     return {'fonte': fonte, 'nome': NOMES.get(fonte, fonte), 'cadastrada': bool(f), 'ativa': bool(f and f['ativo']), 'params': p,
             'esquema': [(n, r, t, de, p.get(n)) for n, r, t, de in ESQUEMA.get(fonte, [])], 'endpoints': endpoints(fonte, p),
             'mapeamento': MAPEAMENTO.get(fonte, []), 'formato': FORMATO.get(fonte, 'JSON'), 'periodicidade': periodicidade(fonte, f),
             'credencial': ('configurada no console' if CR.situacao(cred) else 'NÃO configurada no console') if cred else 'não usa',
             'amostras': amostras, 'coletas': coletas, 'teste': ultimo_teste(o, fonte),
-            'historico': db.todos(db.PLATAFORMA, 'SELECT * FROM fontes_historico WHERE orgao_id=%s AND fonte=%s ORDER BY id DESC LIMIT 10', (o['id'], fonte)),
+            'historico': db.todos(db.LOCAL, 'SELECT * FROM fontes_historico WHERE orgao_id=%s AND fonte=%s ORDER BY id DESC LIMIT 10', (o['id'], fonte)),
             'bases_opcoes': OPCOES_BASES.get(fonte, FIORILLI_BASES),
             'telas': _govbr().telas(p) if fonte == 'govbr' else [], 'fora': _govbr().FORA if fonte == 'govbr' else [],
             'modos_bases': {b: GOVBR_BASES[b] for b in _govbr().API} if fonte == 'govbr' else {}, 'modos_opcoes': _govbr().MODOS if fonte == 'govbr' else {}}

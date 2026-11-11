@@ -14,31 +14,37 @@ JANELA = 300
 TIPOS_REMESSA = ['Ato da Mesa', 'Resolução', 'Decreto Legislativo', 'Extrato de contrato', 'Portaria da Câmara', 'Aviso']
 
 def _orgao(slug=None, id_=None):
-    return db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE ' + ('slug=%s' if slug else 'id=%s'), (slug or id_,))
+    from . import orgaos
+    return orgaos.por_slug(slug) if slug else orgaos.por_id(id_)
 
 def par(origem, destino):
-    return db.um(db.PLATAFORMA, 'SELECT * FROM pares_orgaos WHERE origem_id=%s AND destino_id=%s AND ativo', (origem['id'], destino['id']))
+    return db.um(db.LOCAL, 'SELECT * FROM pares_orgaos WHERE origem_id=%s AND destino_id=%s AND ativo', (origem['id'], destino['id']))
 
 def configurar_pares():
     """Cria o par Legislativo → Executivo do mesmo município (Prefeitura com Diário contratado) se ainda não existir."""
+    from . import orgaos, licenca
     n = 0
-    for c in db.todos(db.PLATAFORMA, "SELECT * FROM orgaos WHERE tipo='legislativo' AND ativo"):
-        for p in db.todos(db.PLATAFORMA, """SELECT o.* FROM orgaos o JOIN orgao_modulos m ON m.orgao_id=o.id AND m.chave='diario' AND m.contratado
-                                           WHERE o.tipo='executivo' AND o.ativo AND o.ibge=%s""", (c['ibge'],)):
-            if not db.um(db.PLATAFORMA, 'SELECT 1 FROM pares_orgaos WHERE origem_id=%s AND destino_id=%s', (c['id'], p['id'])):
-                db.exe(db.PLATAFORMA, 'INSERT INTO pares_orgaos (origem_id, destino_id, token) VALUES (%s,%s,%s)', (c['id'], p['id'], secrets.token_urlsafe(32)))
+    for c in orgaos.todos(tipo='legislativo'):
+        for p in [x for x in orgaos.todos(tipo='executivo') if x['ibge'] == c['ibge'] and 'diario' in ((licenca.vigente(x) or {}).get('modulos') or [])]:
+            if not db.um(db.LOCAL, 'SELECT 1 FROM pares_orgaos WHERE origem_id=%s AND destino_id=%s', (c['id'], p['id'])):
+                db.exe(db.LOCAL, 'INSERT INTO pares_orgaos (origem_id, destino_id, token) VALUES (%s,%s,%s)', (c['id'], p['id'], secrets.token_urlsafe(32)))
                 n += 1
     return n
 
 def destino_do(origem):
-    return db.um(db.PLATAFORMA, 'SELECT o.* FROM pares_orgaos p JOIN orgaos o ON o.id=p.destino_id WHERE p.origem_id=%s AND p.ativo ORDER BY o.id LIMIT 1', (origem['id'],))
+    from . import orgaos
+    for p in db.todos(db.LOCAL, 'SELECT destino_id FROM pares_orgaos WHERE origem_id=%s AND ativo ORDER BY destino_id', (origem['id'],)):
+        o = orgaos.por_id(p['destino_id'])
+        if o:
+            return o
+    return None
 
 def _assinatura(token, momento, metodo, caminho, corpo: bytes):
     msg = f'{momento}\n{metodo}\n{caminho}\n{hashlib.sha256(corpo).hexdigest()}'.encode()
     return hmac.new(token.encode(), msg, hashlib.sha256).hexdigest()
 
 def _log(origem, destino, acao, ok, detalhe=''):
-    db.exe(db.PLATAFORMA, 'INSERT INTO remessas_log (origem, destino, acao, ok, detalhe) VALUES (%s,%s,%s,%s,%s)', (origem, destino, acao, ok, detalhe[:500]))
+    db.exe(db.LOCAL, 'INSERT INTO remessas_log (origem, destino, acao, ok, detalhe) VALUES (%s,%s,%s,%s,%s)', (origem, destino, acao, ok, detalhe[:500]))
 
 # ---------- cliente (órgão de origem) ----------
 def _cliente():

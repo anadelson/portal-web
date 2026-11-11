@@ -599,7 +599,7 @@ def completa_agora(orgao, base):
     """Uma execução a cada 24 horas (de cada base) relê o ano inteiro; as demais, só os últimos meses. No teste, só o mês atual."""
     if db.ENSAIO.get() is not None:
         return False
-    return not db.um(db.PLATAFORMA, "SELECT 1 FROM coletas WHERE orgao_slug=%s AND fonte=%s AND ok AND mensagem LIKE %s AND inicio > now() - interval '24 hours'",
+    return not db.um(db.LOCAL, "SELECT 1 FROM coletas WHERE orgao_slug=%s AND fonte=%s AND ok AND mensagem LIKE %s AND inicio > now() - interval '24 hours'",
                      (orgao['slug'], f'{FONTE}:{base}', '%completa%'))
 
 def servidores(pt, orgao, p, ano, hoje):

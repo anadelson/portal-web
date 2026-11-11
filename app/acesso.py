@@ -31,11 +31,11 @@ def _chave_origem(request, c: Conta):
 
 def origem_bloqueada(request, c: Conta) -> bool:
     """Mais de 3× o limite de falhas da mesma origem em LOGIN_BLOQUEIO_MIN minutos bloqueia a origem."""
-    r = db.um(db.PLATAFORMA, "SELECT count(*) n FROM login_tentativas WHERE chave=%s AND NOT ok AND quando > now() - make_interval(mins => %s)", (_chave_origem(request, c), config.LOGIN_BLOQUEIO_MIN))
+    r = db.um(db.LOCAL if c.tipo == 'usuario' else db.PLATAFORMA, "SELECT count(*) n FROM login_tentativas WHERE chave=%s AND NOT ok AND quando > now() - make_interval(mins => %s)", (_chave_origem(request, c), config.LOGIN_BLOQUEIO_MIN))
     return r['n'] >= config.LOGIN_MAX_FALHAS * 3
 
 def registrar_tentativa(request, c: Conta, conta, ok: bool):
-    db.exe(db.PLATAFORMA, 'INSERT INTO login_tentativas (chave, ok) VALUES (%s,%s)', (_chave_origem(request, c), ok))
+    db.exe(db.LOCAL if c.tipo == 'usuario' else db.PLATAFORMA, 'INSERT INTO login_tentativas (chave, ok) VALUES (%s,%s)', (_chave_origem(request, c), ok))
     if not conta:
         return None
     if ok:

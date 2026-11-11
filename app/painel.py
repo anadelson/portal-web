@@ -231,7 +231,7 @@ def gravar(banco, chave, periodo, data_ref, valor=None, texto='', detalhe=None, 
 
 def gravar_publico(ibge, chave, periodo, data_ref, fonte, valor=None, texto='', detalhe=None, nota='', parcial=False):
     """Dados nacionais (IBGE, INEP, CNES, MDS, Siconfi) ficam no banco de controle por código IBGE, para servir a qualquer município."""
-    db.exe(db.PLATAFORMA, """INSERT INTO indicadores_publicos (ibge, indicador, periodo, data_ref, valor, texto, detalhe, nota, parcial, fonte, coletado_em)
+    db.exe(db.LOCAL, """INSERT INTO indicadores_publicos (ibge, indicador, periodo, data_ref, valor, texto, detalhe, nota, parcial, fonte, coletado_em)
                              VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now())
                              ON CONFLICT (ibge, indicador, periodo) DO UPDATE SET data_ref=EXCLUDED.data_ref, valor=EXCLUDED.valor, texto=EXCLUDED.texto, detalhe=EXCLUDED.detalhe,
                              nota=EXCLUDED.nota, parcial=EXCLUDED.parcial, fonte=EXCLUDED.fonte, coletado_em=now()""",
@@ -240,7 +240,7 @@ def gravar_publico(ibge, chave, periodo, data_ref, fonte, valor=None, texto='', 
 def copiar_publicos(banco, ibge, chaves):
     """Copia para o banco do órgão a série compartilhada dos indicadores indicados."""
     n = 0
-    for x in db.todos(db.PLATAFORMA, 'SELECT * FROM indicadores_publicos WHERE ibge=%s AND indicador = ANY(%s)', (str(ibge), list(chaves))):
+    for x in db.todos(db.LOCAL, 'SELECT * FROM indicadores_publicos WHERE ibge=%s AND indicador = ANY(%s)', (str(ibge), list(chaves))):
         n += gravar(banco, x['indicador'], x['periodo'], x['data_ref'], x['valor'], x['texto'], x['detalhe'], x['nota'], x['parcial'])
     return n
 

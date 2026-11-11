@@ -208,7 +208,7 @@ def coletar_comparacao(ibge, edicao):
         if not alvo:
             continue
         url = url.format(edicao=edicao)
-        marca = db.um(db.PLATAFORMA, "SELECT payload FROM dados_publicos WHERE ibge=%s AND fonte='inep_arquivo' AND chave=%s", (escopo if escopo == 'BR' else str(ibge)[:2], f'comparacao_{edicao}'))
+        marca = db.um(db.LOCAL, "SELECT payload FROM dados_publicos WHERE ibge=%s AND fonte='inep_arquivo' AND chave=%s", (escopo if escopo == 'BR' else str(ibge)[:2], f'comparacao_{edicao}'))
         st, lm, tam = cabecalho(url)
         if st != 200:
             res.append(f'{escopo}: {st}')
@@ -247,7 +247,7 @@ def coletar_inep(o, p, hoje=None):
             if not achou:
                 raise ValueError('nenhuma edição encontrada no servidor do INEP')
             ed, url, lm, tam = achou
-            marca = db.um(db.PLATAFORMA, "SELECT payload FROM dados_publicos WHERE ibge=%s AND fonte='inep_arquivo' AND chave=%s", (ibge, f'{etapa}_{ed}'))
+            marca = db.um(db.LOCAL, "SELECT payload FROM dados_publicos WHERE ibge=%s AND fonte='inep_arquivo' AND chave=%s", (ibge, f'{etapa}_{ed}'))
             if marca and marca['payload'].get('last_modified') == lm:
                 n = P.copiar_publicos(o['banco'], ibge, chaves)
                 P.marcar_coleta(o['banco'], 'inep', True, f'edição {ed} já importada' + (f' · {aviso}' if aviso else ''), chaves)
@@ -455,7 +455,7 @@ def coletar_iegm(o, p, hoje=None):
     if not auth or not modo_automatico(o['banco']):
         return []
     ibge = str(p.get('ibge') or o['ibge'])
-    feitos = {x['periodo'] for x in db.todos(db.PLATAFORMA, "SELECT DISTINCT periodo FROM indicadores_publicos WHERE ibge=%s AND fonte='iegm' AND indicador='gestao_iegm'", (ibge,))}
+    feitos = {x['periodo'] for x in db.todos(db.LOCAL, "SELECT DISTINCT periodo FROM indicadores_publicos WHERE ibge=%s AND fonte='iegm' AND indicador='gestao_iegm'", (ibge,))}
     ultimo = hoje.year - 1
     anos = [a for a in range(IEGM_PRIMEIRO_ANO_BASE, ultimo + 1) if str(a) not in feitos or a >= ultimo - 1]
     try:

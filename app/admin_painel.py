@@ -43,8 +43,8 @@ def lista(request: Request, area: str = 'fin', sub: str = ''):
     for ind in P.catalogo(b, so_visiveis=False):
         ult = db.um(b, 'SELECT * FROM indicador_valores WHERE indicador_id=%s ORDER BY data_ref DESC, periodo DESC LIMIT 1', (ind['id'],))
         itens.append(dict(ind, ult=ult, valor=P.exibir(ind, ult) if ult else '', aviso=P.aviso_antigo(ind), tema_nome=P.TEMA_NOME[ind['tema']]))
-    fontes = db.todos(db.PLATAFORMA, 'SELECT fonte, ativo FROM fontes WHERE orgao_id=%s AND fonte = ANY(%s) ORDER BY fonte', (request.state.orgao['id'], list(FONTES_PAINEL)))
-    coletas = db.todos(db.PLATAFORMA, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1) = ANY(%s) ORDER BY id DESC LIMIT 15", (request.state.orgao['slug'], list(FONTES_PAINEL)))
+    fontes = db.todos(db.LOCAL, 'SELECT fonte, ativo FROM fontes WHERE orgao_id=%s AND fonte = ANY(%s) ORDER BY fonte', (request.state.orgao['id'], list(FONTES_PAINEL)))
+    coletas = db.todos(db.LOCAL, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1) = ANY(%s) ORDER BY id DESC LIMIT 15", (request.state.orgao['slug'], list(FONTES_PAINEL)))
     hist = db.todos(b, 'SELECT h.*, i.nome FROM indicador_historico h LEFT JOIN indicadores i ON i.id=h.indicador_id ORDER BY h.id DESC LIMIT 40')
     from .coletores.inep_iegm import aviso_certificado
     try:
@@ -84,9 +84,11 @@ def coletar_agora(o, so=None):
     """Roda as fontes ativas do painel deste órgão (mesma rotina do worker, com registro em `coletas`)."""
     from .worker import rodar
     res = []
-    for f in db.todos(db.PLATAFORMA, 'SELECT o.*, f.fonte, f.params FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE o.id=%s AND f.ativo AND f.fonte = ANY(%s) ORDER BY f.fonte',
+    from . import orgaos
+    oo = orgaos.por_id(o['id']) or o
+    for f in db.todos(db.LOCAL, 'SELECT fonte, params FROM fontes WHERE orgao_id=%s AND ativo AND fonte = ANY(%s) ORDER BY fonte',
                       (o['id'], [so] if so else list(FONTES_PAINEL))):
-        res += rodar(f, f['fonte'], f['params'])
+        res += rodar(dict(oo, fonte=f['fonte'], params=f['params']), f['fonte'], f['params'])
     return res
 
 @r.post('/indicadores')
@@ -129,7 +131,7 @@ def editar(request: Request, iid: int):
     hist = db.todos(b, 'SELECT * FROM indicador_historico WHERE indicador_id=%s ORDER BY id DESC LIMIT 50', (iid,))
     cat = P.CAT.get(ind['chave'], {})
     from . import config
-    ult_coleta = db.um(db.PLATAFORMA, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1)=%s ORDER BY id DESC LIMIT 1", (request.state.orgao['slug'], ind['coletor'])) if ind['coletor'] else None
+    ult_coleta = db.um(db.LOCAL, "SELECT * FROM coletas WHERE orgao_slug=%s AND split_part(fonte, ':', 1)=%s ORDER BY id DESC LIMIT 1", (request.state.orgao['slug'], ind['coletor'])) if ind['coletor'] else None
     return T('indicador', request, u, i=ind, serie=serie, hist=hist, exibir=P.exibir, faixas=P.FAIXAS_IEGM, tema_nome=P.TEMA_NOME[ind['tema']],
              link=P.link_fonte(ind, request.state.orgao), aviso=P.aviso_antigo(ind), alternavel=cat.get('alternavel'), reserva=cat.get('reserva') or coleta_falhou(ind),
              credencial=_origem_iegm() if ind['coletor'] == 'iegm' else None, ult_coleta=ult_coleta)

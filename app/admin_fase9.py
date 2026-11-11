@@ -20,14 +20,14 @@ def painel_completo(o, fonte):
     return cp
 
 def _fontes(o):
-    return db.todos(db.PLATAFORMA, 'SELECT fonte, ativo FROM fontes WHERE orgao_id=%s ORDER BY fonte', (o['id'],))
+    return db.todos(db.LOCAL, 'SELECT fonte, ativo FROM fontes WHERE orgao_id=%s ORDER BY fonte', (o['id'],))
 
 @r.get('/integracoes')
 def integracoes(request: Request, fonte: str = ''):
     u = exige(request); o = request.state.orgao
     fs = [dict(f, nome=CS.NOMES.get(f['fonte'], f['fonte'])) for f in _fontes(o)]
     sel = fonte if fonte in {f['fonte'] for f in fs} else (fs[0]['fonte'] if fs else '')
-    ult = {x['f']: x for x in db.todos(db.PLATAFORMA, "SELECT DISTINCT ON (split_part(fonte, ':', 1)) split_part(fonte, ':', 1) f, inicio, ok, mensagem FROM coletas WHERE orgao_slug=%s ORDER BY split_part(fonte, ':', 1), id DESC", (o['slug'],))}
+    ult = {x['f']: x for x in db.todos(db.LOCAL, "SELECT DISTINCT ON (split_part(fonte, ':', 1)) split_part(fonte, ':', 1) f, inicio, ok, mensagem FROM coletas WHERE orgao_slug=%s ORDER BY split_part(fonte, ':', 1), id DESC", (o['slug'],))}
     from . import avisos
     from .web import modulos_do_orgao
     ag = None
@@ -58,13 +58,13 @@ async def integracao_agenda(request: Request, fonte: str):
         raise HTTPException(404)
     antes = AG.descrever(AG.da_fonte(dict(f, fonte=fonte)))
     if form.get('acao') == 'padrao':
-        db.exe(db.PLATAFORMA, 'UPDATE fontes SET agenda=NULL WHERE orgao_id=%s AND fonte=%s', (o['id'], fonte))
+        db.exe(db.LOCAL, 'UPDATE fontes SET agenda=NULL WHERE orgao_id=%s AND fonte=%s', (o['id'], fonte))
         auditar(request, f'Integrações: agenda da fonte {fonte} voltou ao padrão ({antes} → {AG.descrever(AG.padrao(fonte))})')
         return ir(volta, 'Agenda voltou ao padrão do sistema.', request)
     ag, erros = AG.validar(fonte, form)
     if erros:
         return ir(volta, 'Agenda não salva: ' + ' '.join(erros), request)
-    db.exe(db.PLATAFORMA, 'UPDATE fontes SET agenda=%s WHERE orgao_id=%s AND fonte=%s', (Jsonb(ag), o['id'], fonte))
+    db.exe(db.LOCAL, 'UPDATE fontes SET agenda=%s WHERE orgao_id=%s AND fonte=%s', (Jsonb(ag), o['id'], fonte))
     auditar(request, f'Integrações: agenda da fonte {fonte} alterada ({antes} → {AG.descrever(ag)})')
     return ir(volta, f'Agenda salva: {AG.descrever(ag)}. Vale a partir da próxima verificação do coletor (a cada minuto).', request)
 
@@ -102,7 +102,8 @@ async def integracao_post(request: Request, fonte: str):
             difs = '; '.join(f'{k}: {atual.get(k)} → {v}' for k, v in novo.items() if atual.get(k) != v)
             auditar(request, f'Integrações: parâmetros da fonte {fonte} alterados ({difs[:300]})')
         from .worker import rodar
-        oo = dict(db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (o['id'],)))
+        from . import orgaos
+        oo = dict(orgaos.por_id(o['id']) or o)
         resp = ir(volta, ('Parâmetros salvos. ' if mudou else 'Parâmetros sem mudança. ') + 'A coleta começou agora; o resultado aparece em “Última execução” em alguns minutos.', request)
         resp.background = BackgroundTask(rodar, oo, fonte, novo)
         auditar(request, f'Integrações: coleta manual da fonte {fonte} iniciada')

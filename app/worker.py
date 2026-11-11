@@ -36,7 +36,11 @@ def pronta(f, agora, ultimo):
     return AG.deve_rodar(AG.da_fonte(f), agora, ultimo)
 
 def fontes_ativas():
-    return db.todos(db.PLATAFORMA, 'SELECT o.*, f.fonte, f.params, f.agenda FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE f.ativo AND o.ativo ORDER BY o.id, f.fonte')
+    """Fontes ligadas dos órgãos ativos (o órgão vem do cadastro: controle no papel "tudo", licenças no papel "no")."""
+    from . import orgaos
+    por_id = {o['id']: o for o in orgaos.todos()}
+    return [dict(por_id[f['orgao_id']], fonte=f['fonte'], params=f['params'], agenda=f['agenda'])
+            for f in db.todos(db.LOCAL, 'SELECT orgao_id, fonte, params, agenda FROM fontes WHERE ativo ORDER BY orgao_id, fonte') if f['orgao_id'] in por_id]
 
 def tcesp_pendente(o, p):
     """TCESP: mensal (dia 20) ou enquanto faltar algum ano configurado."""
@@ -72,7 +76,7 @@ def rodar(o, fonte, p):
 def ultimas_execucoes():
     """Lembra a última coleta de cada fonte (no banco), para um reinício não repetir as fontes à toa."""
     r = {}
-    for x in db.todos(db.PLATAFORMA, "SELECT orgao_slug, split_part(fonte, ':', 1) f, max(inicio) t FROM coletas WHERE fonte LIKE '%%:%%' GROUP BY 1, 2"):
+    for x in db.todos(db.LOCAL, "SELECT orgao_slug, split_part(fonte, ':', 1) f, max(inicio) t FROM coletas WHERE fonte LIKE '%%:%%' GROUP BY 1, 2"):
         r[(x['orgao_slug'], x['f'])] = x['t'].astimezone().replace(tzinfo=None)
     return r
 
@@ -80,7 +84,8 @@ def diario_tick(agora):
     """Rotina do Diário Oficial, nos horários de cada órgão (padrão 16h, 16h30 e 17h): edição sem atos, alerta e publicação, só com edição assinada."""
     from . import diario_servico as DS
     from .web import modulos_do_orgao
-    for o in db.todos(db.PLATAFORMA, "SELECT * FROM orgaos WHERE ativo AND tipo='executivo'"):
+    from . import orgaos
+    for o in orgaos.todos(tipo='executivo'):
         try:
             if not modulos_do_orgao(o).get('diario'):
                 continue

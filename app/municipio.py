@@ -12,7 +12,7 @@ def _br(fmt, v):
 def automaticos(ibge):
     out = []
     for chave, rot, fmt, un in AUTO:
-        r = db.um(db.PLATAFORMA, 'SELECT * FROM indicadores_publicos WHERE ibge=%s AND indicador=%s AND valor IS NOT NULL ORDER BY data_ref DESC, periodo DESC LIMIT 1', (str(ibge), chave))
+        r = db.um(db.LOCAL, 'SELECT * FROM indicadores_publicos WHERE ibge=%s AND indicador=%s AND valor IS NOT NULL ORDER BY data_ref DESC, periodo DESC LIMIT 1', (str(ibge), chave))
         if r:
             out.append({'chave': chave, 'rotulo': rot, 'valor': _br(fmt, r['valor']) + (f' {un}' if un else ''), 'periodo': r['periodo'],
                         'coletado_em': r['coletado_em'], 'fonte': 'IBGE (servicodados.ibge.gov.br)', 'manual': False})
