@@ -36,6 +36,8 @@
 <label>Câmara: órgão recebedor nas transferências<input name="gov_recebedora" value="{{ v('gov_recebedora', '') }}" placeholder="PODER LEGISLATIVO"></label>
 <p class="legal">Sem API, o coletor usa a exportação em XML do próprio portal (sem login e sem captcha). Com a API de dados abertos informada, receitas, despesas e pessoal vêm dela e, se ela falhar, do XML. A escolha de cada base fica em Integrações.</p></div>
 </fieldset>
+{% if nos %}<fieldset><legend>Hospedagem</legend><label>Onde o portal e o painel deste órgão ficam<select name="no_id"><option value="">Esta VPS (junto com a gestão)</option>{% for n in nos %}<option value="{{ n.id }}" {{ 'selected' if v('no_id', '') == n.id|string }}>Nó {{ n.nome }}</option>{% endfor %}</select></label>
+<p class="legal">Em um nó, o banco do órgão é criado pelo próprio nó (ordem assinada, em até 1 minuto). A senha inicial do administrador aparece aqui e só o código cifrado dela vai para o nó.</p></fieldset>{% endif %}
 <fieldset class="opcoes"><legend>5. Módulos opcionais contratados</legend>{% for m in mods %}<label data-serve="{{ m[4] }}"><input type="checkbox" name="mod_{{ m[0] }}" value="1" {{ 'checked' if v('mod_' ~ m[0]) }}> {{ m[1] }}{% if m[4] != 'ambos' %} <small>({{ 'Prefeitura' if m[4] == 'executivo' else 'Câmara' }})</small>{% endif %}</label>{% endfor %}</fieldset>
 <div class="acoes-form"><button class="btn">Cadastrar órgão</button><a class="btn sec" href="/">Cancelar</a></div>
 </form>

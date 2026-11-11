@@ -1669,3 +1669,35 @@ Próximos passos dependem das pessoas:
   - timer do ativador ativo.
 - `separacao-a2-local` mesclado em `main` com a tag `separacao-a2`.
 - **Próximo:** A3 — fila de ordens (o console deixa de escrever direto nos bancos dos órgãos).
+
+### Separação gestão × portais — etapa A3: fila de ordens (11/11/2026, ramo `separacao-a3-ordens`)
+- **Usuário:** "Sim, etapa A3".
+- **Feito:**
+  - `app/ordens.py`: o console não escreve mais direto nos bancos dos órgãos; registra uma **ordem** de uma lista fechada:
+    - `criar_orgao`: banco do órgão, esquema, identidade, integrações, menus, layout e administrador. Leva só o **hash** da senha inicial; a senha em claro aparece uma vez no console;
+    - `credencial`: gravar ou apagar credencial de fonte, sempre **cifrada** (mesma `CHAVE_CREDENCIAIS` na gestão e no nó).
+  - **Órgão nesta VPS (papel "tudo"):** a ordem é executada na hora, no mesmo pedido, como antes.
+  - **Órgão num nó:** a ordem fica na fila.
+    - o nó busca em `GET /api/no/ordens` (token), confere a **assinatura** da gestão (cobre id, nó, tipo e conteúdo) e executa **uma vez só** (`ordens_feitas` no banco local);
+    - o nó devolve o resultado em `POST /api/no/ordens/{id}`; se a gestão estiver fora do ar, informa depois sem executar de novo;
+    - ordem adulterada e tipo fora da lista são recusados.
+  - `provision.registrar_orgao` foi separado em `registrar_controle` (gestão: órgão, contrato, módulos) e `preparar_orgao` (quem hospeda). O piloto continua pelo caminho de sempre.
+  - **Console:**
+    - cadastro de órgão com "Hospedagem" (esta VPS ou um nó), mostrada só quando há nós cadastrados;
+    - página do órgão com as últimas ordens;
+    - "Nós e licenças" com as ordens na fila e com erro;
+    - credencial gravada ou apagada vai, cifrada, para cada nó;
+    - o editor de layout do console recusa órgão hospedado em nó (o ajuste é no painel do órgão).
+  - Worker do nó: busca as ordens a cada minuto, depois das licenças.
+  - Migrações: `026_plataforma_ordens.sql` (controle) e `migrations_local/002_local_ordens.sql` (nó).
+- **Ficou para a A4, com o relatório do nó:** publicar o domínio de órgão hospedado em nó, porque precisa que os passos do ativador voltem para o console.
+- **Testes:**
+  - `tests/teste_ordens.py`:
+    - cadastro igual ao de antes nesta VPS, com o login do administrador;
+    - órgão no nó: ordem na fila, banco não criado na gestão, API 401 e isolamento entre nós;
+    - nó simulado: executa, devolve, não repete, informa depois de queda da gestão, recusa ordem adulterada e tipo fora da lista, serve o portal e aceita o login com a senha mostrada no console;
+    - credencial cifrada gravada, decifrada e apagada no nó;
+  - as 23 suítes e `teste_ativador.sh` passaram com o código montado;
+  - prévia com cópia dos bancos: as 12 páginas do piloto **idênticas** ao ar; 16 fontes ativas; migração 026 aplicada sem erro.
+- **Implantação:** tem migração (026). Ordem: `up -d app` → `provision atualizar` → `up -d worker`.
+- **Onde parou:** aguardando aprovação para implantar A3.

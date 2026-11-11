@@ -108,12 +108,26 @@ def licencas_tick(estado):
     except Exception as e:
         comum.registrar('', 'licencas:gestao', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
 
+def ordens_tick(estado):
+    """Papel "no": busca e executa as ordens da gestão a cada minuto (depois das licenças, para o órgão novo já ser conhecido)."""
+    if config.PAPEL != 'no' or time.monotonic() - estado.get('t', -1e9) < 60:
+        return
+    estado['t'] = time.monotonic()
+    from . import ordens
+    try:
+        msg = ordens.puxar()
+        if not msg.startswith('0 ordem') or 'RECUSADA' in msg:
+            comum.registrar('', 'ordens:gestao', 'RECUSADA' not in msg, 0, msg)
+    except Exception as e:
+        comum.registrar('', 'ordens:gestao', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
+
 def main():
     ultimo = ultimas_execucoes()
-    lic = {}
+    lic, ords = {}, {}
     print('worker iniciado', flush=True)
     while True:
         licencas_tick(lic)
+        ordens_tick(ords)
         agora = datetime.now()
         try:
             for f in fontes_ativas():

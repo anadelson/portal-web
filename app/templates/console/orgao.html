@@ -15,7 +15,9 @@
 <label>Mudar hospedagem<select name="no_id"><option value="">Esta VPS</option>{% for n in nos %}<option value="{{ n.id }}" {{ 'selected' if o.no_id == n.id }}>Nó {{ n.nome }}</option>{% endfor %}</select></label>
 <label class="opc"><input type="checkbox" name="confirmo" value="1"> Confirmo: a partir de agora as licenças deste órgão são entregues a quem o hospeda. A mudança dos dados e do DNS é feita na virada, com aprovação.</label>
 <div class="acoes-form"><button class="btn sec">Salvar hospedagem</button></div></form>
-<p class="legal">Licença sem renovação por mais de {{ validade }} dias (gestão fora do ar): o órgão entra em carência no nó — transparência, e-SIC e ouvidoria continuam no ar (LAI, art. 8º).</p></section>
+<p class="legal">Licença sem renovação por mais de {{ validade }} dias (gestão fora do ar): o órgão entra em carência no nó — transparência, e-SIC e ouvidoria continuam no ar (LAI, art. 8º).</p>
+{% if lic.ordens %}<h3>Ordens para quem hospeda</h3><div class="tabela"><table><caption class="sr">Últimas ordens</caption><thead><tr><th scope="col">Quando</th><th scope="col">Ordem</th><th scope="col">Situação</th><th scope="col">Resultado</th></tr></thead><tbody>
+{% for x in lic.ordens %}<tr><td>{{ x.criada_em|br }}<br><small>{{ x.criada_por }}</small></td><td>{{ x.resumo or x.tipo }}</td><td><span class="chip {{ {'feita': 'ok', 'erro': 'erro'}.get(x.situacao, 'alerta') }}">{{ {'feita': 'feita', 'erro': 'erro', 'pendente': 'na fila do nó'}[x.situacao] }}</span></td><td>{{ x.resultado }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}</section>
 <section class="cx" id="publicacao" aria-labelledby="h-pub"><h2 id="h-pub">Domínio e publicação</h2>
 {% set u = pub.ultima %}{% set d = pub.dns %}
 {% if o.slug in pub.pilotos %}<p>Domínio do piloto (<code>{{ o.dominio }}</code>): publicado pelo <code>portal-bora.conf</code>, fora do ativador.</p>

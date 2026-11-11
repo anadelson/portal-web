@@ -1,6 +1,6 @@
 {% extends 'console/base.html' %}{% block h1 %}Órgão criado{% endblock %}
 {% block conteudo %}
-<p class="msg" role="status"><strong>{{ o.nome }}</strong> foi criado em implantação (banco {{ o.banco }}, município {{ o.municipio }}, IBGE {{ o.ibge }}).</p>
+<p class="msg" role="status"><strong>{{ o.nome }}</strong> foi criado em implantação (banco {{ o.banco }}, município {{ o.municipio }}, IBGE {{ o.ibge }}).{% if no %} Hospedagem: nó <strong>{{ no.nome }}</strong> — o nó cria o banco do órgão na próxima busca (até 1 minuto); acompanhe em Órgãos → {{ o.nome }} → Hospedagem e licença.{% endif %}</p>
 <section class="cx senha-unica" aria-labelledby="h-senha"><h2 id="h-senha">Acesso do administrador — anote agora</h2>
 <p>Esta senha aparece <strong>só nesta tela</strong>: não fica gravada (o sistema guarda apenas o código cifrado) e não vai para o registro. Entregue ao administrador por um canal seguro; no primeiro acesso ele cadastra o segundo fator e troca a senha.</p>
 <dl class="dados-senha"><dt>Endereço do painel</dt><dd><code>https://{{ o.dominio }}/admin</code></dd><dt>E-mail</dt><dd><code>{{ dados.email_admin }}</code></dd><dt>Senha provisória</dt><dd><code class="senha">{{ senha }}</code></dd></dl>
