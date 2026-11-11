@@ -1578,3 +1578,17 @@ Próximos passos dependem das pessoas:
   - as 20 suítes e `teste_ativador.sh` passaram com o código montado.
 - **Capturas** em `Docs/avaliacao-govbr-api/` (1366 e 390 px, axe sem violações).
 - **Onde parou:** aguardando aprovação para implantar. Sem migração; não precisa de `provision atualizar`.
+
+### Implantação da escolha API/XML da GOVBR (11/11/2026, aprovada: "Aprovo os passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 12h01 UTC.
+- **Build e testes:** as 20 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** `up -d app` → `up -d worker` → `image prune`. Sem migração. App e worker sem reinícios nem erros no log.
+- **Conferência:** portais 200; console 303 (login); timer do ativador ativo; o piloto continua com "Fonte: Sistema contábil da Prefeitura (Fiorilli)".
+- `govbr-api` mesclado em `main` com a tag `govbr-api`.
+- **Para usar em Pato Branco:**
+  - cadastrar o órgão no console com sistema "GOVBR", portal `…/pronimtb/` e API `…/dadosabertos/`;
+  - em Integrações → GOVBR, usar a unidade gestora "MUNICIPIO DE PATO BRANCO" (é o nome que a API e o XML usam);
+  - deixar no automático ou escolher por base, e clicar em "Testar consulta".
+- **Avisar a GOVBR:**
+  - a rota de despesas da API de Pato Branco devolve erro do banco deles;
+  - as descrições das receitas perdem a letra "o".
