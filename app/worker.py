@@ -121,13 +121,28 @@ def ordens_tick(estado):
     except Exception as e:
         comum.registrar('', 'ordens:gestao', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
 
+def relatorio_tick(estado):
+    """Papel "no": relatório técnico para a gestão a cada 5 minutos (a cada minuto com publicação de domínio em andamento)."""
+    if config.PAPEL != 'no':
+        return
+    from . import relatorio
+    intervalo = 60 if relatorio.com_pressa() else 300
+    if time.monotonic() - estado.get('t', -1e9) < intervalo:
+        return
+    estado['t'] = time.monotonic()
+    try:
+        relatorio.enviar()
+    except Exception as e:
+        comum.registrar('', 'relatorio:gestao', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
+
 def main():
     ultimo = ultimas_execucoes()
-    lic, ords = {}, {}
+    lic, ords, rel = {}, {}, {}
     print('worker iniciado', flush=True)
     while True:
         licencas_tick(lic)
         ordens_tick(ords)
+        relatorio_tick(rel)
         agora = datetime.now()
         try:
             for f in fontes_ativas():

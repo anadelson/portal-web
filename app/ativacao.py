@@ -8,6 +8,10 @@ O app web NUNCA executa comandos na VPS: o console só grava o pedido (tabela `a
   python -m app.ativacao vhost [--incluir ID] [--teste DOMINIO]   # imprime o portal-orgaos.conf inteiro
   python -m app.ativacao passo ID "texto"       # registra um passo (aparece no console)
   python -m app.ativacao concluir ID SITUACAO "mensagem"   # no_ar | desativado | erro
+
+Separação gestão × portais (etapa A4): no papel "no" o mesmo ativador roda no NÓ. A fila (`ativacoes`) e os domínios publicados
+(`dominios_publicados`) ficam no banco local; o pedido chega da gestão pela ordem "dominio" e os passos voltam pelo relatório do nó.
+Na VPS da gestão (papel "tudo"), o vhost gerado aqui só leva os órgãos hospedados nesta VPS.
 """
 import json, re, socket, sys
 from . import config, db
@@ -31,12 +35,18 @@ def resolver(dominio):
     except OSError:
         return []
 
-def dns(dominio):
-    ips, alvo = resolver(dominio), vps_ip()
+def dns(dominio, alvo=None):
+    """O DNS aponta só para a VPS que hospeda o órgão? (alvo = IP do nó; sem alvo, o IP desta VPS)"""
+    ips, alvo = resolver(dominio), alvo or vps_ip()
     return {'ips': ips, 'vps': alvo, 'ok': bool(ips) and bool(alvo) and ips == [alvo]}
 
+def ip_do_no(no_id):
+    """IP público informado pelo nó no último relatório."""
+    n = db.um(db.PLATAFORMA, 'SELECT relatorio FROM nos WHERE id=%s', (no_id,))
+    return ((n or {}).get('relatorio') or {}).get('ip', '')
+
 def ultima(oid):
-    return db.um(db.PLATAFORMA, 'SELECT * FROM ativacoes WHERE orgao_id=%s ORDER BY id DESC LIMIT 1', (oid,))
+    return db.um(db.LOCAL, 'SELECT * FROM ativacoes WHERE orgao_id=%s ORDER BY id DESC LIMIT 1', (oid,))
 
 def pedir(o, acao, quem):
     """Grava o pedido na fila. Devolve (ok, mensagem)."""
@@ -47,13 +57,23 @@ def pedir(o, acao, quem):
     u = ultima(o['id'])
     if u and u['situacao'] in ('pendente', 'processando'):
         return False, 'Já existe um pedido em andamento para este órgão.'
+    no_id = o.get('no_id')
+    alvo = ip_do_no(no_id) if no_id else None
+    if no_id and not alvo:
+        return False, 'O nó ainda não informou o IP público dele (relatório do nó). Confira em Nós e licenças.'
     if acao == 'ativar':
-        d = dns(o['dominio'])
+        d = dns(o['dominio'], alvo)
         if not d['ok']:
-            return False, f"O DNS de {o['dominio']} ainda não aponta só para a VPS ({d['vps'] or '?'}): hoje devolve {', '.join(d['ips']) or 'nada'}."
+            return False, f"O DNS de {o['dominio']} ainda não aponta só para {'o nó' if no_id else 'a VPS'} ({d['vps'] or '?'}): hoje devolve {', '.join(d['ips']) or 'nada'}."
     elif not o['vhost_ativo']:
         return False, 'O domínio não está publicado pelo console.'
-    db.exe(db.PLATAFORMA, 'INSERT INTO ativacoes (orgao_id, dominio, acao, pedido_por) VALUES (%s,%s,%s,%s)', (o['id'], o['dominio'], acao, quem))
+    a = db.um(db.PLATAFORMA, 'INSERT INTO ativacoes (orgao_id, dominio, acao, pedido_por) VALUES (%s,%s,%s,%s) RETURNING id', (o['id'], o['dominio'], acao, quem))
+    if no_id:  # o pedido vai para o ativador do nó; os passos voltam pelo relatório do nó
+        from . import ordens
+        ordens.enviar('dominio', {'ativacao_id': a['id'], 'orgao_id': o['id'], 'dominio': o['dominio'], 'acao': acao, 'pedido_por': quem},
+                      orgao=o, no_id=no_id, quem=quem, resumo=f"{'publicar' if acao == 'ativar' else 'tirar do ar'} {o['dominio']}")
+        return True, ('Pedido enviado ao nó: o ativador do nó emite o certificado, publica o domínio e os passos aparecem aqui em até 5 minutos.' if acao == 'ativar'
+                      else 'Pedido para tirar do ar enviado ao nó: os passos aparecem aqui em até 5 minutos (o certificado fica guardado no nó).')
     return True, ('Pedido de ativação registrado: o ativador da VPS emite o certificado, publica o domínio e informa aqui em 1 a 3 minutos.' if acao == 'ativar'
                   else 'Pedido para tirar do ar registrado: o ativador da VPS remove o domínio do nginx em 1 a 3 minutos (o certificado fica guardado).')
 
@@ -79,13 +99,16 @@ server {{
 def vhost(incluir=None, teste=None, excluir=None):
     """Conteúdo inteiro do portal-orgaos.conf: órgãos com vhost_ativo, mais o do pedido em processamento (incluir) e,
     no modo de teste do ativador, um domínio de teste (sem órgão)."""
-    doms = [o['dominio'] for o in db.todos(db.PLATAFORMA, 'SELECT dominio FROM orgaos WHERE vhost_ativo ORDER BY id')]
+    if config.PAPEL == 'no':
+        doms = [r['dominio'] for r in db.todos(db.LOCAL, 'SELECT dominio FROM dominios_publicados ORDER BY orgao_id, dominio')]
+    else:  # só os órgãos hospedados nesta VPS (os dos nós são publicados pelo ativador de cada nó)
+        doms = [o['dominio'] for o in db.todos(db.PLATAFORMA, 'SELECT dominio FROM orgaos WHERE vhost_ativo AND no_id IS NULL ORDER BY id')]
     if incluir:
-        a = db.um(db.PLATAFORMA, 'SELECT dominio FROM ativacoes WHERE id=%s', (incluir,))
+        a = db.um(db.LOCAL, 'SELECT dominio FROM ativacoes WHERE id=%s', (incluir,))
         if a and a['dominio'] not in doms:
             doms.append(a['dominio'])
     if excluir:
-        a = db.um(db.PLATAFORMA, 'SELECT dominio FROM ativacoes WHERE id=%s', (excluir,))
+        a = db.um(db.LOCAL, 'SELECT dominio FROM ativacoes WHERE id=%s', (excluir,))
         doms = [d for d in doms if not a or d != a['dominio']]
     if teste and teste not in doms:
         doms.append(teste)
@@ -94,7 +117,14 @@ def vhost(incluir=None, teste=None, excluir=None):
     return cab + '\n'.join(bloco(d) for d in doms)
 
 def validar(aid):
-    a = db.um(db.PLATAFORMA, 'SELECT a.*, o.dominio dom_orgao, o.vhost_ativo FROM ativacoes a JOIN orgaos o ON o.id=a.orgao_id WHERE a.id=%s', (aid,))
+    if config.PAPEL == 'no':
+        from . import orgaos
+        a = db.um(db.LOCAL, 'SELECT * FROM ativacoes WHERE id=%s', (aid,))
+        o = orgaos.por_id(a['orgao_id']) if a else None
+        if a:
+            a = dict(a, dom_orgao=(o or {}).get('dominio'))
+    else:
+        a = db.um(db.PLATAFORMA, 'SELECT a.*, o.dominio dom_orgao, o.vhost_ativo FROM ativacoes a JOIN orgaos o ON o.id=a.orgao_id WHERE a.id=%s AND o.no_id IS NULL', (aid,))
     if not a:
         return 'pedido inexistente'
     if a['situacao'] not in ('pendente', 'processando'):
@@ -106,14 +136,20 @@ def validar(aid):
     return ''
 
 def passo(aid, txt):
-    db.exe(db.PLATAFORMA, "UPDATE ativacoes SET situacao=CASE WHEN situacao='pendente' THEN 'processando' ELSE situacao END, passos = passos || %s::jsonb WHERE id=%s",
+    db.exe(db.LOCAL, "UPDATE ativacoes SET situacao=CASE WHEN situacao='pendente' THEN 'processando' ELSE situacao END, passos = passos || %s::jsonb WHERE id=%s",
            (json.dumps([{'em': config.agora().strftime('%d/%m %H:%M:%S'), 'txt': txt[:300]}]), aid))
 
 def concluir(aid, situacao, msg):
     if situacao not in ('no_ar', 'desativado', 'erro'):
         raise ValueError(situacao)
-    a = db.um(db.PLATAFORMA, 'SELECT * FROM ativacoes WHERE id=%s', (aid,))
-    db.exe(db.PLATAFORMA, 'UPDATE ativacoes SET situacao=%s, mensagem=%s, concluido_em=now() WHERE id=%s', (situacao, msg[:500], aid))
+    a = db.um(db.LOCAL, 'SELECT * FROM ativacoes WHERE id=%s', (aid,))
+    db.exe(db.LOCAL, 'UPDATE ativacoes SET situacao=%s, mensagem=%s, concluido_em=now() WHERE id=%s', (situacao, msg[:500], aid))
+    if config.PAPEL == 'no':  # nó: domínios publicados ficam no banco local; o console recebe pelo relatório do nó
+        if situacao == 'no_ar':
+            db.exe(db.LOCAL, 'INSERT INTO dominios_publicados (dominio, orgao_id) VALUES (%s,%s) ON CONFLICT (dominio) DO UPDATE SET orgao_id=EXCLUDED.orgao_id', (a['dominio'], a['orgao_id']))
+        elif situacao == 'desativado':
+            db.exe(db.LOCAL, 'DELETE FROM dominios_publicados WHERE dominio=%s', (a['dominio'],))
+        return
     if situacao in ('no_ar', 'desativado'):
         db.exe(db.PLATAFORMA, 'UPDATE orgaos SET vhost_ativo=%s WHERE id=%s', (situacao == 'no_ar', a['orgao_id']))
     db.exe(db.PLATAFORMA, 'INSERT INTO log_console (quem, acao) VALUES (%s,%s)', ('ativador da VPS', f"Domínio {a['dominio']}: {a['acao']} → {situacao}. {msg[:300]}"))
@@ -121,7 +157,9 @@ def concluir(aid, situacao, msg):
 def main(args):
     cmd = args[0] if args else ''
     if cmd == 'pendentes':
-        for a in db.todos(db.PLATAFORMA, "SELECT id, acao, dominio FROM ativacoes WHERE situacao='pendente' ORDER BY id"):
+        sql = ("SELECT id, acao, dominio FROM ativacoes WHERE situacao='pendente' ORDER BY id" if config.PAPEL == 'no' else  # pedidos de órgão de nó são do ativador do nó
+               "SELECT a.id, a.acao, a.dominio FROM ativacoes a JOIN orgaos o ON o.id=a.orgao_id WHERE a.situacao='pendente' AND o.no_id IS NULL ORDER BY a.id")
+        for a in db.todos(db.LOCAL, sql):
             print(f"{a['id']}\t{a['acao']}\t{a['dominio']}")
     elif cmd == 'validar':
         erro = validar(int(args[1]))

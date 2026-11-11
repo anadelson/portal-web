@@ -1711,3 +1711,56 @@ Próximos passos dependem das pessoas:
   - 16 fontes ativas; tabela de ordens vazia; nenhum nó; timer do ativador ativo.
 - `separacao-a3-ordens` mesclado em `main` com a tag `separacao-a3`.
 - **Próximo:** A4 — relatório do nó (saúde, coletas e espaço) e publicação de domínio de órgão hospedado em nó, com os passos voltando para o console.
+
+### Separação gestão × portais — etapa A4: relatório do nó e domínio em nó (11/11/2026, ramo `separacao-a4-relatorio`)
+- **Usuário:** "Sim, etapa A4".
+- **Feito:**
+  - `app/relatorio.py`: o nó envia à gestão (`POST /api/no/relatorio`, token), a cada 5 min ou a cada minuto com publicação de domínio em andamento:
+    - versão, IP público (`VPS_IP` do .env do nó) e espaço em disco;
+    - licença por órgão (válida/até quando), última execução de cada coleta e falhas em 24 h;
+    - ordens com erro, domínios publicados e passos das ativações.
+
+    **Sem dados pessoais**; limite de 256 KB.
+  - **Domínio de órgão hospedado em nó:**
+    - o console confere o DNS contra o **IP do nó** (do relatório), registra o pedido e manda a ordem `dominio`;
+    - o nó põe o pedido na fila local, e o mesmo `deploy/ativador.sh` do nó publica: certificado, vhost a partir de `dominios_publicados`, `nginx -t`, recarga e conferência do HTTPS;
+    - os passos voltam pelo relatório e atualizam o pedido no console ("no ar", `vhost_ativo`, registro "ativador do nó …");
+    - relatório de outro nó não mexe no pedido.
+  - **Ativador desta VPS (papel "tudo"):** o vhost e a lista de pendentes só levam órgãos hospedados aqui. Nada muda para o piloto (o vhost gerado é igual ao do ar).
+  - **Console:**
+    - "Nós e licenças": último relatório, IP, GB livres, versão, falhas de coleta e licença vencida;
+    - página do órgão do nó: licença no nó e a tabela das coletas no nó.
+  - Migrações: `027_plataforma_relatorio.sql` (controle) e `migrations_local/003_local_ativacoes.sql` (nó).
+- **Testes:**
+  - `tests/teste_relatorio.py`:
+    - sem relatório não há IP do nó (pedido recusado);
+    - relatório sem dados pessoais;
+    - console mostra relatório e coletas;
+    - DNS na gestão recusado e no IP do nó aceito;
+    - ativador desta VPS ignora o pedido;
+    - nó valida, publica e retira, com os passos no console;
+    - relatório de outro nó ignorado; API 401, 413 e 400;
+  - as 24 suítes e `teste_ativador.sh` passaram com o código montado;
+  - prévia com cópia dos bancos: as 12 páginas **idênticas**; 16 fontes; vhost igual ao do ar.
+- **Com a A4, a etapa A (código) fica completa.** As etapas B a E (VPS nova, ensaio, virada) dependem das decisões listadas em `Docs/ANALISE-SEPARACAO-VPS.md` (plano da VPS, validade da licença, nome do nó, janela) e da confirmação das três mudanças de decisão do `Docs/CLAUDE.md`.
+- **Implantação:** tem migração (027). Ordem: `up -d app` → `provision atualizar` → `up -d worker`.
+- **Onde parou:** aguardando aprovação para implantar A4.
+
+### Implantação da etapa A4 — relatório do nó e domínio em nó (11/11/2026, aprovada: "Aprovo os passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 17h19 UTC.
+- **Build e testes:** as 24 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** `up -d app` → `provision atualizar` (migração 027 aplicada) → `up -d worker` → `image prune`. Sem reinícios nem erros no log.
+- **Conferência:**
+  - portais, transparência, Diário e login dos dois painéis 200; console 303 (login);
+  - APIs de licenças e de relatório sem token: 401;
+  - 16 fontes ativas; vhost gerado pelo ativador sem blocos, igual ao do ar;
+  - o timer do ativador rodou com o código novo às 17h30 UTC e saiu com sucesso.
+- `separacao-a4-relatorio` mesclado em `main` com a tag `separacao-a4`.
+- **Etapa A (código) completa:** licença assinada (A1), banco local do nó (A2), fila de ordens (A3), relatório e domínio em nó (A4). Tudo no papel "tudo", sem mudança para o piloto.
+- **Próximo (B a E):** depende do usuário:
+  - confirmar as três mudanças de decisão do `Docs/CLAUDE.md`;
+  - plano e região da VPS nova;
+  - validade da licença sem contato (sugestão: 15 dias);
+  - nome do nó;
+  - janela da virada;
+  - cópia dos segredos (`.env`, chave do nó, certificado do Diário) feita por ele.

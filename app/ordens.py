@@ -9,13 +9,15 @@ Tipos:
   criar_orgao   prepara o banco do órgão (esquema, identidade, integrações, menus, layout, administrador inicial).
                 Leva só o HASH da senha inicial do administrador; a senha em claro aparece uma vez no console e não viaja.
   credencial    grava (ou apaga) uma credencial de fonte de dados — vai CIFRADA (CHAVE_CREDENCIAIS, igual na gestão e no nó).
+  dominio       põe na fila do ativador do NÓ o pedido de publicar/tirar do ar o domínio do órgão (mesmo id do pedido no console);
+                os passos (certificado, nginx, HTTPS) voltam para o console pelo relatório do nó.
 """
 import json, sys, time
 from datetime import datetime, timezone
 from psycopg.types.json import Jsonb
 from . import config, db
 
-TIPOS = ('criar_orgao', 'credencial')
+TIPOS = ('criar_orgao', 'credencial', 'dominio')
 
 # ---------- execução (em quem hospeda) ----------
 def _criar_orgao(p):
@@ -34,7 +36,18 @@ def _credencial(p):
                         testada_em=NULL, testada_por=NULL, teste_resultado=NULL""", (p['fonte'], p['dados'], p.get('configurada_em') or datetime.now(timezone.utc), p.get('configurada_por', '')))
     return 'credencial gravada (cifrada)'
 
-EXECUTA = {'criar_orgao': _criar_orgao, 'credencial': _credencial}
+def _dominio(p):
+    from . import orgaos
+    o = orgaos.por_id(p['orgao_id'])
+    if not o or o['dominio'] != p['dominio']:
+        raise ValueError('domínio do pedido não confere com a licença do órgão neste nó')
+    if p['acao'] not in ('ativar', 'desativar'):
+        raise ValueError('ação inválida')
+    r = db.exe(db.LOCAL, 'INSERT INTO ativacoes (id, orgao_id, dominio, acao, pedido_por) VALUES (%s,%s,%s,%s,%s) ON CONFLICT (id) DO NOTHING RETURNING id',
+               (p['ativacao_id'], p['orgao_id'], p['dominio'], p['acao'], p.get('pedido_por', '')[:120]))
+    return f"pedido {p['ativacao_id']} na fila do ativador do nó" if r else 'pedido já estava na fila'
+
+EXECUTA = {'criar_orgao': _criar_orgao, 'credencial': _credencial, 'dominio': _dominio}
 
 def executar(tipo, payload):
     if tipo not in EXECUTA:
