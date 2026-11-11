@@ -1475,3 +1475,14 @@ Próximos passos dependem das pessoas:
   - volta ao padrão; sem login.
 - **Testes:** as 19 suítes (18 de antes + `teste_diario_regras`) deram ERROS: 0 / tudo ok no banco de TESTE, e `teste_ativador.sh` deu tudo ok; nenhum volume solto.
 - **Onde parou:** aguardando aprovação para implantar. Sem migração de banco; precisa de `provision atualizar` (grava o decreto do piloto). Ordem: `up -d app` → `provision atualizar` → `up -d worker`.
+
+### Implantação da etapa 3 (11/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 00h34 UTC.
+- **Build e testes:** as 19 suítes com a imagem nova deram ERROS: 0 / tudo ok; nenhum volume solto.
+- **Subida:** `up -d app` → `provision atualizar` (gravou o decreto do piloto) → `up -d worker`. Worker sem erros.
+- **Conferência:**
+  - Borá com 16h, 16h30 e 17h (sem horários próprios), "Lei Municipal nº 910/2026" e "Decreto de 25/03/2026";
+  - /diario com "a partir das 16h" e a base legal de sempre;
+  - portais 200, console 303 (login); timer do ativador ativo; logs sem erro.
+- `diario-configuravel` mesclado em `main` com a tag `diario-configuravel`.
+- **Próxima etapa do modelo:** 4, adaptadores de outros sistemas da transparência. Depende de saber quais sistemas os próximos órgãos usam.
