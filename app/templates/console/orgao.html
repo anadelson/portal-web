@@ -25,7 +25,7 @@
 {% for x in lic.ordens %}<tr><td>{{ x.criada_em|br }}<br><small>{{ x.criada_por }}</small></td><td>{{ x.resumo or x.tipo }}</td><td><span class="chip {{ {'feita': 'ok', 'erro': 'erro'}.get(x.situacao, 'alerta') }}">{{ {'feita': 'feita', 'erro': 'erro', 'pendente': 'na fila do nó'}[x.situacao] }}</span></td><td>{{ x.resultado }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}</section>
 <section class="cx" id="publicacao" aria-labelledby="h-pub"><h2 id="h-pub">Domínio e publicação</h2>
 {% set u = pub.ultima %}{% set d = pub.dns %}
-{% if o.slug in pub.pilotos %}<p>Domínio do piloto (<code>{{ o.dominio }}</code>): publicado pelo <code>portal-bora.conf</code>, fora do ativador.</p>
+{% if o.slug in pub.pilotos and not o.no_id %}<p>Domínio do piloto (<code>{{ o.dominio }}</code>): publicado pelo <code>portal-bora.conf</code>, fora do ativador.</p>
 {% else %}
 <dl class="dados-senha"><dt>Domínio</dt><dd><code>{{ o.dominio }}</code>{% if o.vhost_ativo %} <span class="chip ok">no ar pelo console</span>{% else %} <span class="chip">não publicado</span>{% endif %}</dd>
 <dt>DNS agora</dt><dd>{% if d.ips %}{{ d.ips|join(', ') }}{% else %}não resolve{% endif %} {% if d.ok %}<span class="chip ok">aponta para a VPS</span>{% else %}<span class="chip alerta">ainda não aponta só para a VPS ({{ d.vps or '?' }})</span>{% endif %}</dd></dl>

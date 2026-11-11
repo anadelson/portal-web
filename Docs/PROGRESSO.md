@@ -1764,3 +1764,21 @@ Próximos passos dependem das pessoas:
   - nome do nó;
   - janela da virada;
   - cópia dos segredos (`.env`, chave do nó, certificado do Diário) feita por ele.
+
+### Separação gestão × portais — fase 1: preparo desta VPS antes da VPS nova (11/11/2026, ramo `separacao-f1-preparo`)
+- **Usuário:** "finalize o que necessita nessa vps sem derrubar os pilotos instalados, em outro momento vou iniciar a nova vps e informo aki".
+- **Feito:**
+  - **Domínios do piloto:** nesta VPS, pmbora e cmbora continuam no `portal-bora.conf` (fora do ativador), como antes. Quando estiverem hospedados num nó, o console libera a publicação pelo ativador do nó, como qualquer órgão (necessário na virada).
+  - **Backup** (`deploy/backup.sh`): a lista de bancos passa a ser a do próprio servidor PostgreSQL, sem depender do banco de controle, que o nó não tem. Nesta VPS a lista é a mesma de hoje (plataforma, bd_pm_bora, bd_cm_bora); no nó, banco local e bancos dos órgãos. Sem nenhum banco: erro e saída.
+- **Testes:** `tests/teste_relatorio.py` ganhou o caso do piloto (bloqueado aqui; liberado e enviado ao nó quando hospedado lá). As 24 suítes e `teste_ativador.sh` passaram com o código montado. Prévia com cópia dos bancos: as 12 páginas **idênticas**.
+- **Implantação:** sem migração. O backup do primeiro passo já usa o script novo e serve de conferência. Ordem: `up -d app` → `up -d worker`.
+- **Onde parou:** aguardando aprovação para implantar a fase 1. Depois disso, **nada mais falta nesta VPS antes da VPS nova**. O resto (cadastrar o nó, exportar, virada) acontece junto com as fases 2 a 4.
+
+### Implantação da fase 1 — preparo desta VPS (11/11/2026, aprovada: "Aprovo os passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 18h36 UTC, já com o `backup.sh` novo: plataforma, bd_pm_bora, bd_cm_bora, dados e .env, como antes.
+- **Build e testes:** as 24 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** às 15h47 (Brasília, antes do horário do Diário) `up -d app` → `up -d worker` → `image prune`. Sem migração, sem reinícios nem erros no log.
+- **Conferência:** portais, transparência, Diário e login dos dois painéis 200; console 303 (login); 16 fontes ativas; timer do ativador ativo.
+- `separacao-f1-preparo` mesclado em `main` com a tag `separacao-f1`.
+- **Nesta VPS não falta mais nada antes da VPS nova.**
+- **Próximo:** o usuário vai contratar a VPS nova e avisar. Então seguem as decisões pendentes e as fases 2 (montar o nó), 3 (ensaio), 4 (virada) e 5 (depois). Ver `Docs/ANALISE-SEPARACAO-VPS.md`.
