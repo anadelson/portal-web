@@ -19,7 +19,7 @@ Parâmetros por órgão (tabela `fontes`, fonte='govbr'):
 Cada base é descrita UMA vez em BASES: o coletor executa essa descrição e a tela "Como a consulta é montada" mostra a
 mesma descrição (parâmetros, arquivo, filtros e, coluna por coluna, de que campo do XML vem cada valor do portal).
 A banco de cada órgão continua separado; a Câmara lê o portal público da Prefeitura, nunca o banco dela."""
-import io, re, time, unicodedata, zipfile
+import io, json, re, time, unicodedata, zipfile
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta
 import httpx
@@ -30,7 +30,7 @@ from .comum import txt, data_br, sem_cpf, doc_pj, eh_pessoa_fisica, chave, grava
 FONTE = 'govbr'
 MAX_ZIP = 40 * 1024 * 1024      # tamanho máximo do ZIP baixado
 MAX_XML = 200 * 1024 * 1024     # tamanho máximo do XML descompactado
-OCULTOS = {'Descontos', 'Liquido', 'CPFCNPJ', 'CNPJCPF', 'NCPJ', 'CNPJFornecedor'}
+OCULTOS = {'Descontos', 'Liquido', 'CPF', 'CPFCNPJ', 'CNPJCPF', 'NCPJ', 'CNPJFornecedor'}
 MESES = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO']
 
 # ---------- descrição de cada base (o coletor executa; a tela de Integrações mostra) ----------
@@ -48,7 +48,7 @@ BASES = {
                  ('liquidado', 'Liquidado', 'ValorLiquidado', 'R$ → número'), ('pago', 'Pago', 'ValorPago', 'R$ → número')]),
     'diarias': dict(rotulo='Diárias', item=6, banco='ano', janela='mes', arquivo='empenhos.zip', registro='Principal', tabela='diarias',
         tela='diarias', titulo='Diárias', filtro='UnidadeGestora', de='empenhos',
-        nota='Lidas do mesmo arquivo dos empenhos: entram só os empenhos com ObjetivoViagem ou QuantidadeDiasDiarias preenchidos.',
+        nota='Lidas do mesmo arquivo dos empenhos: entram só os empenhos com QuantidadeDiasDiarias maior que zero, ObjetivoViagem informado ou natureza de diária (3.3.90.14 civil, 3.3.90.15 militar).',
         colunas=[('data', 'Data', 'DataInicialViagem (ou DataEmissaoEmpenho)', ''), ('empenho', 'Empenho', 'NumeroEmpenho', 'número/ano'),
                  ('favorecido', 'Favorecido', 'Credor', 'sem CPF no nome'), ('unidade', 'Unidade', 'Departamento', ''),
                  ('motivo', 'Motivo', 'ObjetivoViagem + Destino', ''), ('valor', 'Valor', 'ValorTotal (ou ValorEmpenhado)', 'R$ → número')]),
@@ -264,10 +264,18 @@ def linhas_empenhos(regs, p, ano):
                   'liquidado': liq(x), 'pago': valor(x.findtext('ValorPago')) or 0})
     return L
 
+NATUREZA_DIARIAS = ('3.3.90.14', '3.3.90.15', '3.1.90.14', '3.1.90.15')  # diárias civil e militar
+
+def eh_diaria(x):
+    """Empenho de diária: com dias de viagem (> 0), objetivo de viagem informado ou natureza de diária.
+    Alguns portais mandam QuantidadeDiasDiarias = 0.0000 em TODOS os empenhos: campo preenchido não basta."""
+    return ((valor(x.findtext('QuantidadeDiasDiarias')) or 0) > 0 or bool(t(x, 'ObjetivoViagem'))
+            or t(x, 'DesdobramentoDespesa/Identificacao').startswith(NATUREZA_DIARIAS) or t(x, 'ElementoDespesa/Identificacao').startswith(NATUREZA_DIARIAS))
+
 def linhas_diarias(regs, p, ano):
     L = []
     for x in regs:
-        if not da_unidade(p, t(x, 'UnidadeGestora')) or not (t(x, 'ObjetivoViagem') or t(x, 'QuantidadeDiasDiarias')):
+        if not da_unidade(p, t(x, 'UnidadeGestora')) or not eh_diaria(x):
             continue
         motivo = ' — '.join(v for v in (t(x, 'ObjetivoViagem'), t(x, 'Destino')) if v)
         L.append({'chave': chave('gdia', ano, t(x, 'UnidadeGestora'), t(x, 'NumeroEmpenho')), 'fonte': FONTE, 'ano': ano,
@@ -388,20 +396,211 @@ def linhas_servidores(regs, p, ano, mes):
         if not nome:
             continue
         L.append({'chave': chave('gsrv', ano, mes, x.get('_entidade', ''), nome, t(x, 'Cargo'), t(x, 'Lotacao')), 'fonte': FONTE, 'ano': ano, 'mes': mes,
-                  'registro': '', 'nome': nome, 'cargo': txt(t(x, 'Cargo'), 120), 'vinculo': '', 'lotacao': txt(t(x, 'Lotacao'), 200), 'admissao': None,
+                  'registro': txt(t(x, 'Matricula'), 20), 'nome': nome, 'cargo': txt(t(x, 'Cargo'), 120), 'vinculo': '', 'lotacao': txt(t(x, 'Lotacao'), 200), 'admissao': None,
                   'proventos': valor(x.findtext('Proventos')) if valor(x.findtext('Proventos')) is not None else valor(x.findtext('VencimentosTotais'))})
     return L
 
 MONTA = {'empenhos': linhas_empenhos, 'diarias': linhas_diarias, 'receitas': linhas_receitas, 'despesas_unidade': linhas_despesas_unidade,
          'restos_pagar': linhas_restos_pagar, 'licitacoes': linhas_licitacoes, 'contratos': linhas_contratos, 'transferencias': linhas_transferencias}
 
+# ---------- API de dados abertos da GOVBR (só alguns portais têm: …/dadosabertos/, com Swagger) ----------
+# Cobre só receitas, despesas (empenhos e diárias) e pessoal (folha). As demais bases vêm sempre do XML.
+PAGINA = 200          # registros por página na API
+MAX_PAGINAS = 500     # trava contra laço sem fim
+API = {
+    'receitas': dict(rota='Receitas/buscarDadosReceitas/{ano}/{pagina}/{entidade}', q={'unidadeGestora': '{cada unidade gestora do órgão}'}, area='Financeira',
+        obrig=('Exercicio', 'ValorArrecadadoLiquido'), nota='A API traz também a previsão da receita (o XML não traz). Lê o exercício inteiro em toda execução, 200 registros por página.',
+        colunas={'ano': 'Exercicio', 'mes': 'Mes', 'codigo': 'SubAlinea › Alinea › Rubrica › Especie › Origem (o nível mais detalhado preenchido)',
+                 'nome': 'ds… do mesmo nível (ex.: dsAlinea)', 'fonte_recurso': 'FonteRecurso', 'arrecadado': 'ValorArrecadadoLiquido'}),
+    'empenhos': dict(rota='Despesas/buscarDadosDespesas/{ano}/{pagina}/{entidade}', q={'unidadeGestora': '{cada unidade gestora do órgão}'}, area='Financeira',
+        obrig=('NumeroEmpenho', 'ValorEmpenhado'), nota='Mesmos campos da exportação XML. Lê o exercício inteiro em toda execução, 200 registros por página.', colunas={}),
+    'diarias': dict(rota='Despesas/buscarDadosDespesas/{ano}/{pagina}/{entidade}', q={'unidadeGestora': '{cada unidade gestora do órgão}'}, area='Financeira',
+        obrig=('NumeroEmpenho', 'ValorEmpenhado'), de='empenhos', nota='Lidas da mesma resposta dos empenhos (consulta feita uma vez só).', colunas={}),
+    'servidores': dict(rota='FolhaPagamento', q={'dataInicial': '{1º dia do mês, dd/mm/aaaa}', 'dataFinal': '{último dia do mês, dd/mm/aaaa}', 'numeroPagina': '{1, 2, …}',
+                                                 'nomeBase': '{entidade de pessoal}'}, area='GestaoPessoas', obrig=('NomeServidor',),
+        nota='LGPD: CPF, descontos e líquido vêm na API e são descartados antes de qualquer gravação.',
+        colunas={'mes': 'Competencia', 'nome': 'NomeServidor', 'cargo': 'Cargo', 'lotacao': 'Lotacao', 'proventos': 'Proventos (ou VencimentosTotais)'}),
+}
+MODOS = {'auto': 'Automático: API; se falhar, XML', 'api': 'Só API', 'xml': 'Só XML (exportação)'}
+DESCARTAR = {'CPF', 'CPFCNPJ', 'Descontos', 'Liquido'}  # campos da API de pessoal que nunca passam adiante
+
+class ApiErro(Exception):
+    """A API não existe, respondeu erro (mesmo com HTTP 200) ou mandou um formato que o coletor não reconhece."""
+
+class Api:
+    def __init__(self, base):
+        self.base = base.rstrip('/') + '/'
+        self.c = httpx.Client(timeout=180, follow_redirects=True, headers={'User-Agent': config.USER_AGENT, 'Accept': 'application/json'})
+
+    def fechar(self):
+        self.c.close()
+
+    def _raw(self, caminho, params=None):
+        espera = comum.INTERVALO * 2 - (time.monotonic() - comum._ultimo.get(FONTE, 0))
+        if espera > 0:
+            time.sleep(espera)
+        comum._ultimo[FONTE] = time.monotonic()
+        r = self.c.get(self.base + caminho, params=params)
+        return r.status_code, r.text
+
+    def get(self, caminho, params=None, amostra=True):
+        """GET na API. A GOVBR às vezes devolve o JSON dentro de uma string, e às vezes um erro do servidor como texto com HTTP 200."""
+        t0 = time.monotonic()
+        try:
+            st, texto = self._raw(caminho, params)
+        except httpx.HTTPError as e:
+            raise ApiErro(f'sem resposta da API ({type(e).__name__})')
+        ms = int((time.monotonic() - t0) * 1000)
+        url = self.base + caminho
+        try:
+            d = json.loads(texto) if texto.strip() else None
+            if isinstance(d, str) and d.strip()[:1] in '[{':
+                d = json.loads(d)
+        except ValueError:
+            d = texto
+        if st >= 400 or d is None or isinstance(d, str):
+            msg = (d.get('errors') or d.get('title')) if isinstance(d, dict) else (d or '').strip().splitlines()[0] if d else ''
+            comum.anotar(FONTE, url, params, st, ms, erro=f'API: {str(msg)[:150]}')
+            raise ApiErro(f'HTTP {st}' + (f': {str(msg)[:160]}' if msg else ' sem conteúdo'))
+        if amostra:
+            linhas = d if isinstance(d, list) else [d]
+            limpo = [{k: v for k, v in x.items() if k not in OCULTOS and k not in DESCARTAR} if isinstance(x, dict) else x for x in linhas[:2]]
+            comum.anotar(FONTE, url, params, st, ms, limpo + [{}] * max(0, len(linhas) - 2))
+        return d
+
+    def entidades(self, ano, area):
+        d = self.get(f'dbdestino/buscarEntidadesArea{area}/{ano}')
+        return [str(x) for x in d] if isinstance(d, list) else []
+
+    def unidades(self, ano, entidade):
+        d = self.get(f'unidadeGestora/buscarUnidadesGestoras/{ano}/{entidade}')
+        return [x.get('ds_UnidadeGestora', '') for x in d if isinstance(x, dict)] if isinstance(d, list) else []
+
+    def paginas(self, rota, params, obrig, exercicio=None, pagina_na_rota=True, **fmt):
+        """Todas as páginas (200 registros cada) até vir uma página incompleta. No teste (ensaio), só a primeira."""
+        out = []
+        for pg in range(1, MAX_PAGINAS + 1):
+            caminho = rota.format(pagina=pg, **fmt) if pagina_na_rota else rota
+            q = dict(params) if pagina_na_rota else dict(params, numeroPagina=pg)
+            d = self.get(caminho, q, amostra=pg == 1)
+            if not isinstance(d, list):
+                raise ApiErro('formato não reconhecido (esperava uma lista)')
+            for x in d:
+                if not isinstance(x, dict) or any(k not in x for k in obrig):
+                    raise ApiErro(f'formato não reconhecido (faltam campos: {", ".join(k for k in obrig if not isinstance(x, dict) or k not in x)})')
+                if exercicio and x.get('Exercicio') not in (None, '') and str(x['Exercicio']) != str(exercicio):
+                    raise ApiErro(f'a API devolveu outro exercício ({x["Exercicio"]})')
+            out += d
+            if len(d) < PAGINA or db.ENSAIO.get() is not None:
+                return out, pg
+        raise ApiErro(f'mais de {MAX_PAGINAS} páginas: consulta interrompida')
+
+def elem(d, tag='r'):
+    """Registro da API (dict) → elemento no formato do XML, para as mesmas regras de montagem valerem nos dois caminhos."""
+    e = ET.Element(tag)
+    for k, v in d.items():
+        if v is None or isinstance(v, list) or k in DESCARTAR:
+            continue
+        if isinstance(v, dict):
+            e.append(elem(v, k))
+        else:
+            ET.SubElement(e, k).text = str(v)
+    return e
+
+NIVEIS = ('SubAlinea', 'Alinea', 'Rubrica', 'Especie', 'Origem', 'CategoriaEconomica')
+
+def linhas_receitas_api(regs, p, ano):
+    soma = {}
+    for x in regs:
+        if not da_unidade(p, x.get('UnidadeGestora')):
+            continue
+        nivel = next((n for n in NIVEIS if str(x.get(n) or '').strip()), 'CategoriaEconomica')
+        codigo = str(x.get(nivel) or '').strip()
+        nome = next((str(x.get('ds' + n)).strip() for n in NIVEIS[NIVEIS.index(nivel):] if str(x.get('ds' + n) or '').strip()), codigo)
+        m = mes_num(x.get('Mes')) or ((data_br(x.get('DataArrecadacao')) or date(ano, 1, 1)).month)
+        k = (m, codigo, txt(x.get('FonteRecurso')))
+        r = soma.setdefault(k, {'chave': chave('grec', ano, *k), 'fonte': FONTE, 'ano': ano, 'mes': m, 'codigo': txt(codigo, 40), 'nome': txt(nome, 300),
+                                'fonte_recurso': txt(k[2], 200), 'previsto': 0.0, 'atualizado': None, 'arrecadado': 0.0, 'soma': True})
+        r['previsto'] += valor(x.get('ValorPrevistoLiquido')) or 0
+        r['arrecadado'] += valor(x.get('ValorArrecadadoLiquido')) or 0
+    return list(soma.values())
+
+def unidades_api(api, p, ano, ent):
+    todas = api.unidades(ano, ent)
+    sel = [u for u in todas if da_unidade(p, u)]
+    if not sel:
+        raise ApiErro(f"nenhuma unidade gestora da API confere com “{p.get('unidades')}”; a API oferece: {', '.join(todas) or 'nenhuma'}")
+    return sel
+
+def via_api(api, orgao, p, base, ano, hoje, cache):
+    """Coleta uma base pela API. Devolve (registros, mensagem) ou levanta ApiErro."""
+    d = API[base]
+    if base == 'servidores':
+        return folha_api(api, orgao, p, ano, hoje)
+    ent = p.get('api_entidade') or next(iter(api.entidades(ano, d['area'])), '')
+    if not ent:
+        raise ApiErro('a API não oferece entidade para este exercício')
+    k = ('api', d['rota'], ent)
+    if k not in cache:
+        regs, pgs = [], 0
+        for ug in unidades_api(api, p, ano, ent):
+            r, n = api.paginas(d['rota'], {'unidadeGestora': ug}, d['obrig'], exercicio=ano, ano=ano, entidade=ent)
+            regs += r; pgs += n
+        cache[k] = (regs, pgs)
+    regs, pgs = cache[k]
+    L = linhas_receitas_api(regs, p, ano) if base == 'receitas' else MONTA[base]([elem(x) for x in regs], p, ano)
+    n = gravar(orgao['banco'], BASES[base]['tabela'], L, {'ano': ano}, FONTE)
+    return n, f'{n} registros de {ano} ({pgs} página(s) da API)'
+
+def folha_api(api, orgao, p, ano, hoje):
+    """Folha pela API, com a mesma regra do XML: a competência mais recente (até 3 meses) que todas as entidades já publicaram."""
+    ents = lista(p.get('api_pessoal')) or api.entidades(ano, 'GestaoPessoas')
+    if not ents:
+        raise ApiErro('a API não oferece entidades de pessoal')
+    mes = hoje.month if ano == hoje.year else 12
+    melhor, erro, respondeu = None, None, False
+    for m in range(mes, max(0, mes - 3), -1):
+        ini = date(ano, m, 1); fim = date(ano + (m == 12), m % 12 + 1, 1) - timedelta(days=1)
+        regs, com = [], 0
+        for e in ents:
+            try:
+                r, _ = api.paginas('FolhaPagamento', {'dataInicial': ini.strftime('%d/%m/%Y'), 'dataFinal': fim.strftime('%d/%m/%Y'), 'nomeBase': e},
+                                   API['servidores']['obrig'], pagina_na_rota=False)
+                respondeu = True
+            except ApiErro as x:  # a API responde erro também para mês sem folha: só conta como falha se nenhum pedido der certo
+                erro = x; continue
+            if r:
+                com += 1
+                for x in r:
+                    el = elem({('NomServidor' if k == 'NomeServidor' else k): v for k, v in x.items()})
+                    el.set('_entidade', e); regs.append(el)
+        if regs and (melhor is None or com > melhor[1]):
+            melhor = (m, com, regs)
+        if com == len(ents):
+            break
+    if not melhor:
+        if not respondeu and erro:
+            raise erro
+        return 0, f'nenhuma folha publicada de {max(1, mes - 2):02d}/{ano} a {mes:02d}/{ano}'
+    m, com, regs = melhor
+    L = linhas_servidores(regs, p, ano, m)
+    falta = '' if com == len(ents) else f'; só {com} de {len(ents)} entidade(s) já publicaram'
+    return gravar(orgao['banco'], 'servidores', L, {'ano': ano, 'mes': m}, FONTE), f'folha de {m:02d}/{ano} ({com} entidade(s){falta})'
+
+def modo_de(p, base):
+    """Caminho escolhido para a base: só as bases que a API cobre podem usar a API."""
+    if base not in API:
+        return 'xml'
+    m = (p.get('modos') or {}).get(base, 'auto')
+    return m if m in MODOS else 'auto'
+
 # ---------- execução ----------
 def completa_agora(orgao, base):
     """Uma execução a cada 24 horas (de cada base) relê o ano inteiro; as demais, só os últimos meses. No teste, só o mês atual."""
     if db.ENSAIO.get() is not None:
         return False
-    return not db.um(db.PLATAFORMA, "SELECT 1 FROM coletas WHERE orgao_slug=%s AND fonte=%s AND ok AND mensagem LIKE 'completa%%' AND inicio > now() - interval '24 hours'",
-                     (orgao['slug'], f'{FONTE}:{base}'))
+    return not db.um(db.PLATAFORMA, "SELECT 1 FROM coletas WHERE orgao_slug=%s AND fonte=%s AND ok AND mensagem LIKE %s AND inicio > now() - interval '24 hours'",
+                     (orgao['slug'], f'{FONTE}:{base}', '%completa%'))
 
 def servidores(pt, orgao, p, ano, hoje):
     """Cada entidade de pessoal publica a folha no seu ritmo: vale a competência mais recente (até 3 meses para trás) que TODAS
@@ -431,45 +630,63 @@ def servidores(pt, orgao, p, ano, hoje):
     falta = '' if com == len(ents) else f'; só {com} de {len(ents)} entidade(s) já publicaram'
     return gravar(orgao['banco'], 'servidores', L, {'ano': ano, 'mes': m}, FONTE), f'folha de {m:02d}/{ano} ({com} entidade(s){falta})'
 
+def via_xml(pt, orgao, p, base, ano, hoje, cache, forcar_completa=False):
+    d = BASES[base]
+    if base == 'servidores':
+        return servidores(pt, orgao, p, ano, hoje)
+    completa = d['janela'] == 'ano' or ((forcar_completa or completa_agora(orgao, base)) and db.ENSAIO.get() is None)  # o teste lê só o mês atual
+    recentes = 1 if db.ENSAIO.get() is not None else p.get('meses_recentes', 2)  # o teste lê só o mês atual
+    periodos = [(date(ano, 1, 1), hoje if ano == hoje.year else date(ano, 12, 31))] if d['janela'] == 'ano' \
+        else meses_da_execucao(hoje, ano, completa, recentes)
+    fonte_arq = d.get('de', base)
+    k = (fonte_arq, tuple(periodos))
+    if k not in cache:
+        cache[k] = baixar(pt, BASES[fonte_arq], ano, periodos)
+    L = MONTA[base](cache[k], p, ano)
+    if completa:
+        n = gravar(orgao['banco'], d['tabela'], L, {'ano': ano}, FONTE)  # ano inteiro: o que sumiu da fonte sai daqui também
+    elif base == 'receitas':
+        n = sum(gravar(orgao['banco'], 'receitas', [x for x in L if x['mes'] == m], {'ano': ano, 'mes': m}, FONTE) for m in sorted({x['mes'] for x in L}))
+    else:
+        n = gravar(orgao['banco'], d['tabela'], L, None, FONTE)
+    return n, f"{'completa' if completa else 'rápida'}: {n} registros de {ano} ({len(periodos)} período(s) lido(s))"
+
 def coletar(orgao, p, hoje=None):
     """Roda as bases configuradas. Devolve [(base, ok, registros, mensagem)]; a falha de uma base não para as outras.
-    Bases que vêm do mesmo arquivo (empenhos e diárias; licitações e contratos) baixam o arquivo uma vez só."""
+    Cada base segue o caminho escolhido no painel (automático, só API ou só XML). No automático, se a API falhar, a base vem do XML
+    nessa execução, relendo o ano inteiro (para não misturar códigos dos dois caminhos). Bases do mesmo arquivo/consulta baixam uma vez só."""
     hoje = hoje or config.hoje()
     ano = hoje.year
     if not p.get('base'):
         return [('config', False, 0, 'endereço do portal não configurado')]
     pt = Portal(p['base'])
+    api = Api(p['api']) if p.get('api') else None
     res, cache = [], {}
     try:
         for base in p.get('bases', []):
-            d = BASES.get(base)
-            if not d:
+            if base not in BASES:
                 continue
+            modo = modo_de(p, base)
             try:
-                if base == 'servidores':
-                    n, msg = servidores(pt, orgao, p, ano, hoje)
-                    res.append((base, True, n, msg)); continue
-                completa = d['janela'] == 'ano' or completa_agora(orgao, base)
-                recentes = 1 if db.ENSAIO.get() is not None else p.get('meses_recentes', 2)  # o teste lê só o mês atual
-                periodos = [(date(ano, 1, 1), hoje if ano == hoje.year else date(ano, 12, 31))] if d['janela'] == 'ano' \
-                    else meses_da_execucao(hoje, ano, completa, recentes)
-                fonte_arq = d.get('de', base)
-                k = (fonte_arq, tuple(periodos))
-                if k not in cache:
-                    cache[k] = baixar(pt, BASES[fonte_arq], ano, periodos)
-                L = MONTA[base](cache[k], p, ano)
-                if completa:
-                    n = gravar(orgao['banco'], d['tabela'], L, {'ano': ano}, FONTE)  # ano inteiro: o que sumiu da fonte sai daqui também
-                elif base == 'receitas':
-                    n = sum(gravar(orgao['banco'], 'receitas', [x for x in L if x['mes'] == m], {'ano': ano, 'mes': m}, FONTE) for m in sorted({x['mes'] for x in L}))
-                else:
-                    n = gravar(orgao['banco'], d['tabela'], L, None, FONTE)
-                tipo = 'completa' if completa else 'rápida'
-                res.append((base, True, n, f'{tipo}: {n} registros de {ano} ({len(periodos)} período(s) lido(s))'))
+                aviso = ''
+                if modo in ('api', 'auto') and api:
+                    try:
+                        n, msg = via_api(api, orgao, p, base, ano, hoje, cache)
+                        res.append((base, True, n, f'via API: {msg}')); continue
+                    except ApiErro as e:
+                        if modo == 'api':
+                            raise
+                        aviso = f'API falhou ({str(e)[:160]}); usado o XML — '
+                elif modo == 'api':
+                    raise ApiErro('endereço da API não configurado')
+                n, msg = via_xml(pt, orgao, p, base, ano, hoje, cache, forcar_completa=bool(aviso))
+                res.append((base, True, n, f'{aviso}via XML: {msg}'))
             except Exception as e:
                 res.append((base, False, 0, f'{type(e).__name__}: {e}'))
     finally:
         pt.fechar()
+        if api:
+            api.fechar()
     return res
 
 # ---------- descrição para a tela "Como a consulta é montada" ----------
@@ -489,7 +706,13 @@ def endpoints(p):
             q = {'item': d['item'] if not d.get('itens_extra') else f"{d['item']} e {', '.join(map(str, d['itens_extra']))}",
                  'banco': '{código do ano ' + str(ano) + ', lido na tela}' if d['banco'] == 'ano' else '{entidade de licitações, lida na tela}',
                  'exercicio': ano, 'dataInicial / dataFinal': per, 'unidadeGestora': -1, **(d.get('extra') or {})}
-        out.append((d['rotulo'], 'GET', f'{base}geraxml.asp  →  {base}dll/{d["arquivo"]}', q, k))
+        modo = modo_de(p, k)
+        if modo != 'xml' and k in API:
+            a = API[k]
+            api = (p.get('api') or '{endereço da API — não configurado}').rstrip('/') + '/'
+            qa = dict(a['q'], **({'entidade': p.get('api_entidade') or '{a primeira oferecida pela API}'} if '{entidade}' in a['rota'] else {}))
+            out.append((f"{d['rotulo']} — API ({MODOS[modo]})", 'GET', api + a['rota'].replace('{ano}', str(ano)), qa, ''))
+        out.append((d['rotulo'] + (' — XML' if k in API and modo != 'xml' else ''), 'GET', f'{base}geraxml.asp  →  {base}dll/{d["arquivo"]}', q, k))
     return out
 
 def telas(p):
@@ -508,7 +731,20 @@ def telas(p):
         janela = {'mes': f"um pedido por mês — uma execução a cada 24 h relê o ano inteiro (completa); as demais, só os últimos {p.get('meses_recentes', 2)} mês(es) (rápida)",
                   'ano': 'um pedido de 01/01 até hoje (o ano inteiro em toda execução)',
                   'folha': 'um pedido por entidade e mês: do mês atual para trás (até 3 meses), até achar a folha de todas as entidades'}[d['janela']]
+        modo = modo_de(p, k)
+        a = API.get(k) if modo != 'xml' else None
+        if k not in API:
+            caminho = 'Só XML: a API de dados abertos da GOVBR não oferece esta base'
+        elif modo == 'xml':
+            caminho = MODOS['xml'] + ' (escolhido no painel)'
+        elif not p.get('api'):
+            caminho = f"{MODOS[modo]} — mas o endereço da API não foi informado: " + ('a base falha' if modo == 'api' else 'usa o XML')
+        else:
+            caminho = MODOS[modo]
+        colunas = [(c, r, campo, regra, (a['colunas'].get(c, campo) if a else '')) for c, r, campo, regra in d['colunas']]
         out.append({'base': k, 'rotulo': d['rotulo'], 'titulo': d['titulo'], 'rota': f"/transparencia/{d['tela']}", 'tabela': d['tabela'],
                     'arquivo': d['arquivo'], 'registro': d['registro'], 'item': d['item'], 'filtro': filtro, 'janela': janela,
-                    'nota': d.get('nota', ''), 'de': BASES[d['de']]['rotulo'] if d.get('de') else '', 'colunas': d['colunas']})
+                    'nota': d.get('nota', ''), 'de': BASES[d['de']]['rotulo'] if d.get('de') else '', 'colunas': colunas,
+                    'caminho': caminho, 'api_rota': ((p.get('api') or '{endereço da API}').rstrip('/') + '/' + a['rota']) if a else '',
+                    'api_nota': a['nota'] if a else ''})
     return out

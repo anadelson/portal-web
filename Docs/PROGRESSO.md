@@ -1540,3 +1540,41 @@ Próximos passos dependem das pessoas:
   - o piloto continua com "Fonte: Sistema contábil da Prefeitura (Fiorilli)", sem GOVBR.
 - `govbr-coletor` mesclado em `main` com a tag `govbr-coletor`.
 - **Para usar:** cadastrar o órgão no console com o sistema "GOVBR" e o endereço do portal (…/pronimtb/). Depois, em Integrações → GOVBR, conferir a unidade gestora e as entidades de pessoal, e "Testar consulta".
+
+### GOVBR: API de dados abertos ou XML, escolhido por base (11/11/2026, ramo `govbr-api`)
+- **Pedido:** Pato Branco/PR usa GOVBR e tem API registrada. Manter os dois procedimentos: sem API, XML; com API, API. A escolha fica no gestor/admin.
+- **Análise (só leitura):**
+  - a API de dados abertos fica em `https://<municipio>.cidade360.cloud/dadosabertos/`, com Swagger em `/dadosabertos/swagger`, pública, sem chave;
+  - cobre só **receitas**, **despesas**, **folha** e **servidores**;
+  - Regente Feijó não tem a API (404).
+- **Situação da API de Pato Branco hoje:**
+  - receitas funcionam e trazem a previsão (o XML não traz), mas em algumas descrições a letra “o” some (“Imp st s”) — defeito do lado da GOVBR;
+  - despesas respondem HTTP 200 com erro do banco deles (“Invalid column name 'nr_CGCCPF'”);
+  - folha funciona (traz CPF, que é descartado);
+  - o XML de Pato Branco também funciona.
+- **Feito:**
+  - Integrações → GOVBR ganhou:
+    - “Endereço da API de dados abertos (opcional)”, “Entidade na API” e “Entidades de pessoal na API”;
+    - **“Como buscar cada base”** para receitas, empenhos, diárias e pessoal, com as opções **Automático** (API; se falhar, XML), **Só API** e **Só XML**;
+    - as demais bases vêm sempre do XML, e a tela explica por quê.
+  - No automático, se a API falhar (inclusive com erro disfarçado de HTTP 200 ou formato desconhecido), a base vem do XML nessa execução, relendo o ano inteiro para não misturar os dois caminhos. A “Última execução” diz o caminho: “via API”, “via XML” ou “API falhou (…); usado o XML”.
+  - “Só API” sem resposta registra a falha e mantém os dados anteriores.
+  - Unidade gestora que não existe na API: o erro lista as que a API oferece.
+  - “Como cada tela do portal é montada” mostra, por base:
+    - o caminho escolhido;
+    - a rota da API;
+    - a coluna “Campo da API” ao lado do “Campo do XML”.
+  - LGPD: CPF, descontos e líquido da API de pessoal são descartados antes de qualquer gravação e não aparecem nas amostras; a matrícula passa a ser guardada.
+  - Console: campo opcional “GOVBR: API de dados abertos” no cadastro de órgão.
+  - **Correção encontrada no ensaio:** em Pato Branco, todos os empenhos vêm com `QuantidadeDiasDiarias = 0.0000`, e todos viravam diárias. Agora só contam empenhos com dias > 0, objetivo de viagem ou natureza de diária (3.3.90.14/15). Em 11/2026 ficaram 15 diárias de 345 empenhos.
+- **Ensaio real em Pato Branco (modo de teste, nada gravado):**
+  - receitas pela API (previsão R$ 656,9 mi);
+  - despesas: a API falhou e o automático usou o XML;
+  - folha de 10/2026 pela API, com 200 servidores, matrícula e sem CPF;
+  - licitações pelo XML;
+  - todas as requisições com HTTP 200.
+- **Testes:**
+  - `tests/teste_govbr.py` ganhou a parte da API simulada: JSON dentro de string, erro com HTTP 200, paginação, só API, só XML, unidade inexistente, LGPD da folha e tela;
+  - as 20 suítes e `teste_ativador.sh` passaram com o código montado.
+- **Capturas** em `Docs/avaliacao-govbr-api/` (1366 e 390 px, axe sem violações).
+- **Onde parou:** aguardando aprovação para implantar. Sem migração; não precisa de `provision atualizar`.

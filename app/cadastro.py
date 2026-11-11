@@ -118,6 +118,8 @@ def montar(f, ibge_api=None, ocupados=()):
             erros.append('GOVBR: informe o endereço https do portal (ex.: https://<municipio>.cidade360.cloud/pronimtb/).')
         if len(gov_unid) > 300:
             erros.append('GOVBR: nome da unidade gestora longo demais.')
+        if (f.get('gov_api') or '').strip() and not re.match(r'^https://[^\s/]+(:\d+)?/[\w./-]*$', f.get('gov_api').strip()):
+            erros.append('GOVBR: o endereço da API de dados abertos precisa ser https (ex.: https://<municipio>.cidade360.cloud/dadosabertos/), ou fique vazio.')
     if erros:
         return None, erros
     if gov_base and not gov_base.endswith('/'):
@@ -142,7 +144,7 @@ def montar(f, ibge_api=None, ocupados=()):
     if sistema == 'govbr':
         from .coletores.govbr import PADRAO_BASES
         fontes['govbr'] = {'base': gov_base, 'unidades': gov_unid or ('PREFEITURA' if tipo == 'executivo' else 'CAMARA'), 'bases': PADRAO_BASES[tipo],
-                           'meses_recentes': 2, 'pessoal': '', **({'recebedora': (f.get('gov_recebedora') or 'PODER LEGISLATIVO').strip()} if tipo == 'legislativo' else {})}
+                           'meses_recentes': 2, 'pessoal': '', 'api': (f.get('gov_api') or '').strip(), 'api_entidade': '', 'api_pessoal': '', 'modos': {}, **({'recebedora': (f.get('gov_recebedora') or 'PODER LEGISLATIVO').strip()} if tipo == 'legislativo' else {})}
     from .catalogo import MODULOS, serve
     opcionais = {m[0]: f.get(f'mod_{m[0]}') == '1' for m in MODULOS if m[3] == 'opc' and serve(m[0], tipo)}
     return {'slug': slug, 'nome': nome, 'tipo': tipo, 'dominio': dominio, 'banco': 'bd_' + slug.replace('-', '_'), 'plano': 'Executivo' if tipo == 'executivo' else 'Legislativo',
