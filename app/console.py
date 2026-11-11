@@ -160,12 +160,16 @@ def orgao(request: Request, oid: int):
     opc = [dict(chave=m[0], nome=m[1], desc=m[2], depende=m[5], on=contratados.get(m[0], False)) for m in MODULOS if m[3] == 'opc' and serve(m[0], o['tipo'])]
     anos = (c['fim'] - c['inicio']).days / 365.25
     from . import ativacao as AT
-    pub = {'dns': AT.dns(o['dominio']), 'ultima': AT.ultima(oid), 'pilotos': {x['slug'] for x in provision.PILOTO}}
+    pub = {'dns': AT.dns(o['dominio'], AT.ip_do_no(o['no_id']) if o.get('no_id') else None), 'ultima': AT.ultima(oid), 'pilotos': {x['slug'] for x in provision.PILOTO}}
     from . import licenca
     lic = licenca.situacao(o)
     lic['doc'] = licenca.documento(o)
     nos_ = db.todos(db.PLATAFORMA, 'SELECT id, nome, ultimo_contato FROM nos WHERE ativo ORDER BY nome')
     lic['ordens'] = db.todos(db.PLATAFORMA, 'SELECT * FROM ordens WHERE orgao_id=%s ORDER BY id DESC LIMIT 8', (oid,))
+    if lic.get('no'):
+        n_ = db.um(db.PLATAFORMA, 'SELECT relatorio, relatorio_em FROM nos WHERE id=%s', (o['no_id'],))
+        lic['relatorio'] = ((n_ or {}).get('relatorio') or {}).get('orgaos', {}).get(o['slug'])
+        lic['relatorio_em'] = (n_ or {}).get('relatorio_em')
     return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub, lic=lic, nos=nos_, validade=config.LICENCA_VALIDADE_DIAS)
 
 @r.post('/orgao/{oid}/dominio')
@@ -240,6 +244,27 @@ def _no_da_api(request):
         raise HTTPException(404)
     a = request.headers.get('authorization', '')
     return licenca.no_do_token(a[7:].strip() if a[:7].lower() == 'bearer ' else '')
+
+@r.post('/api/no/relatorio')
+async def api_relatorio(request: Request):
+    """Relatório técnico do nó (sem dados pessoais); atualiza também os pedidos de domínio dos órgãos do nó."""
+    from fastapi.responses import JSONResponse
+    from . import relatorio
+    no = _no_da_api(request)
+    if not no:
+        return JSONResponse({'erro': 'não autorizado'}, status_code=401)
+    corpo = await request.body()
+    if len(corpo) > relatorio.MAX_BYTES:
+        return JSONResponse({'erro': 'relatório grande demais'}, status_code=413)
+    try:
+        import json as _json
+        d = _json.loads(corpo)
+        if not isinstance(d, dict):
+            raise ValueError
+        n = relatorio.receber(no, d)
+    except ValueError:
+        return JSONResponse({'erro': 'relatório inválido'}, status_code=400)
+    return JSONResponse({'ok': True, 'ativacoes': n})
 
 @r.get('/api/no/ordens')
 def api_ordens(request: Request):
