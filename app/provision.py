@@ -144,6 +144,13 @@ def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, mun
                     identidade=None, fontes=None, email_admin=None, senha_admin=None):
     """Cadastra o órgão no banco de controle e prepara o banco dele (esquema, identidade, fontes, menus, layout e
     usuário administrador inicial). Idempotente para o piloto; para órgão novo, os dados vêm do cadastro no console."""
+    oid = registrar_controle(slug, nome, tipo, dominio, banco, plano, cor, opcionais, municipio, ibge, inicio, fim)
+    preparar_orgao(db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,)), identidade=identidade, fontes=fontes, email_admin=email_admin,
+                   senha_hash=hash_senha(senha_admin or config.SENHA_INICIAL_ADMIN), avisar_senha=not senha_admin)
+    return oid
+
+def registrar_controle(slug, nome, tipo, dominio, banco, plano, cor, opcionais, municipio, ibge, inicio=None, fim=None):
+    """Parte da GESTÃO: o órgão, o contrato e os módulos no banco de controle. Devolve o id."""
     r = db.um(db.PLATAFORMA, 'SELECT id FROM orgaos WHERE slug=%s', (slug,))
     if r:
         db.exe(db.PLATAFORMA, 'UPDATE orgaos SET dominio=%s WHERE id=%s', (dominio, r['id']))
@@ -154,6 +161,13 @@ def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, mun
     for m in MODULOS:
         if m[3] == 'opc' and serve(m[0], tipo):
             db.exe(db.PLATAFORMA, 'INSERT INTO orgao_modulos (orgao_id, chave, contratado) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING', (oid, m[0], bool(opcionais.get(m[0]))))
+    return oid
+
+def preparar_orgao(o, identidade=None, fontes=None, email_admin=None, senha_hash=None, avisar_senha=False):
+    """Parte de QUEM HOSPEDA o órgão (esta VPS no papel "tudo"; o nó, pela ordem "criar_orgao"): banco do órgão,
+    esquema, identidade, integrações, menus, layout e administrador inicial. Recebe só o HASH da senha inicial.
+    Idempotente: não sobrescreve identidade, layout nem usuários que já existam."""
+    oid, slug, nome, tipo, dominio, banco, cor = o['id'], o['slug'], o['nome'], o['tipo'], o['dominio'], o['banco'], o.get('cor')
     criar_banco(banco)
     aplicar(banco, MIG_ORGAO)
     if not db.cfg(banco, 'identidade'):
@@ -161,8 +175,8 @@ def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, mun
     completar_identidade(banco, slug, tipo)
     completar_diario(banco, slug)
     configurar_fontes(oid, slug, fontes)
-    configurar_painel(db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,)))
-    configurar_youtube(db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,)))
+    configurar_painel(o)
+    configurar_youtube(o)
     from . import menus as MN, fase8 as F8
     MN.semear(banco, tipo, (db.cfg(banco, 'identidade', {}) or {}).get('nome_curto', ''))
     F8.migrar_conheca(banco, db.cfg(banco, 'identidade', {}))
@@ -171,8 +185,8 @@ def registrar_orgao(slug, nome, tipo, dominio, banco, plano, cor, opcionais, mun
             db.exe(banco, 'INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING', ('home', k, reg, i))
     if not db.um(banco, 'SELECT 1 FROM usuarios LIMIT 1'):
         email = email_admin or f'admin@{dominio}'
-        db.exe(banco, "INSERT INTO usuarios (nome, email, setor, perfil, escopo, senha_hash) VALUES (%s,%s,%s,'admin','Órgão inteiro',%s)", ('Administrador do órgão', email, 'Administração', hash_senha(senha_admin or config.SENHA_INICIAL_ADMIN)))
-        if not senha_admin:
+        db.exe(banco, "INSERT INTO usuarios (nome, email, setor, perfil, escopo, senha_hash) VALUES (%s,%s,%s,'admin','Órgão inteiro',%s)", ('Administrador do órgão', email, 'Administração', senha_hash or hash_senha(config.SENHA_INICIAL_ADMIN)))
+        if avisar_senha:
             print(f'  usuário inicial: {email} (senha = SENHA_INICIAL_ADMIN; troque no primeiro acesso)')
     return oid
 

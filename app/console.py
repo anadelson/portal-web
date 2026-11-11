@@ -165,6 +165,7 @@ def orgao(request: Request, oid: int):
     lic = licenca.situacao(o)
     lic['doc'] = licenca.documento(o)
     nos_ = db.todos(db.PLATAFORMA, 'SELECT id, nome, ultimo_contato FROM nos WHERE ativo ORDER BY nome')
+    lic['ordens'] = db.todos(db.PLATAFORMA, 'SELECT * FROM ordens WHERE orgao_id=%s ORDER BY id DESC LIMIT 8', (oid,))
     return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub, lic=lic, nos=nos_, validade=config.LICENCA_VALIDADE_DIAS)
 
 @r.post('/orgao/{oid}/dominio')
@@ -230,6 +231,42 @@ async def orgao_post(request: Request, oid: int):
     return ir(f'/orgao/{oid}', msg, request)
 
 # ---------- nós (VPS de portais) e licenças — separação gestão × portais, etapa A1 ----------
+def _nos_ativos():
+    return db.todos(db.PLATAFORMA, 'SELECT id, nome FROM nos WHERE ativo ORDER BY nome')
+
+def _no_da_api(request):
+    from . import licenca
+    if config.PAPEL == 'no':
+        raise HTTPException(404)
+    a = request.headers.get('authorization', '')
+    return licenca.no_do_token(a[7:].strip() if a[:7].lower() == 'bearer ' else '')
+
+@r.get('/api/no/ordens')
+def api_ordens(request: Request):
+    """Ordens pendentes do nó do token, assinadas pela gestão."""
+    from fastapi.responses import JSONResponse
+    from . import ordens
+    no = _no_da_api(request)
+    if not no:
+        return JSONResponse({'erro': 'não autorizado'}, status_code=401, headers={'Cache-Control': 'no-store'})
+    db.exe(db.PLATAFORMA, 'UPDATE nos SET ultimo_contato=now() WHERE id=%s', (no['id'],))
+    return JSONResponse({'ordens': ordens.para_no(no)}, headers={'Cache-Control': 'no-store'})
+
+@r.post('/api/no/ordens/{oid}')
+async def api_ordem_resultado(request: Request, oid: int):
+    """O nó devolve o resultado de uma ordem que executou."""
+    from fastapi.responses import JSONResponse
+    from . import ordens
+    no = _no_da_api(request)
+    if not no:
+        return JSONResponse({'erro': 'não autorizado'}, status_code=401)
+    try:
+        d = await request.json()
+    except Exception:
+        return JSONResponse({'erro': 'corpo inválido'}, status_code=400)
+    if not ordens.informar(no, oid, bool(d.get('ok')), str(d.get('resultado', ''))[:500]):
+        return JSONResponse({'erro': 'ordem não é deste nó'}, status_code=404)
+    return JSONResponse({'ok': True})
 @r.get('/api/no/licencas')
 def api_licencas(request: Request):
     """API para os nós: licenças assinadas dos órgãos hospedados no nó do token. Sem sessão; só o token do nó."""
@@ -250,7 +287,9 @@ def nos(request: Request):
     gestor(request)
     from . import licenca
     imp, pub = licenca.garantir_chaves()
-    lista = db.todos(db.PLATAFORMA, 'SELECT n.*, (SELECT count(*) FROM orgaos o WHERE o.no_id=n.id) orgaos FROM nos n ORDER BY n.id')
+    lista = db.todos(db.PLATAFORMA, """SELECT n.*, (SELECT count(*) FROM orgaos o WHERE o.no_id=n.id) orgaos,
+                                     (SELECT count(*) FROM ordens x WHERE x.no_id=n.id AND x.situacao='pendente') pendentes,
+                                     (SELECT count(*) FROM ordens x WHERE x.no_id=n.id AND x.situacao='erro') com_erro FROM nos n ORDER BY n.id""")
     return T('nos', request, nos=lista, impressao=imp, publica=pub, validade=config.LICENCA_VALIDADE_DIAS)
 
 @r.post('/nos')
@@ -304,7 +343,7 @@ async def orgao_hospedagem(request: Request, oid: int):
 def novo(request: Request):
     gestor(request)
     from . import cadastro as CD
-    return T('novo', request, f={}, erros=[], ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO)
+    return T('novo', request, f={}, erros=[], ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO, nos=_nos_ativos())
 
 @r.get('/orgaos/ibge/{codigo}')
 def ibge(request: Request, codigo: str):
@@ -327,22 +366,32 @@ async def novo_post(request: Request):
     ocupados = {x['slug'] for x in db.todos(db.PLATAFORMA, 'SELECT slug FROM orgaos')} | {x['dominio'] for x in db.todos(db.PLATAFORMA, 'SELECT dominio FROM orgaos')}
     api = CD.consultar_ibge(re.sub(r'\D', '', f.get('ibge', '')))  # o IBGE manda; sem resposta, valem o município e a UF digitados
     dados, erros = CD.montar(f, api, ocupados)
+    no_id = int(f['no_id']) if (f.get('no_id') or '').isdigit() else None
+    if no_id and not any(n['id'] == no_id for n in _nos_ativos()):
+        erros = ['Nó de hospedagem inválido.']
     if erros:
-        return T('novo', request, f=f, erros=erros, ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO)
+        return T('novo', request, f=f, erros=erros, ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO, nos=_nos_ativos())
     senha = CD.senha_inicial()
+    from . import ordens
+    from .security import hash_senha
     try:
-        oid = provision.registrar_orgao(dados['slug'], dados['nome'], dados['tipo'], dados['dominio'], dados['banco'], dados['plano'], dados['cor'], dados['opcionais'],
-                                        dados['municipio'], dados['ibge'], identidade=dados['identidade'], fontes=dados['fontes'],
-                                        email_admin=dados['email_admin'], senha_admin=senha)
-        from . import remessa
-        remessa.configurar_pares()
+        # gestão: órgão, contrato e módulos; quem hospeda (esta VPS na hora, ou o nó pela fila): banco do órgão e administrador
+        oid = provision.registrar_controle(dados['slug'], dados['nome'], dados['tipo'], dados['dominio'], dados['banco'], dados['plano'], dados['cor'],
+                                           dados['opcionais'], dados['municipio'], dados['ibge'])
+        if no_id:
+            db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=%s WHERE id=%s', (no_id, oid))
+        o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+        carga = {'orgao': {k: o[k] for k in ('id', 'slug', 'nome', 'tipo', 'dominio', 'banco', 'municipio', 'ibge', 'plano', 'cor', 'ativo')},
+                 'identidade': dados['identidade'], 'fontes': dados['fontes'], 'email_admin': dados['email_admin'], 'senha_hash': hash_senha(senha)}
+        local, res_ordem = ordens.enviar('criar_orgao', carga, orgao=o, no_id=no_id, quem=g['nome'], resumo=f"criar {dados['slug']} ({dados['banco']})")
     except Exception as e:
-        return T('novo', request, f=f, erros=[f'Não foi possível criar: {type(e).__name__}: {e}'], ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO)
+        return T('novo', request, f=f, erros=[f'Não foi possível criar: {type(e).__name__}: {e}'], ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO, nos=_nos_ativos())
     limpar_cache()
     log(g, f"Cadastrou o órgão {dados['nome']} ({dados['dominio']}, banco {dados['banco']}, IBGE {dados['ibge']}, integrações: {', '.join(sorted(dados['fontes']))})")
     o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
     vizinhos = db.todos(db.PLATAFORMA, 'SELECT nome, dominio FROM orgaos WHERE ibge=%s AND id<>%s', (o['ibge'], oid))
-    resp = T('criado', request, o=o, dados=dados, senha=senha, vizinhos=vizinhos, sistemas=CD.SISTEMAS)
+    no_ = db.um(db.PLATAFORMA, 'SELECT nome FROM nos WHERE id=%s', (no_id,)) if no_id else None
+    resp = T('criado', request, o=o, dados=dados, senha=senha, vizinhos=vizinhos, sistemas=CD.SISTEMAS, no=no_)
     resp.headers['Cache-Control'] = 'no-store'
     return resp
 
@@ -357,6 +406,8 @@ def catalogo(request: Request):
 def layout(request: Request, oid: int):
     gestor(request)
     o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    if o and o.get('no_id'):
+        return ir(f'/orgao/{oid}#hospedagem', 'Órgão hospedado em nó: a página inicial é ajustada no painel do órgão (Página inicial). A gestão não acessa o banco do nó.', request)
     bl = db.todos(o['banco'], "SELECT * FROM blocos WHERE pagina='home' ORDER BY ordem")
     usados = {b['chave'] for b in bl}
     paleta = [(k, v) for k, v in BLOCOS.items() if k not in usados and (v[4] == 'ambos' or v[4] == o['tipo'])]
@@ -366,6 +417,8 @@ def layout(request: Request, oid: int):
 async def layout_post(request: Request, oid: int):
     g = gestor(request); f = await ler_form(request)
     o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    if o and o.get('no_id'):
+        return ir(f'/orgao/{oid}#hospedagem', 'Órgão hospedado em nó: a página inicial é ajustada no painel do órgão.', request)
     b = o['banco']; acao = f.get('acao')
     if acao == 'regiao':
         k = db.um(b, 'SELECT chave FROM blocos WHERE id=%s', (int(f['id']),))['chave']
@@ -401,6 +454,19 @@ def credenciais(request: Request):
     itens = [dict(chave=k, **v, sit=CR.situacao(k)) for k, v in CR.FONTES.items()]
     return T('credenciais', request, itens=itens, chave_ok=CR.chave_ok())
 
+def _credencial_para_nos(fonte, g, apagar=False):
+    """Ordem "credencial" para cada nó ativo: leva o valor CIFRADO (o nó usa a mesma CHAVE_CREDENCIAIS); nunca em claro."""
+    from . import ordens
+    r_ = None if apagar else db.um(db.LOCAL, 'SELECT dados, configurada_em, configurada_por FROM credenciais_fontes WHERE fonte=%s', (fonte,))
+    if not apagar and not r_:
+        return 0
+    carga = {'fonte': fonte, 'apagar': True} if apagar else {'fonte': fonte, 'dados': r_['dados'], 'configurada_em': r_['configurada_em'].isoformat(), 'configurada_por': r_['configurada_por']}
+    n = 0
+    for no in _nos_ativos():
+        ordens.enviar('credencial', carga, no_id=no['id'], quem=g['nome'], resumo=f"credencial {fonte} {'apagada' if apagar else 'gravada'}")
+        n += 1
+    return n
+
 @r.post('/credenciais')
 async def credenciais_post(request: Request):
     g = gestor(request)
@@ -418,10 +484,12 @@ async def credenciais_post(request: Request):
         except ValueError as e:
             return ir('/credenciais', f'Não gravado: {e}.', request)
         log(g, f'Credencial da fonte {fonte} {r_}')
-        return ir('/credenciais', f'Credencial {r_}. O valor não é exibido nem registrado.', request)
+        nn = _credencial_para_nos(fonte, g)
+        return ir('/credenciais', f'Credencial {r_}. O valor não é exibido nem registrado.' + (f' Enviada cifrada a {nn} nó(s).' if nn else ''), request)
     if acao == 'apagar':
         if CR.apagar(fonte):
             log(g, f'Credencial da fonte {fonte} apagada')
+            _credencial_para_nos(fonte, g, apagar=True)
             return ir('/credenciais', 'Credencial apagada. A coleta usa a reserva do .env, se houver; senão, fica desligada.', request)
         return ir('/credenciais', 'Não havia credencial cadastrada.', request)
     if acao == 'testar':

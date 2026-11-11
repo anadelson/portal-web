@@ -143,7 +143,7 @@ def guardar(pacotes, publica):
     ok = ruim = 0
     for p in pacotes:
         d = verificar(p, publica)
-        if not d or d.get('v') != VERSAO:
+        if not d or d.get('v') != VERSAO or 'orgao' not in d or 'modulos' not in d:  # só licença (ordem assinada não vale como licença)
             ruim += 1
             continue
         o = d['orgao']
@@ -194,6 +194,7 @@ def vigente(o):
         return m[1]
     r = db.um(db.LOCAL, 'SELECT pacote FROM licencas_cache WHERE orgao_id=%s', (o['id'],))
     d = verificar(r['pacote'], chave_publica()) if r else None
+    d = d if d and 'modulos' in d else None
     if d and datetime.fromisoformat(d['valida_ate']) < _agora():
         d = None  # vencida: a gestão está sem contato há mais que a validade
     _memo[o['id']] = (time.monotonic(), d)
