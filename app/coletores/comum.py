@@ -47,7 +47,7 @@ def anotar(fonte, url, params, status, ms, d=None, erro='', metodo='GET'):
     o = ORGAO.get()
     try:
         chave = f"{o or ''}|{httpx.URL(url).path}|{(params or {}).get('Listagem', '') or (params or {}).get('item', '')}"
-        db.exe(db.PLATAFORMA, """INSERT INTO consulta_amostras (chave, orgao_slug, fonte, url, status, ms, registros, trecho, erro, em) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,now())
+        db.exe(db.LOCAL, """INSERT INTO consulta_amostras (chave, orgao_slug, fonte, url, status, ms, registros, trecho, erro, em) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,now())
                                  ON CONFLICT (chave) DO UPDATE SET url=EXCLUDED.url, status=EXCLUDED.status, ms=EXCLUDED.ms, registros=EXCLUDED.registros,
                                  trecho=EXCLUDED.trecho, erro=EXCLUDED.erro, em=now()""", (chave, o or '', fonte, item['url'], status, ms, item['registros'], item['trecho'], item['erro']))
     except Exception:
@@ -171,11 +171,11 @@ def gravar(banco: str, tabela: str, linhas: list[dict], substituir: dict | None 
     return len(linhas)
 
 def registrar(orgao_slug, fonte, ok, n, msg, inicio=None):
-    db.exe(db.PLATAFORMA, 'INSERT INTO coletas (orgao_slug, fonte, inicio, fim, ok, registros, mensagem) VALUES (%s,%s,coalesce(%s, now()),now(),%s,%s,%s)',
+    db.exe(db.LOCAL, 'INSERT INTO coletas (orgao_slug, fonte, inicio, fim, ok, registros, mensagem) VALUES (%s,%s,coalesce(%s, now()),now(),%s,%s,%s)',
            (orgao_slug, fonte, inicio, ok, n, (msg or '')[:500]))
 
 def guardar_publico(ibge, fonte, chave_, payload):
-    db.exe(db.PLATAFORMA, "INSERT INTO dados_publicos (ibge, fonte, chave, payload, coletado_em) VALUES (%s,%s,%s,%s,now()) ON CONFLICT (ibge, fonte, chave) DO UPDATE SET payload=EXCLUDED.payload, coletado_em=now()",
+    db.exe(db.LOCAL, "INSERT INTO dados_publicos (ibge, fonte, chave, payload, coletado_em) VALUES (%s,%s,%s,%s,now()) ON CONFLICT (ibge, fonte, chave) DO UPDATE SET payload=EXCLUDED.payload, coletado_em=now()",
            (ibge, fonte, str(chave_), Jsonb(payload)))
 
 def agora():

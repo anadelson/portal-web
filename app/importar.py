@@ -243,7 +243,8 @@ if __name__ == '__main__':
     if len(a) < 2 or a[0] not in MODELOS:
         sys.exit(__doc__ + '\nModelos: ' + ', '.join(MODELOS))
     slug = a[a.index('--orgao') + 1] if '--orgao' in a else None
-    o = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE slug=%s" if slug else "SELECT * FROM orgaos WHERE tipo='legislativo' ORDER BY id LIMIT 1", (slug,) if slug else ())
+    from . import orgaos
+    o = orgaos.por_slug(slug) if slug else next(iter(orgaos.todos(ativos=False, tipo='legislativo')), None)
     rel = importar(o['banco'], a[0], open(a[1], 'rb').read(), simular='--gravar' not in a, arquivo=a[1])
     if a[0] == 'votos' and not rel['simulacao'] and not rel['erros']:
         votacoes_importadas_tramitar(o['banco'])

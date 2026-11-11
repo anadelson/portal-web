@@ -21,6 +21,7 @@ AQUI = Path(__file__).parent
 MIGRACOES = sorted((AQUI / 'migrations').glob('[0-9][0-9][0-9]_*.sql'))
 MIG_PLAT = [m for m in MIGRACOES if 'plataforma' in m.stem]
 MIG_ORGAO = [m for m in MIGRACOES if 'plataforma' not in m.stem]
+MIG_LOCAL = sorted((Path(__file__).parent / 'migrations_local').glob('*.sql'))  # banco local do nó (papel "no")
 
 def criar_banco(nome: str):
     with psycopg.connect(config.dsn('postgres'), autocommit=True) as c:
@@ -65,7 +66,7 @@ def configurar_fontes(oid, slug, fontes=None):
     existirem — nunca sobrescreve a configuração feita."""
     n = 0
     for fonte, params in (fontes if fontes is not None else FONTES_PADRAO.get(slug, {})).items():
-        r = db.exe(db.PLATAFORMA, 'INSERT INTO fontes (orgao_id, fonte, params) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING RETURNING 1', (oid, fonte, Jsonb(params)))
+        r = db.exe(db.LOCAL, 'INSERT INTO fontes (orgao_id, fonte, params) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING RETURNING 1', (oid, fonte, Jsonb(params)))
         n += 1 if r else 0
     return n
 
@@ -84,11 +85,11 @@ def configurar_painel(o):
     for fonte, ativo in FONTES_PAINEL.items():
         params = {'ibge': o['ibge']}
         if fonte == 'financas':  # usa a mesma API e entidade da fonte fiorilli do órgão
-            fio = db.um(db.PLATAFORMA, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='fiorilli'", (o['id'],))
+            fio = db.um(db.LOCAL, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='fiorilli'", (o['id'],))
             if not fio:
                 continue
             params = {k: fio['params'][k] for k in ('base', 'empresa') if k in fio['params']}
-        r = db.exe(db.PLATAFORMA, 'INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING RETURNING 1', (o['id'], fonte, Jsonb(params), ativo))
+        r = db.exe(db.LOCAL, 'INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING RETURNING 1', (o['id'], fonte, Jsonb(params), ativo))
         nf += 1 if r else 0
     return novos, nf
 
@@ -96,7 +97,7 @@ def configurar_youtube(o):
     """Fonte "youtube" para todo órgão (Fase 8). Sem módulo de transmissão, canal ou chave, o coletor não faz nada."""
     n = 0
     for fonte in ('youtube', 'redes'):  # Fase 9: redes sociais (últimas publicações) — sem conta/credencial não faz nada
-        r = db.exe(db.PLATAFORMA, "INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,%s,'{}',TRUE) ON CONFLICT DO NOTHING RETURNING 1", (o['id'], fonte))
+        r = db.exe(db.LOCAL, "INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,%s,'{}',TRUE) ON CONFLICT DO NOTHING RETURNING 1", (o['id'], fonte))
         n += 1 if r else 0
     return n
 
@@ -253,12 +254,19 @@ def init():
 
 def atualizar():
     """Atualização sem perda: migrações idempotentes em todos os bancos, catálogo de módulos,
-    chaves novas da identidade e blocos novos da página inicial."""
-    aplicar(db.PLATAFORMA, MIG_PLAT)
-    print('plataforma: migrações', ', '.join(m.name for m in MIG_PLAT))
-    for m in MODULOS:
-        db.exe(db.PLATAFORMA, 'INSERT INTO modulos VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT (chave) DO UPDATE SET nome=EXCLUDED.nome, descricao=EXCLUDED.descricao, oferta=EXCLUDED.oferta, serve=EXCLUDED.serve, depende=EXCLUDED.depende', m)
-    for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos ORDER BY id'):
+    chaves novas da identidade e blocos novos da página inicial.
+    Papel "no" (nó de portais): não há banco de controle; prepara o banco local e os bancos dos órgãos das licenças recebidas."""
+    from . import orgaos as ORG
+    if config.PAPEL == 'no':
+        criar_banco(db.LOCAL)
+        aplicar(db.LOCAL, MIG_LOCAL)
+        print(f'{db.LOCAL} (banco local do nó): migrações', ', '.join(m.name for m in MIG_LOCAL))
+    else:
+        aplicar(db.PLATAFORMA, MIG_PLAT)
+        print('plataforma: migrações', ', '.join(m.name for m in MIG_PLAT))
+        for m in MODULOS:
+            db.exe(db.PLATAFORMA, 'INSERT INTO modulos VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT (chave) DO UPDATE SET nome=EXCLUDED.nome, descricao=EXCLUDED.descricao, oferta=EXCLUDED.oferta, serve=EXCLUDED.serve, depende=EXCLUDED.depende', m)
+    for o in ORG.todos(ativos=False):
         aplicar(o['banco'], MIG_ORGAO)
         ident = 'identidade completada' if completar_identidade(o['banco'], o['slug'], o['tipo']) else 'identidade sem mudança'
         completar_diario(o['banco'], o['slug'])

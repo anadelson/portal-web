@@ -70,7 +70,8 @@ def perfil(request: Request, slug: str):
 # ---------- Legislação ----------
 def _leg_prefeitura(o):
     """Na Câmara, a legislação municipal vem da API pública da Prefeitura do mesmo município (nunca do banco)."""
-    pm = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE tipo='executivo' AND ativo AND ibge=%s ORDER BY id LIMIT 1", (o['ibge'],))
+    from . import orgaos
+    pm = orgaos.executivo_do(o['ibge'])
     if not pm:
         return [], None
     import httpx

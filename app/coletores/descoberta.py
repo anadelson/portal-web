@@ -90,12 +90,13 @@ def resumo_campos(rows):
 def alvo(slug):
     """Preenche ALVO com a fonte Fiorilli e o código IBGE do órgão cadastrado."""
     from .. import db
-    o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE slug=%s', (slug,))
+    from .. import orgaos
+    o = orgaos.por_slug(slug)
     if not o:
         sys.exit(f'Órgão {slug} não cadastrado.')
-    f = db.um(db.PLATAFORMA, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='fiorilli'", (o['id'],))
+    f = db.um(db.LOCAL, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='fiorilli'", (o['id'],))
     p = (f or {}).get('params') or {}
-    t = db.um(db.PLATAFORMA, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='tcesp'", (o['id'],))
+    t = db.um(db.LOCAL, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='tcesp'", (o['id'],))
     ALVO.update(fio=p.get('base', ''), empresa=str(p.get('empresa', '')), ibge=o['ibge'], tcesp=((t or {}).get('params') or {}).get('municipio', ''))
 
 def main(ano=None):

@@ -1632,3 +1632,29 @@ Próximos passos dependem das pessoas:
   - nenhum nó cadastrado; timer do ativador ativo.
 - `separacao-a1-licenca` mesclado em `main` com a tag `separacao-a1`.
 - **Próximo:** A2 — banco local do nó (tabelas operacionais saem do banco de controle).
+
+### Separação gestão × portais — etapa A2: banco local do nó (11/11/2026, ramo `separacao-a2-local`)
+- **Usuário:** "Sim, etapa A2".
+- **Feito:**
+  - `db.LOCAL`: banco das tabelas operacionais. No papel `tudo`/`gestao` é o próprio banco de controle (como sempre); no papel `no` é o banco local do nó (`NO_BANCO`, padrão `no_local`).
+    - Tabelas: fontes, coletas, consultas (amostras, testes, histórico), credenciais, dados públicos, indicadores públicos, pares e registro de remessas, tentativas de login, cache de licenças e aparência do login.
+    - 58 consultas passaram a usar `db.LOCAL`; as que tocam o cadastro de órgãos, contratos e módulos continuam no controle.
+  - `app/orgaos.py`: o portal, o painel e o worker leem os órgãos por ele — no controle (papel `tudo`) ou nas licenças assinadas (papel `no`). Foram trocadas as 11 leituras diretas da tabela `orgaos` fora do console (worker, remessas, painel, Diário, importação, legislação da Câmara).
+  - A licença leva também o plano e a cor do órgão.
+  - `app/migrations_local/001_local.sql`: esquema do banco local, igual ao do controle e sem chave estrangeira para `orgaos`. O teste confere coluna por coluna.
+  - `provision atualizar` no papel `no`: cria e atualiza o banco local e os bancos dos órgãos das licenças, sem tocar no controle.
+  - Tentativas de login: as do painel dos órgãos vão para o banco local; as do console, para o controle.
+  - `app/no_local.py`, ferramenta da virada:
+    - `exportar NOME_DO_NO arquivo.zip` (gestão), só com as linhas dos órgãos do nó e permissão 600;
+    - `importar arquivo.zip` (nó), numa transação só, conferindo SHA-256 de cada tabela, colunas e contagem — qualquer diferença desfaz tudo;
+    - `conferir arquivo.zip`.
+- **Testes:**
+  - `tests/teste_no_local.py`:
+    - esquema igual nas 13 tabelas;
+    - exportação só do nó;
+    - arquivo alterado e contagem errada recusados, com nada gravado;
+    - nó simulado com banco local real: portal, transparência, Diário, dados abertos, Câmara, painel com login 2FA e integrações, worker com as mesmas fontes, coleta e tentativa de login gravadas no banco local, remessa Câmara → Prefeitura e provision do nó;
+  - as 22 suítes e `teste_ativador.sh` passaram com o código montado;
+  - prévia com cópia dos bancos: as 12 páginas do piloto **idênticas** ao ar, e o worker vê as mesmas 16 fontes ativas.
+- **Implantação:** sem migração no banco de controle e sem `provision atualizar` (o banco local só nasce no nó). Ordem: `up -d app` → `up -d worker`.
+- **Onde parou:** aguardando aprovação para implantar A2.

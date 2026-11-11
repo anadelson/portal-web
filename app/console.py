@@ -384,14 +384,14 @@ async def layout_post(request: Request, oid: int):
 @r.get('/log')
 def ver_log(request: Request):
     gestor(request)
-    situacao = db.todos(db.PLATAFORMA, """SELECT DISTINCT ON (c.orgao_slug, c.fonte) c.*,
+    situacao = db.todos(db.LOCAL, """SELECT DISTINCT ON (c.orgao_slug, c.fonte) c.*,
         (SELECT max(fim) FROM coletas v WHERE v.orgao_slug IS NOT DISTINCT FROM c.orgao_slug AND v.fonte=c.fonte AND v.ok) ultima_ok,
         (SELECT count(*) FROM coletas x WHERE x.orgao_slug IS NOT DISTINCT FROM c.orgao_slug AND x.fonte=c.fonte AND NOT x.ok AND x.inicio > now() - interval '24 hours') falhas_24h
         FROM coletas c ORDER BY c.orgao_slug, c.fonte, c.id DESC""")
     situacao.sort(key=lambda x: (x['ok'], x['orgao_slug'] or '', x['fonte']))
     fontes = db.todos(db.PLATAFORMA, 'SELECT o.slug, f.fonte, f.ativo FROM fontes f JOIN orgaos o ON o.id=f.orgao_id ORDER BY o.slug, f.fonte')
     return T('log', request, itens=db.todos(db.PLATAFORMA, 'SELECT * FROM log_console ORDER BY id DESC LIMIT 300'), situacao=situacao, fontes=fontes,
-             coletas=db.todos(db.PLATAFORMA, 'SELECT * FROM coletas ORDER BY id DESC LIMIT 80'))
+             coletas=db.todos(db.LOCAL, 'SELECT * FROM coletas ORDER BY id DESC LIMIT 80'))
 
 # ---------- Integrações: credenciais de fontes (só gravação) ----------
 @r.get('/credenciais')
@@ -461,7 +461,7 @@ async def aparencia_post(request: Request):
     g = gestor(request); f = await ler_form(request)
     from psycopg.types.json import Jsonb
     from .imagens import validar_upload, LIMITE_UPLOAD
-    atual = (db.um(db.PLATAFORMA, "SELECT valor FROM config_console WHERE chave='login'") or {}).get('valor') or {}
+    atual = (db.um(db.LOCAL, "SELECT valor FROM config_console WHERE chave='login'") or {}).get('valor') or {}
     atual['titulo'] = (f.get('titulo') or '').strip()[:120]
     if f.get('acao') == 'remover':
         atual.pop('fundo', None)
@@ -480,6 +480,6 @@ async def aparencia_post(request: Request):
         if atual.get('fundo'):
             for k in ('foco_x', 'foco_y'):
                 v = f.get(k, '50'); atual['fundo'][k] = max(0, min(100, int(v))) if str(v).isdigit() else 50
-    db.exe(db.PLATAFORMA, "INSERT INTO config_console (chave, valor) VALUES ('login', %s) ON CONFLICT (chave) DO UPDATE SET valor=EXCLUDED.valor", (Jsonb(atual),))
+    db.exe(db.LOCAL, "INSERT INTO config_console (chave, valor) VALUES ('login', %s) ON CONFLICT (chave) DO UPDATE SET valor=EXCLUDED.valor", (Jsonb(atual),))
     log(g, 'Aparência da tela de login do console alterada')
     return ir('/aparencia', 'Aparência salva.', request)

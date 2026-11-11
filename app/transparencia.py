@@ -94,7 +94,7 @@ def _fontes_visiveis(fontes, do_orgao):
     return vis or {k: v for k, v in fontes.items() if k != 'govbr'}
 
 def bases_do(o):
-    do_orgao = {f['fonte'] for f in db.todos(db.PLATAFORMA, 'SELECT fonte FROM fontes WHERE orgao_id=%s', (o['id'],))} if o.get('id') else set()
+    do_orgao = {f['fonte'] for f in db.todos(db.LOCAL, 'SELECT fonte FROM fontes WHERE orgao_id=%s', (o['id'],))} if o.get('id') else set()
     return {k: dict(v, fontes=_fontes_visiveis(v['fontes'], do_orgao)) for k, v in BASES.items() if o['tipo'] in v['tipos']}
 
 def _base(request, nome):
@@ -138,7 +138,7 @@ def situacao(o, b):
     """Data da última coleta válida e, se a última tentativa falhou, o aviso."""
     tab = b['tabela']
     atualizado = db.um(o['banco'], f'SELECT max(coletado_em) t, count(*) n FROM {tab}')
-    ult = db.um(db.PLATAFORMA, 'SELECT * FROM coletas WHERE orgao_slug=%s AND fonte = ANY(%s) ORDER BY id DESC LIMIT 1', (o['slug'], b['coletas'])) if b['coletas'] else None
+    ult = db.um(db.LOCAL, 'SELECT * FROM coletas WHERE orgao_slug=%s AND fonte = ANY(%s) ORDER BY id DESC LIMIT 1', (o['slug'], b['coletas'])) if b['coletas'] else None
     return {'atualizado': atualizado['t'], 'n': atualizado['n'], 'falhou': ult if ult and not ult['ok'] else None}
 
 def consulta(o, b, q, limite=POR_PAGINA, pagina=1):

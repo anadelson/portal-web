@@ -53,7 +53,7 @@ def decifrar(token):
 
 def situacao(fonte):
     """Só metadados: quando, por quem e o último teste. Nunca os valores."""
-    r = db.um(db.PLATAFORMA, 'SELECT fonte, configurada_em, configurada_por, testada_em, testada_por, teste_resultado, dados FROM credenciais_fontes WHERE fonte=%s', (fonte,))
+    r = db.um(db.LOCAL, 'SELECT fonte, configurada_em, configurada_por, testada_em, testada_por, teste_resultado, dados FROM credenciais_fontes WHERE fonte=%s', (fonte,))
     if not r:
         return None
     legivel = decifrar(r['dados']) is not None
@@ -67,18 +67,18 @@ def salvar(fonte, usuario, senha, quem):
     if not usuario or not senha:
         raise ValueError('preencha usuário e senha' if not FONTES[fonte].get('so_chave') else 'preencha a chave')
     token = cifrar(usuario, senha)
-    existia = bool(db.um(db.PLATAFORMA, 'SELECT 1 FROM credenciais_fontes WHERE fonte=%s', (fonte,)))
-    db.exe(db.PLATAFORMA, """INSERT INTO credenciais_fontes (fonte, dados, configurada_em, configurada_por) VALUES (%s,%s,now(),%s)
+    existia = bool(db.um(db.LOCAL, 'SELECT 1 FROM credenciais_fontes WHERE fonte=%s', (fonte,)))
+    db.exe(db.LOCAL, """INSERT INTO credenciais_fontes (fonte, dados, configurada_em, configurada_por) VALUES (%s,%s,now(),%s)
                              ON CONFLICT (fonte) DO UPDATE SET dados=EXCLUDED.dados, configurada_em=now(), configurada_por=EXCLUDED.configurada_por,
                              testada_em=NULL, testada_por='', teste_resultado=''""", (fonte, token, quem))
     return 'trocada' if existia else 'cadastrada'
 
 def apagar(fonte):
-    return bool(db.exe(db.PLATAFORMA, 'DELETE FROM credenciais_fontes WHERE fonte=%s RETURNING 1', (fonte,)))
+    return bool(db.exe(db.LOCAL, 'DELETE FROM credenciais_fontes WHERE fonte=%s RETURNING 1', (fonte,)))
 
 def obter(fonte):
     """Uso interno dos coletores: (usuario, senha) da plataforma ou None."""
-    r = db.um(db.PLATAFORMA, 'SELECT dados FROM credenciais_fontes WHERE fonte=%s', (fonte,))
+    r = db.um(db.LOCAL, 'SELECT dados FROM credenciais_fontes WHERE fonte=%s', (fonte,))
     return decifrar(r['dados']) if r else None
 
 def _http_teste(fonte, auth):
@@ -123,5 +123,5 @@ def testar(fonte, quem):
             res = f"HTTP {st} · {'JSON válido' if valido else 'resposta não é o JSON esperado'}"
         except Exception as e:  # só o tipo do erro: a mensagem poderia conter dados da requisição
             res = f'falha de conexão ({type(e).__name__})'
-    db.exe(db.PLATAFORMA, 'UPDATE credenciais_fontes SET testada_em=now(), testada_por=%s, teste_resultado=%s WHERE fonte=%s', (quem, res, fonte))
+    db.exe(db.LOCAL, 'UPDATE credenciais_fontes SET testada_em=now(), testada_por=%s, teste_resultado=%s WHERE fonte=%s', (quem, res, fonte))
     return res

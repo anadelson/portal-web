@@ -65,6 +65,9 @@ def exe(banco, sql, params=()):
             return None
 
 PLATAFORMA = 'plataforma'
+# Banco das tabelas operacionais (integrações, coletas, credenciais, dados públicos, remessas, tentativas de login).
+# Papel "tudo"/"gestao": o próprio banco de controle (como sempre foi). Papel "no": o banco local do nó (etapa A2).
+LOCAL = (config.env('NO_BANCO', 'no_local') or 'no_local') if config.PAPEL == 'no' else PLATAFORMA
 
 def cfg(banco, chave, padrao=None):
     r = um(banco, 'SELECT valor FROM config WHERE chave=%s', (chave,))

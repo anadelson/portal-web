@@ -156,7 +156,7 @@ def _orgaos_do_no():
     licença vencida põe o órgão em carência, mas o portal (transparência) continua no ar."""
     from . import licenca
     pub, out = licenca.chave_publica(), {}
-    for r in db.todos(db.PLATAFORMA, 'SELECT pacote FROM licencas_cache'):
+    for r in db.todos(db.LOCAL, 'SELECT pacote FROM licencas_cache'):
         d = licenca.verificar(r['pacote'], pub)
         if d and d['orgao'].get('ativo', True):
             out[d['orgao']['dominio']] = dict(d['orgao'])
@@ -346,7 +346,7 @@ def auditar(request: Request, acao: str, quem: str | None = None):
 def tela_acesso(request, passo=None, console=False):
     if console:
         try:
-            c = db.um(db.PLATAFORMA, "SELECT valor FROM config_console WHERE chave='login'")
+            c = db.um(db.LOCAL, "SELECT valor FROM config_console WHERE chave='login'")
         except Exception:  # banco ainda sem a migração 018
             c = None
         v = (c or {}).get('valor') or {}
