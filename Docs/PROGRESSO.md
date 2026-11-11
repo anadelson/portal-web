@@ -1486,3 +1486,57 @@ Próximos passos dependem das pessoas:
   - portais 200, console 303 (login); timer do ativador ativo; logs sem erro.
 - `diario-configuravel` mesclado em `main` com a tag `diario-configuravel`.
 - **Próxima etapa do modelo:** 4, adaptadores de outros sistemas da transparência. Depende de saber quais sistemas os próximos órgãos usam.
+
+### Etapa 4 do modelo multi-órgão: coletor GOVBR (11/11/2026, ramo `govbr-coletor`)
+- **Pedido:** coletor para a GOVBR, tendo a Prefeitura de Regente Feijó (TransparênciaBR / Pronim TB) como exemplo. No painel, mostrar os parâmetros da consulta, a periodicidade e como cada tela é montada. Lutécia usa Fiorilli, que já é atendida.
+- **Análise (só leitura, sem login, sem captcha):**
+  - a GOVBR não tem API JSON pública (`/pronimtb/api/` responde 404; a API citada no JS é um servidor interno);
+  - a saída em formato de máquina é "Exportar Dados": `geraxml.asp?item=N&banco=…&exercicio=…&dataInicial=AAAAMMDD&dataFinal=AAAAMMDD&unidadeGestora=-1` devolve o link de um ZIP com XML (ISO-8859-1);
+  - o código do banco muda a cada ano e é lido na própria tela;
+  - Prefeitura, Câmara e fundo vêm no mesmo arquivo; cada órgão filtra pela unidade gestora;
+  - "Salários por colaborador" tem reCAPTCHA e fica de fora; ordem cronológica não tem exportação; o lançamento das receitas não tem dados.
+- **Feito:**
+  - `app/coletores/govbr.py`: cada base é descrita uma vez (item, arquivo, filtro, período e coluna ← campo do XML); o coletor executa essa descrição e a tela mostra a mesma.
+    - Bases: receitas, despesas por unidade, empenhos, diárias, restos a pagar, licitações, contratos, pessoal e transferências.
+  - Execução completa (ano inteiro) uma vez a cada 24 h; nas demais, só os últimos meses (parâmetro de 1 a 3). Empenhos/diárias e licitações/contratos baixam o arquivo uma vez só.
+  - Regras confirmadas no ensaio real:
+    - dotação inicial vem em janeiro e "DotacaoAtualizada" é a variação do mês;
+    - restos a pagar vêm em movimentos e são somados por empenho;
+    - a folha vale para a competência mais recente que todas as entidades já publicaram;
+    - concessão e recebimento do mesmo repasse contam uma vez.
+  - LGPD:
+    - CPF nunca é gravado;
+    - na folha, descontos e líquido não são lidos;
+    - pessoa física fica fora dos restos a pagar;
+    - a amostra da tela não traz descontos, líquido nem documentos.
+  - Segurança: limite de tamanho do ZIP e do XML; XML com DOCTYPE/ENTITY recusado; arquivo de outro exercício recusado.
+  - Painel → Integrações → "Portal da transparência (GOVBR)":
+    - agenda (padrão a cada 3 h, entre 6h e 22h; mínimo de 1 h);
+    - "Como a consulta é montada", com endereço, parâmetros e arquivo;
+    - parâmetros editáveis: endereço, unidade gestora, bases, meses relidos, entidades de pessoal e recebedora;
+    - novo bloco **"Como cada tela do portal é montada"**: rota, tabela, arquivo, período, filtro, regra e a tabela coluna no portal ← campo do XML ← regra;
+    - lista do que fica de fora e por quê.
+  - Console: opção GOVBR no cadastro de órgão. Prefeitura: todas as bases, unidade "PREFEITURA". Câmara: transferências, recebedora "PODER LEGISLATIVO".
+  - Transparência: "Fonte:" mostra só o sistema que o órgão usa. O piloto continua com "Fiorilli".
+  - "Em números" da página inicial aceita receita da GOVBR.
+  - Migração `024_plataforma_fontes_govbr.sql` (fonte `govbr` na lista permitida).
+- **Ensaio real (modo de teste, nada gravado) no portal de Regente Feijó:**
+  - todos os pedidos com HTTP 200;
+  - dotação atualizada R$ 277,4 mi ≥ empenhado R$ 216,0 mi;
+  - folha de 09/2026 com as 3 entidades;
+  - transferências do duodécimo lidas.
+- **Testes:**
+  - `tests/teste_govbr.py` usa um portal simulado com dados fictícios marcados como exemplo;
+  - as 20 suítes e `teste_ativador.sh` passaram com o código montado;
+  - capturas em `Docs/avaliacao-govbr/` (1366 e 390 px, axe sem violações, sem rolagem lateral).
+- **Onde parou:** aguardando aprovação para implantar. Tem migração; ordem: `up -d app` → `provision atualizar` → `up -d worker`.
+
+### Implantação da etapa 4 (11/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 10h43 UTC.
+- **Build e testes:** as 20 suítes e `teste_ativador.sh` passaram com a imagem nova. Os volumes soltos são de outros projetos da VPS, de junho/2026; não foram tocados.
+- **Subida:** `up -d app` → `provision atualizar` (migração `024_plataforma_fontes_govbr.sql` aplicada; `govbr` na lista de fontes) → `up -d worker` (sem reinícios nem erros) → `image prune`.
+- **Conferência:**
+  - portais 200; console 303 (login); timer do ativador ativo;
+  - o piloto continua com "Fonte: Sistema contábil da Prefeitura (Fiorilli)", sem GOVBR.
+- `govbr-coletor` mesclado em `main` com a tag `govbr-coletor`.
+- **Para usar:** cadastrar o órgão no console com o sistema "GOVBR" e o endereço do portal (…/pronimtb/). Depois, em Integrações → GOVBR, conferir a unidade gestora e as entidades de pessoal, e "Testar consulta".

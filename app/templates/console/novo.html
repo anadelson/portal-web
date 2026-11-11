@@ -30,9 +30,13 @@
 <div class="grade2" id="c-fio"><label>Fiorilli: endereço da API (VersaoJson)<input name="fio_base" value="{{ v('fio_base', '') }}" placeholder="https://<municipio>.dcfiorilli.com.br:879/transparencia/VersaoJson/"></label>
 <label>Fiorilli: código da entidade<input name="fio_empresa" value="{{ v('fio_empresa', '') }}" inputmode="numeric" placeholder="2"></label>
 <label>Câmara: nome do órgão recebedor nas transferências<input name="fio_recebedora" value="{{ v('fio_recebedora', '') }}" placeholder="Câmara Municipal"></label></div>
+<div class="grade2" id="c-gov"><label>GOVBR: endereço do portal (Pronim TB)<input name="gov_base" value="{{ v('gov_base', '') }}" placeholder="https://<municipio>.cidade360.cloud/pronimtb/"></label>
+<label>GOVBR: unidade gestora no XML (vazio = sugerida)<input name="gov_unidades" value="{{ v('gov_unidades', '') }}" placeholder="PREFEITURA ou CAMARA"></label>
+<label>Câmara: órgão recebedor nas transferências<input name="gov_recebedora" value="{{ v('gov_recebedora', '') }}" placeholder="PODER LEGISLATIVO"></label>
+<p class="legal">A GOVBR não tem API: o coletor usa a exportação em XML do próprio portal (sem login e sem captcha). Depois do cadastro, ajuste e teste em Integrações.</p></div>
 </fieldset>
 <fieldset class="opcoes"><legend>5. Módulos opcionais contratados</legend>{% for m in mods %}<label data-serve="{{ m[4] }}"><input type="checkbox" name="mod_{{ m[0] }}" value="1" {{ 'checked' if v('mod_' ~ m[0]) }}> {{ m[1] }}{% if m[4] != 'ambos' %} <small>({{ 'Prefeitura' if m[4] == 'executivo' else 'Câmara' }})</small>{% endif %}</label>{% endfor %}</fieldset>
 <div class="acoes-form"><button class="btn">Cadastrar órgão</button><a class="btn sec" href="/">Cancelar</a></div>
 </form>
-<script src="/static/console.js?v=1" defer></script>
+<script src="/static/console.js?v=2" defer></script>
 {% endblock %}
