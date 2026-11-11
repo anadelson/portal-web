@@ -1530,3 +1530,13 @@ Próximos passos dependem das pessoas:
   - as 20 suítes e `teste_ativador.sh` passaram com o código montado;
   - capturas em `Docs/avaliacao-govbr/` (1366 e 390 px, axe sem violações, sem rolagem lateral).
 - **Onde parou:** aguardando aprovação para implantar. Tem migração; ordem: `up -d app` → `provision atualizar` → `up -d worker`.
+
+### Implantação da etapa 4 (11/11/2026, aprovada: "Aprovo os 6 passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 10h43 UTC.
+- **Build e testes:** as 20 suítes e `teste_ativador.sh` passaram com a imagem nova. Os volumes soltos são de outros projetos da VPS, de junho/2026; não foram tocados.
+- **Subida:** `up -d app` → `provision atualizar` (migração `024_plataforma_fontes_govbr.sql` aplicada; `govbr` na lista de fontes) → `up -d worker` (sem reinícios nem erros) → `image prune`.
+- **Conferência:**
+  - portais 200; console 303 (login); timer do ativador ativo;
+  - o piloto continua com "Fonte: Sistema contábil da Prefeitura (Fiorilli)", sem GOVBR.
+- `govbr-coletor` mesclado em `main` com a tag `govbr-coletor`.
+- **Para usar:** cadastrar o órgão no console com o sistema "GOVBR" e o endereço do portal (…/pronimtb/). Depois, em Integrações → GOVBR, conferir a unidade gestora e as entidades de pessoal, e "Testar consulta".
