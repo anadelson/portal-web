@@ -33,7 +33,11 @@ ESQUEMA = {
               ('bases', 'Bases coletadas', 'bases', 'escolha do órgão'),
               ('meses_recentes', 'Meses relidos nas execuções rápidas (1 a 3)', 'int', 'uma execução a cada 24 h relê o ano inteiro'),
               ('pessoal', 'Entidades de pessoal (códigos, vírgula separa; vazio = todas)', 'texto', 'combo “Entidade” da tela Exportar Dados › Folha de Pagamento, ex.: DW_LC131_AP_3'),
-              ('recebedora', 'Órgão recebedor nas transferências (opcional)', 'texto', 'usado pela Câmara, ex.: PODER LEGISLATIVO')],
+              ('recebedora', 'Órgão recebedor nas transferências (opcional)', 'texto', 'usado pela Câmara, ex.: PODER LEGISLATIVO'),
+              ('api', 'Endereço da API de dados abertos (opcional)', 'url_opc', 'só alguns portais GOVBR têm; termina em /dadosabertos/ e tem Swagger'),
+              ('api_entidade', 'Entidade na API (vazio = a primeira oferecida)', 'texto', 'combo “Entidade” da página Dados Abertos, ex.: PREFEITURA DE …'),
+              ('api_pessoal', 'Entidades de pessoal na API (vírgula separa; vazio = todas)', 'texto', 'combo “Entidade” do bloco Pessoal da página Dados Abertos'),
+              ('modos', 'Como buscar cada base', 'modos', 'automático = API e, se ela falhar, a exportação XML')],
     'financas': [('base', 'Endereço da API de dados abertos', 'url', 'o mesmo da fonte Fiorilli do órgão'),
                  ('empresa', 'Código da entidade (Empresa)', 'int', 'o mesmo da fonte Fiorilli do órgão')],
     'pncp': [_IBGE, ('cnpj', 'CNPJ do órgão', 'texto', 'cadastro do órgão')],
@@ -168,8 +172,15 @@ def validar(fonte, form, atual):
     """Lê do formulário os campos do esquema. Devolve (novo_params, erros). Campos fora do esquema são preservados."""
     novo, erros = dict(atual or {}), []
     for nome, rot, tipo, _ in ESQUEMA.get(fonte, []):
-        v = (form.get(f'p_{nome}') or '').strip() if tipo not in ('bases', 'sn') else None
-        if tipo == 'url':
+        v = (form.get(f'p_{nome}') or '').strip() if tipo not in ('bases', 'sn', 'modos') else None
+        if tipo == 'url_opc':
+            if v and not re.match(r'^https://[\w.-]+(:\d+)?(/[\w./%-]*)?$', v):
+                erros.append(f'{rot}: informe um endereço https:// válido ou deixe vazio.')
+            novo[nome] = v
+        elif tipo == 'modos':
+            from .coletores.govbr import API, MODOS
+            novo[nome] = {b: (form.get(f'p_modo_{b}') if form.get(f'p_modo_{b}') in MODOS else 'auto') for b in API}
+        elif tipo == 'url':
             if not re.match(r'^https://[\w.-]+(:\d+)?(/[\w./%-]*)?$', v):
                 erros.append(f'{rot}: informe um endereço https:// válido.')
             novo[nome] = v
@@ -272,4 +283,5 @@ def painel(o, fonte):
             'amostras': amostras, 'coletas': coletas, 'teste': ultimo_teste(o, fonte),
             'historico': db.todos(db.PLATAFORMA, 'SELECT * FROM fontes_historico WHERE orgao_id=%s AND fonte=%s ORDER BY id DESC LIMIT 10', (o['id'], fonte)),
             'bases_opcoes': OPCOES_BASES.get(fonte, FIORILLI_BASES),
-            'telas': _govbr().telas(p) if fonte == 'govbr' else [], 'fora': _govbr().FORA if fonte == 'govbr' else []}
+            'telas': _govbr().telas(p) if fonte == 'govbr' else [], 'fora': _govbr().FORA if fonte == 'govbr' else [],
+            'modos_bases': {b: GOVBR_BASES[b] for b in _govbr().API} if fonte == 'govbr' else {}, 'modos_opcoes': _govbr().MODOS if fonte == 'govbr' else {}}
