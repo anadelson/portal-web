@@ -1904,3 +1904,9 @@ Próximos passos dependem das pessoas:
   | Câmara | GOVBR | SP | bloco GOVBR com "recebedor" |
 
 - **Implantação:** só CSS e telas; reiniciar o app.
+- **Ajuste pedido pelo usuário:** "deveria ter um seletor solicitando qual a integração usa e mostrar somente os campos daquela integração… se tivéssemos 10 tipos de integração iria ficar muito poluído".
+  - Cada sistema da transparência passa a ter **um bloco** marcado com `data-sistema="<valor do seletor>"`, e o script mostra só o bloco escolhido. Campos só de Câmara: `data-so-tipo="legislativo"`.
+  - Sistema novo = opção em `cadastro.SISTEMAS` + um bloco com `data-sistema`; o script não muda.
+  - `console.js?v=4`.
+  - O teste da GOVBR deixou de depender do número da versão do script (foi o que parou a primeira tentativa de implantação).
+  - Conferência no navegador: as cinco combinações iguais à tabela acima. `teste_govbr` ok.

@@ -4,7 +4,7 @@
   var f = document.getElementById('form-cadastro'); if (!f) return;
   var tipo = document.getElementById('c-tipo'), ibge = document.getElementById('c-ibge'), bt = document.getElementById('c-buscar'), msg = document.getElementById('c-ibge-msg');
   var mun = document.getElementById('c-municipio'), uf = document.getElementById('c-uf'), nome = document.getElementById('c-nome'), slug = document.getElementById('c-slug');
-  var tce = document.getElementById('c-tcesp'), sis = document.getElementById('c-sistema'), fio = document.getElementById('c-fio'), gov = document.getElementById('c-gov'), cor = document.getElementById('c-cor');
+  var tce = document.getElementById('c-tcesp'), sis = document.getElementById('c-sistema'), cor = document.getElementById('c-cor');
   var ultimo = null;
   bt.hidden = false;
   function sugestoes() {
@@ -12,9 +12,9 @@
     if (ultimo) { nome.placeholder = ex ? ultimo.nome_pm : ultimo.nome_cm; slug.placeholder = ex ? ultimo.slug_pm : ultimo.slug_cm; tce.placeholder = ultimo.tcesp; }
     cor.placeholder = ex ? '#1D4E89' : '#2F5233';
     tce.closest('label').hidden = !(ex && uf.value === 'SP');
-    var rec = f.querySelector('[name=fio_recebedora]').closest('label'); rec.hidden = ex;
-    fio.hidden = sis.value !== 'fiorilli';
-    if (gov) { gov.hidden = sis.value !== 'govbr'; gov.querySelector('[name=gov_recebedora]').closest('label').hidden = ex; }
+    // um bloco por sistema da transparência (data-sistema): só o do sistema escolhido aparece; campos só de Câmara (data-so-tipo)
+    f.querySelectorAll('[data-sistema]').forEach(function (b) { b.hidden = b.dataset.sistema !== sis.value; });
+    f.querySelectorAll('[data-so-tipo]').forEach(function (l) { l.hidden = l.dataset.soTipo !== tipo.value; });
     f.querySelectorAll('[data-serve]').forEach(function (l) { var s = l.dataset.serve; l.hidden = !(s === 'ambos' || s === tipo.value); if (l.hidden) l.querySelector('input').checked = false; });
   }
   function buscar() {

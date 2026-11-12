@@ -173,7 +173,7 @@ G.Portal._get = falso_get
 con = TestClient(app, base_url='http://gestao.localhost')
 entrar(con, 'gestor@gestao.localhost', 'gestor123', 'gestorforte1234', prefixo='')
 t = con.get('/orgaos/novo').text
-checa('GOVBR' in t and 'name="gov_base"' in t and 'console.js?v=2' in t, 'cadastro oferece a GOVBR com os campos dela')
+checa('GOVBR' in t and 'name="gov_base"' in t and re.search(r'/static/console\.js\?v=\d+', t) and 'data-sistema="govbr"' in t, 'cadastro oferece a GOVBR com os campos dela (bloco próprio do sistema)')
 def cadastrar(**k):
     d = {'csrf': tok(con, '/orgaos/novo'), 'tipo': 'executivo', 'ibge': '3599931', 'municipio': 'Município Exemplo GOVBR', 'uf': 'SP', 'dominio': 'pmgov.localhost',
          'email_admin': 'admin@pmgov.localhost', 'sistema': 'govbr', 'gov_base': 'https://portal-exemplo.invalid/pronimtb/', 'gov_unidades': 'PREFEITURA MUNICIPAL EXEMPLO'}
