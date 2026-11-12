@@ -1918,3 +1918,19 @@ Próximos passos dependem das pessoas:
 - **Subida:** só o app (`up -d --no-deps app`), às 11h03 de Brasília. Sem reinícios nem erros no log.
 - **Conferência:** portais e logins 200; o console serve `admin.css?v=16` (regra do `hidden` no cadastro) e `console.js?v=4` (blocos por `data-sistema`).
 - `cadastro-campos` mesclado em `main` com a tag `cadastro-campos`.
+
+### Órgão novo hospedado em nó: correção do worker da gestão (12/11/2026, ramo `orgao-no-local`)
+- **Usuário:** cadastrou o órgão `prefbora` (domínio `pmbora.prefbora.cloud`, banco `bd_prefbora`) hospedado no nó `726025036.conectatech.tech`; "o e-mail não chegou".
+- **Diagnóstico (só leitura):**
+  - o nó nunca contatou a gestão (instalador não rodado ou não concluído) → ordem `criar_orgao` na fila; `bd_prefbora` ainda não existe;
+  - o DNS do domínio já aponta para 72.60.250.36;
+  - o convite saiu às 11h55 pelo SMTP `mail.bora.sp.gov.br` (aceito pelo servidor; a entrega depende dele: spam, quarentena ou fila).
+  - Nome com erro de digitação ("Borã").
+  - Perguntado se a ideia é um órgão novo (vazio) ou levar o piloto `pm-bora` com os dados (virada).
+- **Problema encontrado:** o worker desta VPS tentava a cada minuto abrir `bd_prefbora` (rotina do Diário), com erro no log.
+- **Correção:** no papel `tudo`/`gestao`, `orgaos.todos()` e o roteamento por domínio só consideram órgãos sem nó (`no_id IS NULL`). Os órgãos do nó são tratados pelo próprio nó.
+- **Testes:**
+  - `teste_ordens`: esta VPS não serve nem trata o órgão do nó; a rotina do Diário não tenta abrir o banco dele;
+  - `teste_no_local`: as fontes são lidas antes de os órgãos irem para o nó;
+  - as 25 suítes e `teste_ativador.sh` passaram com o código montado.
+- **Implantação:** sem migração; reiniciar o app e o worker (o worker reiniciado também descarta a conexão presa ao banco inexistente).
