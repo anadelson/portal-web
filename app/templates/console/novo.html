@@ -1,6 +1,6 @@
 {% extends 'console/base.html' %}{% block h1 %}Cadastrar órgão{% endblock %}
 {% block conteudo %}{% set v = f.get %}
-<p>Cria o órgão a partir do modelo: banco próprio, esquema, menus, página inicial, identidade com os dados abaixo, integrações montadas a partir do código IBGE, do CNPJ e do sistema da transparência, e o administrador inicial com senha única (mostrada uma vez). O órgão nasce “em implantação”.</p>
+<p>Cria o órgão a partir do modelo: banco próprio, esquema, menus, página inicial, identidade com os dados abaixo, integrações montadas a partir do código IBGE, do CNPJ e do sistema da transparência, e o administrador inicial, que recebe por e-mail um convite de primeiro acesso. O órgão nasce “em implantação”.</p>
 {% if erros %}<div class="msg" role="alert" style="background:#FBE4D8"><strong>Não cadastrado:</strong><ul>{% for e in erros %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
 <form class="campos cadastro-orgao" method="post" action="/orgaos/novo" id="form-cadastro"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
 <fieldset><legend>1. Órgão e município</legend>
@@ -17,7 +17,7 @@
 <fieldset><legend>2. Endereço do portal e administrador</legend>
 <div class="grade2"><label>Domínio do portal<input name="dominio" value="{{ v('dominio', '') }}" required placeholder="portal.municipio.sp.gov.br"></label>
 <label>E-mail do administrador do órgão<input name="email_admin" type="email" value="{{ v('email_admin', '') }}" required></label></div>
-<p class="legal">O administrador recebe uma senha provisória única (mostrada uma vez na próxima tela), cadastra o segundo fator e troca a senha no primeiro acesso.</p>
+<p class="legal">Nenhuma senha aparece aqui: o administrador recebe neste e-mail um link de primeiro acesso (uso único, vale 7 dias) para criar a própria senha e cadastrar o segundo fator. O e-mail sai quando o domínio do órgão estiver no ar.</p>
 </fieldset>
 <fieldset><legend>3. Contatos (aparecem no rodapé e em “Fale conosco”; podem ser preenchidos depois no painel)</legend>
 <div class="grade2"><label>Endereço<input name="endereco" value="{{ v('endereco', '') }}"></label><label>Telefone<input name="telefone" value="{{ v('telefone', '') }}"></label>
@@ -37,7 +37,7 @@
 <p class="legal">Sem API, o coletor usa a exportação em XML do próprio portal (sem login e sem captcha). Com a API de dados abertos informada, receitas, despesas e pessoal vêm dela e, se ela falhar, do XML. A escolha de cada base fica em Integrações.</p></div>
 </fieldset>
 {% if nos %}<fieldset><legend>Hospedagem</legend><label>Onde o portal e o painel deste órgão ficam<select name="no_id"><option value="">Esta VPS (junto com a gestão)</option>{% for n in nos %}<option value="{{ n.id }}" {{ 'selected' if v('no_id', '') == n.id|string }}>Nó {{ n.nome }}</option>{% endfor %}</select></label>
-<p class="legal">Em um nó, o banco do órgão é criado pelo próprio nó (ordem assinada, em até 1 minuto). A senha inicial do administrador aparece aqui e só o código cifrado dela vai para o nó.</p></fieldset>{% endif %}
+<p class="legal">Em um nó, o banco do órgão é criado pelo próprio nó (ordem assinada, em até 1 minuto). O convite do administrador é gravado pelo nó e o e-mail sai da gestão quando o domínio estiver no ar.</p></fieldset>{% endif %}
 <fieldset class="opcoes"><legend>5. Módulos opcionais contratados</legend>{% for m in mods %}<label data-serve="{{ m[4] }}"><input type="checkbox" name="mod_{{ m[0] }}" value="1" {{ 'checked' if v('mod_' ~ m[0]) }}> {{ m[1] }}{% if m[4] != 'ambos' %} <small>({{ 'Prefeitura' if m[4] == 'executivo' else 'Câmara' }})</small>{% endif %}</label>{% endfor %}</fieldset>
 <div class="acoes-form"><button class="btn">Cadastrar órgão</button><a class="btn sec" href="/">Cancelar</a></div>
 </form>

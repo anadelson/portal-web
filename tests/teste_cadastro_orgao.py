@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app import db, cadastro as CD
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from apoio import entrar, tok
+from apoio import entrar, tok, ligar_email_teste, primeiro_acesso, link_convite, CAIXA
 
 erros = []
 def checa(c, nome):
@@ -59,17 +59,20 @@ r = cadastrar(sistema='fiorilli', fio_base='http://sem-https/', fio_empresa='x')
 checa('Fiorilli: informe o endereço https' in r.text and 'código da entidade' in r.text, 'Fiorilli exige https e código da entidade')
 
 # Prefeitura fictícia de SP, com Fiorilli
+ligar_email_teste()
 r = cadastrar()
 checa(r.status_code == 200 and 'Órgão criado' in r.text, 'Prefeitura criada')
-m = re.search(r'<code class="senha">([^<]+)</code>', r.text)
-senha = m.group(1) if m else ''
-checa(len(senha) == 16 and r.headers.get('cache-control') == 'no-store', 'senha única mostrada uma vez, página sem cache')
+checa('class="senha"' not in r.text and 'Senha provisória' not in r.text and 'link de primeiro acesso' in r.text, 'nenhuma senha na tela: convite por e-mail')
+url = link_convite('admin@pmteste.localhost')
+checa(url and url.startswith('https://pmteste.localhost/admin/primeiro-acesso?t=') and 'enviado' in r.text, 'convite enviado por e-mail ao administrador')
+senha = url.split('t=')[1] if url else ''
 o = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE dominio='pmteste.localhost'")
 checa(o and o['slug'] == 'pm-municipio-ficticio-de-teste' and o['banco'] == 'bd_pm_municipio_ficticio_de_teste' and o['ibge'] == '3599901' and o['municipio'] == 'Município Fictício de Teste (SP)', f'órgão no banco de controle ({o and o["slug"]})')
 b = o['banco']
-checa(not db.um(db.PLATAFORMA, 'SELECT 1 FROM log_console WHERE acao LIKE %s', (f'%{senha}%',)) if senha else False, 'senha não vai para o registro do console')
+checa(not db.um(db.PLATAFORMA, 'SELECT 1 FROM log_console WHERE acao LIKE %s', (f'%{senha}%',)) if senha else False, 'link do convite não vai para o registro do console')
+checa(not db.um(db.PLATAFORMA, "SELECT 1 FROM convites WHERE token_cifrado IS NOT NULL AND situacao='enviado'"), 'depois do envio, a gestão apaga o link')
 u = db.um(b, "SELECT * FROM usuarios WHERE email='admin@pmteste.localhost'")
-checa(u and u['perfil'] == 'admin' and u['trocar_senha'] and senha not in (u['senha_hash'] or ''), 'administrador com o e-mail informado, só o hash guardado, troca obrigatória')
+checa(u and u['perfil'] == 'admin' and u['convite_hash'] and senha not in (u['convite_hash'] or '') and senha not in (u['senha_hash'] or ''), 'administrador com o e-mail informado, só o hash do convite guardado')
 F = {x['fonte']: x['params'] for x in db.todos(db.PLATAFORMA, 'SELECT fonte, params FROM fontes WHERE orgao_id=%s', (o['id'],))}
 checa(F.get('siconfi') == {'ibge': '3599901', 'rgf_poder': 'E', 'rreo': True}, f'Siconfi pelo IBGE ({F.get("siconfi")})')
 checa(F.get('pncp', {}).get('cnpj') == CD.cnpj_formatado(CNPJ), 'PNCP pelo CNPJ')
@@ -94,9 +97,9 @@ for u in ('/', '/diario', '/transparencia', '/comunicados', '/fale-conosco'):
     checa('910' not in t and 'Borá' not in t, f'{u} do órgão novo sem a lei nem o nome do piloto')
 checa('<p class="sub"> · ' not in h.text and '>· ' not in h.text and 'Rua de Teste, 1 · (00) 0000-0000' in h.text, 'contato da sede montado sem separador sobrando')
 adm = TestClient(app, base_url='http://pmteste.localhost')
-r = entrar(adm, 'admin@pmteste.localhost', senha, 'senhaNovaTeste123')
-checa(r.status_code == 200 and 'Visão geral' in r.text, 'administrador entra com a senha única, cadastra o 2º fator e troca a senha')
-checa(not db.um(b, "SELECT trocar_senha FROM usuarios WHERE email='admin@pmteste.localhost'")['trocar_senha'], 'senha provisória trocada no primeiro acesso')
+r = primeiro_acesso(adm, 'admin@pmteste.localhost', 'senhaNovaTeste123')
+checa(r is not None and r.status_code == 200 and 'Visão geral' in r.text, 'administrador abre o convite, cria a senha e cadastra o 2º fator')
+checa(not db.um(b, "SELECT convite_hash FROM usuarios WHERE email='admin@pmteste.localhost'")['convite_hash'], 'convite usado: link invalidado')
 checa('Borá' not in adm.get('/admin/identidade?aba=dados').text, 'painel do órgão novo sem Borá')
 
 # Câmara do mesmo município (ligada pelo IBGE)

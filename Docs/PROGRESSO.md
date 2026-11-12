@@ -1833,3 +1833,36 @@ Próximos passos dependem das pessoas:
 - **Subida:** só o app (`up -d --no-deps app`), às 08h50 de Brasília; o worker não mudou e seguiu rodando. Sem reinícios nem erros no log.
 - **Conferência:** portais e painéis 200; console 303 (login) e tela de login 200 com `admin.css?v=15`, com a regra nova servida.
 - `console-largura` mesclado em `main` com a tag `console-largura`.
+
+### Convite de primeiro acesso por e-mail e e-mail de saída no console (12/11/2026, ramo `convite-email`)
+- **Usuário:**
+  - "não deve ser gerado em tela e sim enviado via e-mail cadastrado, pois nem sempre o responsável está junto ao gestor na hora do cadastro";
+  - "ao invés de inserir a configuração do e-mail direto no .env crie uma sessão dentro do gestor para configurar o e-mail de saída".
+- **Feito:**
+  - **Console → E-mail de saída** (`app/email_saida.py`):
+    - servidor, porta, segurança (SSL, STARTTLS ou nenhuma), usuário, senha, remetente e nome;
+    - a senha fica **cifrada** com a `CHAVE_CREDENCIAIS`, nunca volta para a tela nem para o registro, e vazio mantém a atual;
+    - botão "Enviar teste", com o resultado sem segredos;
+    - só a gestão envia; os nós não precisam de SMTP.
+  - **Cadastro de órgão sem senha na tela** (`app/convites.py`):
+    - o administrador recebe um **link de primeiro acesso** (uso único, 7 dias) e, ao abrir, cria a própria senha (12+ caracteres, não previsível) e cadastra o segundo fator no fluxo de sempre;
+    - o banco do órgão guarda só o **hash** do link (vai nas ordens `criar_orgao`/`convite`);
+    - a gestão guarda o link **cifrado** só até o e-mail sair;
+    - o e-mail sai quando a ordem foi executada **e** o domínio do órgão responde. Enquanto isso, a página do órgão mostra o motivo: servidor do órgão, domínio fora do ar, e-mail de saída não configurado ou falha do SMTP (com nova tentativa a cada minuto pelo worker).
+  - **Página do órgão → Acesso do administrador:**
+    - situação do convite (aguardando, enviado, usado, vencido);
+    - "Enviar/Reenviar convite" com confirmação: o link e a senha anteriores deixam de valer;
+    - "usado" vem do banco do órgão (nesta VPS) ou do relatório do nó, que leva só **códigos** dos e-mails, sem dado pessoal.
+  - **Painel do órgão:** `/admin/primeiro-acesso` (sem cache, sem referer; link inválido, usado ou vencido explicado; registro na auditoria).
+  - Migrações `028_plataforma_email.sql` (controle) e `029_orgao_convite.sql` (órgãos).
+- **Testes:**
+  - `tests/teste_convite.py`:
+    - e-mail de saída: validação, senha cifrada e nunca exibida, teste e falha de autenticação;
+    - convite: espera o domínio, falha do SMTP e nova tentativa, e-mail com link sem senha;
+    - primeiro acesso: senha fraca recusada, segundo fator, link usado e vencido recusados;
+    - reenviar invalida a senha anterior; sem e-mail de saída fica aguardando; sem login não reenvia.
+  - `apoio.py` com e-mail simulado; cadastro, GOVBR e ordens passaram a entrar pelo convite. O relatório continua sem dado pessoal (corrigido para levar só os códigos).
+  - As 25 suítes e `teste_ativador.sh` passaram com o código montado.
+  - Capturas em `Docs/avaliacao-convite/` (1366 e 390 px; axe sem violações; sem rolagem lateral).
+- **Ainda não feito:** os usuários que o administrador do órgão cria dentro do painel continuam com senha provisória mostrada na tela; pode ser o próximo passo.
+- **Implantação:** tem migração (028 e 029). Ordem: `up -d app` → `provision atualizar` → `up -d worker`. Depois, o usuário configura o e-mail de saída no console.

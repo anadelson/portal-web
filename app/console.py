@@ -166,6 +166,9 @@ def orgao(request: Request, oid: int):
     lic['doc'] = licenca.documento(o)
     nos_ = db.todos(db.PLATAFORMA, 'SELECT id, nome, ultimo_contato FROM nos WHERE ativo ORDER BY nome')
     lic['ordens'] = db.todos(db.PLATAFORMA, 'SELECT * FROM ordens WHERE orgao_id=%s ORDER BY id DESC LIMIT 8', (oid,))
+    from . import convites, email_saida
+    lic['convite'] = convites.ultimo(o)
+    lic['email_ok'] = bool(email_saida.config_atual())
     if lic.get('no'):
         n_ = db.um(db.PLATAFORMA, 'SELECT relatorio, relatorio_em FROM nos WHERE id=%s', (o['no_id'],))
         lic['relatorio'] = ((n_ or {}).get('relatorio') or {}).get('orgaos', {}).get(o['slug'])
@@ -347,6 +350,61 @@ async def nos_post(request: Request):
     r.headers['Cache-Control'] = 'no-store'
     return r
 
+@r.post('/orgao/{oid}/convite')
+async def orgao_convite(request: Request, oid: int):
+    """Novo convite de primeiro acesso para o administrador do órgão (o anterior deixa de valer; a senha atual dele também)."""
+    g = gestor(request); f = await ler_form(request)
+    from . import convites, ordens, cadastro as CD
+    o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    if not o:
+        raise HTTPException(404)
+    email = (f.get('email') or '').strip().lower()
+    if not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email):
+        return ir(f'/orgao/{oid}#convite', 'Informe o e-mail do administrador.', request)
+    if f.get('confirmo') != '1':
+        return ir(f'/orgao/{oid}#convite', 'Marque a confirmação: o acesso atual do administrador deixa de valer até ele usar o convite novo.', request)
+    cid, cv = convites.novo(o, email, g['nome'])
+    try:
+        oid_ordem, local, res = ordens.enviar_com_id('convite', dict(cv, orgao_id=oid), orgao=o, no_id=o.get('no_id'), quem=g['nome'], resumo=f'convite para {email}')
+    except Exception as e:
+        db.exe(db.PLATAFORMA, "UPDATE convites SET situacao='erro', token_cifrado=NULL, mensagem=%s WHERE id=%s", (f'{type(e).__name__}: {str(e)[:200]}', cid))
+        return ir(f'/orgao/{oid}#convite', f'Convite não gravado: {e}', request)
+    convites.ligar_ordem(cid, oid_ordem)
+    convites.tick()
+    log(g, f"{o['nome']}: convite de primeiro acesso para {email}")
+    c = convites.ultimo(o)
+    return ir(f'/orgao/{oid}#convite', 'Convite enviado por e-mail.' if c and c['situacao'] == 'enviado' else f"Convite registrado: {c['mensagem'] if c else ''}", request)
+
+# ---------- e-mail de saída ----------
+@r.get('/email')
+def email_cfg(request: Request):
+    gestor(request)
+    from . import email_saida as EM, credenciais
+    return T('email', request, cfg=EM.config_atual(), segs=EM.SEGURANCAS, chave_ok=credenciais.chave_ok())
+
+@r.post('/email')
+async def email_cfg_post(request: Request):
+    g = gestor(request); f = await ler_form(request)
+    from . import email_saida as EM, credenciais
+    from fastapi.concurrency import run_in_threadpool
+    if f.get('acao') == 'testar':
+        para = (f.get('para') or '').strip()
+        if not EM.EMAIL.match(para):
+            return ir('/email', 'Informe para qual e-mail mandar o teste.', request)
+        res = await run_in_threadpool(EM.testar, para, g['nome'])
+        log(g, f'E-mail de saída testado: {res}')
+        return ir('/email', f'Teste: {res}.', request)
+    if not credenciais.chave_ok():
+        return ir('/email', 'Não gravado: falta a CHAVE_CREDENCIAIS no .env (ela cifra a senha do SMTP).', request)
+    d, erros = EM.validar(f)
+    if not EM.config_atual() and not d['senha'] and d['usuario']:
+        erros.append('Informe a senha do SMTP.')
+    if erros:
+        return ir('/email', 'Não gravado: ' + ' '.join(erros), request)
+    EM.salvar(d, g['nome'])
+    log(g, f"E-mail de saída configurado: {d['servidor']}:{d['porta']} ({d['seguranca']}), remetente {d['remetente']}" + (' — senha trocada' if d['senha'] else ''))
+    return ir('/email', 'E-mail de saída gravado. A senha não é exibida. Mande um teste para conferir.', request)
+
 @r.post('/orgao/{oid}/hospedagem')
 async def orgao_hospedagem(request: Request, oid: int):
     g = gestor(request); f = await ler_form(request)
@@ -397,9 +455,7 @@ async def novo_post(request: Request):
         erros = ['Nó de hospedagem inválido.']
     if erros:
         return T('novo', request, f=f, erros=erros, ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO, nos=_nos_ativos())
-    senha = CD.senha_inicial()
-    from . import ordens
-    from .security import hash_senha
+    from . import ordens, convites
     try:
         # gestão: órgão, contrato e módulos; quem hospeda (esta VPS na hora, ou o nó pela fila): banco do órgão e administrador
         oid = provision.registrar_controle(dados['slug'], dados['nome'], dados['tipo'], dados['dominio'], dados['banco'], dados['plano'], dados['cor'],
@@ -407,9 +463,13 @@ async def novo_post(request: Request):
         if no_id:
             db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=%s WHERE id=%s', (no_id, oid))
         o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+        # sem senha na tela: o administrador recebe por e-mail um link de primeiro acesso (cria a própria senha e o segundo fator)
+        cid, cv = convites.novo(o, dados['email_admin'], g['nome'])
         carga = {'orgao': {k: o[k] for k in ('id', 'slug', 'nome', 'tipo', 'dominio', 'banco', 'municipio', 'ibge', 'plano', 'cor', 'ativo')},
-                 'identidade': dados['identidade'], 'fontes': dados['fontes'], 'email_admin': dados['email_admin'], 'senha_hash': hash_senha(senha)}
-        local, res_ordem = ordens.enviar('criar_orgao', carga, orgao=o, no_id=no_id, quem=g['nome'], resumo=f"criar {dados['slug']} ({dados['banco']})")
+                 'identidade': dados['identidade'], 'fontes': dados['fontes'], 'email_admin': dados['email_admin'], 'convite': cv}
+        oid_ordem, local, res_ordem = ordens.enviar_com_id('criar_orgao', carga, orgao=o, no_id=no_id, quem=g['nome'], resumo=f"criar {dados['slug']} ({dados['banco']})")
+        convites.ligar_ordem(cid, oid_ordem)
+        convites.tick()  # se o domínio já responde e o e-mail de saída está configurado, o convite sai agora
     except Exception as e:
         return T('novo', request, f=f, erros=[f'Não foi possível criar: {type(e).__name__}: {e}'], ufs=CD.UFS, sistemas=CD.SISTEMAS, mods=[m for m in MODULOS if m[3] == 'opc'], cores=CD.COR_PADRAO, nos=_nos_ativos())
     limpar_cache()
@@ -417,7 +477,7 @@ async def novo_post(request: Request):
     o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
     vizinhos = db.todos(db.PLATAFORMA, 'SELECT nome, dominio FROM orgaos WHERE ibge=%s AND id<>%s', (o['ibge'], oid))
     no_ = db.um(db.PLATAFORMA, 'SELECT nome FROM nos WHERE id=%s', (no_id,)) if no_id else None
-    resp = T('criado', request, o=o, dados=dados, senha=senha, vizinhos=vizinhos, sistemas=CD.SISTEMAS, no=no_)
+    resp = T('criado', request, o=o, dados=dados, convite=convites.ultimo(o), vizinhos=vizinhos, sistemas=CD.SISTEMAS, no=no_)
     resp.headers['Cache-Control'] = 'no-store'
     return resp
 

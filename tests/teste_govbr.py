@@ -12,7 +12,8 @@ from app.main import app
 from app import db, config, worker, consultas as CS
 from app.coletores import govbr as G
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from apoio import entrar, tok
+from apoio import entrar, tok, ligar_email_teste, primeiro_acesso
+ligar_email_teste()
 
 erros = []
 def checa(c, nome):
@@ -180,7 +181,6 @@ def cadastrar(**k):
     return con.post('/orgaos/novo', data={x: y for x, y in d.items() if y is not None})
 checa('GOVBR: informe o endereço https' in cadastrar(gov_base='http://sem-https').text, 'GOVBR exige endereço https do portal')
 r = cadastrar()
-senha = (re.search(r'<code class="senha">([^<]+)</code>', r.text) or [None, ''])[1]
 o = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE dominio='pmgov.localhost'")
 F = {x['fonte']: x['params'] for x in db.todos(db.PLATAFORMA, 'SELECT fonte, params FROM fontes WHERE orgao_id=%s', (o['id'],))} if o else {}
 g = F.get('govbr', {})
@@ -258,7 +258,7 @@ checa('Fiorilli' in tb and 'GOVBR' not in tb, 'piloto continua mostrando só a F
 
 # ---------- 7. painel: parâmetros, periodicidade e como cada tela é montada ----------
 adm = TestClient(app, base_url='http://pmgov.localhost')
-entrar(adm, 'admin@pmgov.localhost', senha, 'senhaNovaGov1234')
+primeiro_acesso(adm, 'admin@pmgov.localhost', 'senhaNovaGov1234')
 t = adm.get('/admin/integracoes?fonte=govbr').text
 checa('Portal da transparência (GOVBR' in t and 'XML dentro de ZIP' in t and 'Agenda de execução' in t and 'a cada 3 horas' in t, 'tela com nome, formato e periodicidade (padrão a cada 3 h)')
 checa('geraxml.asp' in t and 'dll/empenhos.zip' in t and 'código do ano 2026, lido na tela' in t, 'como a consulta é montada (endereço, arquivo e banco do ano)')
@@ -325,7 +325,6 @@ r = cadastrar(dominio='pmapi.localhost', email_admin='admin@pmapi.localhost', ib
 checa('API de dados abertos precisa ser https' in r.text, 'endereço da API exige https')
 r = cadastrar(dominio='pmapi.localhost', email_admin='admin@pmapi.localhost', ibge='3599932', municipio='Município Exemplo API',
               gov_api='https://portal-exemplo.invalid/dadosabertos/', gov_unidades=f'{UG_API}, {PM}')
-senha2 = (re.search(r'<code class="senha">([^<]+)</code>', r.text) or [None, ''])[1]
 oa = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE dominio='pmapi.localhost'")
 ga = db.um(db.PLATAFORMA, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='govbr'", (oa['id'],))['params'] if oa else {}
 checa(ga.get('api') == 'https://portal-exemplo.invalid/dadosabertos/' and ga.get('modos') == {}, f'cadastro com a API (todas as bases no automático) ({ga})')
@@ -377,7 +376,7 @@ class F(dict):
 v, e = CS.validar('govbr', F({'p_base': ga['base'], 'p_unidades': 'X', 'p_meses_recentes': '2', 'p_api': '', 'p_modo_receitas': 'xml', 'p_modo_empenhos': 'qualquer', 'p_bases[]': ['receitas']}), ga)
 checa(not e and v['modos'] == {'receitas': 'xml', 'empenhos': 'auto', 'diarias': 'auto', 'servidores': 'auto'} and v['api'] == '', f'validação: escolha por base ({e}, {v.get("modos")})')
 ad = TestClient(app, base_url='http://pmapi.localhost')
-entrar(ad, 'admin@pmapi.localhost', senha2, 'senhaNovaApi1234')
+primeiro_acesso(ad, 'admin@pmapi.localhost', 'senhaNovaApi1234')
 t = ad.get('/admin/integracoes?fonte=govbr').text
 checa('Como buscar cada base' in t and 'name="p_modo_receitas"' in t and 'Automático: API; se falhar, XML' in t and 'name="p_api"' in t, 'tela: escolha por base e endereço da API')
 checa('Campo da API' in t and 'buscarDadosReceitas' in t and 'ValorArrecadadoLiquido' in t and 'Só XML: a API de dados abertos da GOVBR não oferece esta base' in t,
