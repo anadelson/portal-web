@@ -1,7 +1,26 @@
 {% extends 'console/base.html' %}{% block h1 %}Instalação do nó {{ n.nome }}{% endblock %}
 {% block conteudo %}
-{% if not res %}
-<p>Gera os dois pacotes que a VPS nova precisa e mostra os comandos para colar no terminal dela. Os pacotes saem por <strong>links de uso único</strong> (valem {{ validade }} minutos) que a própria VPS nova baixa: nada passa pelo seu computador.</p>
+{% if res %}
+<section class="cx" aria-labelledby="h-prep"><h2 id="h-prep">Pacotes preparados</h2>
+<p>Gerados em {{ res.criado_em|br }} por {{ res.criado_por }}. Os links valem <strong>uma vez só</strong>, até {{ res.expira_em|br }}. Esta tela pode ser aberta de novo enquanto eles valerem (Nós e licenças → Preparar instalação).</p>
+<dl class="dados-senha">{% for tipo, rot in (('codigo', 'Pacote de código'), ('segredos', 'Pacote de segredos')) %}{% set x = res[tipo] %}{% if x %}<dt>{{ rot }}</dt><dd>{% if x.baixado_em %}<span class="chip ok">baixado</span> em {{ x.baixado_em|br }}{% if x.baixado_ip %} (IP {{ x.baixado_ip }}){% endif %}{% else %}<span class="chip azul">aguardando download</span>{% endif %}</dd>{% endif %}{% endfor %}</dl>
+<form class="inline" method="post" action="/nos/{{ n.id }}/instalar/cancelar"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn perigo">Cancelar estes links</button></form></section>
+<section class="cx" aria-labelledby="h-cmd"><h2 id="h-cmd">Na VPS nova, como root</h2>
+<p>1. Baixar os pacotes direto da gestão:</p>
+{% set cods = [] %}{% for tipo, arq in (('codigo', '/root/portal-codigo.tar.gz'), ('segredos', '/root/segredos-no.tar.gz.enc')) %}{% if res[tipo] and res[tipo].link %}{% set _ = cods.append('curl -fsS -o ' ~ arq ~ ' "' ~ res[tipo].link ~ '"') %}{% endif %}{% endfor %}
+{% if cods %}<pre class="trecho">{{ cods|join('\n') }}</pre>{% endif %}
+{% if (res.codigo and res.codigo.baixado_em) or (res.segredos and res.segredos.baixado_em) %}<p class="legal">{% if res.codigo and res.codigo.baixado_em %}O pacote de código já foi baixado. {% endif %}{% if res.segredos and res.segredos.baixado_em %}O pacote de segredos já foi baixado. {% endif %}Se o arquivo se perdeu, cancele e gere de novo.</p>{% endif %}
+<p>2. Extrair o código e rodar o instalador (ele encontra o pacote de segredos e pede a <strong>senha do pacote</strong>):</p>
+<pre class="trecho">mkdir -p /opt &amp;&amp; tar -xzf /root/portal-codigo.tar.gz -C /opt &amp;&amp; cd /opt/portal_web &amp;&amp; bash deploy/no/instalar.sh</pre>
+<p>3. No fim, apague o pacote de segredos:</p>
+<pre class="trecho">rm /root/segredos-no.tar.gz.enc</pre>
+{% if res.token_novo %}<p class="legal">O pacote leva um token novo do nó, o endereço da gestão e a chave pública: o instalador não pede esses dados.</p>{% endif %}
+{% if cods %}<p class="legal">Se preferir, baixe no navegador: {% if res.codigo.link %}<a href="{{ res.codigo.link }}" rel="noreferrer">pacote de código</a>{% endif %}{% if res.codigo.link and res.segredos.link %} · {% endif %}{% if res.segredos.link %}<a href="{{ res.segredos.link }}" rel="noreferrer">pacote de segredos</a>{% endif %} (cada link funciona uma vez).</p>{% endif %}
+<p class="legal">A senha do pacote não fica guardada: se ela se perdeu, gere de novo.</p></section>
+{% else %}
+<p>Gera os dois pacotes que a VPS nova precisa e mostra os comandos para colar no terminal dela. Os pacotes saem por <strong>links de uso único</strong> (valem {{ validade }} minutos) que a própria VPS nova baixa: nada passa pelo seu computador. Enquanto os links valerem, os comandos ficam nesta tela.</p>
+{% endif %}
+{% if res %}<details class="cx"><summary><strong>Gerar novos pacotes</strong> (cancela os links acima)</summary>{% endif %}
 <section class="cx" aria-labelledby="h-pac"><h2 id="h-pac">Pacotes</h2>
 <dl class="dados-senha"><dt>Código</dt><dd>versão em produção nesta VPS: <code>{{ versao }}</code>{% if not codigo_ok %} <span class="chip erro">indisponível: gere a imagem de novo</span>{% endif %} — sem nenhum segredo</dd>
 <dt>Segredos</dt><dd>as chaves que precisam ser iguais nas duas VPS (sessão, 2FA, CPF, credenciais), a pasta de certificados (Diário) e, se marcado, um token novo do nó com o endereço da gestão e a chave pública — <strong>cifrado com a senha do pacote</strong></dd></dl></section>
@@ -15,18 +34,6 @@
 <label>Código do autenticador<input name="codigo" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"></label></div>
 <div class="acoes"><button class="btn" {{ '' if codigo_ok else 'disabled' }}>Gerar pacotes e comandos</button></div></form>
 <p class="legal">A senha do pacote não é guardada em lugar nenhum: anote-a para digitar no instalador. Se perder, gere de novo.</p></section>
-{% else %}
-<p class="msg" role="status">Pacotes gerados. Os links valem <strong>uma vez só</strong>, por {{ validade }} minutos. Esta página não fica guardada: copie os comandos agora.</p>
-<section class="cx" aria-labelledby="h-cmd"><h2 id="h-cmd">Na VPS nova, como root</h2>
-<p>1. Baixar os pacotes direto da gestão:</p>
-<pre class="trecho">curl -fsS -o /root/portal-codigo.tar.gz "{{ res.codigo }}"
-curl -fsS -o /root/segredos-no.tar.gz.enc "{{ res.segredos }}"</pre>
-<p>2. Extrair o código e rodar o instalador (ele encontra o pacote de segredos e pede a <strong>senha do pacote</strong>):</p>
-<pre class="trecho">mkdir -p /opt &amp;&amp; tar -xzf /root/portal-codigo.tar.gz -C /opt &amp;&amp; cd /opt/portal_web &amp;&amp; bash deploy/no/instalar.sh</pre>
-<p>3. No fim, apague o pacote de segredos:</p>
-<pre class="trecho">rm /root/segredos-no.tar.gz.enc</pre>
-{% if res.token_novo %}<p class="legal">O pacote leva um token novo do nó, o endereço da gestão e a chave pública: o instalador não pede esses dados.</p>{% endif %}
-<p class="legal">Se preferir, baixe no navegador: <a href="{{ res.codigo }}" rel="noreferrer">pacote de código</a> · <a href="{{ res.segredos }}" rel="noreferrer">pacote de segredos</a> (cada link funciona uma vez).</p></section>
+{% if res %}</details>{% endif %}
 <p><a class="btn sec" href="/nos">Voltar para Nós e licenças</a></p>
-{% endif %}
 {% endblock %}
