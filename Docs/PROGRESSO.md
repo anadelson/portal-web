@@ -1876,3 +1876,15 @@ Próximos passos dependem das pessoas:
   - A gestão guarda o hash do link para reconhecê-lo (`convites.token_hash`, na mesma migração 028 ainda não implantada).
   - O e-mail avisa que o painel pode ainda não estar publicado.
   - As 25 suítes e `teste_ativador.sh` passaram de novo com o código montado.
+
+### Implantação: convite por e-mail e e-mail de saída (12/11/2026, aprovada: "Aprovo os passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 13h03 UTC.
+- **Build e testes:** as 25 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** `up -d app` → `provision atualizar` (migrações 028 no controle e 029 nos dois órgãos) → `up -d worker` → `image prune`. Sem reinícios nem erros no log.
+- **Conferência:**
+  - portais e logins dos dois painéis 200; login do console 200;
+  - `/convite` na gestão e `/admin/primeiro-acesso` no pmbora respondem e explicam o link inválido;
+  - tabelas `email_saida` e `convites` criadas (nenhum convite ainda);
+  - colunas do convite nos dois órgãos.
+- `convite-email` mesclado em `main` com a tag `convite-email`.
+- **Falta (usuário):** configurar a conta de envio em Console → E-mail de saída e mandar um teste. Até lá, convites de órgãos novos ficam "aguardando" com o motivo na página do órgão.
