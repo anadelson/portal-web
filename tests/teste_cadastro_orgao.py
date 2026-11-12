@@ -7,7 +7,7 @@ if os.environ.get('PG_HOST', 'db') == 'db' or not os.environ.get('TESTE'):
     sys.exit('Recusado: rode só contra o banco de TESTE (TESTE=1 e PG_HOST de teste).')
 from fastapi.testclient import TestClient
 from app.main import app
-from app import db, cadastro as CD
+from app import db, cadastro as CD, provision
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from apoio import entrar, tok, ligar_email_teste, primeiro_acesso, link_convite, CAIXA
 
@@ -81,7 +81,7 @@ checa(F.get('fiorilli', {}).get('empresa') == '7' and F['fiorilli']['base'].star
 checa(all(k in F for k in ('ibge', 'cnes', 'inep', 'iegm', 'painel', 'financas')), f'fontes do painel de indicadores ({sorted(F)})')
 ident = db.cfg(b, 'identidade', {})
 checa(ident.get('nome') == 'Prefeitura Municipal de Município Fictício de Teste' and ident.get('nome_curto') == 'Município Fictício de Teste' and ident.get('subtitulo') == 'Estado de São Paulo'
-      and ident.get('cor') == CD.COR_PADRAO['executivo'] and ident.get('prefixo') == 'Prefeitura Municipal de' and ident.get('telefone') == '(00) 0000-0000', 'identidade montada a partir do cadastro')
+      and ident.get('cor') == CD.COR_PADRAO['executivo'] and ident.get('prefixo') == 'Poder Executivo' and ident.get('telefone') == '(00) 0000-0000', 'identidade montada a partir do cadastro')
 checa(db.um(db.PLATAFORMA, "SELECT contratado FROM orgao_modulos WHERE orgao_id=%s AND chave='diario'", (o['id'],))['contratado'], 'módulo opcional marcado ficou contratado')
 checa(db.um(b, "SELECT count(*) n FROM blocos WHERE pagina='home'")['n'] > 5, 'página inicial com os blocos do modelo')
 checa('Já existe um órgão com este identificador' in cadastrar(dominio='outro.localhost').text, 'não repete identificador')
@@ -90,6 +90,7 @@ checa('Já existe um órgão com este domínio' in cadastrar(slug='pm-outro').te
 # portal e painel do órgão novo
 pt = TestClient(app, base_url='http://pmteste.localhost')
 h = pt.get('/')
+checa('<span class="pre">Poder Executivo</span><strong>Prefeitura Municipal de Município Fictício de Teste</strong>' in h.text, 'cabeçalho no padrão da Câmara: Poder Executivo e o nome completo')
 checa(h.status_code == 200 and 'Município Fictício de Teste' in h.text and 'Borá' not in h.text and 'Conheça Município Fictício de Teste' in h.text or 'Município Fictício de Teste' in h.text, 'portal do órgão novo no ar, sem Borá')
 checa('Borá' not in pt.get('/transparencia').text and pt.get('/transparencia').status_code == 200, 'transparência do órgão novo sem Borá')
 for u in ('/', '/diario', '/transparencia', '/comunicados', '/fale-conosco'):
@@ -122,6 +123,14 @@ checa(o2 and 'tcesp' not in F2 and 'fiorilli' not in F2 and 'financas' not in F2
 pi = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE slug='pm-bora'")
 FP = {x['fonte']: x['params'] for x in db.todos(db.PLATAFORMA, 'SELECT fonte, params FROM fontes WHERE orgao_id=%s', (pi['id'],))}
 checa(pi['ibge'] == '3507209' and FP['fiorilli']['empresa'] == '2' and FP['tcesp']['municipio'] == 'bora' and db.cfg(pi['banco'], 'identidade', {}).get('nome_curto') == 'Borá', 'piloto de Borá intacto (dados vindos do arquivo do piloto)')
+
+# cabeçalho: prefixo antigo padrão vira "Poder Executivo"; prefixo escolhido pelo órgão não muda
+ib = dict(db.cfg(b, 'identidade', {})); ib['prefixo'] = 'Prefeitura Municipal de'; db.set_cfg(b, 'identidade', ib)
+provision.completar_identidade(b, 'pm-teste-x', 'executivo')
+checa(db.cfg(b, 'identidade', {}).get('prefixo') == 'Poder Executivo', 'atualização troca o prefixo antigo padrão por Poder Executivo')
+ib = dict(db.cfg(b, 'identidade', {})); ib['prefixo'] = 'Município de'; db.set_cfg(b, 'identidade', ib)
+provision.completar_identidade(b, 'pm-teste-x', 'executivo')
+checa(db.cfg(b, 'identidade', {}).get('prefixo') == 'Município de', 'prefixo escolhido pelo órgão não muda')
 
 if erros:
     print('ERROS:', len(erros)); [print(e) for e in erros]; sys.exit(1)

@@ -2024,3 +2024,25 @@ Próximos passos dependem das pessoas:
     - `/instalar/x`: 404;
     - sem erros no log;
     - sem reinícios.
+
+### Cabeçalho da Prefeitura no padrão da Câmara (12/11/2026, ramo `cabecalho-padrao-camara`)
+- **Usuário:** "as fontes dos portais da Câmara com o da Prefeitura ainda estão diferentes, quero que utilize o mesmo padrão da Câmara no da Prefeitura, já solicitei isso e não foi aplicado" (pedido de 10/11).
+- **Medição dos portais no ar (1366 px):** família, tamanhos e pesos já iguais em todos os elementos comuns (Public Sans, 17 px de base, título do destaque 50 px, títulos de seção 26 px etc.); isso foi feito em `visual-prefeitura`. O que continuava diferente era a **composição do nome no cabeçalho**:
+  - Prefeitura: "Prefeitura Municipal de" pequeno e só **"Borá"** em destaque;
+  - Câmara: "Poder Legislativo" pequeno e o **nome completo** em destaque.
+- **Feito (para todos os órgãos, sem código por órgão):**
+  - o cabeçalho usa sempre o padrão da Câmara: linha pequena = prefixo, destaque = nome completo;
+  - prefixo padrão da Prefeitura passa a ser **"Poder Executivo"**;
+  - `provision atualizar` troca o prefixo antigo padrão ("Prefeitura Municipal de") por "Poder Executivo"; prefixo escolhido pelo órgão não muda;
+  - o nome curto (município) continua nos menus e títulos ("Conheça Borá", "Borá em números", Diário);
+  - textos de ajuda do painel → Identidade atualizados.
+- **Conferência na prévia (cópia dos bancos):** nas 3 larguras, Prefeitura e Câmara com o mesmo padrão e tamanhos:
+  - 1920 px: 13/22 px;
+  - 1366 px: 13/21 px;
+  - 390 px: 13/25 px, nome em duas linhas nos dois;
+  - sem rolagem horizontal.
+  Capturas em `Docs/avaliacao-cabecalho/`.
+- **Testes:**
+  - `teste_cadastro_orgao`: cabeçalho de órgão novo; troca do prefixo antigo; prefixo escolhido mantido;
+  - as 28 linhas passaram com o código montado.
+- **Implantação:** sem migração SQL; build → suítes → `up -d app` → `provision atualizar` (troca o prefixo do pm-bora) → `up -d worker`.
