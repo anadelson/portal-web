@@ -1826,3 +1826,10 @@ Próximos passos dependem das pessoas:
   - CSS `v=15`.
 - **Conferência:** medição no ambiente de teste em 1366 e 390 px das telas do órgão, cadastro, nós, credenciais, aparência e senha — nenhuma rolagem lateral. Capturas antes/depois em `Docs/avaliacao-console-largura/`. Testes do console (licença, cadastro, painel admin, ativação) ok.
 - **Implantação:** só templates e CSS; sem migração. `up -d app` (o worker não muda).
+
+### Implantação: console com formulários na largura toda (12/11/2026, aprovada: "Aprovo os passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 11h41 UTC.
+- **Build e testes:** as 24 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** só o app (`up -d --no-deps app`), às 08h50 de Brasília; o worker não mudou e seguiu rodando. Sem reinícios nem erros no log.
+- **Conferência:** portais e painéis 200; console 303 (login) e tela de login 200 com `admin.css?v=15`, com a regra nova servida.
+- `console-largura` mesclado em `main` com a tag `console-largura`.
