@@ -1888,3 +1888,33 @@ Próximos passos dependem das pessoas:
   - colunas do convite nos dois órgãos.
 - `convite-email` mesclado em `main` com a tag `convite-email`.
 - **Falta (usuário):** configurar a conta de envio em Console → E-mail de saída e mandar um teste. Até lá, convites de órgãos novos ficam "aguardando" com o motivo na página do órgão.
+
+### Cadastro de órgão: campos da Câmara e de outro sistema aparecendo para Prefeitura (12/11/2026, ramo `cadastro-campos`)
+- **Usuário:** "estou cadastrando um órgão prefeitura e aparece uma indagação de campos relacionados à Câmara, o que são e como preencher".
+- **Causa:** o `console.js` esconde os campos com o atributo `hidden`, mas o CSS dos rótulos (`display:flex`) e das grades (`display:grid`) vencia o `hidden`. Por isso apareciam sempre: os campos "Câmara: … recebedor nas transferências" e os blocos Fiorilli e GOVBR, independentemente do tipo e do sistema escolhidos.
+- **Correção:** `.cadastro-orgao [hidden]{display:none!important}` (só no formulário de cadastro); CSS `v=16`; `console.js?v=3`.
+- **Conferência no navegador** (ambiente de teste), campos que aparecem em cada caso:
+
+  | Tipo | Sistema | UF | Aparece |
+  |---|---|---|---|
+  | Prefeitura | nenhum | SP | só o TCESP |
+  | Prefeitura | Fiorilli | SP | bloco Fiorilli, sem o campo da Câmara |
+  | Prefeitura | GOVBR | PR | bloco GOVBR, sem o campo da Câmara e sem o TCESP |
+  | Câmara | Fiorilli | SP | bloco Fiorilli com "recebedor nas transferências" |
+  | Câmara | GOVBR | SP | bloco GOVBR com "recebedor" |
+
+- **Implantação:** só CSS e telas; reiniciar o app.
+- **Ajuste pedido pelo usuário:** "deveria ter um seletor solicitando qual a integração usa e mostrar somente os campos daquela integração… se tivéssemos 10 tipos de integração iria ficar muito poluído".
+  - Cada sistema da transparência passa a ter **um bloco** marcado com `data-sistema="<valor do seletor>"`, e o script mostra só o bloco escolhido. Campos só de Câmara: `data-so-tipo="legislativo"`.
+  - Sistema novo = opção em `cadastro.SISTEMAS` + um bloco com `data-sistema`; o script não muda.
+  - `console.js?v=4`.
+  - O teste da GOVBR deixou de depender do número da versão do script (foi o que parou a primeira tentativa de implantação).
+  - Conferência no navegador: as cinco combinações iguais à tabela acima. `teste_govbr` ok.
+
+### Implantação: cadastro de órgão com um bloco por sistema (12/11/2026, aprovada: "Aprovo os passos" + snapshot "existe"; depois "ajuste e publique")
+- Snapshot confirmado pelo usuário. Backup às 13h37 UTC.
+- **Primeira tentativa parada antes do reinício:** `teste_govbr` exigia `console.js?v=2`. Explicado ao usuário, que pediu "ajuste e publique" junto com o bloco por sistema.
+- **Build e testes:** as 25 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** só o app (`up -d --no-deps app`), às 11h03 de Brasília. Sem reinícios nem erros no log.
+- **Conferência:** portais e logins 200; o console serve `admin.css?v=16` (regra do `hidden` no cadastro) e `console.js?v=4` (blocos por `data-sistema`).
+- `cadastro-campos` mesclado em `main` com a tag `cadastro-campos`.

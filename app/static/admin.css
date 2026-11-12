@@ -195,3 +195,5 @@ caption.titulo-lista{caption-side:top;text-align:left;font-weight:700;font-size:
 .console form.campos{max-width:none}.dados-senha dd,code.url{overflow-wrap:anywhere;word-break:break-word}
 .dados-senha>*{min-width:0}@media (max-width:640px){.dados-senha{grid-template-columns:minmax(0,1fr)!important}.dados-senha dd{margin:0 0 8px}}
 .dados-senha+form.campos{margin-top:14px}
+/* Cadastro de órgão: o atributo hidden precisa vencer o display dos rótulos e grades (campos da Câmara e de outro sistema somem de verdade) */
+.cadastro-orgao [hidden]{display:none!important}
