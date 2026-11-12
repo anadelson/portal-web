@@ -139,8 +139,9 @@ def convites_tick():
     """Gestão: manda os convites de primeiro acesso prontos (ordem executada e domínio do órgão no ar)."""
     if config.PAPEL == 'no':
         return
-    from . import convites
+    from . import convites, instalacao
     try:
+        instalacao.limpar()  # pacotes de segredos vencidos ou já baixados saem do disco
         n = convites.tick()
         if n:
             print(datetime.now(), 'CONVITES', n, 'enviado(s)', flush=True)

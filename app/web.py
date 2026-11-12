@@ -168,7 +168,7 @@ def orgao_por_dominio(host: str):
         if config.PAPEL == 'no':
             _cache['orgaos'] = _orgaos_do_no()
         else:
-            _cache['orgaos'] = {o['dominio']: o for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE ativo')}
+            _cache['orgaos'] = {o['dominio']: o for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE ativo AND no_id IS NULL')}
         _cache['t'] = time.time()
     return _cache['orgaos'].get(host)
 

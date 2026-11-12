@@ -1,0 +1,32 @@
+{% extends 'console/base.html' %}{% block h1 %}Instalação do nó {{ n.nome }}{% endblock %}
+{% block conteudo %}
+{% if not res %}
+<p>Gera os dois pacotes que a VPS nova precisa e mostra os comandos para colar no terminal dela. Os pacotes saem por <strong>links de uso único</strong> (valem {{ validade }} minutos) que a própria VPS nova baixa: nada passa pelo seu computador.</p>
+<section class="cx" aria-labelledby="h-pac"><h2 id="h-pac">Pacotes</h2>
+<dl class="dados-senha"><dt>Código</dt><dd>versão em produção nesta VPS: <code>{{ versao }}</code>{% if not codigo_ok %} <span class="chip erro">indisponível: gere a imagem de novo</span>{% endif %} — sem nenhum segredo</dd>
+<dt>Segredos</dt><dd>as chaves que precisam ser iguais nas duas VPS (sessão, 2FA, CPF, credenciais), a pasta de certificados (Diário) e, se marcado, um token novo do nó com o endereço da gestão e a chave pública — <strong>cifrado com a senha do pacote</strong></dd></dl></section>
+<section class="cx form-tela" aria-labelledby="h-ger"><h2 id="h-ger">Gerar</h2>
+<form class="campos" method="post" action="/nos/{{ n.id }}/instalar" autocomplete="off"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<div class="grade2"><label>Senha do pacote (12+ caracteres; o instalador vai pedir)<input type="password" name="senha_pacote" required minlength="12" autocomplete="new-password"></label>
+<label>Repita a senha do pacote<input type="password" name="senha_pacote2" required minlength="12" autocomplete="new-password"></label></div>
+<label class="opc"><input type="checkbox" name="novo_token" value="1" {{ 'checked' if not n.ultimo_contato }}> Incluir um <strong>token novo</strong> do nó no pacote (o instalador já sai preenchido). O token atual deixa de valer.</label>
+<p class="legal">Confirme que é você (o pacote de segredos dá acesso às chaves da plataforma):</p>
+<div class="grade2"><label>Sua senha do console<input type="password" name="minha_senha" required autocomplete="current-password"></label>
+<label>Código do autenticador<input name="codigo" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"></label></div>
+<div class="acoes"><button class="btn" {{ '' if codigo_ok else 'disabled' }}>Gerar pacotes e comandos</button></div></form>
+<p class="legal">A senha do pacote não é guardada em lugar nenhum: anote-a para digitar no instalador. Se perder, gere de novo.</p></section>
+{% else %}
+<p class="msg" role="status">Pacotes gerados. Os links valem <strong>uma vez só</strong>, por {{ validade }} minutos. Esta página não fica guardada: copie os comandos agora.</p>
+<section class="cx" aria-labelledby="h-cmd"><h2 id="h-cmd">Na VPS nova, como root</h2>
+<p>1. Baixar os pacotes direto da gestão:</p>
+<pre class="trecho">curl -fsS -o /root/portal-codigo.tar.gz "{{ res.codigo }}"
+curl -fsS -o /root/segredos-no.tar.gz.enc "{{ res.segredos }}"</pre>
+<p>2. Extrair o código e rodar o instalador (ele encontra o pacote de segredos e pede a <strong>senha do pacote</strong>):</p>
+<pre class="trecho">mkdir -p /opt &amp;&amp; tar -xzf /root/portal-codigo.tar.gz -C /opt &amp;&amp; cd /opt/portal_web &amp;&amp; bash deploy/no/instalar.sh</pre>
+<p>3. No fim, apague o pacote de segredos:</p>
+<pre class="trecho">rm /root/segredos-no.tar.gz.enc</pre>
+{% if res.token_novo %}<p class="legal">O pacote leva um token novo do nó, o endereço da gestão e a chave pública: o instalador não pede esses dados.</p>{% endif %}
+<p class="legal">Se preferir, baixe no navegador: <a href="{{ res.codigo }}" rel="noreferrer">pacote de código</a> · <a href="{{ res.segredos }}" rel="noreferrer">pacote de segredos</a> (cada link funciona uma vez).</p></section>
+<p><a class="btn sec" href="/nos">Voltar para Nós e licenças</a></p>
+{% endif %}
+{% endblock %}

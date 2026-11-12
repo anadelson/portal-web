@@ -1918,3 +1918,52 @@ Próximos passos dependem das pessoas:
 - **Subida:** só o app (`up -d --no-deps app`), às 11h03 de Brasília. Sem reinícios nem erros no log.
 - **Conferência:** portais e logins 200; o console serve `admin.css?v=16` (regra do `hidden` no cadastro) e `console.js?v=4` (blocos por `data-sistema`).
 - `cadastro-campos` mesclado em `main` com a tag `cadastro-campos`.
+
+### Órgão novo hospedado em nó: correção do worker da gestão (12/11/2026, ramo `orgao-no-local`)
+- **Usuário:** cadastrou o órgão `prefbora` (domínio `pmbora.prefbora.cloud`, banco `bd_prefbora`) hospedado no nó `726025036.conectatech.tech`; "o e-mail não chegou".
+- **Diagnóstico (só leitura):**
+  - o nó nunca contatou a gestão (instalador não rodado ou não concluído) → ordem `criar_orgao` na fila; `bd_prefbora` ainda não existe;
+  - o DNS do domínio já aponta para 72.60.250.36;
+  - o convite saiu às 11h55 pelo SMTP `mail.bora.sp.gov.br` (aceito pelo servidor; a entrega depende dele: spam, quarentena ou fila).
+  - Nome com erro de digitação ("Borã").
+  - Perguntado se a ideia é um órgão novo (vazio) ou levar o piloto `pm-bora` com os dados (virada).
+- **Problema encontrado:** o worker desta VPS tentava a cada minuto abrir `bd_prefbora` (rotina do Diário), com erro no log.
+- **Correção:** no papel `tudo`/`gestao`, `orgaos.todos()` e o roteamento por domínio só consideram órgãos sem nó (`no_id IS NULL`). Os órgãos do nó são tratados pelo próprio nó.
+- **Testes:**
+  - `teste_ordens`: esta VPS não serve nem trata o órgão do nó; a rotina do Diário não tenta abrir o banco dele;
+  - `teste_no_local`: as fontes são lidas antes de os órgãos irem para o nó;
+  - as 25 suítes e `teste_ativador.sh` passaram com o código montado.
+- **Implantação:** sem migração; reiniciar o app e o worker (o worker reiniciado também descarta a conexão presa ao banco inexistente).
+
+### Instalação de nó pelo console, sem terminal na gestão (12/11/2026, ramo `instalacao-console`, sobre `orgao-no-local`)
+- **Usuário:** "preciso que pelo gestão consiga gerar e baixar os pacotes e demais arquivos/componentes necessários a subir o novo portal na outra VPS, sem precisar fazer por código" (e "onde pego esses códigos no gestão, tem algum lugar para backup").
+- **Feito (`app/instalacao.py`):** Console → Nós e licenças → **Preparar instalação** (por nó).
+  - **Pacote de código:** a versão em produção (a imagem passa a levar `Dockerfile`, `docker-compose.yml`, `requirements.txt` e `deploy/` em `/srv/fonte`); sem segredos; versão em `app/VERSAO` (escrita na implantação, fora do git).
+  - **Pacote de segredos:**
+    - chaves que precisam ser iguais (lidas do ambiente do app, sem a senha do banco nem as senhas iniciais) e `segredos/`;
+    - opcionalmente um **token novo** do nó com o endereço da gestão e a chave pública;
+    - **cifrado** (AES-256-CBC, PBKDF2 600 mil iterações, formato `openssl enc`) com a **senha do pacote**, que não é guardada.
+  - Para gerar: senha do pacote (2×, 12+ caracteres) + **senha e código do 2FA do gestor** (contam como tentativas de login).
+  - **Links de uso único** (60 min) em `https://<gestão>/instalar/<token>`: a VPS nova baixa com `curl`. O pacote de segredos fica no disco só cifrado e é apagado no download ou ao vencer (limpeza pelo worker).
+  - A tela mostra os 3 comandos para colar na VPS nova. Tudo vai para o registro do console, sem senha, token ou link.
+  - **Instalador:** aceita o pacote `.enc` (pede a senha do pacote e decifra com `openssl`) e usa token, nó, gestão e chave que vierem no pacote, sem perguntar.
+  - Migração `030_plataforma_instalacao.sql`.
+- **Backup (resposta ao usuário):** esta VPS já faz backup diário às 5h em `/opt/portal_web/backups` (14 dias), mas ele fica dentro da própria VPS. Cópia externa sugerida.
+- **Testes:**
+  - `tests/teste_instalacao.py`: recusas (senha do pacote curta, senha e 2FA do gestor errados); token novo; registro limpo; código sem `.env` nem segredos; uso único; `openssl` abre com a senha certa e não abre com a errada; conteúdo; vencido e limpeza; sem login; sem fontes;
+  - `teste_instalador_no.sh`: pacote cifrado com senha errada e certa, instalador preenchido, senha e token fora da tela e do log;
+  - as 26 suítes, `teste_ativador.sh` e o ensaio do instalador passaram com o código montado; tela sem violações no axe.
+- **Implantação (junto com `orgao-no-local`):** `app/VERSAO` → build → suítes → conferir o pacote de código na imagem nova → `up -d app` → `provision atualizar` (030) → `up -d worker`.
+- **Implantado em 12/11/2026, 12:34–12:50 (Brasília), com aprovação do usuário e snapshot confirmado:**
+  - backup às 12:34;
+  - `app/VERSAO` = `instalacao-console (e7671e0)`;
+  - na imagem nova: o pacote de código sai com 268 arquivos (~2,3 MB), com instalador, `Dockerfile` e `docker-compose.yml`, e sem `.env`, segredos nem backups;
+  - as 28 linhas de teste com a imagem: tudo ok;
+  - migração 030 aplicada;
+  - conferências:
+    - gestão → login; pm e cm: 200;
+    - `/instalar/x`: 404;
+    - `/nos/1/instalar` pede login;
+    - `instalacao_links` criada (vazia);
+    - worker sem erros do `bd_prefbora`;
+    - app e worker sem reinícios.
