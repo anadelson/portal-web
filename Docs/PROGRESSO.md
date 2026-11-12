@@ -2013,3 +2013,14 @@ Próximos passos dependem das pessoas:
   - cancelar: links 404, arquivo e link apagados, registro;
   - botão em Nós e licenças.
 - **Implantação:** migração 031; build → suítes → `up -d app` → `provision atualizar` → `up -d worker`.
+- **Implantado em 12/11/2026, 13:56–14:10 (Brasília), com aprovação do usuário e snapshot confirmado:**
+  - backup às 13:56;
+  - `app/VERSAO` = `instalacao-revisitar (e7c69f8)`;
+  - 28 linhas de teste com a imagem: tudo ok;
+  - migração 031 aplicada (4 colunas);
+  - conferências:
+    - pm e cm: 200;
+    - gestão, `/nos`, `/nos/1/instalar` e cancelar sem login → login;
+    - `/instalar/x`: 404;
+    - sem erros no log;
+    - sem reinícios.
