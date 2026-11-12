@@ -186,7 +186,61 @@ def orgao(request: Request, oid: int):
         n_ = db.um(db.PLATAFORMA, 'SELECT relatorio, relatorio_em FROM nos WHERE id=%s', (o['no_id'],))
         lic['relatorio'] = ((n_ or {}).get('relatorio') or {}).get('orgaos', {}).get(o['slug'])
         lic['relatorio_em'] = (n_ or {}).get('relatorio_em')
-    return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub, lic=lic, nos=nos_, validade=config.LICENCA_VALIDADE_DIAS)
+    cad = _criacao_pendente(oid)
+    return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub, lic=lic, nos=nos_, validade=config.LICENCA_VALIDADE_DIAS,
+             cad=(cad['payload'].get('identidade') or {}) if cad else None)
+
+def _criacao_pendente(oid):
+    """Ordem criar_orgao ainda na fila do nó: enquanto não for entregue, a identidade inicial ainda pode ser corrigida
+    (a ordem só é assinada na entrega, com o conteúdo do momento)."""
+    return db.um(db.PLATAFORMA, "SELECT * FROM ordens WHERE orgao_id=%s AND tipo='criar_orgao' AND situacao='pendente' ORDER BY id DESC LIMIT 1", (oid,))
+
+@r.post('/orgao/{oid}/cadastro')
+async def orgao_cadastro(request: Request, oid: int):
+    """Corrige os dados do cadastro. Nome e cor valem na gestão (console, e-mails, licença). Se o órgão ainda não foi criado
+    pelo nó, corrige também a identidade inicial que vai na ordem; depois de criado, a identidade é do órgão (painel → Identidade)."""
+    from psycopg.types.json import Jsonb
+    from . import cadastro as CD
+    g = gestor(request); f = await ler_form(request)
+    o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    if not o:
+        raise HTTPException(404)
+    volta = f'/orgao/{oid}#cadastro'
+    nome = re.sub(r'\s+', ' ', f.get('nome') or '').strip()
+    cor = (f.get('cor') or '').strip()
+    if not 3 <= len(nome) <= 160:
+        return ir(volta, 'Informe o nome do órgão (3 a 160 caracteres).', request)
+    if not CD.COR.match(cor):
+        return ir(volta, 'Cor principal inválida: use o formato #RRGGBB.', request)
+    mudou = [x for x, a, b in (('nome', o['nome'], nome), ('cor', o['cor'], cor)) if a != b]
+    p = _criacao_pendente(oid)
+    if p:
+        cnpj = (f.get('cnpj') or '').strip()
+        if cnpj and not CD.cnpj_valido(cnpj):
+            return ir(volta, 'CNPJ inválido (confira os dígitos).', request)
+        carga = p['payload']
+        ident = carga.setdefault('identidade', {})
+        novos = {'nome': nome, 'cor': cor, 'cnpj': CD.cnpj_formatado(cnpj) if cnpj else '', 'endereco': (f.get('endereco') or '').strip()[:300],
+                 'telefone': (f.get('telefone') or '').strip()[:60], 'email': (f.get('email') or '').strip()[:120], 'horario': (f.get('horario') or '').strip()[:120]}
+        if o['tipo'] != 'executivo':
+            novos['nome_curto'] = nome  # na Câmara o nome curto do cabeçalho é o próprio nome
+        mudou += [k for k in ('cnpj', 'endereco', 'telefone', 'email', 'horario') if (ident.get(k) or '') != novos[k]]
+        ident.update(novos)
+        if o['tipo'] == 'executivo' and 'pncp' in (carga.get('fontes') or {}):
+            if novos['cnpj']:
+                carga['fontes']['pncp']['cnpj'] = novos['cnpj']
+        elif o['tipo'] == 'executivo' and novos['cnpj']:
+            carga.setdefault('fontes', {})['pncp'] = {'ibge': o['ibge'], 'cnpj': novos['cnpj']}
+        carga.setdefault('orgao', {}).update({'nome': nome, 'cor': cor})
+        r_ = db.um(db.PLATAFORMA, "UPDATE ordens SET payload=%s WHERE id=%s AND situacao='pendente' RETURNING id", (Jsonb(carga), p['id']))
+        if not r_:
+            return ir(volta, 'O nó acabou de receber a criação do órgão; nada foi alterado. Recarregue a página.', request)
+    if not mudou:
+        return ir(volta, 'Nada mudou.', request)
+    db.exe(db.PLATAFORMA, 'UPDATE orgaos SET nome=%s, cor=%s WHERE id=%s', (nome, cor, oid))
+    limpar_cache()
+    log(g, f"{o['nome']}: corrigiu o cadastro ({', '.join(sorted(set(mudou)))})" + (f" → {nome}" if 'nome' in mudou else ''))
+    return ir(volta, 'Cadastro corrigido.' + (' A correção vai junto na criação do órgão no nó.' if p else ''), request)
 
 @r.post('/orgao/{oid}/dominio')
 async def orgao_dominio(request: Request, oid: int):

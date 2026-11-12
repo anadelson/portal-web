@@ -1967,3 +1967,16 @@ Próximos passos dependem das pessoas:
     - `instalacao_links` criada (vazia);
     - worker sem erros do `bd_prefbora`;
     - app e worker sem reinícios.
+- **Decisão do usuário (12/11/2026):** o órgão `prefbora` (`pmbora.prefbora.cloud`, `bd_prefbora`, nó 72.60.250.36) é um **órgão novo e vazio**. Não é a mudança do piloto: `pm-bora` e `cm-bora` continuam nesta VPS com os dados, e não há virada para agendar por causa dele.
+
+### Correção do cadastro do órgão pelo console (12/11/2026, ramo `orgao-editar`)
+- **Usuário:** "não tem opção de edição do cadastro no órgão, nem no contrato" (para corrigir o nome "Borã" do prefbora).
+- **Contrato:** a edição já existia no quadro "Licença" da tela do órgão (número, processo, início, fim e carência → "Salvar dados").
+- **Feito:** quadro **Dados do cadastro** na tela do órgão (`POST /orgao/{id}/cadastro`).
+  - Nome e cor: valem na gestão (console, e-mails do convite, licença).
+  - Enquanto a ordem `criar_orgao` estiver **na fila do nó**, também é possível corrigir a identidade inicial (nome, cor, CNPJ, endereço, telefone, e-mail e horário), que vai junto na ordem. A ordem só é assinada na entrega, então não há conflito. O CNPJ corrigido atualiza também a integração com o PNCP.
+  - Depois que o órgão é criado, o que aparece no portal fica com o administrador do órgão (painel → Identidade).
+  - Identificador, tipo, município, domínio e banco não mudam por aqui.
+  - Validações (nome com 3 a 160 caracteres, cor `#RRGGBB`, CNPJ); "Nada mudou"; registro no console.
+- **Testes:** `teste_ordens` cobre as recusas, a correção na gestão e na ordem pendente, o nó criando o órgão já com o nome corrigido e o órgão já criado (sem os campos de identidade). As 26 suítes, `teste_ativador.sh` e o ensaio do instalador passaram com o código montado.
+- **Implantação:** sem migração; build → suítes → `up -d app` (o worker não muda, mas a imagem é a mesma: `up -d worker`).

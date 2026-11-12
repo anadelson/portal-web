@@ -42,6 +42,8 @@ adm = TestClient(app, base_url='http://pmordem.localhost')
 checa('Visão geral' in (primeiro_acesso(adm, 'admin@pmordem.localhost', 'senhaNovaOrdem123') or adm.get('/')).text, 'administrador cria a senha pelo convite e entra')
 checa(con.get(f"/layout/{o['id']}").status_code == 200, 'layout pelo console continua para órgão desta VPS')
 checa('Ordens para quem hospeda' in con.get(f"/orgao/{o['id']}").text, 'página do órgão lista as ordens')
+t = con.get(f"/orgao/{o['id']}").text
+checa('Dados do cadastro' in t and 'name="cnpj"' not in t and 'em Identidade' in t, 'órgão já criado: corrige nome e cor; identidade do portal fica com o painel do órgão')
 
 # ---------- 2. órgão num nó: ordem na fila, nada criado aqui ----------
 token = L.criar_no('no-a3.exemplo.test')
@@ -60,6 +62,21 @@ r_ = gl.get('/convite?t=' + url2.split('t=')[-1], follow_redirects=False)
 checa(r_.status_code == 200 and 'ainda está sendo preparado' in r_.text and 'Nada foi feito' in r_.text, 'link antes de o nó gravar: avisa e não faz nada')
 senha2 = 'nenhuma-senha'
 checa(not existe_banco(o2['banco']), 'gestão NÃO cria o banco do órgão do nó')
+# correção do cadastro antes de o nó receber a criação (nome digitado errado no cadastro)
+U2 = f"/orgao/{o2['id']}"
+t = con.get(U2).text
+checa('Dados do cadastro' in t and 'name="cnpj"' in t and 'vai junto com a criação' in t, 'tela do órgão permite corrigir o cadastro enquanto a criação está na fila')
+def corrigir(**k):
+    d = {'csrf': tok(con, U2), 'nome': 'Prefeitura Municipal de Exemplo Corrigido', 'cor': '#1F4E79', 'cnpj': '', 'endereco': 'Rua Fictícia, 1', 'telefone': '', 'email': '', 'horario': ''}
+    d.update(k)
+    return con.post(U2 + '/cadastro', data=d, follow_redirects=True)
+checa('Informe o nome' in corrigir(nome='x').text and 'Cor principal inválida' in corrigir(cor='azul').text and 'CNPJ inválido' in corrigir(cnpj='11.111.111/1111-11').text, 'correção recusa nome curto, cor e CNPJ inválidos')
+checa('Cadastro corrigido' in corrigir().text, 'cadastro corrigido')
+p2 = db.um(db.PLATAFORMA, "SELECT payload FROM ordens WHERE orgao_id=%s AND tipo='criar_orgao'", (o2['id'],))['payload']
+checa(db.um(db.PLATAFORMA, 'SELECT nome FROM orgaos WHERE id=%s', (o2['id'],))['nome'] == 'Prefeitura Municipal de Exemplo Corrigido'
+      and p2['orgao']['nome'] == p2['identidade']['nome'] == 'Prefeitura Municipal de Exemplo Corrigido' and p2['identidade']['endereco'] == 'Rua Fictícia, 1', 'nome corrigido na gestão e na ordem ainda não entregue')
+checa('corrigiu o cadastro' in db.um(db.PLATAFORMA, 'SELECT acao FROM log_console ORDER BY id DESC LIMIT 1')['acao'], 'correção registrada no console')
+checa('Nada mudou' in corrigir().text, 'sem mudança: avisa')
 from app import worker as WK
 checa(o2['id'] not in [x['id'] for x in orgaos.todos()] and TestClient(app, base_url='http://pmnoa3.localhost').get('/').status_code == 404, 'esta VPS não serve nem trata o órgão do nó')
 import io as _io, contextlib as _cl
@@ -105,6 +122,7 @@ db.LOCAL = LOCAL; web.limpar_cache(); L._memo.clear()
 checa(L.puxar() == '1 licença(s) aceitas', 'nó recebe a licença do órgão novo')
 checa(OR.puxar() == '1 ordem(ns) executada(s)', 'nó executa a ordem')
 checa(existe_banco(o2['banco']) and db.um(o2['banco'], "SELECT 1 FROM usuarios WHERE email='admin@pmnoa3.localhost'"), 'banco e administrador criados PELO NÓ')
+checa((db.cfg(o2['banco'], 'identidade', {}) or {}).get('nome') == 'Prefeitura Municipal de Exemplo Corrigido', 'nó cria o órgão já com o nome corrigido')
 checa(db.um(LOCAL, 'SELECT count(*) n FROM fontes WHERE orgao_id=%s', (o2['id'],))['n'] > 0 and not db.um(db.PLATAFORMA, 'SELECT 1 FROM fontes WHERE orgao_id=%s', (o2['id'],)),
       'integrações do órgão no banco local do nó, não no controle')
 checa(como_gestao(db.um, db.PLATAFORMA, 'SELECT situacao FROM ordens WHERE id=%s', (x2['id'],))['situacao'] == 'feita', 'gestão recebe o resultado')
