@@ -1934,3 +1934,23 @@ Próximos passos dependem das pessoas:
   - `teste_no_local`: as fontes são lidas antes de os órgãos irem para o nó;
   - as 25 suítes e `teste_ativador.sh` passaram com o código montado.
 - **Implantação:** sem migração; reiniciar o app e o worker (o worker reiniciado também descarta a conexão presa ao banco inexistente).
+
+### Instalação de nó pelo console, sem terminal na gestão (12/11/2026, ramo `instalacao-console`, sobre `orgao-no-local`)
+- **Usuário:** "preciso que pelo gestão consiga gerar e baixar os pacotes e demais arquivos/componentes necessários a subir o novo portal na outra VPS, sem precisar fazer por código" (e "onde pego esses códigos no gestão, tem algum lugar para backup").
+- **Feito (`app/instalacao.py`):** Console → Nós e licenças → **Preparar instalação** (por nó).
+  - **Pacote de código:** a versão em produção (a imagem passa a levar `Dockerfile`, `docker-compose.yml`, `requirements.txt` e `deploy/` em `/srv/fonte`); sem segredos; versão em `app/VERSAO` (escrita na implantação, fora do git).
+  - **Pacote de segredos:**
+    - chaves que precisam ser iguais (lidas do ambiente do app, sem a senha do banco nem as senhas iniciais) e `segredos/`;
+    - opcionalmente um **token novo** do nó com o endereço da gestão e a chave pública;
+    - **cifrado** (AES-256-CBC, PBKDF2 600 mil iterações, formato `openssl enc`) com a **senha do pacote**, que não é guardada.
+  - Para gerar: senha do pacote (2×, 12+ caracteres) + **senha e código do 2FA do gestor** (contam como tentativas de login).
+  - **Links de uso único** (60 min) em `https://<gestão>/instalar/<token>`: a VPS nova baixa com `curl`. O pacote de segredos fica no disco só cifrado e é apagado no download ou ao vencer (limpeza pelo worker).
+  - A tela mostra os 3 comandos para colar na VPS nova. Tudo vai para o registro do console, sem senha, token ou link.
+  - **Instalador:** aceita o pacote `.enc` (pede a senha do pacote e decifra com `openssl`) e usa token, nó, gestão e chave que vierem no pacote, sem perguntar.
+  - Migração `030_plataforma_instalacao.sql`.
+- **Backup (resposta ao usuário):** esta VPS já faz backup diário às 5h em `/opt/portal_web/backups` (14 dias), mas ele fica dentro da própria VPS. Cópia externa sugerida.
+- **Testes:**
+  - `tests/teste_instalacao.py`: recusas (senha do pacote curta, senha e 2FA do gestor errados); token novo; registro limpo; código sem `.env` nem segredos; uso único; `openssl` abre com a senha certa e não abre com a errada; conteúdo; vencido e limpeza; sem login; sem fontes;
+  - `teste_instalador_no.sh`: pacote cifrado com senha errada e certa, instalador preenchido, senha e token fora da tela e do log;
+  - as 26 suítes, `teste_ativador.sh` e o ensaio do instalador passaram com o código montado; tela sem violações no axe.
+- **Implantação (junto com `orgao-no-local`):** `app/VERSAO` → build → suítes → conferir o pacote de código na imagem nova → `up -d app` → `provision atualizar` (030) → `up -d worker`.

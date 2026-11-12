@@ -97,10 +97,19 @@ ORIGEM=""
 if [ -f "$PROJ/.env.origem" ]; then
   c_ok "segredos da gestão já importados antes (.env.origem)"; ORIGEM="$PROJ/.env.origem"
 else
-  ARQ=$(pergunta "Caminho do pacote de segredos (segredos-no-*.tar.gz) — vazio para digitar as chaves" "$(ls -1t /root/segredos-no-*.tar.gz 2>/dev/null | head -1)")
+  ARQ=$(pergunta "Caminho do pacote de segredos (segredos-no*.tar.gz.enc ou .tar.gz) — vazio para digitar as chaves" "$(ls -1t /root/segredos-no*.enc /root/segredos-no-*.tar.gz 2>/dev/null | head -1)")
   if [ -n "$ARQ" ]; then
     [ -f "$ARQ" ] || para "arquivo $ARQ não encontrado"
-    T=$(mktemp -d); tar -xzf "$ARQ" -C "$T" || para "pacote de segredos ilegível"
+    T=$(mktemp -d)
+    if [[ "$ARQ" == *.enc ]]; then  # gerado pelo console (Nós e licenças → Preparar instalação): cifrado com a senha do pacote
+      command -v openssl >/dev/null || para "falta o openssl para abrir o pacote cifrado (apt-get install -y openssl)"
+      SENHA_PACOTE=$(segredo "Senha do pacote (a que você escolheu no console)"); export SENHA_PACOTE
+      openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -md sha256 -in "$ARQ" -out "$T/pacote.tar.gz" -pass env:SENHA_PACOTE 2>/dev/null || { unset SENHA_PACOTE; rm -rf "$T"; para "senha do pacote incorreta ou arquivo corrompido"; }
+      unset SENHA_PACOTE
+      tar -xzf "$T/pacote.tar.gz" -C "$T" || para "pacote de segredos ilegível"; rm -f "$T/pacote.tar.gz"
+    else
+      tar -xzf "$ARQ" -C "$T" || para "pacote de segredos ilegível"
+    fi
     [ -f "$T/env-origem" ] || para "pacote sem env-origem (gere de novo com exportar_segredos.sh)"
     install -m 600 "$T/env-origem" "$PROJ/.env.origem"; ORIGEM="$PROJ/.env.origem"
     if [ -d "$T/segredos" ]; then mkdir -p "$PROJ/segredos"; cp -a "$T/segredos/." "$PROJ/segredos/"; chmod -R go-rwx "$PROJ/segredos"; c_ok "pasta segredos/ (certificado do Diário etc.) copiada"; fi
@@ -120,16 +129,24 @@ grep -qE "^SECRET_KEY=.+" "$ORIGEM" || para "SECRET_KEY é obrigatória (a mesma
 # ---------- 6. configuração do nó ----------
 etapa 6 "Configuração do nó"
 echo "  Os dados abaixo estão no console da gestão, em Nós e licenças (cadastre o nó lá para receber o token)."
-DG=$(grep -E '^DOMINIO_GESTAO=' "$ORIGEM" 2>/dev/null | cut -d= -f2- || true)
-PADRAO=$(env_val GESTAO_URL); [ -n "$PADRAO" ] || { [ -n "$DG" ] && PADRAO="https://$DG"; } || true
+org_val() { grep -E "^$1=" "$ORIGEM" 2>/dev/null | tail -1 | cut -d= -f2- || true; }  # valor vindo do pacote de segredos
+DG=$(org_val DOMINIO_GESTAO)
+PADRAO=$(org_val GESTAO_URL); [ -n "$PADRAO" ] || PADRAO=$(env_val GESTAO_URL); [ -n "$PADRAO" ] || { [ -n "$DG" ] && PADRAO="https://$DG"; } || true
 GESTAO_URL=$(pergunta "Endereço da gestão" "$PADRAO")
 [[ "$GESTAO_URL" =~ ^https://[a-z0-9.-]+$ ]] || para "endereço da gestão inválido (ex.: https://gestao.dominio.tld)"
-NO_NOME=$(pergunta "Nome do nó (o mesmo cadastrado no console)" "$(env_val NO_NOME)")
+PADRAO=$(org_val NO_NOME); [ -n "$PADRAO" ] || PADRAO=$(env_val NO_NOME)
+NO_NOME=$(pergunta "Nome do nó (o mesmo cadastrado no console)" "$PADRAO")
 [[ "$NO_NOME" =~ ^[a-z0-9][a-z0-9.-]{1,60}$ ]] || para "nome do nó inválido"
-NO_TOKEN=$(env_val NO_TOKEN)
-if [ -n "$NO_TOKEN" ] && ! confirma "Já existe um token do nó gravado. Trocar?"; then :; else NO_TOKEN=$(segredo "Token do nó (mostrado uma vez no console)"); fi
+NO_TOKEN=$(org_val NO_TOKEN)
+if [ -n "$NO_TOKEN" ]; then
+  c_ok "token do nó veio no pacote gerado pelo console (não é exibido)"
+else
+  NO_TOKEN=$(env_val NO_TOKEN)
+  if [ -n "$NO_TOKEN" ] && ! confirma "Já existe um token do nó gravado. Trocar?"; then :; else NO_TOKEN=$(segredo "Token do nó (mostrado uma vez no console)"); fi
+fi
 [ ${#NO_TOKEN} -ge 30 ] || para "token do nó curto demais (copie de novo do console)"
-PUB=$(pergunta "Chave pública da licença (LICENCA_CHAVE_PUBLICA, mostrada em Nós e licenças)" "$(env_val LICENCA_CHAVE_PUBLICA)")
+PADRAO=$(org_val LICENCA_CHAVE_PUBLICA); [ -n "$PADRAO" ] || PADRAO=$(env_val LICENCA_CHAVE_PUBLICA)
+PUB=$(pergunta "Chave pública da licença (LICENCA_CHAVE_PUBLICA, mostrada em Nós e licenças)" "$PADRAO")
 python3 -c "import base64,sys; sys.exit(0 if len(base64.b64decode(sys.argv[1], validate=True)) == 32 else 1)" "$PUB" 2>/dev/null || para "chave pública inválida (copie de novo do console)"
 IP_DET=$(ip -4 route get 1.1.1.1 2>/dev/null | sed -nE 's/.* src ([0-9.]+).*/\1/p')
 PADRAO=$(env_val VPS_IP); [ -n "$PADRAO" ] || PADRAO="$IP_DET"

@@ -14,3 +14,4 @@ logs/
 .env.origem
 .env.anterior-*
 deploy/no/proxy/conf.d/
+app/VERSAO

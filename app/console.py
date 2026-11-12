@@ -418,6 +418,72 @@ async def email_cfg_post(request: Request):
     log(g, f"E-mail de saída configurado: {d['servidor']}:{d['porta']} ({d['seguranca']}), remetente {d['remetente']}" + (' — senha trocada' if d['senha'] else ''))
     return ir('/email', 'E-mail de saída gravado. A senha não é exibida. Mande um teste para conferir.', request)
 
+# ---------- instalação de nó pelo console (pacotes por link de uso único) ----------
+@r.get('/instalar/{token}')
+def instalar_baixar(request: Request, token: str):
+    """Download de um pacote de instalação (sem login: o nó baixa com curl). Vale uma vez só e vence em 60 minutos."""
+    from fastapi.responses import Response, PlainTextResponse
+    from . import instalacao as IN
+    if config.PAPEL == 'no':
+        raise HTTPException(404)
+    ip = (request.headers.get('x-forwarded-for') or (request.client.host if request.client else '')).split(',')[0].strip()
+    try:
+        r = IN.usar_link(token, ip)
+    except RuntimeError as e:
+        return PlainTextResponse(f'Pacote indisponível: {e}\n', status_code=503, headers={'Cache-Control': 'no-store'})
+    if not r:
+        return PlainTextResponse('Link inválido, já usado ou vencido. Gere outro em Nós e licenças → Preparar instalação.\n', status_code=404, headers={'Cache-Control': 'no-store'})
+    tipo, dados, nome = r
+    return Response(dados, media_type='application/octet-stream', headers={'Content-Disposition': f'attachment; filename="{nome}"', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
+
+@r.get('/nos/{nid}/instalar')
+def instalar(request: Request, nid: int):
+    gestor(request)
+    from . import instalacao as IN
+    n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (nid,))
+    if not n:
+        raise HTTPException(404)
+    r = T('instalar', request, n=n, versao=IN.versao(), codigo_ok=IN.codigo_disponivel(), validade=IN.VALIDADE_MIN, res=None)
+    r.headers['Cache-Control'] = 'no-store'
+    return r
+
+@r.post('/nos/{nid}/instalar')
+async def instalar_post(request: Request, nid: int):
+    """Gera os links dos pacotes. O de segredos exige a senha e o 2FA do gestor e sai cifrado com a senha do pacote (não guardada)."""
+    g = gestor(request); f = await ler_form(request)
+    from . import instalacao as IN, licenca, acesso as AC
+    from .security import confere_senha
+    n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (nid,))
+    if not n:
+        raise HTTPException(404)
+    volta = f'/nos/{nid}/instalar'
+    if not IN.codigo_disponivel():
+        return ir(volta, 'O código de implantação não está na imagem desta VPS: gere a imagem de novo (implantação) antes de preparar o nó.', request)
+    senha_pac, conf = f.get('senha_pacote', ''), f.get('senha_pacote2', '')
+    if len(senha_pac) < 12 or senha_pac != conf:
+        return ir(volta, 'A senha do pacote precisa ter 12 caracteres ou mais e ser igual nos dois campos.', request)
+    c = AC.Conta(request, 'gestor'); conta = c.por_id(g['id'])
+    if AC.origem_bloqueada(request, c) or AC.bloqueada(conta):
+        return ir(volta, 'Muitas tentativas. Aguarde alguns minutos.', request)
+    if not confere_senha(f.get('minha_senha', ''), conta['senha_hash']):
+        ate = AC.registrar_tentativa(request, c, conta, False)
+        log(g, f"Instalação do nó {n['nome']}: confirmação recusada (senha)")
+        return ir(volta, AC.msg_bloqueio(ate) if ate else 'Sua senha não confere. Nada foi gerado.', request)
+    ok, msg = AC.conferir_segundo_fator(request, c, conta, f.get('codigo', ''))
+    if not ok:
+        ate = AC.registrar_tentativa(request, c, conta, False)
+        log(g, f"Instalação do nó {n['nome']}: confirmação recusada (segundo fator)")
+        return ir(volta, AC.msg_bloqueio(ate) if ate else 'Código do autenticador incorreto. Nada foi gerado.', request)
+    token = licenca.novo_token(n['id']) if f.get('novo_token') == '1' else None
+    t_cod = IN.novo_link(n, 'codigo', g['nome'])
+    t_seg = IN.novo_link(n, 'segredos', g['nome'], IN.cifrar(IN.pacote_segredos(n, token), senha_pac))
+    log(g, f"Instalação do nó {n['nome']}: pacotes gerados (código {IN.versao()} e segredos cifrados{', com token NOVO do nó' if token else ''}); links de uso único por {IN.VALIDADE_MIN} min")
+    base = f'https://{config.DOMINIO_GESTAO}/instalar/'
+    res = {'codigo': base + t_cod, 'segredos': base + t_seg, 'token_novo': bool(token)}
+    r = T('instalar', request, n=n, versao=IN.versao(), codigo_ok=True, validade=IN.VALIDADE_MIN, res=res)
+    r.headers['Cache-Control'] = 'no-store'; r.headers['Referrer-Policy'] = 'no-referrer'
+    return r
+
 @r.post('/orgao/{oid}/hospedagem')
 async def orgao_hospedagem(request: Request, oid: int):
     g = gestor(request); f = await ler_form(request)

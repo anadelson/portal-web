@@ -6,6 +6,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY deploy/certs ./deploy/certs
+# fontes de implantação (para o console gerar o pacote de código de um nó novo: Nós e licenças → Preparar instalação)
+COPY Dockerfile docker-compose.yml requirements.txt ./fonte/
+COPY deploy ./fonte/deploy
 RUN python -m app.imagens otimizar
 RUN useradd -r -u 1001 portal && mkdir -p /srv/dados && chown -R portal /srv/dados
 USER portal

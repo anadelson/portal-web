@@ -83,6 +83,25 @@ checa 'echo "$SAIDA" | grep -q "já são usadas por outro sistema"' 'detecta as 
 checa 'grep -qxF "PROXY_MODO=existente" $E && grep -qxF "REDE_PROXY=outra-rede" $E && grep -qxF "NGINX_C=outro-nginx" $E' 'usa o nginx existente (rede e container)'
 checa '[ -f /tmp/outro/conf.d/portal-comum.inc ] && ! grep -q "up -d" <(grep "deploy/no/proxy" /tmp/chamadas)' 'instala só o trecho comum no nginx existente, sem subir outro nginx'
 
+# ---------- pacote gerado pelo console: cifrado (openssl), já com o token do nó, o endereço da gestão e a chave ----------
+rm -f /tmp/portas-ocupadas "$E" "$P/.env.origem" /root/segredos-no-teste.tar.gz; rm -rf "$P/segredos"
+T2=$(mktemp -d); mkdir -p "$T2/segredos/a1"; echo certificado-ficticio > "$T2/segredos/a1/certificado.p12"
+printf 'SECRET_KEY=segredo-teste-AAAA\nTOTP_CHAVE=totp-teste-BBBB\nCPF_HMAC_CHAVE=hmac-teste-CCCC\nCHAVE_CREDENCIAIS=cred-teste-DDDD\nPG_USER=portal\nDOMINIO_GESTAO=gestao.exemplo.test\nGESTAO_URL=https://gestao.exemplo.test\nNO_NOME=no3.exemplo.test\nNO_TOKEN=%s\nLICENCA_CHAVE_PUBLICA=%s\n' "$TOKEN" "$PUB" > "$T2/env-origem"
+tar -czf "$T2/p.tgz" -C "$T2" env-origem segredos
+SP='senha-do-pacote-teste-123' openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -md sha256 -salt -in "$T2/p.tgz" -out /root/segredos-no.tar.gz.enc -pass env:SP
+# senha do pacote errada: para sem gravar nada
+SAIDA=$(printf 'n\n\nsenha-errada-qualquer\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "senha do pacote incorreta" && [ ! -f $P/.env.origem ] && [ ! -f $E ]' 'pacote do console com senha errada: para sem gravar'
+# respostas: atualizar(n) · pacote(enter = o .enc mais novo) · senha do pacote · gestão(enter) · nome(enter) · [token não é perguntado] · chave(enter) · IP(enter) · validade(enter) · nginx(s) · portal(s) · ativador(s)
+SAIDA=$(printf 'n\n\nsenha-do-pacote-teste-123\n\n\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ]' "pacote do console: instalação sem erro (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
+checa 'echo "$SAIDA" | grep -q "token do nó veio no pacote" && grep -qxF "NO_TOKEN=$TOKEN" $E && grep -qxF "NO_NOME=no3.exemplo.test" $E && grep -qxF "GESTAO_URL=https://gestao.exemplo.test" $E && grep -qxF "LICENCA_CHAVE_PUBLICA=$PUB" $E' 'instalador preenchido pelo pacote (token, nó, gestão e chave)'
+checa '[ -f $P/segredos/a1/certificado.p12 ] && grep -qxF "SECRET_KEY=segredo-teste-AAAA" $E' 'segredos do pacote cifrado importados'
+checa '! echo "$SAIDA" | grep -qF "senha-do-pacote-teste" && ! grep -qF "senha-do-pacote-teste" $P/logs/instalar-no.log && ! echo "$SAIDA" | grep -qF "$TOKEN"' 'senha do pacote e token fora da tela e do log'
+rm -rf "$T2" /root/segredos-no.tar.gz.enc
+# as recusas abaixo testam o token digitado: tira do pacote importado o que veio do console
+grep -vE '^(NO_TOKEN|NO_NOME|GESTAO_URL|LICENCA_CHAVE_PUBLICA)=' "$P/.env.origem" > /tmp/origem && install -m 600 /tmp/origem "$P/.env.origem"
+
 # ---------- recusas ----------
 rm -f /tmp/portas-ocupadas "$E"
 SAIDA=$(printf 'n\n\nno1.exemplo.test\ncurto\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
