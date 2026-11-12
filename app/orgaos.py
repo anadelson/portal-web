@@ -9,8 +9,8 @@ def todos(ativos=True, tipo=None):
     if config.PAPEL == 'no':
         from .web import _orgaos_do_no
         lista = sorted(_orgaos_do_no().values(), key=lambda o: o['id'])
-    else:
-        lista = db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos ORDER BY id')
+    else:  # esta VPS só hospeda os órgãos sem nó; os de nó são servidos (banco, worker, Diário) pelo próprio nó
+        lista = db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE no_id IS NULL ORDER BY id')
     return [o for o in lista if (not ativos or o.get('ativo', True)) and (tipo is None or o['tipo'] == tipo)]
 
 def por_id(oid):

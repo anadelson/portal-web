@@ -39,7 +39,9 @@ db.exe(db.PLATAFORMA, "INSERT INTO remessas_log (origem, destino, acao, ok, deta
 db.exe(db.PLATAFORMA, "INSERT INTO config_console (chave, valor) VALUES ('teste_a2', %s) ON CONFLICT (chave) DO UPDATE SET valor=EXCLUDED.valor", (Jsonb({'exemplo': True}),))
 token = L.criar_no('no-a2.exemplo.test')
 no = db.um(db.PLATAFORMA, "SELECT * FROM nos WHERE nome='no-a2.exemplo.test'")
+antes = [(f['slug'], f['fonte'], json.dumps(f['params'], sort_keys=True)) for f in worker.fontes_ativas()]  # antes de os órgãos irem para o nó
 db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=%s WHERE id IN (%s,%s)', (no['id'], PM['id'], CM['id']))
+checa(worker.fontes_ativas() == [] and orgaos.todos() == [], 'órgãos hospedados no nó saem desta VPS (worker e cadastro local)')
 arq = os.path.join(tempfile.mkdtemp(), 'no.zip')
 man = NL.exportar('no-a2.exemplo.test', arq)
 T = man['tabelas']
@@ -85,7 +87,6 @@ db.exe(LOCAL, "DELETE FROM coletas WHERE fonte='marca:antes'")
 checa(db.um(LOCAL, "SELECT nextval('coletas_id_seq') n")['n'] > db.um(LOCAL, 'SELECT max(id) m FROM coletas')['m'] - 1, 'sequência ajustada depois da cópia')
 
 # ---------- 4. nó simulado lendo do banco local ----------
-antes = [(f['slug'], f['fonte'], json.dumps(f['params'], sort_keys=True)) for f in (lambda: (setattr(db, 'LOCAL', db.PLATAFORMA), worker.fontes_ativas())[1])()]
 db.LOCAL = LOCAL
 imp, pub = L.garantir_chaves()
 pac = L.entregar(no)

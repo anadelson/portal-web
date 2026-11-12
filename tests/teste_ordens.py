@@ -60,6 +60,13 @@ r_ = gl.get('/convite?t=' + url2.split('t=')[-1], follow_redirects=False)
 checa(r_.status_code == 200 and 'ainda está sendo preparado' in r_.text and 'Nada foi feito' in r_.text, 'link antes de o nó gravar: avisa e não faz nada')
 senha2 = 'nenhuma-senha'
 checa(not existe_banco(o2['banco']), 'gestão NÃO cria o banco do órgão do nó')
+from app import worker as WK
+checa(o2['id'] not in [x['id'] for x in orgaos.todos()] and TestClient(app, base_url='http://pmnoa3.localhost').get('/').status_code == 404, 'esta VPS não serve nem trata o órgão do nó')
+import io as _io, contextlib as _cl
+_b = _io.StringIO()
+with _cl.redirect_stderr(_b), _cl.redirect_stdout(_b):
+    WK.diario_tick(config.agora())
+checa('does not exist' not in _b.getvalue() and 'Traceback' not in _b.getvalue(), 'rotina do Diário desta VPS não tenta abrir o banco do órgão do nó')
 x2 = db.um(db.PLATAFORMA, 'SELECT * FROM ordens WHERE orgao_id=%s', (o2['id'],))
 checa(x2['situacao'] == 'pendente' and x2['no_id'] == no['id'] and senha2 not in json.dumps(x2['payload']), 'ordem na fila do nó, sem a senha em claro')
 checa('na fila do nó' in con.get(f"/orgao/{o2['id']}").text and '1 na fila' in con.get('/nos').text, 'console mostra a ordem na fila')
