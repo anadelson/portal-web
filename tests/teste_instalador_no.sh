@@ -24,7 +24,11 @@ case "$*" in
   "compose version"*) echo "2.29.0" ;;
   *"app.licenca puxar"*) echo "0 licença(s) aceitas" ;;
   *"app.relatorio enviar"*) echo "relatório entregue (0 ativação(ões) atualizada(s) na gestão)" ;;
-  "ps"*) [ -f /tmp/portas-ocupadas ] && echo outro-nginx ;;
+  "ps --filter"*) [ -f /tmp/portas-ocupadas ] && [ ! -f /tmp/sem-descoberta ] && echo outro-nginx ;;
+  "ps"*) [ -f /tmp/portas-ocupadas ] && printf 'outro-nginx\noutro-certbot\n' ;;
+  *Mounts*outro-nginx) printf '/etc/nginx/conf.d|/tmp/outro/conf.d\n/etc/letsencrypt|/tmp/outro/certs\n/var/www/certbot|/tmp/outro/www\n' ;;
+  *Mounts*outro-certbot) printf '/etc/letsencrypt|/tmp/outro/certs\n/var/www/certbot|/tmp/outro/www\n' ;;
+  *Networks*outro-nginx) printf 'outra-rede\n' ;;
   "inspect"*|"network inspect"*) [ -f /tmp/portas-ocupadas ] ;;
 esac
 exit 0
@@ -62,7 +66,7 @@ checa 'grep -q "deploy/backup.sh" /etc/cron.d/portal-backup' 'backup diário age
 checa 'grep -q "systemctl enable --now portal-ativador.timer" /tmp/chamadas && grep -q "docker compose up -d worker" /tmp/chamadas && grep -q "app.provision atualizar" /tmp/chamadas' 'sobe portal, provision e ativador'
 checa 'grep -q "ufw --force enable" /tmp/chamadas' 'firewall ligado'
 checa 'echo "$SAIDA" | grep -q "licenças: 0 licença(s) aceitas" && echo "$SAIDA" | grep -q "relatório entregue"' 'conferência com a gestão no fim'
-checa 'echo "$SAIDA" | grep -q "Pronto. No console da gestão"' 'mensagem final com os próximos passos'
+checa 'echo "$SAIDA" | grep -q "Pronto em .*No console da gestão"' 'mensagem final com os próximos passos'
 PG1=$(grep ^PG_PASSWORD= $E)
 
 # ---------- 2ª rodada: mantém senha do banco e segredos; não pede o token de novo ----------
@@ -75,13 +79,22 @@ checa 'ls $P/.env.anterior-* >/dev/null 2>&1' '.env anterior guardado antes de r
 checa 'echo "$SAIDA" | grep -q "segredos da gestão já importados"' 'não pede o pacote de segredos de novo'
 
 # ---------- VPS com outro sistema nas portas 80/443: usar o nginx existente ----------
-touch /tmp/portas-ocupadas; rm -f "$E"; mkdir -p /tmp/outro/conf.d /tmp/outro/certs
-# respostas: atualizar(n) · gestão · nome · token · chave · IP · validade · escolha(1) · container nginx · certbot · conf.d · certs · rede · portal(s) · ativador(s)
-SAIDA=$(printf 'n\n\nno2.exemplo.test\n%s\n%s\n\n\n1\noutro-nginx\noutro-certbot\n/tmp/outro/conf.d\n/tmp/outro/certs\noutra-rede\ns\ns\n' "$TOKEN" "$PUB" | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+touch /tmp/portas-ocupadas; rm -f "$E"; mkdir -p /tmp/outro/conf.d /tmp/outro/certs /tmp/outro/www
+# o instalador DESCOBRE container, pastas, rede e certbot pelo Docker; basta confirmar (Enter)
+# respostas: atualizar(n) · gestão · nome · token · chave · IP · validade · escolha(1) · usar estes dados?(Enter) · portal(s) · ativador(s)
+SAIDA=$(printf 'n\n\nno2.exemplo.test\n%s\n%s\n\n\n1\n\ns\ns\n' "$TOKEN" "$PUB" | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
 checa '[ $RC = 0 ]' "VPS compartilhada: instalação sem erro (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
 checa 'echo "$SAIDA" | grep -q "já são usadas por outro sistema"' 'detecta as portas ocupadas'
-checa 'grep -qxF "PROXY_MODO=existente" $E && grep -qxF "REDE_PROXY=outra-rede" $E && grep -qxF "NGINX_C=outro-nginx" $E' 'usa o nginx existente (rede e container)'
+checa 'echo "$SAIDA" | grep -q "pasta conf.d no servidor: *.tmp.outro.conf.d" && echo "$SAIDA" | grep -q "container do certbot: *outro-certbot"' 'mostra o nginx descoberto (pastas e certbot)'
+checa 'grep -qxF "PROXY_MODO=existente" $E && grep -qxF "REDE_PROXY=outra-rede" $E && grep -qxF "NGINX_C=outro-nginx" $E && grep -qxF "CERTBOT_C=outro-certbot" $E && grep -qxF "CONF_DIR=/tmp/outro/conf.d" $E && grep -qxF "CERTS_DIR=/tmp/outro/certs" $E' 'usa o nginx existente descoberto (container, certbot, pastas e rede)'
+checa 'echo "$SAIDA" | grep -q "compartilham a pasta do desafio"' 'confere a pasta do desafio do Let'"'"'s Encrypt entre nginx e certbot'
 checa '[ -f /tmp/outro/conf.d/portal-comum.inc ] && ! grep -q "up -d" <(grep "deploy/no/proxy" /tmp/chamadas)' 'instala só o trecho comum no nginx existente, sem subir outro nginx'
+# nginx fora do Docker (nada descoberto): pergunta os dados um a um
+rm -f "$E"; touch /tmp/sem-descoberta
+# respostas: atualizar(n) · gestão · nome · token · chave · IP · validade · escolha(1) · container nginx · certbot · conf.d · certs · rede · portal(s) · ativador(s)
+SAIDA=$(printf 'n\n\nno2.exemplo.test\n%s\n%s\n\n\n1\noutro-nginx\noutro-certbot\n/tmp/outro/conf.d\n/tmp/outro/certs\noutra-rede\ns\ns\n' "$TOKEN" "$PUB" | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "não achei um nginx em contêiner" && grep -qxF "CONF_DIR=/tmp/outro/conf.d" $E' 'sem descoberta: pergunta e grava os dados digitados'
+rm -f /tmp/sem-descoberta
 
 # ---------- pacote gerado pelo console: cifrado (openssl), já com o token do nó, o endereço da gestão e a chave ----------
 rm -f /tmp/portas-ocupadas "$E" "$P/.env.origem" /root/segredos-no-teste.tar.gz; rm -rf "$P/segredos"
