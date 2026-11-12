@@ -93,3 +93,15 @@ def receber(no, rel):
                    (f"ativador do nó {no['nome']}", f"Domínio {atual['dominio']}: {atual['acao']} → {a['situacao']}. {str(a.get('mensagem', ''))[:300]}"))
         n += 1
     return n
+
+if __name__ == '__main__':  # python -m app.relatorio enviar | ver  (no nó; "ver" mostra o que seria enviado)
+    import sys
+    try:
+        if sys.argv[1:2] == ['enviar']:
+            print(enviar())
+        elif sys.argv[1:2] == ['ver']:
+            print(json.dumps(montar(), ensure_ascii=False, indent=1, default=str))
+        else:
+            print('uso: python -m app.relatorio enviar|ver', file=sys.stderr); sys.exit(2)
+    finally:
+        db.fechar()

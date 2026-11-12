@@ -1,0 +1,94 @@
+#!/bin/bash
+# Ensaio do deploy/no/instalar.sh num contêiner descartável: docker, apt, systemctl, ufw, timedatectl, ss e ip SIMULADOS
+# (só registram a chamada). Respostas automáticas às perguntas. Valores de teste fictícios. Nada toca a VPS real.
+# Uso (no host):  docker run --rm -v /opt/portal_web:/codigo:ro portal_web-app bash /codigo/tests/teste_instalador_no.sh
+set -u
+ERROS=0; checa() { if eval "$1"; then :; else echo "FALHOU: $2"; ERROS=$((ERROS + 1)); fi; }
+P=/opt/portal_web; S=/tmp/stubs; mkdir -p "$S" /opt
+# cópia SÓ do código (nunca o .env, segredos, backups, dados ou logs da VPS onde o teste roda)
+mkdir -p "$P"
+tar -C /codigo --exclude=./.env --exclude='./.env.*' --exclude=./segredos --exclude=./backups --exclude=./dados --exclude=./logs --exclude=./pacotes \
+    --exclude=./deploy/no/proxy/conf.d --exclude='*/__pycache__' -cf - . | tar -C "$P" -xf -
+checa '[ ! -e $P/.env ] && [ ! -e $P/segredos ] && [ ! -e $P/backups ]' 'cópia do teste sem .env, segredos nem backups'
+mkdir -p /etc/systemd/system /etc/cron.d
+# ---------- simulações ----------
+for c in apt-get systemctl timedatectl; do printf '#!/bin/bash\necho "%s $*" >> /tmp/chamadas\n[ "$1" = show ] && echo America/Sao_Paulo\nexit 0\n' "$c" > "$S/$c"; done
+printf '#!/bin/bash\necho "ufw $*" >> /tmp/chamadas\n[ "$1" = status ] && { [ -f /tmp/ufw-ativo ] && echo "Status: active" || echo "Status: inactive"; }\n[ "$1" = --force ] && touch /tmp/ufw-ativo\nexit 0\n' > "$S/ufw"
+printf '#!/bin/bash\n[ -f /tmp/portas-ocupadas ] && echo "LISTEN 0 511 0.0.0.0:80 0.0.0.0:* users:((\\"outro-nginx\\",pid=1,fd=6))"\nexit 0\n' > "$S/ss"
+printf '#!/bin/bash\necho "1.1.1.1 via 198.51.100.1 dev eth0 src 198.51.100.5 uid 0"\n' > "$S/ip"
+cat > "$S/docker" <<'EOF'
+#!/bin/bash
+echo "docker $*" >> /tmp/chamadas
+case "$*" in
+  --version) echo "Docker version 27.0.0, build x" ;;
+  "compose version"*) echo "2.29.0" ;;
+  *"app.licenca puxar"*) echo "0 licença(s) aceitas" ;;
+  *"app.relatorio enviar"*) echo "relatório entregue (0 ativação(ões) atualizada(s) na gestão)" ;;
+  "ps"*) [ -f /tmp/portas-ocupadas ] && echo outro-nginx ;;
+  "inspect"*|"network inspect"*) [ -f /tmp/portas-ocupadas ] ;;
+esac
+exit 0
+EOF
+chmod +x "$S"/*; export PATH="$S:$PATH"
+# ---------- pacote de segredos fictício (como o exportar_segredos.sh gera) ----------
+T=$(mktemp -d); mkdir -p "$T/segredos/a1"
+printf 'SECRET_KEY=segredo-teste-AAAA\nTOTP_CHAVE=totp-teste-BBBB\nCPF_HMAC_CHAVE=hmac-teste-CCCC\nCHAVE_CREDENCIAIS=cred-teste-DDDD\nPG_USER=portal\nPG_PASSWORD=senha-da-gestao-EEEE\nDOMINIO_GESTAO=gestao.exemplo.test\nDOMINIO_PM=pm.exemplo.test\nDIARIO_MODO=teste\n' > "$T/env-origem"
+echo certificado-ficticio > "$T/segredos/a1/certificado.p12"
+tar -czf /root/segredos-no-teste.tar.gz -C "$T" .
+TOKEN=tokenFicticioDoNo-0123456789abcdefghijklmnop
+PUB=$(python3 -c "import base64; print(base64.b64encode(bytes(range(32))).decode())")
+
+# ---------- 1ª instalação: portas livres, nginx próprio ----------
+# respostas: atualizar(s) · firewall(s) · pacote(enter=padrão) · gestão(enter) · nome · token · chave pública · IP(enter) · validade(enter) · nginx(s) · portal(s) · ativador(s)
+SAIDA=$(printf 's\ns\n\n\nno1.exemplo.test\n%s\n%s\n\n\ns\ns\ns\n' "$TOKEN" "$PUB" | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ]' "instalação termina sem erro (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
+E="$P/.env"
+checa '[ "$(stat -c %a $E)" = 600 ] && [ "$(stat -c %a $P/.env.origem)" = 600 ]' '.env e .env.origem com permissão 600'
+for l in PAPEL=no GESTAO_URL=https://gestao.exemplo.test NO_NOME=no1.exemplo.test "NO_TOKEN=$TOKEN" "LICENCA_CHAVE_PUBLICA=$PUB" LICENCA_VALIDADE_DIAS=15 \
+         VPS_IP=198.51.100.5 PG_HOST=db COMPOSE_FILE=docker-compose.yml:deploy/no/docker-compose.no.yml REDE_PROXY=portal-proxy PROXY_MODO=proprio \
+         SECRET_KEY=segredo-teste-AAAA TOTP_CHAVE=totp-teste-BBBB CPF_HMAC_CHAVE=hmac-teste-CCCC CHAVE_CREDENCIAIS=cred-teste-DDDD DIARIO_MODO=teste PG_USER=portal; do
+  checa "grep -qxF '$l' $E" ".env tem $l"
+done
+checa '! grep -q "senha-da-gestao-EEEE" $E && grep -qE "^PG_PASSWORD=[0-9a-f]{48}$" $E' 'senha do banco do nó é nova (não é a da gestão)'
+checa '! grep -qE "^(DOMINIO_PM|SENHA_INICIAL_ADMIN)=" $E' 'variáveis do piloto/gestão que não valem no nó ficam de fora'
+checa '[ "$(grep -c "^PAPEL=" $E)" = 1 ] && [ "$(grep -c "^SECRET_KEY=" $E)" = 1 ]' 'sem chave repetida no .env'
+for s in segredo-teste-AAAA totp-teste-BBBB hmac-teste-CCCC cred-teste-DDDD "$TOKEN" senha-da-gestao-EEEE "$(grep ^PG_PASSWORD= $E | cut -d= -f2)"; do
+  checa "! echo \"\$SAIDA\" | grep -qF '$s' && ! grep -qF '$s' $P/logs/instalar-no.log" "segredo não aparece na tela nem no log (${s:0:6}…)"
+done
+checa '[ -f $P/segredos/a1/certificado.p12 ] && [ "$(stat -c %a $P/segredos)" = 700 ]' 'pasta segredos/ copiada, só root lê'
+checa '[ -f $P/deploy/no/proxy/conf.d/00-acme.conf ] && cmp -s $P/deploy/nginx/portal-comum.inc $P/deploy/no/proxy/conf.d/portal-comum.inc' 'conf.d do nginx do nó com o desafio do Let'"'"'s Encrypt e o trecho comum'
+checa 'grep -q "Environment=CONF_DIR=$P/deploy/no/proxy/conf.d" /etc/systemd/system/portal-ativador.service.d/no.conf && grep -q "NGINX_C=portal-nginx" /etc/systemd/system/portal-ativador.service.d/no.conf' 'ativador configurado para o nginx do nó'
+checa 'grep -q "deploy/backup.sh" /etc/cron.d/portal-backup' 'backup diário agendado'
+checa 'grep -q "systemctl enable --now portal-ativador.timer" /tmp/chamadas && grep -q "docker compose up -d worker" /tmp/chamadas && grep -q "app.provision atualizar" /tmp/chamadas' 'sobe portal, provision e ativador'
+checa 'grep -q "ufw --force enable" /tmp/chamadas' 'firewall ligado'
+checa 'echo "$SAIDA" | grep -q "licenças: 0 licença(s) aceitas" && echo "$SAIDA" | grep -q "relatório entregue"' 'conferência com a gestão no fim'
+checa 'echo "$SAIDA" | grep -q "Pronto. No console da gestão"' 'mensagem final com os próximos passos'
+PG1=$(grep ^PG_PASSWORD= $E)
+
+# ---------- 2ª rodada: mantém senha do banco e segredos; não pede o token de novo ----------
+: > /tmp/chamadas
+# respostas: atualizar(n) · firewall já ativo · segredos já importados · gestão(enter) · nome(enter) · trocar token?(n) · chave(enter) · IP(enter) · validade(enter) · nginx(s) · portal(s) · ativador(s)
+SAIDA=$(printf 'n\n\n\nn\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ]' "segunda rodada sem erro (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
+checa '[ "$(grep ^PG_PASSWORD= $E)" = "$PG1" ] && grep -qxF "NO_TOKEN=$TOKEN" $E' 'segunda rodada mantém a senha do banco e o token'
+checa 'ls $P/.env.anterior-* >/dev/null 2>&1' '.env anterior guardado antes de regravar'
+checa 'echo "$SAIDA" | grep -q "segredos da gestão já importados"' 'não pede o pacote de segredos de novo'
+
+# ---------- VPS com outro sistema nas portas 80/443: usar o nginx existente ----------
+touch /tmp/portas-ocupadas; rm -f "$E"; mkdir -p /tmp/outro/conf.d /tmp/outro/certs
+# respostas: atualizar(n) · gestão · nome · token · chave · IP · validade · escolha(1) · container nginx · certbot · conf.d · certs · rede · portal(s) · ativador(s)
+SAIDA=$(printf 'n\n\nno2.exemplo.test\n%s\n%s\n\n\n1\noutro-nginx\noutro-certbot\n/tmp/outro/conf.d\n/tmp/outro/certs\noutra-rede\ns\ns\n' "$TOKEN" "$PUB" | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ]' "VPS compartilhada: instalação sem erro (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
+checa 'echo "$SAIDA" | grep -q "já são usadas por outro sistema"' 'detecta as portas ocupadas'
+checa 'grep -qxF "PROXY_MODO=existente" $E && grep -qxF "REDE_PROXY=outra-rede" $E && grep -qxF "NGINX_C=outro-nginx" $E' 'usa o nginx existente (rede e container)'
+checa '[ -f /tmp/outro/conf.d/portal-comum.inc ] && ! grep -q "up -d" <(grep "deploy/no/proxy" /tmp/chamadas)' 'instala só o trecho comum no nginx existente, sem subir outro nginx'
+
+# ---------- recusas ----------
+rm -f /tmp/portas-ocupadas "$E"
+SAIDA=$(printf 'n\n\nno1.exemplo.test\ncurto\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "token do nó curto demais" && [ ! -f $E ]' 'token inválido: para sem gravar o .env'
+SAIDA=$(printf 'n\n\nno1.exemplo.test\n%s\nnao-e-chave\n' "$TOKEN" | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "chave pública inválida"' 'chave pública inválida: para'
+
+if [ "$ERROS" -gt 0 ]; then echo "ERROS: $ERROS"; exit 1; fi
+echo 'instalador do nó (simulado): tudo ok'
