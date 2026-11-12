@@ -1814,3 +1814,22 @@ Próximos passos dependem das pessoas:
   - `nginx -t` com `00-acme.conf`, o trecho comum e um domínio no formato do ativador (certificado de teste): ok.
   - `teste_relatorio` ok.
 - **Sem mudança no que está no ar:** os scripts só rodam na VPS nova ou quando chamados; o app não precisa ser reimplantado.
+
+### Console: formulários na largura toda (12/11/2026, ramo `console-largura`)
+- **Usuário:** "dentro do gestao os formularios nao estao ocupando 100% do espaco".
+- **Causa:** todo formulário `.campos` tem largura máxima de 760 px; no painel dos órgãos isso foi resolvido com `.form-tela`, mas no console não. O cadastro de órgão até tinha `.cadastro-orgao{max-width:none}`, mas a regra `form.campos` vencia; a troca de senha tinha 420 px fixos.
+- **Feito:**
+  - `main.console` na moldura do console e `.console form.campos{max-width:none}`: os formulários ocupam a caixa toda (1366 px: de 760 para 1028–1062 px).
+  - Senha sem os 420 px fixos.
+  - "Hospedagem e licença" e "Cadastrar nó": botões em linha comum (`.acoes`), porque a barra fixa cobria a escolha do nó.
+  - Chave pública e códigos longos quebram a linha. A lista `dados-senha` vira uma coluna em telas de até 640 px: "Nós e licenças" no celular não rola mais para o lado.
+  - CSS `v=15`.
+- **Conferência:** medição no ambiente de teste em 1366 e 390 px das telas do órgão, cadastro, nós, credenciais, aparência e senha — nenhuma rolagem lateral. Capturas antes/depois em `Docs/avaliacao-console-largura/`. Testes do console (licença, cadastro, painel admin, ativação) ok.
+- **Implantação:** só templates e CSS; sem migração. `up -d app` (o worker não muda).
+
+### Implantação: console com formulários na largura toda (12/11/2026, aprovada: "Aprovo os passos" + snapshot "existe")
+- Snapshot confirmado pelo usuário. Backup às 11h41 UTC.
+- **Build e testes:** as 24 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** só o app (`up -d --no-deps app`), às 08h50 de Brasília; o worker não mudou e seguiu rodando. Sem reinícios nem erros no log.
+- **Conferência:** portais e painéis 200; console 303 (login) e tela de login 200 com `admin.css?v=15`, com a regra nova servida.
+- `console-largura` mesclado em `main` com a tag `console-largura`.
