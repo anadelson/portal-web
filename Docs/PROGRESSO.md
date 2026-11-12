@@ -1910,3 +1910,11 @@ Próximos passos dependem das pessoas:
   - `console.js?v=4`.
   - O teste da GOVBR deixou de depender do número da versão do script (foi o que parou a primeira tentativa de implantação).
   - Conferência no navegador: as cinco combinações iguais à tabela acima. `teste_govbr` ok.
+
+### Implantação: cadastro de órgão com um bloco por sistema (12/11/2026, aprovada: "Aprovo os passos" + snapshot "existe"; depois "ajuste e publique")
+- Snapshot confirmado pelo usuário. Backup às 13h37 UTC.
+- **Primeira tentativa parada antes do reinício:** `teste_govbr` exigia `console.js?v=2`. Explicado ao usuário, que pediu "ajuste e publique" junto com o bloco por sistema.
+- **Build e testes:** as 25 suítes e `teste_ativador.sh` passaram com a imagem nova.
+- **Subida:** só o app (`up -d --no-deps app`), às 11h03 de Brasília. Sem reinícios nem erros no log.
+- **Conferência:** portais e logins 200; o console serve `admin.css?v=16` (regra do `hidden` no cadastro) e `console.js?v=4` (blocos por `data-sistema`).
+- `cadastro-campos` mesclado em `main` com a tag `cadastro-campos`.
