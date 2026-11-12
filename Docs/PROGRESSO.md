@@ -1782,3 +1782,35 @@ Próximos passos dependem das pessoas:
 - `separacao-f1-preparo` mesclado em `main` com a tag `separacao-f1`.
 - **Nesta VPS não falta mais nada antes da VPS nova.**
 - **Próximo:** o usuário vai contratar a VPS nova e avisar. Então seguem as decisões pendentes e as fases 2 (montar o nó), 3 (ensaio), 4 (virada) e 5 (depois). Ver `Docs/ANALISE-SEPARACAO-VPS.md`.
+
+### Instalador do nó de portais (12/11/2026, ramo `separacao-instalador-no`)
+- **Usuário:** "ao invés de você fazer, tem como montar um script para rodar e já ir solicitando as informações faltantes, lembrando que uma VPS pode ter mais de um portal rodando nele".
+- **Feito (`deploy/no/`):**
+  - `instalar.sh` (roda na VPS nova, como root): guiado, idempotente, confirma cada etapa que altera o servidor e nunca mostra segredos (leitura sem eco; `.env` com permissão 600; registro em `logs/instalar-no.log` sem segredos).
+    - Etapas: conferência, atualizações/fuso/NTP, Docker oficial, firewall, segredos da gestão, configuração do nó, nginx/certbot, portal, ativador/backup, conferência com a gestão.
+    - `--verificar` só confere.
+    - **Vários órgãos por nó:** nada por órgão no instalador; cada órgão chega pela licença, ordem e ativador.
+    - **VPS compartilhada:** com 80/443 ocupadas por outro sistema, usa o nginx existente (pergunta container, pastas e rede).
+  - `exportar_segredos.sh` (VPS da gestão): pacote 600 com o `.env` e `segredos/`, sem exibir nada.
+    - **Descoberta:** `SECRET_KEY`, `TOTP_CHAVE`, `CPF_HMAC_CHAVE` e `CHAVE_CREDENCIAIS` precisam ser **iguais** no nó; a `SECRET_KEY` também valida os códigos de recuperação do 2FA e os códigos das edições do Diário. Isso corrige a sugestão anterior de trocar a `SECRET_KEY` no nó.
+  - `empacotar.sh` (VPS da gestão): pacote de código de uma tag do git (sem `.env`, segredos, backups nem dados). **Não há repositório remoto**, por isso o pacote.
+  - `docker-compose.no.yml`: sobreposição usada pelo nó via `COMPOSE_FILE` no `.env` (rede do nginx do nó; banco inicial `no_local`).
+  - `proxy/docker-compose.yml` e `proxy/00-acme.conf`: nginx 1.26 e certbot próprios do nó; porta 80 padrão responde ao desafio do Let's Encrypt de qualquer domínio; renovação a cada 12 h.
+  - `LEIA-ME.md`: o passo a passo.
+  - `python -m app.relatorio enviar|ver` (usado na conferência do instalador).
+  - `.gitignore`: pacotes, `.env.origem`, `.env.anterior-*` e o `conf.d` local do nginx do nó.
+- **Testes:**
+  - `tests/teste_instalador_no.sh`: instalador num contêiner descartável e sem rede, com docker/apt/systemd simulados e respostas automáticas. Confere:
+    - o `.env` (31 itens);
+    - segredos fora da tela e do log;
+    - a pasta `segredos/` só para root;
+    - conf.d, ativador, backup, firewall;
+    - segunda rodada mantendo senha do banco e token;
+    - VPS compartilhada;
+    - recusas de token e chave inválidos.
+
+    A cópia do teste exclui `.env`, segredos e backups da VPS.
+  - `docker compose config` do nó (em pasta temporária, `.env` fictício): banco `no_local`, rede `portal-proxy`, alias `portal-web-app`.
+  - `nginx -t` com `00-acme.conf`, o trecho comum e um domínio no formato do ativador (certificado de teste): ok.
+  - `teste_relatorio` ok.
+- **Sem mudança no que está no ar:** os scripts só rodam na VPS nova ou quando chamados; o app não precisa ser reimplantado.

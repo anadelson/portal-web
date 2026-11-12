@@ -1,0 +1,14 @@
+# Sobreposição do docker-compose.yml para um NÓ de portais (separação gestão × portais).
+# O instalador põe COMPOSE_FILE=docker-compose.yml:deploy/no/docker-compose.no.yml no .env do nó, e todo
+# "docker compose" no /opt/portal_web (inclusive o ativador e o backup) passa a usar este arquivo junto.
+# A rede "proxy" deixa de ser a do hotspot e passa a ser a do nginx do nó (ou a do nginx que já existir na VPS).
+services:
+  db:  # no nó o banco inicial é o banco local (o nó não tem o banco de controle "plataforma")
+    environment:
+      POSTGRES_DB: no_local
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d no_local"]
+networks:
+  proxy:
+    external: true
+    name: ${REDE_PROXY:-portal-proxy}

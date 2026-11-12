@@ -9,3 +9,8 @@ Docs/*.tgz
 app/static/img/*.webp
 /segredos/
 logs/
+# nó de portais (deploy/no): pacotes gerados, segredos importados e configuração local do nginx do nó
+/pacotes/
+.env.origem
+.env.anterior-*
+deploy/no/proxy/conf.d/

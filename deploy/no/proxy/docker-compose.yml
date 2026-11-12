@@ -1,0 +1,31 @@
+# nginx + certbot PRÓPRIOS do nó (modo "proprio" do instalador). Projeto: portal-proxy.
+# conf.d: 00-acme.conf (desafio do Let's Encrypt para qualquer domínio) + portal-comum.inc + portal-orgaos.conf (gerado pelo ativador).
+# O certbot fica de pé para o ativador pedir certificados (docker exec) e renova a cada 12 h; o ativador recarrega o nginx após renovação.
+name: portal-proxy
+services:
+  nginx:
+    image: nginx:1.26-alpine
+    container_name: portal-nginx
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d
+      - certs:/etc/letsencrypt:ro
+      - webroot:/var/www/certbot:ro
+    networks: [proxy]
+    mem_limit: 128m
+  certbot:
+    image: certbot/certbot:latest
+    container_name: portal-certbot
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 43200; done"]
+    volumes:
+      - certs:/etc/letsencrypt
+      - webroot:/var/www/certbot
+    mem_limit: 128m
+volumes:
+  certs: {}
+  webroot: {}
+networks:
+  proxy:
+    name: portal-proxy
