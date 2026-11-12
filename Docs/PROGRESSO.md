@@ -1866,3 +1866,13 @@ Próximos passos dependem das pessoas:
   - Capturas em `Docs/avaliacao-convite/` (1366 e 390 px; axe sem violações; sem rolagem lateral).
 - **Ainda não feito:** os usuários que o administrador do órgão cria dentro do painel continuam com senha provisória mostrada na tela; pode ser o próximo passo.
 - **Implantação:** tem migração (028 e 029). Ordem: `up -d app` → `provision atualizar` → `up -d worker`. Depois, o usuário configura o e-mail de saída no console.
+- **Ajuste pedido pelo usuário (12/11/2026):** "o email deve ser enviado mesmo com o dominio nao publicado ainda, e ao tentar fazer a senha e o 2fa, fazer somente se o dominio ja estiver publicado e o painel admin do portal no ar".
+  - O e-mail sai **na hora** (só depende do e-mail de saída configurado).
+  - O link aponta para a **gestão** (`https://<gestão>/convite?t=…`), que está sempre no ar. A gestão confere:
+    - link inválido, substituído, usado ou vencido → explica;
+    - convite ainda não gravado por quem hospeda → "ainda está sendo preparado", nada feito;
+    - painel do órgão não publicado → "ainda não foi publicado", nada feito, volte depois (mostra até quando o convite vale);
+    - painel no ar → encaminha para `https://<órgão>/admin/primeiro-acesso`, onde a senha e o 2º fator são criados.
+  - A gestão guarda o hash do link para reconhecê-lo (`convites.token_hash`, na mesma migração 028 ainda não implantada).
+  - O e-mail avisa que o painel pode ainda não estar publicado.
+  - As 25 suítes e `teste_ativador.sh` passaram de novo com o código montado.

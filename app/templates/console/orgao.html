@@ -17,7 +17,7 @@
 <label>E-mail do administrador<input type="email" name="email" value="{{ cv.email if cv else '' }}" required></label>
 <label class="opc"><input type="checkbox" name="confirmo" value="1"> Confirmo: o link anterior e a senha atual do administrador deixam de valer; ele cria uma senha nova e cadastra o segundo fator pelo convite.</label>
 <div class="acoes"><button class="btn sec">{{ 'Reenviar convite' if cv else 'Enviar convite' }}</button></div></form>
-<p class="legal">O link vale uma vez só, por 7 dias, e aponta para o domínio do órgão: o e-mail sai quando o domínio estiver no ar. Ninguém vê a senha do administrador.</p></section>
+<p class="legal">O e-mail sai na hora. O link vale uma vez só, por 7 dias, e passa pela gestão: enquanto o painel do órgão não estiver publicado, ele só avisa; quando estiver no ar, leva à criação da senha e do segundo fator. Ninguém vê a senha do administrador.</p></section>
 <section class="cx" id="hospedagem" aria-labelledby="h-hosp"><h2 id="h-hosp">Hospedagem e licença</h2>
 {% set d = lic.doc %}
 <dl class="dados-senha"><dt>Hospedado em</dt><dd>{% if lic.no %}nó <strong>{{ lic.no.nome }}</strong>{% else %}esta VPS (gestão e portal juntos){% endif %}</dd>

@@ -64,7 +64,7 @@ r = cadastrar()
 checa(r.status_code == 200 and 'Órgão criado' in r.text, 'Prefeitura criada')
 checa('class="senha"' not in r.text and 'Senha provisória' not in r.text and 'link de primeiro acesso' in r.text, 'nenhuma senha na tela: convite por e-mail')
 url = link_convite('admin@pmteste.localhost')
-checa(url and url.startswith('https://pmteste.localhost/admin/primeiro-acesso?t=') and 'enviado' in r.text, 'convite enviado por e-mail ao administrador')
+checa(url and url.startswith('https://gestao.localhost/convite?t=') and 'enviado' in r.text, 'convite enviado por e-mail ao administrador (link pela gestão)')
 senha = url.split('t=')[1] if url else ''
 o = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE dominio='pmteste.localhost'")
 checa(o and o['slug'] == 'pm-municipio-ficticio-de-teste' and o['banco'] == 'bd_pm_municipio_ficticio_de_teste' and o['ibge'] == '3599901' and o['municipio'] == 'Município Fictício de Teste (SP)', f'órgão no banco de controle ({o and o["slug"]})')

@@ -17,7 +17,7 @@
 <fieldset><legend>2. Endereço do portal e administrador</legend>
 <div class="grade2"><label>Domínio do portal<input name="dominio" value="{{ v('dominio', '') }}" required placeholder="portal.municipio.sp.gov.br"></label>
 <label>E-mail do administrador do órgão<input name="email_admin" type="email" value="{{ v('email_admin', '') }}" required></label></div>
-<p class="legal">Nenhuma senha aparece aqui: o administrador recebe neste e-mail um link de primeiro acesso (uso único, vale 7 dias) para criar a própria senha e cadastrar o segundo fator. O e-mail sai quando o domínio do órgão estiver no ar.</p>
+<p class="legal">Nenhuma senha aparece aqui: o administrador recebe neste e-mail um link de primeiro acesso (uso único, vale 7 dias) para criar a própria senha e cadastrar o segundo fator. O e-mail sai na hora; o link só deixa criar a senha quando o painel do órgão estiver publicado.</p>
 </fieldset>
 <fieldset><legend>3. Contatos (aparecem no rodapé e em “Fale conosco”; podem ser preenchidos depois no painel)</legend>
 <div class="grade2"><label>Endereço<input name="endereco" value="{{ v('endereco', '') }}"></label><label>Telefone<input name="telefone" value="{{ v('telefone', '') }}"></label>
@@ -37,7 +37,7 @@
 <p class="legal">Sem API, o coletor usa a exportação em XML do próprio portal (sem login e sem captcha). Com a API de dados abertos informada, receitas, despesas e pessoal vêm dela e, se ela falhar, do XML. A escolha de cada base fica em Integrações.</p></div>
 </fieldset>
 {% if nos %}<fieldset><legend>Hospedagem</legend><label>Onde o portal e o painel deste órgão ficam<select name="no_id"><option value="">Esta VPS (junto com a gestão)</option>{% for n in nos %}<option value="{{ n.id }}" {{ 'selected' if v('no_id', '') == n.id|string }}>Nó {{ n.nome }}</option>{% endfor %}</select></label>
-<p class="legal">Em um nó, o banco do órgão é criado pelo próprio nó (ordem assinada, em até 1 minuto). O convite do administrador é gravado pelo nó e o e-mail sai da gestão quando o domínio estiver no ar.</p></fieldset>{% endif %}
+<p class="legal">Em um nó, o banco do órgão é criado pelo próprio nó (ordem assinada, em até 1 minuto). O convite do administrador é gravado pelo nó; o e-mail sai da gestão na hora e o link só libera o primeiro acesso quando o painel estiver no ar.</p></fieldset>{% endif %}
 <fieldset class="opcoes"><legend>5. Módulos opcionais contratados</legend>{% for m in mods %}<label data-serve="{{ m[4] }}"><input type="checkbox" name="mod_{{ m[0] }}" value="1" {{ 'checked' if v('mod_' ~ m[0]) }}> {{ m[1] }}{% if m[4] != 'ambos' %} <small>({{ 'Prefeitura' if m[4] == 'executivo' else 'Câmara' }})</small>{% endif %}</label>{% endfor %}</fieldset>
 <div class="acoes-form"><button class="btn">Cadastrar órgão</button><a class="btn sec" href="/">Cancelar</a></div>
 </form>

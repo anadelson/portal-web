@@ -45,17 +45,18 @@ def link_convite(email):
     for m in reversed(CAIXA):
         if m['To'] == email:
             corpo = m.get_body(preferencelist=('plain',)).get_content()
-            r = re.search(r'https://[^\s]+/admin/primeiro-acesso\?t=[A-Za-z0-9_\-]+', corpo)
+            r = re.search(r'https://[^\s]+/convite\?t=[A-Za-z0-9_\-]+', corpo)
             return r.group(0) if r else None
     return None
 
 def primeiro_acesso(c, email, nova, prefixo='/admin'):
-    """Abre o link do convite, cria a senha e cadastra o segundo fator. Devolve a última resposta (painel)."""
+    """Segue o convite até o painel do órgão (como a página /convite da gestão faz quando o painel está no ar),
+    cria a senha e cadastra o segundo fator. Devolve a última resposta (painel)."""
     url = link_convite(email)
     if not url:
         return None
-    caminho = url.split('/admin/', 1)[1]
-    t = caminho.split('t=', 1)[1]
+    t = url.split('t=', 1)[1]
+    caminho = f'primeiro-acesso?t={t}'
     c.get('/admin/' + caminho)
     r = c.post(f'{prefixo}/primeiro-acesso', data={'csrf': tok(c, '/admin/' + caminho), 't': t, 'nova': nova, 'conf': nova}, follow_redirects=True)
     m = re.search(r'Chave para digitar: <code[^>]*>([A-Z2-7 ]+)</code>', r.text)

@@ -37,6 +37,19 @@ def login(request: Request):
     from .web import tela_acesso
     return T('login', request, govbr=AC.govbr_ativo(), tela=tela_acesso(request, 1, console=True))
 
+@r.get('/convite')
+def convite_link(request: Request, t: str = ''):
+    """Link do e-mail de convite (sem login). Só encaminha para o painel do órgão quando ele já está publicado e no ar."""
+    from fastapi.responses import RedirectResponse
+    from .web import tela_acesso
+    from . import convites
+    c, o, estado = convites.situacao_link(t)
+    h = {'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer'}
+    if estado == 'pronto':
+        return RedirectResponse(convites.link_painel(o, t), status_code=303, headers=h)
+    tela = tela_acesso(request, console=True); tela['titulo'] = 'Primeiro acesso'
+    return templates.TemplateResponse(request, 'acesso/convite.html', dict(request=request, tela=tela, estado=estado, c=c, o=o), headers=h)
+
 @r.get('/esqueci')
 def esqueci(request: Request):
     from .web import tela_acesso

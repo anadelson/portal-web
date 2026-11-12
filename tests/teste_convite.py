@@ -57,29 +57,35 @@ r = con.post('/email', data={'csrf': tok(con, '/email'), 'acao': 'testar', 'para
 checa('recusou o usuário/senha (código 535)' in r.text and 'senha-smtp' not in r.text, 'falha de autenticação explicada, sem segredo')
 FALHA.clear()
 
-# ---------- 2. cadastro sem senha na tela; convite espera o domínio ----------
+# ---------- 2. cadastro sem senha na tela; e-mail sai na hora, mesmo com o domínio fora do ar ----------
 CV.dominio_no_ar = lambda d: NO_AR.get(d, False)
 NO_AR = {}
+FALHA['rede'] = True  # primeira tentativa de envio falha: o convite fica aguardando e tenta de novo
 r = con.post('/orgaos/novo', data={'csrf': tok(con, '/orgaos/novo'), 'tipo': 'executivo', 'ibge': '3599961', 'municipio': 'Município Exemplo Convite', 'uf': 'SP',
                                    'dominio': 'pmconvite.localhost', 'email_admin': 'admin@pmconvite.localhost', 'sistema': 'nenhum'})
 o = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE dominio='pmconvite.localhost'")
 c1 = db.um(db.PLATAFORMA, 'SELECT * FROM convites WHERE orgao_id=%s', (o['id'],))
-checa('class="senha"' not in r.text and 'Senha provisória' not in r.text and 'aguardando' in r.text, 'cadastro: nenhuma senha, convite aguardando')
-checa(c1['situacao'] == 'aguardando' and 'aguardando o domínio pmconvite.localhost ficar no ar' in c1['mensagem'] and c1['token_cifrado'], 'domínio fora do ar: convite espera (link guardado cifrado)')
-checa('aguardando o domínio' in con.get(f"/orgao/{o['id']}").text, 'página do órgão mostra o motivo')
-NO_AR['pmconvite.localhost'] = True
-FALHA['rede'] = True
-CV.tick()
-checa(db.um(db.PLATAFORMA, 'SELECT situacao, mensagem FROM convites WHERE id=%s', (c1['id'],)) == {'situacao': 'aguardando', 'mensagem': 'falha no envio, nova tentativa em seguida: sem conexão com o servidor SMTP (OSError)'}, 'falha do SMTP: tenta de novo depois')
+checa('class="senha"' not in r.text and 'Senha provisória' not in r.text, 'cadastro: nenhuma senha na tela')
+checa(c1['situacao'] == 'aguardando' and c1['mensagem'] == 'falha no envio, nova tentativa em seguida: sem conexão com o servidor SMTP (OSError)' and c1['token_cifrado'], 'falha do SMTP: aguarda e tenta de novo (link guardado cifrado)')
+checa('sem conexão com o servidor SMTP' in con.get(f"/orgao/{o['id']}").text, 'página do órgão mostra o motivo')
 FALHA.clear()
-checa(CV.tick() == 1, 'domínio no ar: convite sai')
+checa(CV.tick() == 1, 'nova tentativa: convite sai mesmo com o domínio do órgão fora do ar')
 c1 = db.um(db.PLATAFORMA, 'SELECT * FROM convites WHERE id=%s', (c1['id'],))
-checa(c1['situacao'] == 'enviado' and c1['token_cifrado'] is None, 'enviado e link apagado da gestão')
+checa(c1['situacao'] == 'enviado' and c1['token_cifrado'] is None and c1['token_hash'], 'enviado; a gestão apaga o link e guarda só o hash')
 url = link_convite('admin@pmconvite.localhost')
 m = CAIXA[-1]
-checa(url and url.startswith('https://pmconvite.localhost/admin/primeiro-acesso?t=') and 'Primeiro acesso ao painel' in m['Subject'] and m.get_body(preferencelist=('html',)), 'e-mail com o link (texto e HTML)')
+checa(url and url.startswith('https://gestao.localhost/convite?t=') and 'Primeiro acesso ao painel' in m['Subject'] and m.get_body(preferencelist=('html',)), 'e-mail com o link pela gestão (texto e HTML)')
+checa('ainda não estiver publicado' in m.get_body(preferencelist=('plain',)).get_content(), 'e-mail explica que o painel pode ainda não estar publicado')
 checa('senha' not in m.get_body(preferencelist=('plain',)).get_content().lower().split('crie a sua senha')[0], 'e-mail não leva senha nenhuma')
 token = url.split('t=')[1]
+gl = TestClient(app, base_url='http://gestao.localhost')
+r = gl.get(f'/convite?t={token}', follow_redirects=False)
+checa(r.status_code == 200 and 'ainda não foi publicado' in r.text and 'Nada foi feito' in r.text and 'pmconvite.localhost' in r.text and r.headers.get('cache-control') == 'no-store', 'painel fora do ar: o link avisa e não faz nada')
+checa('inválido' in gl.get('/convite?t=errado').text and 'inválido' in gl.get('/convite').text, 'link inválido na gestão: explica')
+checa(db.um(o['banco'], "SELECT convite_hash FROM usuarios WHERE email='admin@pmconvite.localhost'")['convite_hash'], 'enquanto isso, o convite segue válido no órgão')
+NO_AR['pmconvite.localhost'] = True
+r = gl.get(f'/convite?t={token}', follow_redirects=False)
+checa(r.status_code == 303 and r.headers['location'] == f'https://pmconvite.localhost/admin/primeiro-acesso?t={token}' and r.headers.get('referrer-policy') == 'no-referrer', 'painel no ar: o link leva ao primeiro acesso no painel do órgão')
 
 # ---------- 3. primeiro acesso ----------
 adm = TestClient(app, base_url='http://pmconvite.localhost')
@@ -104,6 +110,7 @@ checa('Visão geral' in adm.get('/admin/', follow_redirects=True).text, 'adminis
 checa(db.um(o['banco'], "SELECT 1 FROM auditoria WHERE acao LIKE %s", ('Primeiro acesso pelo convite%',)), 'primeiro acesso na auditoria')
 t = con.get(f"/orgao/{o['id']}").text
 checa('usado (administrador já criou a senha)' in t, 'console mostra o convite como usado')
+checa('já foi usado' in gl.get(f'/convite?t={token}').text, 'link da gestão depois de usado: avisa')
 
 # ---------- 4. reenviar: link e senha anteriores deixam de valer ----------
 r = con.post(f"/orgao/{o['id']}/convite", data={'csrf': tok(con, f"/orgao/{o['id']}"), 'email': 'admin@pmconvite.localhost'}, follow_redirects=True)
