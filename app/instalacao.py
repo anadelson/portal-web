@@ -8,7 +8,7 @@
                      formato do `openssl enc`) com uma senha de pacote escolhida na hora e que NÃO é guardada.
 
 Para gerar o de segredos o gestor confirma a própria senha e o código do 2FA. Cada pacote sai por um link de USO ÚNICO
-(vale 60 minutos), que o próprio nó baixa com curl — os arquivos não passam pelo computador de ninguém.
+(vale 60 minutos; enquanto vale, o gestor pode rever os comandos na tela do nó), que o próprio nó baixa com curl — os arquivos não passam pelo computador de ninguém.
 Tudo fica no registro do console (sem senha, token ou link)."""
 import hashlib, io, os, re, secrets, tarfile
 from datetime import datetime, timedelta, timezone
@@ -113,8 +113,14 @@ def decifrar(cifrado, senha):
 def _hash(token):
     return hashlib.sha256(('instalacao|' + token).encode()).hexdigest()
 
-def novo_link(no, tipo, quem, dados=None):
-    """Registra um link de uso único. Para 'segredos', grava o arquivo JÁ CIFRADO (só root e o app leem). Devolve o token."""
+def _fernet():
+    import base64
+    from cryptography.fernet import Fernet
+    return Fernet(base64.urlsafe_b64encode(hashlib.sha256(('instalacao|' + config.SECRET_KEY).encode()).digest()))
+
+def novo_link(no, tipo, quem, dados=None, lote='', token_novo=False):
+    """Registra um link de uso único. Para 'segredos', grava o arquivo JÁ CIFRADO (só root e o app leem). Devolve o token.
+    O token fica guardado cifrado só enquanto o link vale, para o gestor poder rever os comandos."""
     token = secrets.token_urlsafe(32)
     arquivo, tam, sha = '', 0, ''
     if dados is not None:
@@ -124,15 +130,43 @@ def novo_link(no, tipo, quem, dados=None):
         with os.fdopen(fd, 'wb') as f:
             f.write(dados)
         arquivo, tam, sha = nome, len(dados), hashlib.sha256(dados).hexdigest()
-    db.exe(db.PLATAFORMA, 'INSERT INTO instalacao_links (no_id, tipo, token_hash, arquivo, tamanho, sha256, criado_por, expira_em) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
-           (no['id'], tipo, _hash(token), arquivo, tam, sha, quem, datetime.now(timezone.utc) + timedelta(minutes=VALIDADE_MIN)))
+    db.exe(db.PLATAFORMA, 'INSERT INTO instalacao_links (no_id, tipo, token_hash, token_cifrado, lote, token_novo, arquivo, tamanho, sha256, criado_por, expira_em) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+           (no['id'], tipo, _hash(token), _fernet().encrypt(token.encode()).decode(), lote, token_novo, arquivo, tam, sha, quem, datetime.now(timezone.utc) + timedelta(minutes=VALIDADE_MIN)))
     return token
+
+def novo_lote():
+    return secrets.token_hex(8)
+
+def cancelar(no_id):
+    """Encerra os lotes do nó (ao gerar novos ou pelo botão Cancelar): links não usados deixam de valer. Devolve quantos não usados."""
+    r = db.todos(db.PLATAFORMA, "UPDATE instalacao_links SET cancelado_em=now(), expira_em=LEAST(expira_em, now()), token_cifrado='' "
+                                "WHERE no_id=%s AND cancelado_em IS NULL AND expira_em > now() RETURNING baixado_em", (no_id,))
+    limpar()
+    return sum(1 for x in r if x['baixado_em'] is None)  # os já baixados só saem da tela
+
+def preparados(no_id, base):
+    """Último lote do nó ainda no prazo e não cancelado: links (só os não usados), situação de cada um e validade. None se não houver."""
+    u = db.um(db.PLATAFORMA, "SELECT lote FROM instalacao_links WHERE no_id=%s AND lote<>'' AND cancelado_em IS NULL AND expira_em > now() ORDER BY id DESC LIMIT 1", (no_id,))
+    if not u:
+        return None
+    itens = {r['tipo']: r for r in db.todos(db.PLATAFORMA, 'SELECT * FROM instalacao_links WHERE no_id=%s AND lote=%s', (no_id, u['lote']))}
+    out = {'token_novo': any(r['token_novo'] for r in itens.values()), 'criado_em': min(r['criado_em'] for r in itens.values()),
+           'expira_em': max(r['expira_em'] for r in itens.values()), 'criado_por': next(iter(itens.values()))['criado_por']}
+    for tipo in ('codigo', 'segredos'):
+        r = itens.get(tipo)
+        if not r:
+            continue
+        link = ''
+        if r['baixado_em'] is None and r['token_cifrado']:
+            link = base + _fernet().decrypt(r['token_cifrado'].encode()).decode()
+        out[tipo] = {'link': link, 'baixado_em': r['baixado_em'], 'baixado_ip': r['baixado_ip'], 'expira_em': r['expira_em']}
+    return out
 
 def usar_link(token, ip=''):
     """Download: devolve (tipo, bytes, nome_do_arquivo) uma vez só; None se inválido, usado ou vencido."""
     if not token or len(token) > 100:
         return None
-    r = db.um(db.PLATAFORMA, "UPDATE instalacao_links SET baixado_em=now(), baixado_ip=%s WHERE token_hash=%s AND baixado_em IS NULL AND expira_em > now() RETURNING *",
+    r = db.um(db.PLATAFORMA, "UPDATE instalacao_links SET baixado_em=now(), baixado_ip=%s, token_cifrado='' WHERE token_hash=%s AND baixado_em IS NULL AND cancelado_em IS NULL AND expira_em > now() RETURNING *",
               (ip[:60], _hash(token)))
     if not r:
         return None
@@ -151,7 +185,8 @@ def usar_link(token, ip=''):
     return r['tipo'], dados, nome
 
 def limpar():
-    """Apaga arquivos de links vencidos ou já usados que ficaram no disco."""
-    for r in db.todos(db.PLATAFORMA, "SELECT id, arquivo FROM instalacao_links WHERE arquivo <> '' AND (expira_em < now() OR baixado_em IS NOT NULL)"):
+    """Apaga arquivos e links guardados de links vencidos, cancelados ou já usados."""
+    db.exe(db.PLATAFORMA, "UPDATE instalacao_links SET token_cifrado='' WHERE token_cifrado<>'' AND (expira_em < now() OR baixado_em IS NOT NULL)")
+    for r in db.todos(db.PLATAFORMA, "SELECT id, arquivo FROM instalacao_links WHERE arquivo <> '' AND (expira_em <= now() OR baixado_em IS NOT NULL)"):
         (pasta() / r['arquivo']).unlink(missing_ok=True)
         db.exe(db.PLATAFORMA, "UPDATE instalacao_links SET arquivo='' WHERE id=%s", (r['id'],))

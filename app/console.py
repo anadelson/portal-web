@@ -497,9 +497,23 @@ def instalar(request: Request, nid: int):
     n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (nid,))
     if not n:
         raise HTTPException(404)
-    r = T('instalar', request, n=n, versao=IN.versao(), codigo_ok=IN.codigo_disponivel(), validade=IN.VALIDADE_MIN, res=None)
-    r.headers['Cache-Control'] = 'no-store'
+    IN.limpar()
+    res = IN.preparados(nid, f'https://{config.DOMINIO_GESTAO}/instalar/')
+    r = T('instalar', request, n=n, versao=IN.versao(), codigo_ok=IN.codigo_disponivel(), validade=IN.VALIDADE_MIN, res=res)
+    r.headers['Cache-Control'] = 'no-store'; r.headers['Referrer-Policy'] = 'no-referrer'
     return r
+
+@r.post('/nos/{nid}/instalar/cancelar')
+async def instalar_cancelar(request: Request, nid: int):
+    g = gestor(request); await ler_form(request)
+    from . import instalacao as IN
+    n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (nid,))
+    if not n:
+        raise HTTPException(404)
+    q = IN.cancelar(nid)
+    if q:
+        log(g, f"Instalação do nó {n['nome']}: {q} link(s) cancelado(s)")
+    return ir(f'/nos/{nid}/instalar', f'{q} link(s) cancelado(s): não baixam mais.' if q else 'Não havia link válido para cancelar.', request)
 
 @r.post('/nos/{nid}/instalar')
 async def instalar_post(request: Request, nid: int):
@@ -529,14 +543,13 @@ async def instalar_post(request: Request, nid: int):
         log(g, f"Instalação do nó {n['nome']}: confirmação recusada (segundo fator)")
         return ir(volta, AC.msg_bloqueio(ate) if ate else 'Código do autenticador incorreto. Nada foi gerado.', request)
     token = licenca.novo_token(n['id']) if f.get('novo_token') == '1' else None
-    t_cod = IN.novo_link(n, 'codigo', g['nome'])
-    t_seg = IN.novo_link(n, 'segredos', g['nome'], IN.cifrar(IN.pacote_segredos(n, token), senha_pac))
-    log(g, f"Instalação do nó {n['nome']}: pacotes gerados (código {IN.versao()} e segredos cifrados{', com token NOVO do nó' if token else ''}); links de uso único por {IN.VALIDADE_MIN} min")
-    base = f'https://{config.DOMINIO_GESTAO}/instalar/'
-    res = {'codigo': base + t_cod, 'segredos': base + t_seg, 'token_novo': bool(token)}
-    r = T('instalar', request, n=n, versao=IN.versao(), codigo_ok=True, validade=IN.VALIDADE_MIN, res=res)
-    r.headers['Cache-Control'] = 'no-store'; r.headers['Referrer-Policy'] = 'no-referrer'
-    return r
+    antigos = IN.cancelar(n['id'])  # só um par de links válido por nó
+    lote = IN.novo_lote()
+    IN.novo_link(n, 'codigo', g['nome'], lote=lote, token_novo=bool(token))
+    IN.novo_link(n, 'segredos', g['nome'], IN.cifrar(IN.pacote_segredos(n, token), senha_pac), lote=lote, token_novo=bool(token))
+    log(g, f"Instalação do nó {n['nome']}: pacotes gerados (código {IN.versao()} e segredos cifrados{', com token NOVO do nó' if token else ''}); links de uso único por {IN.VALIDADE_MIN} min"
+           + (f'; {antigos} link(s) anterior(es) cancelado(s)' if antigos else ''))
+    return ir(f'/nos/{nid}/instalar', 'Pacotes gerados. Os comandos ficam nesta tela enquanto os links valem.' + (' Os links anteriores foram cancelados.' if antigos else ''), request)
 
 @r.post('/orgao/{oid}/hospedagem')
 async def orgao_hospedagem(request: Request, oid: int):

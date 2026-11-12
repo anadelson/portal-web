@@ -1991,3 +1991,36 @@ Próximos passos dependem das pessoas:
     - sem erros no log;
     - sem reinícios.
   - O prefbora segue com a criação na fila do nó (nome ainda "Borã"), à espera da correção pelo usuário na tela.
+
+### Instalação de nó: rever a tela dos comandos e botão (12/11/2026, ramo `instalacao-revisitar`)
+- **Usuário:** "depois de preparada a tela para instalação, se você sair dela não tem mais acesso, tem que gerar novamente; deve ter opção para revisitá-la, e a opção Preparar instalação deve ser um botão e não um link".
+- **Feito:**
+  - Enquanto os links valem (60 min), a tela **Preparar instalação** do nó mostra de novo os **Pacotes preparados**: comandos, situação de cada pacote (aguardando ou baixado, com hora e IP) e validade.
+  - O link fica guardado **cifrado** (chave derivada da `SECRET_KEY`, como no convite), só até ser baixado, vencer ou ser cancelado.
+  - A senha do pacote continua sem ser guardada.
+  - Gerar redireciona para a tela (atualizar a página não gera de novo).
+  - Gerar de novo encerra os links anteriores; o botão **Cancelar estes links** faz o mesmo, apaga o pacote do disco e fica no registro.
+  - Para gerar de novo com links válidos, o formulário fica em "Gerar novos pacotes".
+  - Em Nós e licenças, **Preparar instalação** virou botão.
+  - Migração `031_plataforma_instalacao_rever.sql`: colunas `token_cifrado`, `lote`, `token_novo` e `cancelado_em`.
+- **Testes (as 26 suítes, `teste_ativador.sh` e o ensaio do instalador passaram com o código montado).** `teste_instalacao` cobre:
+  - tela revista com os mesmos links;
+  - link guardado só cifrado;
+  - sem login não vê;
+  - código baixado e segredos ainda disponíveis;
+  - os dois baixados: só o passo do instalador;
+  - gerar de novo cancela os anteriores;
+  - cancelar: links 404, arquivo e link apagados, registro;
+  - botão em Nós e licenças.
+- **Implantação:** migração 031; build → suítes → `up -d app` → `provision atualizar` → `up -d worker`.
+- **Implantado em 12/11/2026, 13:56–14:10 (Brasília), com aprovação do usuário e snapshot confirmado:**
+  - backup às 13:56;
+  - `app/VERSAO` = `instalacao-revisitar (e7c69f8)`;
+  - 28 linhas de teste com a imagem: tudo ok;
+  - migração 031 aplicada (4 colunas);
+  - conferências:
+    - pm e cm: 200;
+    - gestão, `/nos`, `/nos/1/instalar` e cancelar sem login → login;
+    - `/instalar/x`: 404;
+    - sem erros no log;
+    - sem reinícios.
