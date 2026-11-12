@@ -13,6 +13,6 @@
 <section class="cx form-tela" aria-labelledby="h-novo"><h2 id="h-novo">Cadastrar nó</h2>
 <form class="campos" method="post" action="/nos"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
 <label>Nome do nó (ex.: no1.conectatech.tech)<input name="nome" required pattern="[a-z0-9][a-z0-9.\-]{1,60}"></label>
-<div class="acoes-form"><button class="btn" name="acao" value="criar">Cadastrar e gerar token</button></div></form>
+<div class="acoes"><button class="btn" name="acao" value="criar">Cadastrar e gerar token</button></div></form>
 <p class="legal">O token aparece uma vez só. Ele vai no .env do nó (<code>NO_TOKEN</code>) e é copiado por você, nunca por chat ou e-mail aberto.</p></section>
 {% endblock %}

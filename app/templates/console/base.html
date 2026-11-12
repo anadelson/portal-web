@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block titulo %}Console do gestor{% endblock %}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap"><link rel="stylesheet" href="/static/admin.css?v=14"><style>:root{--cor:#1B1E30}nav.lado{background:#1B1E30}</style></head>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block titulo %}Console do gestor{% endblock %}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap"><link rel="stylesheet" href="/static/admin.css?v=15"><style>:root{--cor:#1B1E30}nav.lado{background:#1B1E30}</style></head>
 <body><div class="casca"><nav class="lado" aria-label="Menu do console"><div class="marca">Console do gestor<small>Plataforma de portais</small></div>
 {% set atual = request.url.path[3:] or '/' %}
 <a href="/"{% if atual == '/' or atual.startswith('/orgao/') %} aria-current="page"{% endif %}>{{ icone('orgaos', 20) }}<span>Órgãos e licenças</span></a>
@@ -13,4 +13,4 @@
 <a href="/aparencia"{% if atual == '/aparencia' %} aria-current="page"{% endif %}>{{ icone('ident', 20) }}<span>Aparência do login</span></a>
 </details>
 <div class="rodape">{{ g.nome if g else '' }} · Hoje: {{ hoje|br }}<br><a href="/senha" style="padding:0;color:#C9D1D9">Trocar senha</a> · <a href="/sair" style="padding:0;color:#C9D1D9">Sair</a></div></nav>
-<div class="principal"><header class="barra"><h1>{% block h1 %}{% endblock %}</h1></header><main>{% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}{% block conteudo %}{% endblock %}</main></div></div></body></html>
+<div class="principal"><header class="barra"><h1>{% block h1 %}{% endblock %}</h1></header><main class="console">{% set m = pega_msg(request) %}{% if m %}<p class="msg" role="status">{{ m }}</p>{% endif %}{% block conteudo %}{% endblock %}</main></div></div></body></html>

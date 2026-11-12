@@ -14,7 +14,7 @@
 <form class="campos" method="post" action="/orgao/{{ o.id }}/hospedagem"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
 <label>Mudar hospedagem<select name="no_id"><option value="">Esta VPS</option>{% for n in nos %}<option value="{{ n.id }}" {{ 'selected' if o.no_id == n.id }}>Nó {{ n.nome }}</option>{% endfor %}</select></label>
 <label class="opc"><input type="checkbox" name="confirmo" value="1"> Confirmo: a partir de agora as licenças deste órgão são entregues a quem o hospeda. A mudança dos dados e do DNS é feita na virada, com aprovação.</label>
-<div class="acoes-form"><button class="btn sec">Salvar hospedagem</button></div></form>
+<div class="acoes"><button class="btn sec">Salvar hospedagem</button></div></form>
 <p class="legal">Licença sem renovação por mais de {{ validade }} dias (gestão fora do ar): o órgão entra em carência no nó — transparência, e-SIC e ouvidoria continuam no ar (LAI, art. 8º).</p>
 {% if lic.no %}<h3>No nó (relatório de {{ lic.relatorio_em|br if lic.relatorio_em else '—' }})</h3>
 {% set rr = lic.relatorio %}{% if rr %}<p>Licença no nó: {% if rr.licenca_valida %}<span class="chip ok">válida</span> até {{ rr.licenca_valida_ate }}{% else %}<span class="chip erro">vencida ou ausente — órgão em carência no nó</span>{% endif %}{% if rr.falhas_24h %} · <span class="chip erro">{{ rr.falhas_24h }} falha(s) de coleta em 24 h</span>{% endif %}</p>

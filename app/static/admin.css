@@ -191,3 +191,7 @@ caption.titulo-lista{caption-side:top;text-align:left;font-weight:700;font-size:
 .senha-unica{border:2px solid #F0B429}.dados-senha{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:10px 0 0}.dados-senha dt{font-weight:700}.dados-senha dd{margin:0}
 .dados-senha code.senha{font-size:var(--fs-secao);letter-spacing:.06em;background:#FFF7E0;padding:2px 8px;border-radius:6px}
 .passos-ativacao{margin:4px 0 10px;padding-left:20px}.passos-ativacao small{color:var(--sub)}
+/* Console do gestor: formulários ocupam a largura toda da caixa (como no painel dos órgãos); chaves longas quebram a linha */
+.console form.campos{max-width:none}.dados-senha dd,code.url{overflow-wrap:anywhere;word-break:break-word}
+.dados-senha>*{min-width:0}@media (max-width:640px){.dados-senha{grid-template-columns:minmax(0,1fr)!important}.dados-senha dd{margin:0 0 8px}}
+.dados-senha+form.campos{margin-top:14px}
