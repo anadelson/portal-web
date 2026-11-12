@@ -36,13 +36,16 @@ def aplicar(banco: str, migracoes):
 
 # Identidade visual (Fase 3): valores padrão por tipo de órgão; cada órgão pode trocar tudo em /admin/identidade.
 VISUAL_PADRAO = {
-    'executivo': {'prefixo': 'Prefeitura Municipal de', 'cor_destaque': '#F0B429', 'hero_rotulo': 'Portal oficial da Prefeitura',
+    'executivo': {'prefixo': 'Poder Executivo', 'cor_destaque': '#F0B429', 'hero_rotulo': 'Portal oficial da Prefeitura',
                   'hero_titulo': 'O que você precisa hoje?', 'hero_texto': 'Peça serviços, acompanhe seus pedidos e veja como a Prefeitura usa o dinheiro público.',
                   'busca_dica': 'Ex.: IPTU, creche, edital, diário oficial', 'mais_buscados': ['IPTU', 'Vacinação', 'Concurso', 'Nota fiscal']},
     'legislativo': {'prefixo': 'Poder Legislativo', 'cor_destaque': '#F7C948', 'hero_rotulo': 'Portal oficial da Câmara Municipal',
                     'hero_titulo': 'Acompanhe o trabalho dos vereadores', 'hero_texto': 'Sessões, projetos, votações e gastos da Câmara, num só lugar e em linguagem simples.',
                     'busca_dica': 'Busque projeto, indicação ou vereador', 'mais_buscados': []},
 }
+# Cabeçalho no padrão da Câmara (12/11/2026): linha pequena com o Poder e o nome COMPLETO em destaque.
+# Órgão que ainda tem o prefixo antigo padrão passa para o novo; prefixo escolhido pelo órgão não muda.
+PREFIXO_ANTIGO = {'executivo': 'Prefeitura Municipal de'}
 # Dados do piloto (Prefeitura e Câmara de Borá): ficam em seeds/piloto_bora.json, não no código.
 # O código é neutro: um órgão novo nasce só com o que vier do cadastro no console e com os padrões por tipo de órgão.
 PILOTO = json.loads((AQUI / 'seeds' / 'piloto_bora.json').read_text(encoding='utf-8'))['orgaos']
@@ -108,6 +111,8 @@ def completar_identidade(banco, slug, tipo):
     novo.update(IDENT_VISUAL.get(slug, {}))
     antiga = novo.pop('cor_antiga', None)
     mudou = False
+    if ident.get('prefixo') and ident.get('prefixo') == PREFIXO_ANTIGO.get(tipo) and novo.get('prefixo') and novo['prefixo'] != ident['prefixo']:
+        ident['prefixo'] = novo['prefixo']; mudou = True
     for k, v in novo.items():
         if k == 'cor':
             if antiga and ident.get('cor') == antiga:  # ainda na cor padrão da Fase 2: troca pela cor do protótipo

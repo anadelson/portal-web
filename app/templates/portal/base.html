@@ -39,7 +39,7 @@
 <header class="topo{{ ' cheio' if barras and (barras.portal|length) >= 6 }}"><div class="int">
 <a class="marca" href="/" aria-label="Página inicial — {{ ident.nome or orgao.nome }}">
 {% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="" width="64" height="56">{% else %}<span class="selo" aria-hidden="true">{{ (ident.nome or orgao.nome)|iniciais }}</span>{% endif %}
-<span class="nome">{% if ident.prefixo and not leg %}<span class="pre">{{ ident.prefixo }}</span><strong>{{ ident.nome_curto or ident.nome }}</strong>{% else %}<span class="pre">{{ ident.prefixo or '' }}</span><strong>{{ ident.nome or orgao.nome }}</strong>{% endif %}<span class="sub">{{ ident.subtitulo or orgao.municipio }}</span></span>
+<span class="nome"><span class="pre">{{ ident.prefixo or '' }}</span><strong>{{ ident.nome or orgao.nome }}</strong><span class="sub">{{ ident.subtitulo or orgao.municipio }}</span></span>
 </a>
 <nav class="menu" id="menu" tabindex="-1" aria-label="Portal"><ul>
 {% for m in barras.portal %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}{% if m.vivo %} class="vivo"{% endif %}>{% if m.vivo %}<span class="ponto" aria-hidden="true"></span>{% endif %}{{ m.rotulo }}{% if m.vivo %}<span class="sr"> (transmissão ao vivo agora)</span>{% endif %}</a></li>{% endfor %}
