@@ -2046,3 +2046,20 @@ Próximos passos dependem das pessoas:
   - `teste_cadastro_orgao`: cabeçalho de órgão novo; troca do prefixo antigo; prefixo escolhido mantido;
   - as 28 linhas passaram com o código montado.
 - **Implantação:** sem migração SQL; build → suítes → `up -d app` → `provision atualizar` (troca o prefixo do pm-bora) → `up -d worker`.
+## 12/11/2026 20:35 — Instalador do nó mais legível (ramo `instalador-no-legivel`, só código; nada alterado na VPS)
+Pedido: o script estava complicado e sem comentários; era preciso parar no meio para descobrir os diretórios do nginx; a tela parecia travada nas atualizações.
+- `deploy/no/instalar.sh`:
+  - comentários em blocos: o que cada etapa faz e por quê; etapas numeradas "N/10";
+  - **descoberta do nginx existente pelo Docker** (`descobrir_nginx`):
+    - o container que publica 443/80;
+    - as pastas montadas em `/etc/nginx/conf.d` e `/etc/letsencrypt`;
+    - a rede;
+    - o certbot que monta a mesma pasta de certificados.
+
+    Mostra o que encontrou e pede só Enter. Pergunta apenas o que faltar (ex.: nginx fora do Docker). Confere se nginx e certbot compartilham `/var/www/certbot`;
+  - **andamento** (`rodar` / `esperar`): nos passos demorados (apt, Docker, imagem, banco, app, provision, worker, nginx próprio), mostra na mesma linha o indicador girando, o tempo decorrido e a última linha do registro; também indica `tail -f logs/instalar-no.log` e o tempo total no fim;
+  - esperas de banco e app agora param com mensagem clara depois de 2 minutos (antes seguiam em silêncio).
+- Conferido, só leitura, nesta VPS: a descoberta achou `nginx`, `/opt/hotspot/nginx/conf.d`, o volume `hotspot_nginx-certs`, a rede `hotspot_shared-net` e o certbot `certbot` (os mesmos valores usados pelo ativador daqui).
+- `tests/teste_instalador_no.sh`: o caso de VPS compartilhada agora confirma os dados descobertos com Enter; novo caso sem descoberta (pergunta um a um). Ensaio: tudo ok.
+- `deploy/no/LEIA-ME.md` atualizado.
+- Publicação: o instalador é baixado no pacote de código gerado pelo console a partir da imagem em produção; vale para novos pacotes depois do deploy.

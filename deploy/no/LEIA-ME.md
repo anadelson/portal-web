@@ -50,10 +50,22 @@ O instalador confere o servidor, **pergunta só o que falta** e pede confirmaç�
 6. configuração do nó: endereço da gestão, nome, token (não aparece na tela), chave pública, IP e validade da licença;
 7. nginx e certificados:
    - **portas livres**: sobe um nginx e um certbot próprios do nó;
-   - **portas ocupadas por outro sistema**: usa o nginx que já existe (pergunta o container, as pastas e a rede);
+   - **portas ocupadas por outro sistema**: usa o nginx que já existe. O instalador **descobre pelo Docker**:
+     - o container que publica a porta 443/80;
+     - a pasta conf.d e a pasta dos certificados;
+     - a rede;
+     - o certbot que usa os mesmos certificados.
+
+     Ele mostra o que encontrou e pede só um Enter para confirmar. Só pergunta o que não achar (por exemplo, um nginx instalado fora do Docker);
 8. banco, app e worker (a senha do banco do nó é gerada na hora);
 9. ativador (a cada minuto) e backup diário (02h00);
 10. conferência com a gestão (licenças e relatório).
+
+Os passos demorados mostram o andamento na mesma linha: o tempo decorrido e a última linha do registro. Para acompanhar os detalhes em outro terminal:
+
+```bash
+tail -f /opt/portal_web/logs/instalar-no.log
+```
 
 Pode rodar de novo quando quiser: ele mantém a senha do banco, o token e os segredos já gravados.
 
@@ -89,5 +101,5 @@ Esse comando ensaia o instalador num contêiner descartável, com docker, apt e 
 - o `.env` gerado;
 - que nenhum segredo aparece na tela nem no log;
 - que rodar de novo mantém a senha do banco, o token e os segredos;
-- o caso de VPS compartilhada (portas 80/443 já em uso);
+- o caso de VPS compartilhada (portas 80/443 já em uso): descobre e usa o nginx existente, ou pergunta quando não acha;
 - as recusas de token e de chave pública inválidos.
