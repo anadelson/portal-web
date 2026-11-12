@@ -1,0 +1,16 @@
+{% extends 'acesso/moldura.html' %}
+{% block corpo %}
+{% if conta %}
+<p>Bem-vindo(a). Crie a sua senha de acesso ao painel. Em seguida você vai cadastrar o segundo fator no aplicativo autenticador do celular (Google Authenticator, Microsoft Authenticator ou similar).</p>
+<form class="campos" method="post" action="/admin/primeiro-acesso"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="t" value="{{ token }}">
+<label>E-mail<input value="{{ conta.email }}" readonly autocomplete="username"></label>
+<label>Nova senha ({{ minimo }} caracteres ou mais)<input type="password" name="nova" required minlength="{{ minimo }}" autocomplete="new-password"></label>
+<label>Repita a senha<input type="password" name="conf" required minlength="{{ minimo }}" autocomplete="new-password"></label>
+<button class="btn">Criar senha e continuar</button></form>
+<p class="legal">O link vale uma vez só. Ninguém da equipe vai pedir a sua senha.</p>
+{% else %}
+<p>Este link de primeiro acesso é inválido, já foi usado ou venceu.</p>
+<p>Peça um novo convite à equipe que administra a plataforma{% if tela.contato %} ou ao órgão (<a href="mailto:{{ tela.contato }}">{{ tela.contato }}</a>){% endif %}. Se você já criou a sua senha, entre pelo login.</p>
+<p><a class="btn sec" href="{{ tela.voltar }}">Ir para o login</a></p>
+{% endif %}
+{% endblock %}

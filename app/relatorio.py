@@ -33,7 +33,7 @@ def montar():
                                     AND inicio > now() - interval '7 days' ORDER BY fonte, id DESC""", (o['slug'],))
         f24 = db.um(db.LOCAL, "SELECT count(*) n FROM coletas WHERE orgao_slug=%s AND NOT ok AND inicio > now() - interval '24 hours'", (o['slug'],))['n']
         rel['orgaos'][o['slug']] = {'id': o['id'], 'licenca_valida_ate': _iso(c and c['valida_ate']), 'licenca_recebida_em': _iso(c and c['recebida_em']),
-                                    'licenca_valida': bool(licenca.vigente(o)), 'falhas_24h': f24,
+                                    'licenca_valida': bool(licenca.vigente(o)), 'falhas_24h': f24, 'convites_pendentes': _pendentes(o),
                                     'coletas': [{'fonte': x['fonte'], 'ok': x['ok'], 'inicio': _iso(x['inicio']), 'registros': x['registros'], 'mensagem': (x['mensagem'] or '')[:160]} for x in col[:40]]}
     try:
         rel['ativacoes'] = [{'id': a['id'], 'situacao': a['situacao'], 'passos': a['passos'], 'mensagem': a['mensagem'], 'concluido_em': _iso(a['concluido_em'])}
@@ -43,6 +43,13 @@ def montar():
     except Exception:
         pass  # banco local ainda sem as tabelas (antes do provision): manda o resto
     return rel
+
+def _pendentes(o):
+    from . import convites
+    try:
+        return convites.pendentes(o['banco'])
+    except Exception:
+        return []
 
 def com_pressa():
     """Há publicação de domínio em andamento (ou recém-concluída)? Então o relatório vai a cada minuto."""
@@ -74,6 +81,11 @@ def receber(no, rel):
         raise ValueError('relatório grande demais')
     db.exe(db.PLATAFORMA, 'UPDATE nos SET relatorio=%s, relatorio_em=now(), ultimo_contato=now(), versao=%s WHERE id=%s',
            (Jsonb({k: v for k, v in rel.items() if k != 'ativacoes'}), str(rel.get('versao', ''))[:40], no['id']))
+    from . import convites
+    for slug, info in (rel.get('orgaos') or {}).items():  # convite usado no nó: o e-mail sai da lista de pendentes
+        o = db.um(db.PLATAFORMA, 'SELECT id, no_id FROM orgaos WHERE slug=%s', (slug,))
+        if o and o['no_id'] == no['id'] and isinstance(info, dict) and isinstance(info.get('convites_pendentes'), list):
+            convites.marcar_usados(o['id'], [str(e) for e in info['convites_pendentes']][:50])
     n = 0
     for a in rel.get('ativacoes') or []:
         if not isinstance(a, dict) or not str(a.get('id', '')).isdigit() or a.get('situacao') not in ('pendente', 'processando', 'no_ar', 'desativado', 'erro'):

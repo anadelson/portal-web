@@ -8,7 +8,9 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app import db, config, licenca as L, ordens as OR, web, provision, orgaos
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from apoio import entrar, tok
+from apoio import entrar, tok, ligar_email_teste, primeiro_acesso, link_convite
+from app import convites as CV
+ligar_email_teste()
 
 erros = []
 def checa(c, nome):
@@ -28,15 +30,16 @@ def cadastrar(**k):
 # ---------- 1. papel "tudo": órgão nesta VPS, ordem executada na hora (igual a antes) ----------
 checa('Hospedagem' not in con.get('/orgaos/novo').text, 'sem nós cadastrados, o cadastro não mostra a escolha de hospedagem')
 r = cadastrar()
-senha = (re.search(r'<code class="senha">([^<]+)</code>', r.text) or [None, ''])[1]
+url = link_convite('admin@pmordem.localhost') or ''
+senha = url.split('t=')[-1]
 o = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE dominio='pmordem.localhost'")
-checa('Órgão criado' in r.text and len(senha) == 16 and o and o['no_id'] is None, 'órgão criado nesta VPS')
+checa('Órgão criado' in r.text and len(senha) > 30 and o and o['no_id'] is None, 'órgão criado nesta VPS e convite enviado na hora')
 checa(existe_banco(o['banco']) and db.um(o['banco'], "SELECT 1 FROM usuarios WHERE email='admin@pmordem.localhost' AND perfil='admin'"), 'banco e administrador criados na hora')
 x = db.um(db.PLATAFORMA, 'SELECT * FROM ordens WHERE orgao_id=%s', (o['id'],))
 checa(x and x['tipo'] == 'criar_orgao' and x['situacao'] == 'feita' and x['no_id'] is None and 'preparado' in x['resultado'], 'ordem registrada e executada na hora')
-checa(senha not in json.dumps(x['payload']) and x['payload'].get('senha_hash') and 'senha' not in {k for k in x['payload'] if k != 'senha_hash'}, 'ordem leva só o hash da senha')
+checa(senha not in json.dumps(x['payload']) and x['payload'].get('convite', {}).get('convite_hash') and 'senha_hash' not in x['payload'], 'ordem leva só o hash do link do convite')
 adm = TestClient(app, base_url='http://pmordem.localhost')
-checa('Visão geral' in entrar(adm, 'admin@pmordem.localhost', senha, 'senhaNovaOrdem123').text, 'administrador entra com a senha única (hash feito no console)')
+checa('Visão geral' in (primeiro_acesso(adm, 'admin@pmordem.localhost', 'senhaNovaOrdem123') or adm.get('/')).text, 'administrador cria a senha pelo convite e entra')
 checa(con.get(f"/layout/{o['id']}").status_code == 200, 'layout pelo console continua para órgão desta VPS')
 checa('Ordens para quem hospeda' in con.get(f"/orgao/{o['id']}").text, 'página do órgão lista as ordens')
 
@@ -47,9 +50,15 @@ t = con.get('/orgaos/novo').text
 checa('Hospedagem' in t and 'no-a3.exemplo.test' in t, 'com nó cadastrado, o cadastro oferece a hospedagem')
 checa('Nó de hospedagem inválido' in cadastrar(dominio='pmnoerro.localhost', email_admin='a@pmnoerro.localhost', ibge='3599943', municipio='Erro', no_id='999').text, 'nó inexistente recusado')
 r = cadastrar(dominio='pmnoa3.localhost', email_admin='admin@pmnoa3.localhost', ibge='3599942', municipio='Município Exemplo Nó', no_id=str(no['id']))
-senha2 = (re.search(r'<code class="senha">([^<]+)</code>', r.text) or [None, ''])[1]
 o2 = db.um(db.PLATAFORMA, "SELECT * FROM orgaos WHERE dominio='pmnoa3.localhost'")
-checa('Órgão criado' in r.text and 'no-a3.exemplo.test' in r.text and len(senha2) == 16 and o2['no_id'] == no['id'], 'órgão criado no nó, senha mostrada uma vez')
+cv2 = db.um(db.PLATAFORMA, 'SELECT * FROM convites WHERE orgao_id=%s', (o2['id'],))
+checa('Órgão criado' in r.text and 'no-a3.exemplo.test' in r.text and o2['no_id'] == no['id'] and 'class="senha"' not in r.text, 'órgão criado no nó, sem senha na tela')
+gl = TestClient(app, base_url='http://gestao.localhost')
+url2 = link_convite('admin@pmnoa3.localhost') or ''
+checa(cv2['situacao'] == 'enviado' and url2.startswith('https://gestao.localhost/convite?t='), 'convite enviado na hora, mesmo com o órgão ainda no nó')
+r_ = gl.get('/convite?t=' + url2.split('t=')[-1], follow_redirects=False)
+checa(r_.status_code == 200 and 'ainda está sendo preparado' in r_.text and 'Nada foi feito' in r_.text, 'link antes de o nó gravar: avisa e não faz nada')
+senha2 = 'nenhuma-senha'
 checa(not existe_banco(o2['banco']), 'gestão NÃO cria o banco do órgão do nó')
 x2 = db.um(db.PLATAFORMA, 'SELECT * FROM ordens WHERE orgao_id=%s', (o2['id'],))
 checa(x2['situacao'] == 'pendente' and x2['no_id'] == no['id'] and senha2 not in json.dumps(x2['payload']), 'ordem na fila do nó, sem a senha em claro')
@@ -96,7 +105,13 @@ checa(OR.puxar() == '0 ordem(ns) executada(s)', 'ordem não roda de novo')
 web.limpar_cache()
 pn = TestClient(app, base_url='http://pmnoa3.localhost')
 checa(pn.get('/').status_code == 200 and pn.get('/transparencia').status_code == 200, 'nó serve o portal do órgão novo')
-checa('Visão geral' in entrar(TestClient(app, base_url='http://pmnoa3.localhost'), 'admin@pmnoa3.localhost', senha2, 'senhaNovaNo1234').text, 'administrador do órgão do nó entra com a senha mostrada no console')
+r_ = como_gestao(lambda: TestClient(app, base_url='http://gestao.localhost').get('/convite?t=' + url2.split('t=')[-1], follow_redirects=False))
+checa(r_.status_code == 303 and r_.headers['location'].startswith('https://pmnoa3.localhost/admin/primeiro-acesso?t='), 'depois que o nó gravou e o painel está no ar: o link leva ao painel do órgão')
+checa(not como_gestao(db.um, db.PLATAFORMA, "SELECT token_cifrado FROM convites WHERE orgao_id=%s", (o2['id'],))['token_cifrado'], 'gestão apaga o link depois de enviar')
+r = primeiro_acesso(TestClient(app, base_url='http://pmnoa3.localhost'), 'admin@pmnoa3.localhost', 'senhaNovaNo1234')
+checa(r is not None and 'Visão geral' in r.text, 'administrador do órgão do nó cria a senha pelo convite e entra')
+como_gestao(CV.marcar_usados, o2['id'], CV.pendentes(o2['banco']))
+checa(como_gestao(db.um, db.PLATAFORMA, 'SELECT situacao FROM convites WHERE orgao_id=%s', (o2['id'],))['situacao'] == 'usado', 'gestão marca o convite como usado (pelo relatório do nó)')
 # devolução falha: executa uma vez, informa depois
 como_gestao(OR.enviar, 'credencial', {'fonte': 'iegm', 'apagar': True}, None, no['id'], 'teste', 'credencial iegm apagada')
 FALHA['devolver'] = True

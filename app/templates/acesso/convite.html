@@ -1,0 +1,14 @@
+{% extends 'acesso/moldura.html' %}
+{% block corpo %}
+{% if estado == 'fora_do_ar' or estado == 'preparando' %}
+<p>Seu convite para o painel do <strong>{{ o.nome }}</strong> está válido, mas o painel {{ 'ainda está sendo preparado' if estado == 'preparando' else 'ainda não foi publicado' }}{% if estado == 'fora_do_ar' %} (<code>{{ o.dominio }}</code>){% endif %}.</p>
+<p>Nada foi feito ainda: a senha e o segundo fator só são criados quando o painel estiver no ar. Volte a este mesmo link mais tarde.</p>
+<p class="legal">O convite vale até {{ c.expira_em|br }}. Se vencer antes da publicação, peça um novo à equipe que administra a plataforma.</p>
+{% elif estado == 'usado' %}
+<p>Este convite já foi usado: a senha do painel já foi criada. Entre pelo login do painel do órgão{% if o %} (<code>https://{{ o.dominio }}/admin</code>){% endif %}.</p>
+{% elif estado == 'vencido' %}
+<p>Este convite venceu. Peça um novo à equipe que administra a plataforma.</p>
+{% else %}
+<p>Este link de convite é inválido ou foi substituído por um convite mais novo. Use o link do e-mail mais recente ou peça um novo à equipe que administra a plataforma.</p>
+{% endif %}
+{% endblock %}

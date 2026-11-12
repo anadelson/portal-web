@@ -1,0 +1,23 @@
+{% extends 'console/base.html' %}{% block h1 %}E-mail de saída{% endblock %}
+{% block conteudo %}
+<p>Servidor que a plataforma usa para mandar e-mails, como o convite de primeiro acesso dos administradores dos órgãos. Só a gestão envia: os nós não precisam desta configuração.</p>
+{% if not chave_ok %}<p class="chip alerta">Falta a CHAVE_CREDENCIAIS no .env da VPS: sem ela a senha do SMTP não pode ser guardada cifrada.</p>{% endif %}
+<section class="cx" aria-labelledby="h-smtp"><h2 id="h-smtp">Servidor SMTP</h2>
+{% set c = cfg or {} %}
+<form class="campos" method="post" action="/email"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<div class="grade2"><label>Servidor<input name="servidor" value="{{ c.servidor or '' }}" required placeholder="smtp.seu-provedor.com"></label>
+<label>Porta<input name="porta" type="number" min="1" max="65535" value="{{ c.porta or 465 }}" required></label></div>
+<label>Segurança da conexão<select name="seguranca">{% for k, n in segs.items() %}<option value="{{ k }}" {{ 'selected' if (c.seguranca or 'ssl') == k }}>{{ n }}</option>{% endfor %}</select></label>
+<div class="grade2"><label>Usuário (normalmente o próprio e-mail)<input name="usuario" value="{{ c.usuario or '' }}" autocomplete="off"></label>
+<label>Senha{% if c.tem_senha %} <small>(guardada cifrada; deixe vazio para manter)</small>{% endif %}<input name="senha" type="password" autocomplete="new-password"></label></div>
+<div class="grade2"><label>E-mail do remetente<input name="remetente" type="email" value="{{ c.remetente or '' }}" required placeholder="nao-responda@seudominio.tld"></label>
+<label>Nome do remetente<input name="remetente_nome" value="{{ c.remetente_nome or '' }}" placeholder="Portais Municipais"></label></div>
+<div class="acoes"><button class="btn" name="acao" value="salvar">Salvar</button></div></form>
+{% if cfg %}<p class="legal">Atualizado em {{ cfg.atualizado_em|br }} por {{ cfg.atualizado_por }}. A senha nunca é exibida nem vai para o registro.</p>{% endif %}
+<p class="legal">Para os e-mails não caírem no spam, o domínio do remetente precisa dos registros SPF e DKIM do provedor no DNS (o painel do provedor de e-mail informa quais).</p></section>
+<section class="cx" aria-labelledby="h-teste"><h2 id="h-teste">Testar</h2>
+{% if cfg and cfg.teste_em %}<p>Último teste: {{ cfg.teste_em|br }} por {{ cfg.teste_por }} — <span class="chip {{ 'ok' if cfg.teste_resultado.startswith('enviado') else 'erro' }}">{{ cfg.teste_resultado }}</span></p>{% endif %}
+<form class="campos" method="post" action="/email"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<label>Mandar um e-mail de teste para<input name="para" type="email" required {{ '' if cfg else 'disabled' }}></label>
+<div class="acoes"><button class="btn sec" name="acao" value="testar" {{ '' if cfg else 'disabled' }}>Enviar teste</button></div></form></section>
+{% endblock %}

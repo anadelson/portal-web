@@ -49,6 +49,40 @@ async def login_post(request: Request):
     AC.iniciar_segundo_fator(request, c, conta)
     return ir('/admin/2fa', '', request)
 
+# ---------- primeiro acesso pelo convite (link de uso único enviado por e-mail) ----------
+@r.get('/primeiro-acesso')
+def primeiro_acesso(request: Request, t: str = ''):
+    from .web import tela_acesso
+    from . import convites
+    conta = convites.conta_do_token(request.state.orgao['banco'], t)
+    tela = tela_acesso(request, 1); tela['titulo'] = 'Primeiro acesso'
+    return templates.TemplateResponse(request, 'acesso/primeiro.html', ctx_orgao(request, tela=tela, conta=conta, token=t if conta else '', minimo=12),
+                                      headers={'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer'})
+
+@r.post('/primeiro-acesso')
+async def primeiro_acesso_post(request: Request):
+    f = await ler_form(request)
+    from . import convites
+    from .security import hash_senha
+    c = AC.Conta(request, 'usuario')
+    if AC.origem_bloqueada(request, c):
+        return ir('/admin/login', 'Muitas tentativas a partir desta conexão. Aguarde alguns minutos.', request)
+    t = f.get('t', '')
+    conta = convites.conta_do_token(request.state.orgao['banco'], t)
+    if not conta:
+        AC.registrar_tentativa(request, c, None, False)
+        auditar(request, 'Primeiro acesso recusado: link inválido, usado ou vencido', 'anônimo')
+        return ir('/admin/primeiro-acesso', 'Link inválido, já usado ou vencido. Peça um novo convite à equipe que administra a plataforma.', request)
+    nova = f.get('nova', '')
+    if len(nova) < 12 or nova != f.get('conf'):
+        return ir(f'/admin/primeiro-acesso?t={t}', 'A senha precisa ter 12 caracteres ou mais e ser igual nos dois campos.', request)
+    if nova.lower() in (conta['email'] or '').lower() or len(set(nova)) < 5:
+        return ir(f'/admin/primeiro-acesso?t={t}', 'Escolha uma senha menos previsível (não use o e-mail nem repita poucos caracteres).', request)
+    convites.usar(request.state.orgao['banco'], conta, hash_senha(nova))
+    auditar(request, f"Primeiro acesso pelo convite: senha criada por {conta['email']}", conta['nome'])
+    AC.iniciar_segundo_fator(request, c, c.por_id(conta['id']))
+    return ir('/admin/2fa', 'Senha criada. Agora cadastre o segundo fator no aplicativo autenticador do celular.', request)
+
 @r.get('/2fa')
 def segundo_fator(request: Request):
     c = AC.Conta(request, 'usuario'); conta = AC.pre_conta(request, c)

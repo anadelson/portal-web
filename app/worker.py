@@ -135,6 +135,18 @@ def relatorio_tick(estado):
     except Exception as e:
         comum.registrar('', 'relatorio:gestao', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
 
+def convites_tick():
+    """Gestão: manda os convites de primeiro acesso prontos (ordem executada e domínio do órgão no ar)."""
+    if config.PAPEL == 'no':
+        return
+    from . import convites
+    try:
+        n = convites.tick()
+        if n:
+            print(datetime.now(), 'CONVITES', n, 'enviado(s)', flush=True)
+    except Exception:
+        traceback.print_exc()
+
 def main():
     ultimo = ultimas_execucoes()
     lic, ords, rel = {}, {}, {}
@@ -143,6 +155,7 @@ def main():
         licencas_tick(lic)
         ordens_tick(ords)
         relatorio_tick(rel)
+        convites_tick()
         agora = datetime.now()
         try:
             for f in fontes_ativas():
