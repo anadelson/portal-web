@@ -41,5 +41,5 @@
 <fieldset class="opcoes"><legend>5. Módulos opcionais contratados</legend>{% for m in mods %}<label data-serve="{{ m[4] }}"><input type="checkbox" name="mod_{{ m[0] }}" value="1" {{ 'checked' if v('mod_' ~ m[0]) }}> {{ m[1] }}{% if m[4] != 'ambos' %} <small>({{ 'Prefeitura' if m[4] == 'executivo' else 'Câmara' }})</small>{% endif %}</label>{% endfor %}</fieldset>
 <div class="acoes-form"><button class="btn">Cadastrar órgão</button><a class="btn sec" href="/">Cancelar</a></div>
 </form>
-<script src="/static/console.js?v=2" defer></script>
+<script src="/static/console.js?v=3" defer></script>
 {% endblock %}

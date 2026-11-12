@@ -1888,3 +1888,19 @@ Próximos passos dependem das pessoas:
   - colunas do convite nos dois órgãos.
 - `convite-email` mesclado em `main` com a tag `convite-email`.
 - **Falta (usuário):** configurar a conta de envio em Console → E-mail de saída e mandar um teste. Até lá, convites de órgãos novos ficam "aguardando" com o motivo na página do órgão.
+
+### Cadastro de órgão: campos da Câmara e de outro sistema aparecendo para Prefeitura (12/11/2026, ramo `cadastro-campos`)
+- **Usuário:** "estou cadastrando um órgão prefeitura e aparece uma indagação de campos relacionados à Câmara, o que são e como preencher".
+- **Causa:** o `console.js` esconde os campos com o atributo `hidden`, mas o CSS dos rótulos (`display:flex`) e das grades (`display:grid`) vencia o `hidden`. Por isso apareciam sempre: os campos "Câmara: … recebedor nas transferências" e os blocos Fiorilli e GOVBR, independentemente do tipo e do sistema escolhidos.
+- **Correção:** `.cadastro-orgao [hidden]{display:none!important}` (só no formulário de cadastro); CSS `v=16`; `console.js?v=3`.
+- **Conferência no navegador** (ambiente de teste), campos que aparecem em cada caso:
+
+  | Tipo | Sistema | UF | Aparece |
+  |---|---|---|---|
+  | Prefeitura | nenhum | SP | só o TCESP |
+  | Prefeitura | Fiorilli | SP | bloco Fiorilli, sem o campo da Câmara |
+  | Prefeitura | GOVBR | PR | bloco GOVBR, sem o campo da Câmara e sem o TCESP |
+  | Câmara | Fiorilli | SP | bloco Fiorilli com "recebedor nas transferências" |
+  | Câmara | GOVBR | SP | bloco GOVBR com "recebedor" |
+
+- **Implantação:** só CSS e telas; reiniciar o app.
