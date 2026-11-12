@@ -1980,3 +1980,14 @@ Próximos passos dependem das pessoas:
   - Validações (nome com 3 a 160 caracteres, cor `#RRGGBB`, CNPJ); "Nada mudou"; registro no console.
 - **Testes:** `teste_ordens` cobre as recusas, a correção na gestão e na ordem pendente, o nó criando o órgão já com o nome corrigido e o órgão já criado (sem os campos de identidade). As 26 suítes, `teste_ativador.sh` e o ensaio do instalador passaram com o código montado.
 - **Implantação:** sem migração; build → suítes → `up -d app` (o worker não muda, mas a imagem é a mesma: `up -d worker`).
+- **Implantado em 12/11/2026, 13:04–13:18 (Brasília), com aprovação do usuário e snapshot confirmado:**
+  - backup às 13:04;
+  - `app/VERSAO` = `orgao-editar (e0cca30)`;
+  - 28 linhas de teste com a imagem: tudo ok;
+  - `up -d app` e `up -d worker`;
+  - conferências:
+    - pm e cm: 200;
+    - gestão, `/orgao/3` e `POST /orgao/3/cadastro` sem login → login;
+    - sem erros no log;
+    - sem reinícios.
+  - O prefbora segue com a criação na fila do nó (nome ainda "Borã"), à espera da correção pelo usuário na tela.
