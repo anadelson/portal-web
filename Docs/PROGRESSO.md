@@ -1954,3 +1954,16 @@ Próximos passos dependem das pessoas:
   - `teste_instalador_no.sh`: pacote cifrado com senha errada e certa, instalador preenchido, senha e token fora da tela e do log;
   - as 26 suítes, `teste_ativador.sh` e o ensaio do instalador passaram com o código montado; tela sem violações no axe.
 - **Implantação (junto com `orgao-no-local`):** `app/VERSAO` → build → suítes → conferir o pacote de código na imagem nova → `up -d app` → `provision atualizar` (030) → `up -d worker`.
+- **Implantado em 12/11/2026, 12:34–12:50 (Brasília), com aprovação do usuário e snapshot confirmado:**
+  - backup às 12:34;
+  - `app/VERSAO` = `instalacao-console (e7671e0)`;
+  - na imagem nova: o pacote de código sai com 268 arquivos (~2,3 MB), com instalador, `Dockerfile` e `docker-compose.yml`, e sem `.env`, segredos nem backups;
+  - as 28 linhas de teste com a imagem: tudo ok;
+  - migração 030 aplicada;
+  - conferências:
+    - gestão → login; pm e cm: 200;
+    - `/instalar/x`: 404;
+    - `/nos/1/instalar` pede login;
+    - `instalacao_links` criada (vazia);
+    - worker sem erros do `bd_prefbora`;
+    - app e worker sem reinícios.
