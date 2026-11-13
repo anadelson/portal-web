@@ -2063,3 +2063,14 @@ Pedido: o script estava complicado e sem comentários; era preciso parar no meio
 - `tests/teste_instalador_no.sh`: o caso de VPS compartilhada agora confirma os dados descobertos com Enter; novo caso sem descoberta (pergunta um a um). Ensaio: tudo ok.
 - `deploy/no/LEIA-ME.md` atualizado.
 - Publicação: o instalador é baixado no pacote de código gerado pelo console a partir da imagem em produção; vale para novos pacotes depois do deploy.
+
+## 12/11/2026 21:03 — Publicados juntos: cabeçalho padrão Câmara + instalador do nó legível (aprovado; snapshot confirmado pelo usuário)
+- Backup antes: bd_cm_bora, bd_pm_bora, plataforma ok.
+- Imagem `cabecalho-padrao-camara+instalador-no-legivel (e042f9f)`. Suítes contra a imagem: 28 linhas, todas sem erro.
+- app → `provision atualizar` (pm-bora: identidade completada, prefixo "Poder Executivo"; cm-bora sem mudança) → worker; prune.
+- Conferido, só leitura:
+  - pmbora 200 com `Poder Executivo` + **Prefeitura Municipal de Borá**;
+  - cmbora 200 com `Poder Legislativo` + **Câmara Municipal de Borá**;
+  - gestão 303 (login);
+  - versão certa; reinícios 0; sem erros no log;
+  - o instalador novo está na imagem (`/srv/fonte`), então os pacotes gerados a partir de agora já saem com ele (links gerados antes deste deploy levam o script antigo: gere de novo).
