@@ -5,7 +5,9 @@ O app web NUNCA executa comandos na VPS: o console só grava o pedido (tabela `a
 
   python -m app.ativacao pendentes              # um pedido por linha: ID<TAB>ACAO<TAB>DOMINIO
   python -m app.ativacao validar ID             # revalida o pedido (domínio cadastrado, formato, DNS na VPS); sai 0 se ok
-  python -m app.ativacao vhost [--incluir ID] [--teste DOMINIO]   # imprime o portal-orgaos.conf inteiro
+  python -m app.ativacao vhost [--incluir ID] [--teste DOMINIO]   # imprime o portal-orgaos.conf inteiro (nginx)
+  python -m app.ativacao vhost --formato traefik [--entrada-http web] [--entrada-https websecure] [--resolvedor letsencrypt] ...
+                                                # imprime o portal-orgaos.yml (rotas do Traefik, ex.: VPS com Dokploy)
   python -m app.ativacao passo ID "texto"       # registra um passo (aparece no console)
   python -m app.ativacao concluir ID SITUACAO "mensagem"   # no_ar | desativado | erro
 
@@ -96,9 +98,9 @@ server {{
 }}
 """
 
-def vhost(incluir=None, teste=None, excluir=None):
-    """Conteúdo inteiro do portal-orgaos.conf: órgãos com vhost_ativo, mais o do pedido em processamento (incluir) e,
-    no modo de teste do ativador, um domínio de teste (sem órgão)."""
+def dominios(incluir=None, teste=None, excluir=None):
+    """Domínios a publicar: órgãos com vhost_ativo, mais o do pedido em processamento (incluir), menos o retirado (excluir)
+    e, no modo de teste do ativador, um domínio de teste (sem órgão)."""
     if config.PAPEL == 'no':
         doms = [r['dominio'] for r in db.todos(db.LOCAL, 'SELECT dominio FROM dominios_publicados ORDER BY orgao_id, dominio')]
     else:  # só os órgãos hospedados nesta VPS (os dos nós são publicados pelo ativador de cada nó)
@@ -112,9 +114,50 @@ def vhost(incluir=None, teste=None, excluir=None):
         doms = [d for d in doms if not a or d != a['dominio']]
     if teste and teste not in doms:
         doms.append(teste)
+    return doms
+
+def vhost(incluir=None, teste=None, excluir=None):
+    """Conteúdo inteiro do portal-orgaos.conf (nginx)."""
+    doms = dominios(incluir, teste, excluir)
     cab = ('# GERADO pelo ativador dos Portais (/opt/portal_web/deploy/ativador.sh) a partir do banco de controle. NÃO EDITE À MÃO.\n'
            '# Um par de blocos por órgão publicado pelo console. O piloto continua em portal-bora.conf.\n\n')
     return cab + '\n'.join(bloco(d) for d in doms)
+
+NOME_TRAEFIK = re.compile(r'^[A-Za-z0-9_-]{1,40}$')
+
+def rotas_traefik(incluir=None, teste=None, excluir=None, entrada_http='web', entrada_https='websecure', resolvedor='letsencrypt'):
+    """Conteúdo inteiro do portal-orgaos.yml para o provedor de arquivos do Traefik (VPS em que o Traefik, ex.: do Dokploy,
+    ocupa as portas 80/443). O corpo é JSON — que também é YAML válido —, então nunca sai um arquivo malformado.
+    Tudo leva o prefixo "portal-orgaos-" para não colidir com rotas de outros sistemas. O Traefik emite e renova o
+    certificado sozinho (resolvedor ACME já configurado nele) e recarrega o arquivo ao ser trocado.
+    Equivale ao portal-comum.inc do nginx: cabeçalhos de segurança, envio até 25 MB, compressão e http → https."""
+    for n in (entrada_http, entrada_https, resolvedor):
+        if not NOME_TRAEFIK.match(n or ''):
+            raise ValueError(f'nome inválido para o Traefik: {n!r}')
+    routers = {}
+    for d in dominios(incluir, teste, excluir):
+        if not DOMINIO.match(d):
+            raise ValueError(f'domínio inválido: {d!r}')
+        nome = 'portal-orgaos-' + d.replace('.', '-')
+        regra = f'Host(`{d}`)'
+        routers[nome + '-http'] = {'rule': regra, 'entryPoints': [entrada_http], 'middlewares': ['portal-orgaos-https'],
+                                   'service': 'portal-orgaos-app'}
+        routers[nome] = {'rule': regra, 'entryPoints': [entrada_https], 'service': 'portal-orgaos-app', 'tls': {'certResolver': resolvedor},
+                         'middlewares': ['portal-orgaos-cabecalhos', 'portal-orgaos-limite', 'portal-orgaos-gzip']}
+    conf = {'http': {
+        'routers': routers,
+        'middlewares': {
+            'portal-orgaos-https': {'redirectScheme': {'scheme': 'https', 'permanent': True}},
+            'portal-orgaos-cabecalhos': {'headers': {'contentTypeNosniff': True, 'referrerPolicy': 'strict-origin-when-cross-origin',
+                                                     'stsSeconds': 31536000}},
+            'portal-orgaos-limite': {'buffering': {'maxRequestBodyBytes': 25 * 1024 * 1024}},
+            'portal-orgaos-gzip': {'compress': {}},
+        },
+        'services': {'portal-orgaos-app': {'loadBalancer': {'passHostHeader': True, 'servers': [{'url': 'http://portal-web-app:8000'}]}}},
+    }}
+    cab = ('# GERADO pelo ativador dos Portais (/opt/portal_web/deploy/ativador.sh) a partir do banco. NÃO EDITE À MÃO.\n'
+           '# Rotas do Traefik para os órgãos publicados pelo console (formato JSON, que o Traefik lê como YAML).\n')
+    return cab + json.dumps(conf, indent=2, ensure_ascii=False) + '\n'
 
 def validar(aid):
     if config.PAPEL == 'no':
@@ -169,7 +212,15 @@ def main(args):
         op = dict(zip(args[1::2], args[2::2]))
         if '--teste' in op and not DOMINIO.match(op['--teste']):
             print('domínio de teste inválido', file=sys.stderr); return 2
-        sys.stdout.write(vhost(int(op['--incluir']) if '--incluir' in op else None, op.get('--teste'), int(op['--excluir']) if '--excluir' in op else None))
+        alvo = (int(op['--incluir']) if '--incluir' in op else None, op.get('--teste'), int(op['--excluir']) if '--excluir' in op else None)
+        if op.get('--formato') == 'traefik':
+            try:
+                sys.stdout.write(rotas_traefik(*alvo, entrada_http=op.get('--entrada-http', 'web'),
+                                               entrada_https=op.get('--entrada-https', 'websecure'), resolvedor=op.get('--resolvedor', 'letsencrypt')))
+            except ValueError as e:
+                print(e, file=sys.stderr); return 2
+        else:
+            sys.stdout.write(vhost(*alvo))
     elif cmd == 'passo':
         passo(int(args[1]), args[2])
     elif cmd == 'concluir':

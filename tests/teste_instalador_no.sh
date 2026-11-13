@@ -16,9 +16,22 @@ for c in apt-get systemctl timedatectl; do printf '#!/bin/bash\necho "%s $*" >> 
 printf '#!/bin/bash\necho "ufw $*" >> /tmp/chamadas\n[ "$1" = status ] && { [ -f /tmp/ufw-ativo ] && echo "Status: active" || echo "Status: inactive"; }\n[ "$1" = --force ] && touch /tmp/ufw-ativo\nexit 0\n' > "$S/ufw"
 printf '#!/bin/bash\n[ -f /tmp/portas-ocupadas ] && echo "LISTEN 0 511 0.0.0.0:80 0.0.0.0:* users:((\\"outro-nginx\\",pid=1,fd=6))"\nexit 0\n' > "$S/ss"
 printf '#!/bin/bash\necho "1.1.1.1 via 198.51.100.1 dev eth0 src 198.51.100.5 uid 0"\n' > "$S/ip"
+# dpkg/apt-mark simulados: Docker "instalado" para conferir que ele fica segurado na atualização da VPS compartilhada
+printf '#!/bin/bash\n[ "$1" = -s ] && case "$2" in docker-ce|containerd.io) exit 0 ;; esac\nexit 1\n' > "$S/dpkg"
+printf '#!/bin/bash\necho "apt-mark $*" >> /tmp/chamadas\nexit 0\n' > "$S/apt-mark"
 cat > "$S/docker" <<'EOF'
 #!/bin/bash
 echo "docker $*" >> /tmp/chamadas
+if [ -f /tmp/traefik ]; then  # VPS com Dokploy: Traefik nas portas 80/443, rede overlay attachable
+  case "$*" in
+    "ps --filter"*|"ps --format"*) echo dokploy-traefik; exit 0 ;;
+    *Config.Image*dokploy-traefik) echo traefik:v3.1.2; exit 0 ;;
+    *Mounts*dokploy-traefik) printf '/etc/traefik/traefik.yml|/tmp/dk/traefik.yml\n/etc/dokploy/traefik/dynamic|/tmp/dk/dynamic\n/var/run/docker.sock|/var/run/docker.sock\n'; exit 0 ;;
+    *Networks*dokploy-traefik) printf 'dokploy-network\n'; exit 0 ;;
+    *Driver*) echo overlay; exit 0 ;;
+    *Attachable*) echo true; exit 0 ;;
+  esac
+fi
 case "$*" in
   --version) echo "Docker version 27.0.0, build x" ;;
   "compose version"*) echo "2.29.0" ;;
@@ -121,6 +134,57 @@ SAIDA=$(printf 'n\n\nno1.exemplo.test\ncurto\n' | bash "$P/deploy/no/instalar.sh
 checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "token do nó curto demais" && [ ! -f $E ]' 'token inválido: para sem gravar o .env'
 SAIDA=$(printf 'n\n\nno1.exemplo.test\n%s\nnao-e-chave\n' "$TOKEN" | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
 checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "chave pública inválida"' 'chave pública inválida: para'
+
+# ---------- VPS com Dokploy (Traefik nas portas 80/443): usa o Traefik, sem mexer no que já está no ar ----------
+rm -f "$E" /tmp/ufw-ativo; touch /tmp/portas-ocupadas /tmp/traefik; : > /tmp/chamadas
+mkdir -p /tmp/dk/dynamic; echo '# rota de outro sistema' > /tmp/dk/dynamic/app-de-outro.yml
+cat > /tmp/dk/traefik.yml <<'YML'
+providers:
+  swarm:
+    exposedByDefault: false
+    watch: true
+  docker:
+    exposedByDefault: false
+  file:
+    directory: /etc/dokploy/traefik/dynamic
+    watch: true
+entryPoints:
+  web:
+    address: :80
+  websecure:
+    address: :443
+    http3:
+      advertisedPort: 443
+    http:
+      tls:
+        certResolver: letsencrypt
+api:
+  insecure: true
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: exemplo@exemplo.test
+      storage: /etc/dokploy/traefik/dynamic/acme.json
+      httpChallenge:
+        entryPoint: web
+YML
+# respostas: atualizar(Enter=pula) · firewall(Enter=pula) · gestão(Enter) · nome · token · chave · IP · validade · escolha(Enter=Traefik) · usar estes dados?(Enter) · portal(s) · ativador(s)
+SAIDA=$(printf '\n\n\nno4.exemplo.test\n%s\n%s\n\n\n\n\ns\ns\n' "$TOKEN" "$PUB" | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ]' "Dokploy: instalação sem erro (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
+checa 'echo "$SAIDA" | grep -q "VPS COMPARTILHADA" && echo "$SAIDA" | grep -q "Quem atende essas portas é o Traefik (container dokploy-traefik"' 'Dokploy: avisa VPS compartilhada e acha o Traefik'
+checa '! grep -q "apt-get upgrade" /tmp/chamadas && ! grep -q "ufw --force enable" /tmp/chamadas && ! grep -q "set-timezone" /tmp/chamadas' 'Dokploy: Enter pula atualização e firewall; fuso não muda'
+for l in PROXY_MODO=traefik CONF_DIR=/tmp/dk/dynamic REDE_PROXY=dokploy-network TRAEFIK_C=dokploy-traefik TRAEFIK_ENTRADA_HTTP=web TRAEFIK_ENTRADA_HTTPS=websecure TRAEFIK_RESOLVEDOR=letsencrypt; do
+  checa "grep -qxF '$l' $E" "Dokploy: .env tem $l (descoberto)"
+done
+checa 'grep -q "Environment=PROXY_MODO=traefik" /etc/systemd/system/portal-ativador.service.d/no.conf && grep -q "Environment=TRAEFIK_RESOLVEDOR=letsencrypt" /etc/systemd/system/portal-ativador.service.d/no.conf' 'Dokploy: ativador configurado para o Traefik'
+checa '[ "$(ls -A /tmp/dk/dynamic)" = app-de-outro.yml ] && ! grep -q "deploy/no/proxy" /tmp/chamadas' 'Dokploy: nada gravado na pasta do Traefik e nenhum nginx próprio subido'
+checa '! grep -qE "docker (restart|stop|rm)|systemctl restart docker" /tmp/chamadas' 'Dokploy: nenhum container ou o Docker reiniciado'
+# 2ª rodada pedindo a atualização: Docker segurado e solto no fim, fuso mantido
+: > /tmp/chamadas
+SAIDA=$(printf 's\n\n\n\nn\n\n\n\n\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ] && grep -q "apt-mark hold  *docker-ce containerd.io" /tmp/chamadas && grep -q "apt-mark unhold  *docker-ce containerd.io" /tmp/chamadas' "Dokploy: atualização pedida segura e solta o Docker (rc=$RC)"
+checa 'grep -q "apt-get upgrade" /tmp/chamadas && ! grep -q "set-timezone" /tmp/chamadas && echo "$SAIDA" | grep -q "fuso do servidor mantido"' 'Dokploy: atualização sem trocar o fuso do servidor'
+rm -f /tmp/traefik /tmp/portas-ocupadas
 
 if [ "$ERROS" -gt 0 ]; then echo "ERROS: $ERROS"; exit 1; fi
 echo 'instalador do nó (simulado): tudo ok'

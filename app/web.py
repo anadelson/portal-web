@@ -339,7 +339,7 @@ def exige(request: Request, permissao: str | None = None):
 def auditar(request: Request, acao: str, quem: str | None = None):
     o = request.state.orgao
     u = usuario(request)
-    ip = request.headers.get('x-forwarded-for', request.client.host if request.client else '').split(',')[0].strip()
+    ip = config.ip_cliente(request)
     db.exe(o['banco'], 'INSERT INTO auditoria (usuario, acao, ip) VALUES (%s,%s,%s)', (quem or (u['nome'] if u else 'anônimo'), acao, mascara_ip(ip)))
 
 # ---- Fase 9: telas de acesso (login e segundo fator) personalizadas ----

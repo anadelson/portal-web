@@ -13,7 +13,14 @@
 #      bash deploy/no/instalar.sh --verificar  # só confere (não altera nada)
 #
 #  Etapas:  1 conferência (só leitura)   2 atualizações/fuso/relógio   3 Docker   4 firewall   5 segredos da gestão
-#           6 dados do nó   7 nginx e certificados   8 banco/app/worker   9 ativador e backup   10 conferência final
+#           6 dados do nó   7 proxy (nginx ou Traefik) e certificados   8 banco/app/worker   9 ativador e backup
+#           10 conferência final
+#
+#  VPS COMPARTILHADA (outros sistemas já usam as portas 80/443, ex.: Dokploy/Traefik ou outro nginx):
+#    - a etapa 2 vem desligada por padrão e, se pedida, NÃO atualiza o Docker (reiniciaria todos os containers da VPS),
+#      não reinicia serviços e não muda o fuso do servidor;
+#    - a etapa 4 não liga o firewall por padrão (poderia bloquear serviços de fora do Docker);
+#    - na etapa 7 o portal entra no proxy que já existe, acrescentando só os arquivos dele.
 #
 #  Pode rodar de novo a qualquer momento: mantém o que já existe (senha do banco, token, segredos) e refaz o que faltar.
 #  NUNCA mostra senhas, chaves ou tokens: são lidos sem eco e gravados só no .env (permissão 600).
@@ -127,6 +134,77 @@ descobrir_nginx() {
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
+#  Descoberta do Traefik (ex.: o do Dokploy) quando é ele que ocupa as portas 80/443.
+#    D_TRAEFIK   container do Traefik (publica 443/80, ou a imagem é traefik)
+#    D_DIN       pasta do servidor com as rotas dinâmicas (provedor "file" do Traefik) — o ativador grava portal-orgaos.yml nela
+#    D_REDE      rede docker do Traefik (o app do portal entra nela)
+#    D_HTTP / D_HTTPS  nomes das entradas das portas 80 e 443 (no Dokploy: web e websecure)
+#    D_RESOLV    resolvedor de certificados do Traefik (no Dokploy: letsencrypt)
+#    D_WATCH     se o Traefik relê a pasta sozinho (watch: true)
+#  Lê a configuração do próprio Traefik (arquivo traefik.yml montado no container e os argumentos de linha de comando).
+# ---------------------------------------------------------------------------------------------------------------------
+e_traefik() { docker inspect -f '{{.Config.Image}}' "$1" 2>/dev/null | grep -qi traefik; }
+descobrir_traefik() {
+  D_TRAEFIK=""; D_DIN=""; D_REDE=""; D_HTTP=""; D_HTTPS=""; D_RESOLV=""; D_WATCH=""
+  command -v docker >/dev/null || return 1
+  local c
+  for c in $(docker ps --filter publish=443 --format '{{.Names}}' 2>/dev/null) $(docker ps --filter publish=80 --format '{{.Names}}' 2>/dev/null) \
+           $(docker ps --format '{{.Names}}' 2>/dev/null); do
+    if e_traefik "$c"; then D_TRAEFIK=$c; break; fi
+  done
+  [ -n "$D_TRAEFIK" ] || return 1
+  local estatico="" d
+  for d in /etc/traefik/traefik.yml /etc/traefik/traefik.yaml /etc/traefik/traefik.toml; do
+    estatico=$(montagem "$D_TRAEFIK" "$d"); [ -n "$estatico" ] && break
+  done
+  [ -z "$estatico" ] && [ -d "$(montagem "$D_TRAEFIK" /etc/traefik)" ] && estatico="$(montagem "$D_TRAEFIK" /etc/traefik)/traefik.yml"
+  local args; args=$(docker inspect -f '{{range .Args}}{{.}}{{"\n"}}{{end}}{{range .Config.Cmd}}{{.}}{{"\n"}}{{end}}' "$D_TRAEFIK" 2>/dev/null || true)
+  local saida; saida=$(TRAEFIK_ARGS="$args" python3 - "${estatico:-}" <<'PY' 2>/dev/null || true
+import os, re, sys
+cfg = {}
+def plano(d, pre=''):
+    for k, v in (d or {}).items():
+        if isinstance(v, dict): plano(v, pre + str(k).lower() + '.')
+        else: cfg[pre + str(k).lower()] = str(v)
+arq = sys.argv[1] if len(sys.argv) > 1 else ''
+if arq and os.path.isfile(arq):
+    txt = open(arq, encoding='utf-8', errors='replace').read()
+    try:
+        import yaml; plano(yaml.safe_load(txt))
+    except Exception:  # sem PyYAML: leitor simples de mapas por indentação (basta para estas chaves)
+        pilha = []
+        for linha in txt.splitlines():
+            if not linha.strip() or linha.lstrip().startswith(('#', '-')): continue
+            m = re.match(r'^(\s*)([A-Za-z0-9_.-]+)\s*:\s*(.*?)\s*$', linha)
+            if not m: continue
+            ind = len(m.group(1)); pilha = [p for p in pilha if p[0] < ind]
+            chave = '.'.join([p[1] for p in pilha] + [m.group(2).lower()])
+            val = m.group(3).split(' #')[0].strip().strip('"\'')
+            if val: cfg[chave] = val
+            else: pilha.append((ind, m.group(2).lower()))
+for a in os.environ.get('TRAEFIK_ARGS', '').split('\n'):  # --providers.file.directory=/x  --entrypoints.web.address=:80 ...
+    m = re.match(r'^--([^=]+)=(.*)$', a.strip())
+    if m: cfg[m.group(1).lower()] = m.group(2)
+ent = {}
+for k, v in cfg.items():
+    m = re.match(r'^entrypoints\.([^.]+)\.address$', k)
+    if m: ent[v.strip().rsplit(':', 1)[-1].split('/')[0]] = m.group(1)
+res = sorted({k.split('.')[1] for k in cfg if k.startswith('certificatesresolvers.')})
+print(cfg.get('providers.file.directory', ''))
+print(ent.get('80', ''))
+print(ent.get('443', ''))
+print(res[0] if len(res) == 1 else ('letsencrypt' if 'letsencrypt' in res else ''))
+print(cfg.get('providers.file.watch', ''))
+PY
+)
+  local din_c; { read -r din_c; read -r D_HTTP; read -r D_HTTPS; read -r D_RESOLV; read -r D_WATCH; } <<< "$saida" || true
+  [ -n "$din_c" ] && D_DIN=$(montagem "$D_TRAEFIK" "$din_c")
+  D_REDE=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{"\n"}}{{end}}' "$D_TRAEFIK" 2>/dev/null \
+             | grep -vxE 'bridge|host|none|ingress|' | head -1 || true)
+  return 0
+}
+
+# ---------------------------------------------------------------------------------------------------------------------
 #  Começo
 # ---------------------------------------------------------------------------------------------------------------------
 [ "$(id -u)" = 0 ] || { echo "Rode como root (sudo bash deploy/no/instalar.sh)."; exit 1; }
@@ -147,6 +225,14 @@ echo "  Fuso: $(timedatectl show -p Timezone --value 2>/dev/null || echo ?) · r
 for p in 80 443; do
   if porta_ocupada $p; then c_av "porta $p já está em uso por: $(ss -ltnpH "( sport = :$p )" | sed -E 's/.*users:\(\("([^"]+)".*/\1/' | head -1)"; else c_ok "porta $p livre"; fi
 done
+# VPS compartilhada = 80/443 já usadas por outro sistema (não pelo nginx próprio do nó), ou instalação anterior assim
+COMPARTILHADA=0
+if (porta_ocupada 80 || porta_ocupada 443) && ! docker ps --format '{{.Names}}' 2>/dev/null | grep -qx portal-nginx; then COMPARTILHADA=1; fi
+case "$(env_val PROXY_MODO)" in existente|traefik) COMPARTILHADA=1 ;; esac
+if [ "$COMPARTILHADA" = 1 ]; then
+  c_av "VPS COMPARTILHADA: outros sistemas já usam as portas 80/443. Para não derrubar nada do que já está no ar,"
+  echo "    as etapas 2 (atualizações) e 4 (firewall) vêm desligadas por padrão — Enter pula."
+fi
 if [ -f "$PROJ/.env" ]; then
   [ "$(env_val PAPEL)" = "no" ] && c_ok ".env do nó já existe (as respostas anteriores viram padrão)" || c_av ".env existe, mas não é de nó (PAPEL=$(env_val PAPEL))"
 fi
@@ -154,7 +240,11 @@ if [ "$VERIFICAR" = 1 ]; then               # modo --verificar: mostra a situaç
   etapa V "Situação do nó"
   if [ -f "$PROJ/.env" ] && command -v docker >/dev/null; then
     (cd "$PROJ" && docker compose ps --format '  {{.Service}}: {{.Status}}' 2>/dev/null) || true
-    echo "  nginx usado: $(env_val NGINX_C) · conf.d: $(env_val CONF_DIR) · certificados: $(env_val CERTS_DIR) · rede: $(env_val REDE_PROXY)"
+    if [ "$(env_val PROXY_MODO)" = traefik ]; then
+      echo "  proxy: Traefik $(env_val TRAEFIK_C) · rotas em: $(env_val CONF_DIR)/portal-orgaos.yml · rede: $(env_val REDE_PROXY) · resolvedor: $(env_val TRAEFIK_RESOLVEDOR)"
+    else
+      echo "  proxy: nginx $(env_val NGINX_C) · conf.d: $(env_val CONF_DIR) · certificados: $(env_val CERTS_DIR) · rede: $(env_val REDE_PROXY)"
+    fi
     systemctl is-active --quiet portal-ativador.timer && c_ok "ativador ligado" || c_av "ativador desligado"
     (cd "$PROJ" && docker compose exec -T app python -m app.licenca puxar 2>/dev/null | sed 's/^/  licenças: /') || c_av "app fora do ar"
   fi
@@ -166,14 +256,37 @@ fi
 #     O relógio certo importa: 2FA, validade das licenças e horário de publicação do Diário dependem dele.
 # =====================================================================================================================
 etapa 2 "Atualizações, fuso horário e relógio"
-if confirma "Atualizar os pacotes do sistema e ajustar fuso (America/Sao_Paulo) e NTP?"; then
+# Na VPS compartilhada: o Docker fica de fora da atualização (atualizá-lo reinicia TODOS os containers da VPS),
+# o needrestart só lista (não reinicia serviços) e o fuso do servidor não muda (os containers do portal já usam
+# America/Sao_Paulo por conta própria).
+SEGURADOS=""
+soltar_docker() { [ -n "$SEGURADOS" ] && apt-mark unhold $SEGURADOS >> "$LOG" 2>&1; SEGURADOS=""; }
+if [ "$COMPARTILHADA" = 1 ]; then
+  PERG="VPS compartilhada: atualizar os pacotes do sistema mesmo assim? (o Docker fica de fora e nenhum serviço é reiniciado)"
+else
+  PERG="Atualizar os pacotes do sistema e ajustar fuso (America/Sao_Paulo) e NTP?"
+fi
+if confirma "$PERG"; then
   export DEBIAN_FRONTEND=noninteractive      # o apt não para para fazer perguntas
-  rodar "Lendo a lista de pacotes (apt update)" apt-get update -q || para "falha ao ler a lista de pacotes (veja $LOG)"
-  rodar "Atualizando os pacotes do sistema (pode levar alguns minutos)" apt-get upgrade -y -q || para "falha ao atualizar pacotes (veja $LOG)"
+  if [ "$COMPARTILHADA" = 1 ]; then
+    export NEEDRESTART_MODE=l                # só lista os serviços que precisariam reiniciar
+    for pk in docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker.io containerd runc; do
+      dpkg -s "$pk" >/dev/null 2>&1 && ! apt-mark showhold 2>/dev/null | grep -qx "$pk" && SEGURADOS="$SEGURADOS $pk"
+    done
+    [ -n "$SEGURADOS" ] && apt-mark hold $SEGURADOS >> "$LOG" 2>&1 && c_ok "Docker segurado durante a atualização:$SEGURADOS"
+  fi
+  rodar "Lendo a lista de pacotes (apt update)" apt-get update -q || { soltar_docker; para "falha ao ler a lista de pacotes (veja $LOG)"; }
+  rodar "Atualizando os pacotes do sistema (pode levar alguns minutos)" apt-get upgrade -y -q || { soltar_docker; para "falha ao atualizar pacotes (veja $LOG)"; }
   rodar "Instalando ferramentas básicas (curl, openssl, ufw, python3)" apt-get install -y -q ca-certificates curl gnupg ufw openssl python3 \
-    || para "falha ao instalar pacotes básicos (veja $LOG)"
-  timedatectl set-timezone America/Sao_Paulo && timedatectl set-ntp true || c_av "não consegui ajustar fuso/NTP"
-  c_ok "fuso $(timedatectl show -p Timezone --value)"
+    || { soltar_docker; para "falha ao instalar pacotes básicos (veja $LOG)"; }
+  soltar_docker
+  if [ "$COMPARTILHADA" = 1 ]; then
+    timedatectl set-ntp true || c_av "não consegui ligar o NTP"
+    c_ok "fuso do servidor mantido ($(timedatectl show -p Timezone --value 2>/dev/null || echo ?)); o portal usa America/Sao_Paulo nos containers"
+  else
+    timedatectl set-timezone America/Sao_Paulo && timedatectl set-ntp true || c_av "não consegui ajustar fuso/NTP"
+    c_ok "fuso $(timedatectl show -p Timezone --value)"
+  fi
 else c_av "etapa pulada"; fi
 
 # =====================================================================================================================
@@ -202,7 +315,9 @@ else para "o nó precisa do Docker"; fi
 etapa 4 "Firewall"
 if ufw status 2>/dev/null | grep -q "Status: active"; then
   c_ok "firewall já ativo"; ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null
-elif confirma "Ligar o firewall (ufw) liberando só SSH, 80 e 443? (a conexão SSH atual continua)"; then
+elif [ "$COMPARTILHADA" = 1 ] && ! confirma "VPS compartilhada: ligar o firewall pode BLOQUEAR serviços desta VPS que não estão em Docker. Ligar mesmo assim (só SSH, 80 e 443)?"; then
+  c_av "firewall não mexido (VPS compartilhada): confira as regras no painel do provedor"
+elif [ "$COMPARTILHADA" = 1 ] || confirma "Ligar o firewall (ufw) liberando só SSH, 80 e 443? (a conexão SSH atual continua)"; then
   ufw allow OpenSSH >/dev/null && ufw allow 80/tcp >/dev/null && ufw allow 443/tcp >/dev/null && ufw --force enable >/dev/null
   c_ok "firewall ativo (SSH, 80, 443)"
 else c_av "firewall não ligado: faça isso pelo painel do provedor"; fi
@@ -300,15 +415,22 @@ VALID=$(pergunta "Dias de validade da licença sem contato com a gestão" "$PADR
 #                pastas, rede e certbot são DESCOBERTOS pelo Docker (descobrir_nginx, acima); só o que não for
 #                encontrado é perguntado.
 # =====================================================================================================================
-etapa 7 "nginx e certificados (Let's Encrypt)"
+etapa 7 "Proxy (nginx ou Traefik) e certificados (Let's Encrypt)"
 MODO=$(env_val PROXY_MODO)
 if [ -z "$MODO" ]; then
-  if (porta_ocupada 80 || porta_ocupada 443) && ! docker ps --format '{{.Names}}' 2>/dev/null | grep -qx portal-nginx; then
+  if [ "$COMPARTILHADA" = 1 ]; then
     echo "  As portas 80/443 já são usadas por outro sistema nesta VPS."
-    echo "  [1] usar o nginx que já existe (como na VPS da gestão, que usa o nginx de outro projeto)   [2] parar aqui"
-    [ "$(pergunta "Escolha" "1")" = "1" ] && MODO=existente || para "libere as portas 80/443 ou escolha usar o nginx existente"
+    if descobrir_traefik; then
+      echo "  Quem atende essas portas é o Traefik (container $D_TRAEFIK — por exemplo, o do Dokploy)."
+      echo "  [1] usar esse Traefik (recomendado: o portal só acrescenta as rotas dele)   [2] usar um nginx em contêiner   [3] parar aqui"
+      case "$(pergunta "Escolha" "1")" in 1) MODO=traefik ;; 2) MODO=existente ;; *) para "nada foi alterado no proxy" ;; esac
+    else
+      echo "  [1] usar o nginx que já existe (como na VPS da gestão, que usa o nginx de outro projeto)   [2] parar aqui"
+      [ "$(pergunta "Escolha" "1")" = "1" ] && MODO=existente || para "libere as portas 80/443 ou escolha usar o nginx existente"
+    fi
   else MODO=proprio; fi
 fi
+TRAEFIK_C=""; T_HTTP=""; T_HTTPS=""; T_RESOLV=""
 if [ "$MODO" = proprio ]; then
   NGINX_C=portal-nginx; CERTBOT_C=portal-certbot; REDE=portal-proxy
   CONF_DIR="$PROJ/deploy/no/proxy/conf.d"; CERTS_DIR=/var/lib/docker/volumes/portal-proxy_certs/_data
@@ -320,6 +442,38 @@ if [ "$MODO" = proprio ]; then
     rodar "Baixando e subindo nginx e certbot" bash -c "cd '$PROJ/deploy/no/proxy' && docker compose up -d" || para "nginx/certbot não subiram (veja $LOG)"
     docker exec "$NGINX_C" nginx -t >> "$LOG" 2>&1 && c_ok "configuração do nginx válida" || para "nginx -t falhou (veja $LOG)"
   else para "o nó precisa do nginx"; fi
+elif [ "$MODO" = traefik ]; then
+  # Traefik: o ativador grava SÓ o arquivo portal-orgaos.yml na pasta de rotas dinâmicas; o Traefik emite os certificados.
+  # Nada do Traefik nem dos outros sistemas é alterado; para desfazer, basta apagar esse arquivo.
+  TRAEFIK_C=$(env_val TRAEFIK_C); CONF_DIR=$(env_val CONF_DIR); REDE=$(env_val REDE_PROXY)
+  T_HTTP=$(env_val TRAEFIK_ENTRADA_HTTP); T_HTTPS=$(env_val TRAEFIK_ENTRADA_HTTPS); T_RESOLV=$(env_val TRAEFIK_RESOLVEDOR)
+  if [ -n "${D_TRAEFIK:-}" ] || descobrir_traefik; then
+    TRAEFIK_C=${TRAEFIK_C:-$D_TRAEFIK}; CONF_DIR=${CONF_DIR:-$D_DIN}; REDE=${REDE:-$D_REDE}
+    T_HTTP=${T_HTTP:-$D_HTTP}; T_HTTPS=${T_HTTPS:-$D_HTTPS}; T_RESOLV=${T_RESOLV:-$D_RESOLV}
+  else c_av "não achei um container do Traefik; informe os dados abaixo"; fi
+  echo "  Traefik encontrado nesta VPS:"
+  printf '    %-34s %s\n' "container do Traefik:" "${TRAEFIK_C:-(não encontrado)}" "pasta de rotas dinâmicas (servidor):" "${CONF_DIR:-(não encontrada)}" \
+    "rede docker:" "${REDE:-(não encontrada)}" "entrada da porta 80:" "${T_HTTP:-(não encontrada)}" "entrada da porta 443:" "${T_HTTPS:-(não encontrada)}" \
+    "resolvedor de certificados:" "${T_RESOLV:-(não encontrado)}"
+  if [ -n "$TRAEFIK_C" ] && [ -n "$CONF_DIR" ] && [ -n "$REDE" ] && [ -n "$T_HTTP" ] && [ -n "$T_HTTPS" ] && [ -n "$T_RESOLV" ] && confirma_s "Usar estes dados?"; then
+    :
+  else
+    TRAEFIK_C=$(pergunta "Container do Traefik" "$TRAEFIK_C"); CONF_DIR=$(pergunta "Pasta de rotas dinâmicas do Traefik (no servidor)" "${CONF_DIR:-/etc/dokploy/traefik/dynamic}")
+    REDE=$(pergunta "Rede docker do Traefik" "${REDE:-dokploy-network}"); T_HTTP=$(pergunta "Entrada da porta 80" "${T_HTTP:-web}")
+    T_HTTPS=$(pergunta "Entrada da porta 443" "${T_HTTPS:-websecure}"); T_RESOLV=$(pergunta "Resolvedor de certificados" "${T_RESOLV:-letsencrypt}")
+  fi
+  for v in "$T_HTTP" "$T_HTTPS" "$T_RESOLV"; do [[ "$v" =~ ^[A-Za-z0-9_-]{1,40}$ ]] || para "nome inválido para o Traefik: $v"; done
+  docker inspect "$TRAEFIK_C" >/dev/null 2>&1 || para "container $TRAEFIK_C não existe"
+  [ -d "$CONF_DIR" ] || para "pasta $CONF_DIR não existe"
+  docker network inspect "$REDE" >/dev/null 2>&1 || para "rede $REDE não existe"
+  # rede overlay (Docker Swarm, como a do Dokploy) só aceita containers comuns se for "attachable"
+  if [ "$(docker network inspect -f '{{.Driver}}' "$REDE" 2>/dev/null)" = overlay ] && [ "$(docker network inspect -f '{{.Attachable}}' "$REDE" 2>/dev/null)" != true ]; then
+    para "a rede $REDE é overlay e não aceita containers de fora do Swarm (attachable=false)"
+  fi
+  [ "${D_WATCH:-}" = false ] && c_av "o Traefik está com watch: false — ele só lê rotas novas quando reinicia; ligue watch: true no provedor file"
+  [ -e "$CONF_DIR/portal-orgaos.yml" ] && c_ok "portal-orgaos.yml já existe (instalação anterior): o ativador continua cuidando dele"
+  NGINX_C=""; CERTBOT_C=""; CERTS_DIR=""
+  c_ok "o portal vai usar o Traefik $TRAEFIK_C (rotas em $CONF_DIR/portal-orgaos.yml, criado só quando um domínio for publicado)"
 else
   # Valores já gravados numa instalação anterior têm prioridade; o que faltar vem da descoberta.
   NGINX_C=$(env_val NGINX_C); CERTBOT_C=$(env_val CERTBOT_C); CONF_DIR=$(env_val CONF_DIR); CERTS_DIR=$(env_val CERTS_DIR); REDE=$(env_val REDE_PROXY)
@@ -360,12 +514,14 @@ fi
 # =====================================================================================================================
 PGP=$(env_val PG_PASSWORD); [ -n "$PGP" ] && [ "$(env_val PAPEL)" = no ] || PGP=$(openssl rand -hex 24)
 NOVO=$(mktemp)
-grep -vE '^(PAPEL|NO_BANCO|GESTAO_URL|NO_TOKEN|NO_NOME|LICENCA_CHAVE_PUBLICA|LICENCA_VALIDADE_DIAS|VPS_IP|PG_PASSWORD|PG_HOST|COMPOSE_FILE|REDE_PROXY|PROXY_MODO|NGINX_C|CERTBOT_C|CONF_DIR|CERTS_DIR|DOMINIO_PM|DOMINIO_CM|SENHA_INICIAL_ADMIN|SENHA_INICIAL_GESTOR)=' "$ORIGEM" > "$NOVO" || true
+grep -vE '^(PAPEL|NO_BANCO|GESTAO_URL|NO_TOKEN|NO_NOME|LICENCA_CHAVE_PUBLICA|LICENCA_VALIDADE_DIAS|VPS_IP|PG_PASSWORD|PG_HOST|COMPOSE_FILE|REDE_PROXY|PROXY_MODO|NGINX_C|CERTBOT_C|CONF_DIR|CERTS_DIR|TRAEFIK_C|TRAEFIK_ENTRADA_HTTP|TRAEFIK_ENTRADA_HTTPS|TRAEFIK_RESOLVEDOR|DOMINIO_PM|DOMINIO_CM|SENHA_INICIAL_ADMIN|SENHA_INICIAL_GESTOR)=' "$ORIGEM" > "$NOVO" || true
 { echo; echo "# ---- nó de portais (gerado por deploy/no/instalar.sh em $(date -Is)) ----"
   echo "PAPEL=no"; echo "GESTAO_URL=$GESTAO_URL"; echo "NO_NOME=$NO_NOME"; echo "NO_TOKEN=$NO_TOKEN"; echo "LICENCA_CHAVE_PUBLICA=$PUB"
   echo "LICENCA_VALIDADE_DIAS=$VALID"; echo "VPS_IP=$VPS_IP"; echo "PG_PASSWORD=$PGP"; echo "PG_HOST=db"
   echo "COMPOSE_FILE=docker-compose.yml:deploy/no/docker-compose.no.yml"; echo "REDE_PROXY=$REDE"; echo "PROXY_MODO=$MODO"
-  echo "NGINX_C=$NGINX_C"; echo "CERTBOT_C=$CERTBOT_C"; echo "CONF_DIR=$CONF_DIR"; echo "CERTS_DIR=$CERTS_DIR"; } >> "$NOVO"
+  echo "NGINX_C=$NGINX_C"; echo "CERTBOT_C=$CERTBOT_C"; echo "CONF_DIR=$CONF_DIR"; echo "CERTS_DIR=$CERTS_DIR"
+  if [ "$MODO" = traefik ]; then echo "TRAEFIK_C=$TRAEFIK_C"; echo "TRAEFIK_ENTRADA_HTTP=$T_HTTP"; echo "TRAEFIK_ENTRADA_HTTPS=$T_HTTPS"; echo "TRAEFIK_RESOLVEDOR=$T_RESOLV"; fi
+} >> "$NOVO"
 grep -qE '^PG_USER=.+' "$NOVO" || echo "PG_USER=portal" >> "$NOVO"
 [ -f "$PROJ/.env" ] && cp -p "$PROJ/.env" "$PROJ/.env.anterior-$(date +%Y%m%d%H%M%S)"
 install -m 600 "$NOVO" "$PROJ/.env"; rm -f "$NOVO"
@@ -396,12 +552,16 @@ etapa 9 "Ativador de domínios e backup diário"
 if confirma "Instalar o ativador (a cada minuto) e o backup diário (02h00, guarda 14 dias)?"; then
   install -m 644 "$PROJ/deploy/systemd/portal-ativador.service" "$PROJ/deploy/systemd/portal-ativador.timer" /etc/systemd/system/
   mkdir -p /etc/systemd/system/portal-ativador.service.d
-  printf '[Service]\nEnvironment=PROJ=%s\nEnvironment=CONF_DIR=%s\nEnvironment=CERTS_DIR=%s\nEnvironment=NGINX_C=%s\nEnvironment=CERTBOT_C=%s\n' \
-    "$PROJ" "$CONF_DIR" "$CERTS_DIR" "$NGINX_C" "$CERTBOT_C" > /etc/systemd/system/portal-ativador.service.d/no.conf
+  { printf '[Service]\nEnvironment=PROJ=%s\nEnvironment=CONF_DIR=%s\nEnvironment=CERTS_DIR=%s\nEnvironment=NGINX_C=%s\nEnvironment=CERTBOT_C=%s\nEnvironment=PROXY_MODO=%s\n' \
+      "$PROJ" "$CONF_DIR" "$CERTS_DIR" "$NGINX_C" "$CERTBOT_C" "$MODO"
+    [ "$MODO" = traefik ] && printf 'Environment=TRAEFIK_ENTRADA_HTTP=%s\nEnvironment=TRAEFIK_ENTRADA_HTTPS=%s\nEnvironment=TRAEFIK_RESOLVEDOR=%s\n' "$T_HTTP" "$T_HTTPS" "$T_RESOLV"
+  } > /etc/systemd/system/portal-ativador.service.d/no.conf
   chmod 644 /etc/systemd/system/portal-ativador.service.d/no.conf
   systemctl daemon-reload && systemctl enable --now portal-ativador.timer >> "$LOG" 2>&1 && c_ok "ativador ligado"
-  echo "0 2 * * * root $PROJ/deploy/backup.sh >> $PROJ/backups/backup.log 2>&1" > /etc/cron.d/portal-backup; chmod 644 /etc/cron.d/portal-backup
-  mkdir -p "$PROJ/backups"; c_ok "backup diário agendado (copie $PROJ/backups para fora da VPS — combine o destino)"
+  # 02h00 de Brasília: se o servidor estiver em UTC (comum em VPS compartilhada, cujo fuso não mudamos), 05h00 UTC
+  HORA=2; case "$(timedatectl show -p Timezone --value 2>/dev/null)" in UTC|Etc/UTC|Etc/UCT|UCT|Universal|Zulu) HORA=5 ;; esac
+  echo "0 $HORA * * * root $PROJ/deploy/backup.sh >> $PROJ/backups/backup.log 2>&1" > /etc/cron.d/portal-backup; chmod 644 /etc/cron.d/portal-backup
+  mkdir -p "$PROJ/backups"; c_ok "backup diário agendado às 02h00 de Brasília (copie $PROJ/backups para fora da VPS — combine o destino)"
 else c_av "etapa pulada: sem ativador, nenhum domínio é publicado"; fi
 
 # =====================================================================================================================

@@ -9,6 +9,12 @@
 # Uso:  ativador.sh                 # processa a fila (é o que o timer roda)
 #       ativador.sh --teste DOMINIO # ensaio de ponta a ponta com um domínio de teste (sem órgão): publica, confere e retira
 #       DRY_RUN=1 ativador.sh --teste DOMINIO   # só pede o certificado em modo de ensaio do Let's Encrypt (não publica)
+#
+# Dois modos de proxy (PROXY_MODO, gravado pelo instalador no drop-in do systemd):
+#   nginx (padrão; também "proprio" e "existente"): certbot webroot + portal-orgaos.conf + nginx -t/reload, como acima.
+#   traefik (VPS em que o Traefik — ex.: do Dokploy — ocupa 80/443): grava portal-orgaos.yml na pasta de rotas dinâmicas
+#     do Traefik (CONF_DIR). O Traefik lê o arquivo sozinho e emite/renova o certificado pelo resolvedor dele; não há
+#     certbot nem reload. Só esse arquivo é do portal: os de outros sistemas nunca são tocados.
 set -uo pipefail
 
 PROJ=${PROJ:-/opt/portal_web}
@@ -20,7 +26,18 @@ NGINX_C=${NGINX_C:-nginx}
 CERTBOT_C=${CERTBOT_C:-certbot}
 DOCKER=${DOCKER:-docker}
 CURL=${CURL:-curl}
-GERADO="$CONF_DIR/portal-orgaos.conf"
+PROXY_MODO=${PROXY_MODO:-existente}
+TRAEFIK=0; [ "$PROXY_MODO" = traefik ] && TRAEFIK=1
+TRAEFIK_ENTRADA_HTTP=${TRAEFIK_ENTRADA_HTTP:-web}
+TRAEFIK_ENTRADA_HTTPS=${TRAEFIK_ENTRADA_HTTPS:-websecure}
+TRAEFIK_RESOLVEDOR=${TRAEFIK_RESOLVEDOR:-letsencrypt}
+if [ "$TRAEFIK" = 1 ]; then
+  GERADO="$CONF_DIR/portal-orgaos.yml"; PROXY_NOME=Traefik
+  # o Traefik só tira o certificado no primeiro acesso: espera até ~2 min antes de dar o HTTPS como falho
+  TENTATIVAS=${TENTATIVAS:-24}; ESPERA=${ESPERA:-5}
+else
+  GERADO="$CONF_DIR/portal-orgaos.conf"; PROXY_NOME=nginx
+fi
 INC_DESTINO="$CONF_DIR/portal-comum.inc"
 INC_ORIGEM="$PROJ/deploy/nginx/portal-comum.inc"
 
@@ -32,9 +49,20 @@ log() { echo "$(date -Is) $*" >> "$LOG"; }
 app() { if [ -n "${APP_CMD:-}" ]; then $APP_CMD "$@"; else (cd "$PROJ" && $DOCKER compose exec -T app python -m app.ativacao "$@"); fi; }
 dominio_ok() { [[ ${#1} -le 253 && "$1" =~ ^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$ ]]; }
 
-# domínio já atendido por outro arquivo do nginx (hotspot e outros sistemas, ou o piloto)?
+# domínio já atendido por outro site da VPS (hotspot e outros sistemas, ou o piloto)?
 em_outro_site() {
   local f
+  if [ "$TRAEFIK" = 1 ]; then
+    # outras rotas do Traefik: arquivos da pasta dinâmica e rótulos de containers/serviços (regras Host(`dominio`))
+    for f in "$CONF_DIR"/*; do
+      [ -f "$f" ] && [ "$f" != "$GERADO" ] || continue
+      grep -qF "\`$1\`" "$f" && return 0
+    done
+    { $DOCKER ps -q 2>/dev/null | xargs -r $DOCKER inspect -f '{{range $k, $v := .Config.Labels}}{{$v}}{{"\n"}}{{end}}' 2>/dev/null
+      $DOCKER service ls -q 2>/dev/null | xargs -r $DOCKER service inspect -f '{{range $k, $v := .Spec.Labels}}{{$v}}{{"\n"}}{{end}}' 2>/dev/null
+    } | grep -qF "\`$1\`" && return 0
+    return 1
+  fi
   for f in "$CONF_DIR"/*.conf; do
     [ "$f" = "$GERADO" ] && continue
     grep -E '^\s*server_name\s' "$f" | tr -s ' ;\t' '\n' | grep -qxF "$1" && return 0
@@ -43,18 +71,28 @@ em_outro_site() {
 }
 
 nginx_testa_e_recarrega() {
+  [ "$TRAEFIK" = 1 ] && return 0   # Traefik: o arquivo é JSON gerado e conferido pelo app; ele recarrega sozinho
   $DOCKER exec "$NGINX_C" nginx -t >>"$LOG" 2>&1 || return 1
   $DOCKER exec "$NGINX_C" nginx -s reload >>"$LOG" 2>&1
 }
 
+gerar() {  # conteúdo novo do arquivo do proxy (saída do app)
+  if [ "$TRAEFIK" = 1 ]; then
+    app vhost --formato traefik --entrada-http "$TRAEFIK_ENTRADA_HTTP" --entrada-https "$TRAEFIK_ENTRADA_HTTPS" --resolvedor "$TRAEFIK_RESOLVEDOR" "$@"
+  else
+    app vhost "$@"
+  fi
+}
+
 # grava o portal-orgaos.conf novo (saída de "app vhost ...") de forma atômica; se o nginx -t recusar, volta o anterior
 publicar() {
-  local tmp="$CONF_DIR/.portal-orgaos.conf.novo" bak="$ESTADO/portal-orgaos.conf.anterior"
-  [ -f "$INC_DESTINO" ] || install -m 0644 "$INC_ORIGEM" "$INC_DESTINO" || return 1
-  app vhost "$@" > "$tmp" || { rm -f "$tmp"; return 1; }
+  local tmp="$ESTADO/portal-orgaos.novo" bak="$ESTADO/portal-orgaos.anterior"
+  # (o temporário fica fora da pasta do proxy: o Traefik leria qualquer arquivo novo que aparecesse lá)
+  [ "$TRAEFIK" = 1 ] || [ -f "$INC_DESTINO" ] || install -m 0644 "$INC_ORIGEM" "$INC_DESTINO" || return 1
+  gerar "$@" > "$tmp" || { rm -f "$tmp"; return 1; }
   grep -q '^# GERADO pelo ativador' "$tmp" || { rm -f "$tmp"; log "vhost gerado sem cabeçalho: recusado"; return 1; }
   if [ -f "$GERADO" ]; then cp -p "$GERADO" "$bak"; else rm -f "$bak"; fi
-  chmod 0644 "$tmp" && mv -f "$tmp" "$GERADO"
+  chmod 0644 "$tmp" && cp -f "$tmp" "$CONF_DIR/.portal-orgaos.tmp" && mv -f "$CONF_DIR/.portal-orgaos.tmp" "$GERADO" && rm -f "$tmp"
   if ! nginx_testa_e_recarrega; then
     if [ -f "$bak" ]; then mv -f "$bak" "$GERADO"; else rm -f "$GERADO"; fi
     nginx_testa_e_recarrega || log "ATENÇÃO: nginx -t falhou também com a configuração anterior"
@@ -63,6 +101,7 @@ publicar() {
 }
 
 certificado() {
+  [ "$TRAEFIK" = 1 ] && return 0   # o Traefik emite o certificado sozinho quando a rota entra
   local d="$1" extra=()
   [ "${DRY_RUN:-}" = 1 ] && extra+=(--dry-run)
   $DOCKER exec "$CERTBOT_C" certbot certonly --webroot -w /var/www/certbot -d "$d" --cert-name "$d" \
@@ -88,28 +127,33 @@ ativar() {
   erro=$(app validar "$id") || { app concluir "$id" erro "Recusado: $erro"; log "pedido $id ($d) recusado: $erro"; return; }
   dominio_ok "$d" || { app concluir "$id" erro "Domínio em formato inválido."; return; }
   if em_outro_site "$d"; then app concluir "$id" erro "Este domínio já é atendido por outro site da VPS; nada foi alterado."; return; fi
-  app passo "$id" "Pedindo o certificado ao Let's Encrypt"
-  certificado "$d" || { app concluir "$id" erro "O Let's Encrypt não emitiu o certificado (confira se o DNS aponta para a VPS e se a porta 80 responde). Nada foi publicado."; return; }
-  app passo "$id" "Certificado emitido; gerando a configuração do nginx"
-  publicar --incluir "$id" || { app concluir "$id" erro "O nginx recusou a configuração nova (nginx -t); a anterior foi mantida."; return; }
-  app passo "$id" "nginx recarregado; conferindo o HTTPS"
+  if [ "$TRAEFIK" = 0 ]; then
+    app passo "$id" "Pedindo o certificado ao Let's Encrypt"
+    certificado "$d" || { app concluir "$id" erro "O Let's Encrypt não emitiu o certificado (confira se o DNS aponta para a VPS e se a porta 80 responde). Nada foi publicado."; return; }
+    app passo "$id" "Certificado emitido; gerando a configuração do nginx"
+  else
+    app passo "$id" "Gerando a rota no Traefik (ele pede o certificado ao Let's Encrypt)"
+  fi
+  publicar --incluir "$id" || { app concluir "$id" erro "O $PROXY_NOME recusou a configuração nova; a anterior foi mantida."; return; }
+  app passo "$id" "$PROXY_NOME atualizado; conferindo o HTTPS"
   if no_ar "$d"; then
     app concluir "$id" no_ar "No ar em https://$d (certificado válido)."; log "pedido $id: $d no ar"
   else
     publicar --excluir "$id"
-    app concluir "$id" erro "O nginx foi recarregado, mas https://$d não respondeu; o domínio foi retirado de novo."
+    app concluir "$id" erro "O $PROXY_NOME foi atualizado, mas https://$d não respondeu com certificado válido; o domínio foi retirado de novo."
   fi
 }
 
 desativar() {
   local id="$1" d="$2"
-  app passo "$id" "Retirando o domínio do nginx"
+  app passo "$id" "Retirando o domínio do $PROXY_NOME"
   if publicar --excluir "$id"; then app concluir "$id" desativado "Retirado do ar (certificado guardado)."; log "pedido $id: $d retirado"
-  else app concluir "$id" erro "O nginx recusou a configuração; nada mudou."; fi
+  else app concluir "$id" erro "O $PROXY_NOME recusou a configuração; nada mudou."; fi
 }
 
 # recarrega o nginx se algum certificado foi renovado desde a última verificação (no máximo uma vez por execução)
 renovacao() {
+  [ "$TRAEFIK" = 1 ] && return 0   # o Traefik renova e passa a usar o certificado novo sozinho
   local marca="$ESTADO/ultima-renovacao"
   [ -f "$marca" ] || { touch "$marca"; return; }
   if find "$CERTS_DIR/archive" -name '*.pem' -newer "$marca" 2>/dev/null | grep -q .; then
@@ -123,8 +167,8 @@ teste() {
   dominio_ok "$d" || { echo "domínio de teste inválido"; return 2; }
   if em_outro_site "$d"; then echo "domínio já está em outro site da VPS"; return 2; fi
   echo "1/4 certificado$([ "${DRY_RUN:-}" = 1 ] && echo ' (ensaio, --dry-run)')"; certificado "$d" || { echo "FALHOU: certificado (veja $LOG)"; return 1; }
-  [ "${DRY_RUN:-}" = 1 ] && { echo "ensaio do certificado ok (nada publicado)"; return 0; }
-  echo "2/4 publicar no nginx"; publicar --teste "$d" || { echo "FALHOU: nginx -t recusou; configuração anterior mantida"; return 1; }
+  [ "${DRY_RUN:-}" = 1 ] && { echo "ensaio do certificado ok (nada publicado)$([ "$TRAEFIK" = 1 ] && echo '; no Traefik o certificado só é pedido na publicação')"; return 0; }
+  echo "2/4 publicar no $PROXY_NOME"; publicar --teste "$d" || { echo "FALHOU: o $PROXY_NOME recusou; configuração anterior mantida"; return 1; }
   echo "3/4 conferir HTTPS"; if no_ar "$d"; then echo "   https://$d responde com certificado válido"; ok=1; else echo "   FALHOU: https://$d não respondeu"; ok=0; fi
   echo "4/4 retirar o domínio de teste"; publicar || echo "ATENÇÃO: não consegui retirar o domínio de teste (veja $LOG)"
   [ "$ok" = 1 ]

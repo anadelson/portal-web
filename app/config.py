@@ -85,3 +85,12 @@ def govbr_urls():
     sso = 'https://sso.acesso.gov.br' if GOVBR_AMBIENTE == 'producao' else 'https://sso.staging.acesso.gov.br'
     api = 'https://api.acesso.gov.br' if GOVBR_AMBIENTE == 'producao' else 'https://api.staging.acesso.gov.br'
     return {'authorize': sso + '/authorize', 'token': sso + '/token', 'jwks': sso + '/jwk', 'logout': sso + '/logout', 'niveis': api + '/confiabilidades/v3/contas/{cpf}/niveis', 'issuer': sso + '/'}
+
+def ip_cliente(request):
+    """IP de quem acessou. O proxy da frente (nginx ou Traefik) grava em X-Real-IP o endereço de quem conectou nele e
+    descarta o que o visitante mandar nesse cabeçalho. Sem ele, vale o ÚLTIMO endereço do X-Forwarded-For (o que o
+    proxy acrescentou; os anteriores podem ter sido inventados pelo visitante) e, por fim, o endereço da conexão."""
+    ip = (request.headers.get('x-real-ip') or '').strip()
+    if not ip:
+        ip = (request.headers.get('x-forwarded-for') or '').split(',')[-1].strip()
+    return ip or (request.client.host if request.client else '')
