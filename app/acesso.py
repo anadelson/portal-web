@@ -24,7 +24,7 @@ class Conta:
         return db.um(self.banco, f'SELECT * FROM {self.tabela} WHERE lower(email)=lower(%s)', (email or '',))
 
 def _ip(request):
-    return (request.headers.get('x-forwarded-for') or (request.client.host if request.client else '')).split(',')[0].strip()
+    return config.ip_cliente(request)
 
 def _chave_origem(request, c: Conta):
     return hashlib.sha256(f"{c.tipo}|{getattr(request.state, 'orgao', {}) and request.state.orgao.get('slug')}|{_ip(request)}".encode()).hexdigest()

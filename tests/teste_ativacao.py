@@ -5,6 +5,7 @@ if os.environ.get('PG_HOST', 'db') == 'db' or not os.environ.get('TESTE'):
     sys.exit('Recusado: rode só contra o banco de TESTE (TESTE=1 e PG_HOST de teste).')
 from fastapi.testclient import TestClient
 from app.main import app
+import json
 from app import db, ativacao as AT
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from apoio import entrar, tok
@@ -97,6 +98,23 @@ for ruim in ('a.com;\n include /etc/passwd', 'exemplo.com/x', 'EXEMPLO.COM', 'se
         pass
 checa(roda('vhost', '--teste', 'x;y')[0] == 2, 'domínio de teste inválido recusado')
 checa('server_name teste-ativacao.exemplo.com;' in roda('vhost', '--teste', 'teste-ativacao.exemplo.com')[1], 'modo de teste do ativador inclui o domínio de teste')
+# Traefik (VPS com Dokploy): JSON válido (também YAML), rotas http→https e https com o resolvedor pedido, nomes com prefixo
+rc, y = roda('vhost', '--formato', 'traefik', '--resolvedor', 'meu-le', '--teste', 'teste-ativacao.exemplo.com')
+corpo = json.loads(''.join(l for l in y.splitlines(True) if not l.startswith('#'))) if rc == 0 else {}
+rt = corpo.get('http', {}).get('routers', {})
+checa(rc == 0 and y.startswith('# GERADO pelo ativador') and rt.get('portal-orgaos-teste-ativacao-exemplo-com', {}).get('tls') == {'certResolver': 'meu-le'}
+      and rt.get('portal-orgaos-teste-ativacao-exemplo-com-http', {}).get('entryPoints') == ['web'], 'traefik: rotas do domínio de teste com o resolvedor pedido')
+checa(all(k.startswith('portal-orgaos-') for sec in corpo.get('http', {}).values() for k in sec), 'traefik: tudo com prefixo portal-orgaos- (não colide com outros sistemas)')
+checa(corpo.get('http', {}).get('services', {}).get('portal-orgaos-app', {}).get('loadBalancer', {}).get('servers') == [{'url': 'http://portal-web-app:8000'}]
+      and corpo['http']['middlewares']['portal-orgaos-limite']['buffering']['maxRequestBodyBytes'] == 25 * 1024 * 1024, 'traefik: aponta para o app e limita envios a 25 MB')
+checa(roda('vhost', '--formato', 'traefik', '--resolvedor', 'x`y')[0] == 2, 'traefik: nome de resolvedor inválido recusado')
+# IP do visitante: X-Real-IP do proxy vence; sem ele, o último do X-Forwarded-For (o primeiro pode ser inventado)
+from types import SimpleNamespace as NS
+from app import config as CFG
+req = lambda h, c='10.0.0.9': NS(headers={k.lower(): v for k, v in h.items()}, client=NS(host=c))
+checa(CFG.ip_cliente(req({'X-Real-IP': '203.0.113.7', 'X-Forwarded-For': '1.2.3.4, 203.0.113.7'})) == '203.0.113.7', 'IP: X-Real-IP do proxy')
+checa(CFG.ip_cliente(req({'X-Forwarded-For': '1.2.3.4, 203.0.113.8'})) == '203.0.113.8', 'IP: sem X-Real-IP, o último do X-Forwarded-For (não o inventado)')
+checa(CFG.ip_cliente(req({})) == '10.0.0.9', 'IP: sem cabeçalhos, o da conexão')
 r = con.post('/orgao/1/dominio', data={'csrf': tok(con, '/orgao/1'), 'acao': 'ativar'}, follow_redirects=True)
 checa('publicados pelo portal-bora.conf' in r.text and 'portal-bora.conf' in con.get('/orgao/1').text, 'domínios do piloto ficam fora do ativador')
 anon = TestClient(app, base_url='http://gestao.localhost')

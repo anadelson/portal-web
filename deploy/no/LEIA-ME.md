@@ -48,7 +48,7 @@ O instalador confere o servidor, **pergunta só o que falta** e pede confirmaç�
 4. firewall (SSH, 80 e 443);
 5. segredos: lê o pacote da gestão;
 6. configuração do nó: endereço da gestão, nome, token (não aparece na tela), chave pública, IP e validade da licença;
-7. nginx e certificados:
+7. proxy e certificados:
    - **portas livres**: sobe um nginx e um certbot próprios do nó;
    - **portas ocupadas por outro sistema**: usa o nginx que já existe. O instalador **descobre pelo Docker**:
      - o container que publica a porta 443/80;
@@ -57,9 +57,29 @@ O instalador confere o servidor, **pergunta só o que falta** e pede confirmaç�
      - o certbot que usa os mesmos certificados.
 
      Ele mostra o que encontrou e pede só um Enter para confirmar. Só pergunta o que não achar (por exemplo, um nginx instalado fora do Docker);
+   - **portas ocupadas pelo Traefik** (ex.: VPS com **Dokploy**): usa esse Traefik. O instalador descobre:
+     - o container;
+     - a pasta de rotas dinâmicas (no Dokploy, `/etc/dokploy/traefik/dynamic`);
+     - a rede (`dokploy-network`);
+     - as entradas das portas 80/443 (`web` e `websecure`);
+     - o resolvedor de certificados (`letsencrypt`).
+
+     O ativador grava **só** o arquivo `portal-orgaos.yml` nessa pasta, e o próprio Traefik emite os certificados. Não use certbot nem nginx. Os arquivos do Dokploy e dos outros sistemas não são tocados. Não edite `portal-orgaos.yml` à mão (nem pelo painel do Dokploy): ele é regerado a cada publicação. Para desfazer, basta apagá-lo;
 8. banco, app e worker (a senha do banco do nó é gerada na hora);
 9. ativador (a cada minuto) e backup diário (02h00);
 10. conferência com a gestão (licenças e relatório).
+
+### VPS compartilhada (outros sistemas já no ar)
+
+Quando as portas 80/443 já são de outro sistema, o instalador avisa logo na etapa 1 e se protege para não derrubar nada:
+
+- **etapa 2 (atualizações)**: vem desligada (Enter pula). Se pedida:
+  - **não atualiza o Docker**, porque isso reiniciaria todos os containers da VPS;
+  - não reinicia serviços;
+  - não muda o fuso do servidor (os containers do portal já usam o horário de Brasília).
+- **etapa 4 (firewall)**: não liga o ufw por padrão, porque poderia bloquear serviços de fora do Docker.
+- **etapa 7**: o portal só se junta ao proxy existente (nginx ou Traefik). Nenhum container de outro sistema é reiniciado.
+- **backup**: fica às 02h00 de Brasília mesmo com o servidor em UTC (05h00 UTC).
 
 Os passos demorados mostram o andamento na mesma linha: o tempo decorrido e a última linha do registro. Para acompanhar os detalhes em outro terminal:
 

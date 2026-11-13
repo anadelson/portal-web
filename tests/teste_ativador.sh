@@ -20,6 +20,9 @@ if [ "\$1 \$2" = "exec certbot" ]; then
 fi
 if [ "\$1 \$2 \$3 \$4" = "exec nginx nginx -t" ]; then [ -f "$T/nginx-quebrado" ] && exit 1; exit 0; fi
 if [ "\$1 \$2 \$3" = "exec nginx nginx" ]; then echo reload >> "$T/recargas"; exit 0; fi
+# Traefik: um container de outro sistema com rótulo de rota (Host(\`rotulo.exemplo.com\`))
+if [ "\$1 \$2" = "ps -q" ]; then echo abc123; exit 0; fi
+if [ "\$1" = inspect ] && [ "\$4" = abc123 ]; then echo 'Host(\`rotulo.exemplo.com\`)'; exit 0; fi
 exit 0
 EOF
 # --- curl simulado: 200, ou falha se existir $T/https-falha ---
@@ -45,6 +48,12 @@ case "$1" in
          [ "${2:-}" = --excluir ] && { read -r id ac d sit < "$F/$3.ped"; doms=$(echo "$doms" | tr ' ' '\n' | grep -vxF "$d"); }
          [ "${2:-}" = --teste ] && doms="$doms $3"
          echo '# GERADO pelo ativador dos Portais (teste)'
+         if [ "${2:-}" = --formato ]; then  # traefik: como o app, recebe entradas e resolvedor e devolve uma rota por domínio
+           echo "# $*"; shift 9; [ "${1:-}" = --incluir ] && { read -r id ac d sit < "$F/$2.ped"; doms="$(cat "$F/ativos") $d"; }
+           [ "${1:-}" = --excluir ] && { read -r id ac d sit < "$F/$2.ped"; doms=$(cat "$F/ativos" | grep -vxF "$d"); }
+           [ "${1:-}" = --teste ] && doms="$(cat "$F/ativos") $2"
+           for d in $doms; do printf '"rule": "Host(`%s`)"\n' "$d"; done; exit 0
+         fi
          for d in $doms; do printf 'server {\n    listen 443 ssl http2;\n    server_name %s;\n    include /etc/nginx/conf.d/portal-comum.inc;\n}\n' "$d"; done ;;
 esac
 EOF
@@ -108,6 +117,25 @@ saida=$(DRY_RUN=1 rodar --teste ensaio.exemplo.com); checa 'echo "$saida" | grep
 checa '[ "$(rodar --teste "x;y" ; echo $?)" != 0 ]' 'domínio de teste inválido recusado'
 # 10. trava: duas execuções ao mesmo tempo não se atropelam
 exec 8>"$T/estado/trava"; flock -n 8; pedido 8 ativar trava.exemplo.com; rodar; checa '[ "$(sit 8)" = pendente ]' 'segunda execução sai sem fazer nada (trava)'; flock -u 8
+
+# 11. modo Traefik (VPS com Dokploy): grava portal-orgaos.yml na pasta dinâmica, sem certbot nem nginx
+mkdir -p "$T/dyn"; printf 'http:\n  routers:\n    app-dokploy:\n      rule: Host(`ocupado2.exemplo.com`)\n' > "$T/dyn/app-dokploy.yml"; cp "$T/dyn/app-dokploy.yml" "$T/dokploy-antes.yml"
+rm -rf "$T/fila"/*; mkdir -p "$T/fila"; : > "$T/chamadas"; : > "$T/recargas"
+rodar_t() { PROXY_MODO=traefik TRAEFIK_RESOLVEDOR=le CONF_DIR="$T/dyn" TENTATIVAS=${TENTATIVAS:-3} ESPERA=0 PROJ="$RAIZ" CERTS_DIR="$T/certs" ESTADO="$T/estado" LOG="$T/ativador.log" \
+            DOCKER="$T/bin/docker" CURL="$T/bin/curl" APP_CMD="$T/bin/app" FILA="$T/fila" bash "$RAIZ/deploy/ativador.sh" "$@"; }
+pedido 21 ativar orgao.exemplo.com; rodar_t
+checa '[ "$(sit 21)" = no_ar ] && grep -q "Host(\`orgao.exemplo.com\`)" "$T/dyn/portal-orgaos.yml"' 'traefik: rota do órgão publicada em portal-orgaos.yml'
+checa 'grep -q -- "--formato traefik --entrada-http web --entrada-https websecure --resolvedor le" "$T/dyn/portal-orgaos.yml"' 'traefik: entradas e resolvedor configurados passam para o app'
+checa '! grep -q "exec certbot\|nginx -t" "$T/chamadas" && [ ! -s "$T/recargas" ] && [ ! -e "$T/dyn/portal-comum.inc" ]' 'traefik: sem certbot, sem nginx e sem trecho do nginx'
+checa 'cmp -s "$T/dyn/app-dokploy.yml" "$T/dokploy-antes.yml" && [ "$(ls -A "$T/dyn" | sort | tr "\n" " ")" = "app-dokploy.yml portal-orgaos.yml " ]' 'traefik: arquivo do Dokploy intacto e nenhum arquivo extra na pasta'
+grep -q "Gerando a rota no Traefik" "$T/fila/21.passos"; checa '[ $? = 0 ]' 'traefik: passos falam do Traefik'
+pedido 22 ativar ocupado2.exemplo.com; pedido 23 ativar rotulo.exemplo.com; cp "$T/dyn/portal-orgaos.yml" "$T/antes.yml"; rodar_t
+checa '[ "$(sit 22)" = erro ] && [ "$(sit 23)" = erro ] && cmp -s "$T/antes.yml" "$T/dyn/portal-orgaos.yml"' 'traefik: domínio de rota de outro sistema (arquivo ou rótulo) recusado sem mudar nada'
+touch "$T/https-falha"; pedido 24 ativar mudo.exemplo.com; rodar_t; rm -f "$T/https-falha"
+checa '[ "$(sit 24)" = erro ] && ! grep -q mudo "$T/dyn/portal-orgaos.yml" && grep -q "Traefik foi atualizado" "$T/fila/24.msg"' 'traefik: HTTPS sem certificado válido: retirado de novo'
+pedido 25 desativar orgao.exemplo.com; rodar_t
+checa '[ "$(sit 25)" = desativado ] && ! grep -q "orgao.exemplo.com" "$T/dyn/portal-orgaos.yml"' 'traefik: retirada do ar'
+saida=$(rodar_t --teste teste-traefik.exemplo.com); checa 'echo "$saida" | grep -q "publicar no Traefik" && ! grep -q teste-traefik "$T/dyn/portal-orgaos.yml"' "traefik: modo de teste publica e retira ($saida)"
 
 if [ "$ERROS" -gt 0 ]; then echo "ERROS: $ERROS"; exit 1; fi
 echo 'ativador (simulado): tudo ok'

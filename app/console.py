@@ -374,7 +374,7 @@ def api_licencas(request: Request):
     no = licenca.no_do_token(a[7:].strip() if a[:7].lower() == 'bearer ' else '')
     if not no:
         return JSONResponse({'erro': 'não autorizado'}, status_code=401, headers={'Cache-Control': 'no-store'})
-    d = licenca.entregar(no, ip=(request.headers.get('x-forwarded-for') or (request.client.host if request.client else '')).split(',')[0].strip(),
+    d = licenca.entregar(no, ip=config.ip_cliente(request),
                          versao=request.headers.get('x-versao', ''))
     return JSONResponse(d, headers={'Cache-Control': 'no-store'})
 
@@ -480,7 +480,7 @@ def instalar_baixar(request: Request, token: str):
     from . import instalacao as IN
     if config.PAPEL == 'no':
         raise HTTPException(404)
-    ip = (request.headers.get('x-forwarded-for') or (request.client.host if request.client else '')).split(',')[0].strip()
+    ip = config.ip_cliente(request)
     try:
         r = IN.usar_link(token, ip)
     except RuntimeError as e:

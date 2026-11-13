@@ -52,7 +52,7 @@ def gravar_cookie(resp, request, banco, pagina):
                     httponly=True, samesite='lax', secure=config.COOKIE_SEGURO)
 
 def ip_hash(request):
-    ip = (request.headers.get('x-forwarded-for') or (request.client.host if request.client else '')).split(',')[0].strip()
+    ip = config.ip_cliente(request)
     return hashlib.sha256(f'{config.SECRET_KEY}|{config.hoje().isoformat()}|{ip}'.encode()).hexdigest()
 
 def excedeu(banco, h):

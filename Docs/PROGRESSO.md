@@ -2074,3 +2074,31 @@ Pedido: o script estava complicado e sem comentários; era preciso parar no meio
   - gestão 303 (login);
   - versão certa; reinícios 0; sem erros no log;
   - o instalador novo está na imagem (`/srv/fonte`), então os pacotes gerados a partir de agora já saem com ele (links gerados antes deste deploy levam o script antigo: gere de novo).
+
+## 12/11/2026 21:40 — Nó em VPS com Dokploy/Traefik e proteções de VPS compartilhada (ramo `proxy-traefik`, só código; nada alterado na VPS)
+Pedido: a VPS nova não tem nginx, só o Traefik do Dokploy, e já tem outros serviços no ar. O usuário aprovou o modo Traefik com as proteções.
+- **Ativador** (`deploy/ativador.sh`), com `PROXY_MODO=traefik`:
+  - grava só `portal-orgaos.yml` na pasta de rotas dinâmicas do Traefik;
+  - não usa certbot nem nginx e não faz reload (o Traefik emite e renova o certificado);
+  - recusa domínio que já esteja em outra rota (arquivos da pasta e rótulos de containers e serviços);
+  - confere o HTTPS por até ~2 min e retira o domínio se falhar.
+
+  O temporário fica fora da pasta do proxy. O modo nginx não mudou.
+- **App** (`app/ativacao.py`): `vhost --formato traefik` gera o arquivo em JSON, que também é YAML válido e por isso nunca sai malformado.
+  - Tudo leva o prefixo `portal-orgaos-`.
+  - Mesmas proteções do `portal-comum.inc`: nosniff, Referrer-Policy, HSTS, envio até 25 MB, compressão e http → https.
+- **Instalador** (`deploy/no/instalar.sh`):
+  - detecta VPS compartilhada;
+  - etapa 2 desligada por padrão; se pedida, segura os pacotes do Docker (`apt-mark hold`), `NEEDRESTART_MODE=l` e não muda o fuso;
+  - etapa 4 não liga o ufw por padrão;
+  - etapa 7 descobre o Traefik: container, pasta dinâmica (lida do `traefik.yml` ou dos argumentos), rede (exige overlay attachable), entradas 80/443, resolvedor e `watch`. Mostra tudo e pede Enter;
+  - drop-in do ativador com `PROXY_MODO` e `TRAEFIK_*`;
+  - backup às 02h00 de Brasília também com o servidor em UTC.
+- **IP do visitante**: `config.ip_cliente` usa X-Real-IP (nginx e Traefik), senão o último X-Forwarded-For. Antes era o primeiro, que o visitante podia inventar. Vale para login, avaliação, console e licenças.
+- Testes:
+  - `teste_ativador.sh`: cenários Traefik;
+  - `teste_instalador_no.sh`: VPS com Dokploy simulada (descoberta, nada gravado na pasta do Traefik, nenhum reinício, Docker segurado), também sem PyYAML;
+  - `teste_ativacao.py`: rotas Traefik e IP.
+
+  Todas as suítes: 28 linhas ok.
+- Falta: confirmar os nomes reais na VPS nova (container, pasta, rede, resolvedor), com as 4 saídas só de leitura pedidas. O instalador mostra o que descobriu antes de usar.
