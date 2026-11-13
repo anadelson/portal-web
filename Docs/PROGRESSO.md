@@ -2102,3 +2102,14 @@ Pedido: a VPS nova não tem nginx, só o Traefik do Dokploy, e já tem outros se
 
   Todas as suítes: 28 linhas ok.
 - Falta: confirmar os nomes reais na VPS nova (container, pasta, rede, resolvedor), com as 4 saídas só de leitura pedidas. O instalador mostra o que descobriu antes de usar.
+
+## 12/11/2026 21:45 — Publicado `proxy-traefik` (aprovado; snapshot confirmado pelo usuário)
+- Backup antes: bd_cm_bora, bd_pm_bora e plataforma ok.
+- Imagem `proxy-traefik (32ce6ee)`. Suítes contra a imagem: 28 linhas, todas sem erro.
+- Sequência: app → `provision atualizar` (sem mudanças nos órgãos) → worker → prune.
+- Conferido, só leitura:
+  - pm e cm respondem 200; a gestão responde 303 (login);
+  - versão certa; 0 reinícios; sem erros no log;
+  - o ativador desta VPS segue no modo nginx (timer ativo, última execução com status 0);
+  - o instalador novo (com Traefik) está no pacote de código (`/srv/fonte`).
+- Para a VPS nova com Dokploy: gerar os pacotes de novo no console (os links anteriores levam o instalador antigo) e rodar o instalador. Nas etapas 2 e 4, Enter pula. Na etapa 7, escolher o Traefik e conferir os dados descobertos.
