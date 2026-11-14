@@ -2113,3 +2113,24 @@ Pedido: a VPS nova não tem nginx, só o Traefik do Dokploy, e já tem outros se
   - o ativador desta VPS segue no modo nginx (timer ativo, última execução com status 0);
   - o instalador novo (com Traefik) está no pacote de código (`/srv/fonte`).
 - Para a VPS nova com Dokploy: gerar os pacotes de novo no console (os links anteriores levam o instalador antigo) e rodar o instalador. Nas etapas 2 e 4, Enter pula. Na etapa 7, escolher o Traefik e conferir os dados descobertos.
+
+## 14/11/2026 15:41 — Nó: certificados do INEP e credenciais de fontes (ramo `credenciais-e-certs-no`, código)
+Problemas vistos no nó do prefbora (VPS com Dokploy):
+- **INEP:** todas as consultas falhavam com `CERTIFICATE_VERIFY_FAILED`. O instalador gravava `CERTS_DIR` (pasta de certificados do proxy, vazia no modo Traefik) no `.env` do nó. O app lê o `.env` e usava esse mesmo nome para a pasta dos certificados intermediários do INEP (`deploy/certs`), por isso não os encontrava.
+- **IEG-M (TCESP):** o teste falhava porque a credencial foi cadastrada em 07/11, antes de o nó existir. O console só a enviava aos nós no momento da gravação, então o nó nunca a recebeu.
+
+Correções:
+- **App:** a pasta dos intermediários passa a se chamar `CERTS_INTERMEDIARIOS`, e valor vazio usa o padrão da imagem. `CERTS_DIR` não afeta mais o app.
+- **Instalador:** grava `PROXY_CERTS_DIR` no `.env`, lê o nome antigo como reserva e remove `CERTS_DIR` do `.env`. O drop-in do ativador não muda.
+- **Console, envio de credenciais:**
+  - na consulta de ordens, o nó recebe sozinho, cifradas, as credenciais que ainda não tinha (uma vez por gravação, sem repetir);
+  - "Preparar instalação" com token novo põe todas na fila;
+  - novo botão "Reenviar aos nós" em Credenciais de fontes.
+- **Testes:**
+  - `teste_ordens`: nó tardio recebe, não repete, reenvio cifrado;
+  - `teste_painel_fontes`: `CERTS_DIR` vazio não esconde os intermediários;
+  - `teste_instalador_no`: `.env` sem `CERTS_DIR`;
+  - 28 suítes, ativador e instalador ok.
+- **Ainda não implantado** (aguarda aprovação). O nó do prefbora só recebe as correções com pacote novo. Até lá, os contornos:
+  - no nó: `sed -i '/^CERTS_DIR=/d' .env && docker compose up -d app worker`;
+  - na gestão: gravar de novo a credencial do IEG-M.

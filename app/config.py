@@ -79,7 +79,9 @@ IEGM_SENHA = env('IEGM_SENHA')
 # Chave Fernet que cifra as credenciais de fontes cadastradas no console (gerada na VPS, só no .env).
 # Perder a chave obriga a recadastrar as credenciais pela tela.
 CHAVE_CREDENCIAIS = env('CHAVE_CREDENCIAIS')
-CERTS_DIR = env('CERTS_DIR', '/srv/deploy/certs')                # certificados intermediários públicos (só completam a cadeia TLS)
+# Certificados intermediários PÚBLICOS (só completam a cadeia TLS do INEP). Nome próprio: CERTS_DIR é a pasta de
+# certificados do proxy no .env do nó (ativador) e não pode mudar esta; valor vazio cai no padrão da imagem.
+CERTS_INTERMEDIARIOS = env('CERTS_INTERMEDIARIOS') or '/srv/deploy/certs'
 
 def govbr_urls():
     sso = 'https://sso.acesso.gov.br' if GOVBR_AMBIENTE == 'producao' else 'https://sso.staging.acesso.gov.br'

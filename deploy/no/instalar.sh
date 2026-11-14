@@ -243,7 +243,7 @@ if [ "$VERIFICAR" = 1 ]; then               # modo --verificar: mostra a situaç
     if [ "$(env_val PROXY_MODO)" = traefik ]; then
       echo "  proxy: Traefik $(env_val TRAEFIK_C) · rotas em: $(env_val CONF_DIR)/portal-orgaos.yml · rede: $(env_val REDE_PROXY) · resolvedor: $(env_val TRAEFIK_RESOLVEDOR)"
     else
-      echo "  proxy: nginx $(env_val NGINX_C) · conf.d: $(env_val CONF_DIR) · certificados: $(env_val CERTS_DIR) · rede: $(env_val REDE_PROXY)"
+      echo "  proxy: nginx $(env_val NGINX_C) · conf.d: $(env_val CONF_DIR) · certificados: $(env_val PROXY_CERTS_DIR)$(env_val CERTS_DIR) · rede: $(env_val REDE_PROXY)"
     fi
     systemctl is-active --quiet portal-ativador.timer && c_ok "ativador ligado" || c_av "ativador desligado"
     (cd "$PROJ" && docker compose exec -T app python -m app.licenca puxar 2>/dev/null | sed 's/^/  licenças: /') || c_av "app fora do ar"
@@ -476,7 +476,7 @@ elif [ "$MODO" = traefik ]; then
   c_ok "o portal vai usar o Traefik $TRAEFIK_C (rotas em $CONF_DIR/portal-orgaos.yml, criado só quando um domínio for publicado)"
 else
   # Valores já gravados numa instalação anterior têm prioridade; o que faltar vem da descoberta.
-  NGINX_C=$(env_val NGINX_C); CERTBOT_C=$(env_val CERTBOT_C); CONF_DIR=$(env_val CONF_DIR); CERTS_DIR=$(env_val CERTS_DIR); REDE=$(env_val REDE_PROXY)
+  NGINX_C=$(env_val NGINX_C); CERTBOT_C=$(env_val CERTBOT_C); CONF_DIR=$(env_val CONF_DIR); CERTS_DIR=$(env_val PROXY_CERTS_DIR); CERTS_DIR=${CERTS_DIR:-$(env_val CERTS_DIR)}; REDE=$(env_val REDE_PROXY)  # CERTS_DIR: nome antigo
   if descobrir_nginx; then
     NGINX_C=${NGINX_C:-$D_NGINX}; CONF_DIR=${CONF_DIR:-$D_CONF}; CERTS_DIR=${CERTS_DIR:-$D_CERTS}; REDE=${REDE:-$D_REDE}; CERTBOT_C=${CERTBOT_C:-$D_CERTBOT}
   else
@@ -514,12 +514,12 @@ fi
 # =====================================================================================================================
 PGP=$(env_val PG_PASSWORD); [ -n "$PGP" ] && [ "$(env_val PAPEL)" = no ] || PGP=$(openssl rand -hex 24)
 NOVO=$(mktemp)
-grep -vE '^(PAPEL|NO_BANCO|GESTAO_URL|NO_TOKEN|NO_NOME|LICENCA_CHAVE_PUBLICA|LICENCA_VALIDADE_DIAS|VPS_IP|PG_PASSWORD|PG_HOST|COMPOSE_FILE|REDE_PROXY|PROXY_MODO|NGINX_C|CERTBOT_C|CONF_DIR|CERTS_DIR|TRAEFIK_C|TRAEFIK_ENTRADA_HTTP|TRAEFIK_ENTRADA_HTTPS|TRAEFIK_RESOLVEDOR|DOMINIO_PM|DOMINIO_CM|SENHA_INICIAL_ADMIN|SENHA_INICIAL_GESTOR)=' "$ORIGEM" > "$NOVO" || true
+grep -vE '^(PAPEL|NO_BANCO|GESTAO_URL|NO_TOKEN|NO_NOME|LICENCA_CHAVE_PUBLICA|LICENCA_VALIDADE_DIAS|VPS_IP|PG_PASSWORD|PG_HOST|COMPOSE_FILE|REDE_PROXY|PROXY_MODO|NGINX_C|CERTBOT_C|CONF_DIR|CERTS_DIR|PROXY_CERTS_DIR|TRAEFIK_C|TRAEFIK_ENTRADA_HTTP|TRAEFIK_ENTRADA_HTTPS|TRAEFIK_RESOLVEDOR|DOMINIO_PM|DOMINIO_CM|SENHA_INICIAL_ADMIN|SENHA_INICIAL_GESTOR)=' "$ORIGEM" > "$NOVO" || true
 { echo; echo "# ---- nó de portais (gerado por deploy/no/instalar.sh em $(date -Is)) ----"
   echo "PAPEL=no"; echo "GESTAO_URL=$GESTAO_URL"; echo "NO_NOME=$NO_NOME"; echo "NO_TOKEN=$NO_TOKEN"; echo "LICENCA_CHAVE_PUBLICA=$PUB"
   echo "LICENCA_VALIDADE_DIAS=$VALID"; echo "VPS_IP=$VPS_IP"; echo "PG_PASSWORD=$PGP"; echo "PG_HOST=db"
   echo "COMPOSE_FILE=docker-compose.yml:deploy/no/docker-compose.no.yml"; echo "REDE_PROXY=$REDE"; echo "PROXY_MODO=$MODO"
-  echo "NGINX_C=$NGINX_C"; echo "CERTBOT_C=$CERTBOT_C"; echo "CONF_DIR=$CONF_DIR"; echo "CERTS_DIR=$CERTS_DIR"
+  echo "NGINX_C=$NGINX_C"; echo "CERTBOT_C=$CERTBOT_C"; echo "CONF_DIR=$CONF_DIR"; echo "PROXY_CERTS_DIR=$CERTS_DIR"  # não "CERTS_DIR": o app lê o .env e esse nome era o dos certificados do INEP
   if [ "$MODO" = traefik ]; then echo "TRAEFIK_C=$TRAEFIK_C"; echo "TRAEFIK_ENTRADA_HTTP=$T_HTTP"; echo "TRAEFIK_ENTRADA_HTTPS=$T_HTTPS"; echo "TRAEFIK_RESOLVEDOR=$T_RESOLV"; fi
 } >> "$NOVO"
 grep -qE '^PG_USER=.+' "$NOVO" || echo "PG_USER=portal" >> "$NOVO"

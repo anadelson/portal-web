@@ -177,6 +177,25 @@ con.post('/credenciais', data={'csrf': tok(con, '/credenciais'), 'fonte': 'iegm'
 config.PAPEL, db.LOCAL = 'no', LOCAL
 OR.puxar()
 checa(not db.um(LOCAL, "SELECT 1 FROM credenciais_fontes WHERE fonte='iegm'"), 'credencial apagada na gestão é apagada no nó')
+# nó que conecta DEPOIS de a credencial ser gravada (caso do nó instalado depois do cadastro): recebe sozinho, uma vez só
+config.PAPEL, db.LOCAL = 'tudo', db.PLATAFORMA
+con.post('/credenciais', data={'csrf': tok(con, '/credenciais'), 'fonte': 'iegm', 'acao': 'salvar', 'usuario': 'usuario-exemplo', 'senha': 'senha-exemplo-123'}, follow_redirects=True)
+tardio = L.criar_no('no-tardio.exemplo.test')
+nt = db.um(db.PLATAFORMA, "SELECT * FROM nos WHERE nome='no-tardio.exemplo.test'")
+def cred_do(nid):
+    return db.um(db.PLATAFORMA, "SELECT count(*) n FROM ordens WHERE tipo='credencial' AND no_id=%s", (nid,))['n']
+lt = api.get('/api/no/ordens', headers={'Authorization': f'Bearer {tardio}'}).json()['ordens']
+checa(cred_do(nt['id']) == 1 and any(L.verificar(x, pub)['tipo'] == 'credencial' for x in lt), 'nó novo recebe sozinho a credencial já cadastrada')
+api.get('/api/no/ordens', headers={'Authorization': f'Bearer {tardio}'})
+checa(cred_do(nt['id']) == 1, 'credencial já entregue não é repetida a cada consulta do nó')
+antes = cred_do(no['id'])
+api.get('/api/no/ordens', headers={'Authorization': f'Bearer {token}'})
+checa(cred_do(no['id']) == antes, 'nó que já recebeu a gravação atual não ganha ordem repetida')
+checa('Reenviar aos nós (3)' in con.get('/credenciais').text, 'tela de credenciais oferece "Reenviar aos nós"')
+r = con.post('/credenciais', data={'csrf': tok(con, '/credenciais'), 'fonte': 'iegm', 'acao': 'reenviar'}, follow_redirects=True)
+checa('reenviada cifrada a 3 nó(s)' in r.text and cred_do(nt['id']) == 2, f'"Reenviar aos nós" manda de novo a todos ({re.findall(r"Credencial[^<]+|Nada a[^<]+", r.text)[:1]})')
+ult = db.um(db.PLATAFORMA, "SELECT payload FROM ordens WHERE tipo='credencial' AND no_id=%s ORDER BY id DESC LIMIT 1", (nt['id'],))
+checa('senha-exemplo-123' not in json.dumps(ult['payload']), 'reenvio também vai cifrado')
 
 # ---------- 5. de volta ao papel "tudo" ----------
 config.PAPEL, db.LOCAL = 'tudo', db.PLATAFORMA; web.limpar_cache(); L._memo.clear()
