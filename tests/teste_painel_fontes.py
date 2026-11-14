@@ -102,6 +102,9 @@ if r19['valor'] != '' or r19['valor_exibido'] != 'não divulgado pelo INEP' or '
 if 'rendimento (P) 1,000' not in [x for x in rows if x['periodo'] == '2025'][0]['complemento']: falha('CSV sem rendimento')
 # certificado intermediário: aviso 60 dias antes do vencimento
 if X.validade_certificados() and X.aviso_certificado(date(2026, 11, 7)): falha('aviso de certificado antes da hora')
+import subprocess as _sp  # CERTS_DIR (pasta do proxy no .env do nó, vazia no modo Traefik) não pode esconder os intermediários do INEP
+_r = _sp.run([sys.executable, '-c', 'from app.coletores import inep_iegm as X; print(len(X.certificados()))'], env={**os.environ, 'CERTS_DIR': ''}, capture_output=True, text=True)
+if _r.stdout.strip() in ('', '0'): falha(f'CERTS_DIR vazio escondeu os certificados intermediários do INEP ({_r.stdout.strip()} {_r.stderr[-200:]})')
 if X.validade_certificados():
     fim = X.validade_certificados()[0][1]
     if 'vence em' not in X.aviso_certificado(date.fromordinal(fim.toordinal() - 59)): falha('sem aviso 59 dias antes do vencimento')

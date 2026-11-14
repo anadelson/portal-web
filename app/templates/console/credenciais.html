@@ -11,6 +11,7 @@
 <div class="acoes" style="display:flex;gap:8px;flex-wrap:wrap">
 <form class="inline" method="post" action="/credenciais"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="fonte" value="{{ x.chave }}"><button class="btn" name="acao" value="testar">Testar conexão</button></form>
 <form class="inline" method="post" action="/credenciais"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="fonte" value="{{ x.chave }}"><button class="btn sec" name="acao" value="apagar">Apagar</button></form>
+{% if nos %}<form class="inline" method="post" action="/credenciais"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="fonte" value="{{ x.chave }}"><button class="btn sec" name="acao" value="reenviar" title="Manda de novo, cifrada, a {{ nos|length }} nó(s)">Reenviar aos nós ({{ nos|length }})</button></form>{% endif %}
 </div>
 <details style="margin-top:12px"><summary>Trocar</summary>
 {% else %}

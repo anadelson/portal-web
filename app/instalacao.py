@@ -22,7 +22,7 @@ APP = Path(__file__).resolve().parent
 # variáveis do .env que NÃO vão para o nó (o nó gera a dele ou não usa)
 FORA = {'PG_PASSWORD', 'PG_HOST', 'PG_PORT', 'SENHA_INICIAL_ADMIN', 'SENHA_INICIAL_GESTOR', 'DOMINIO_PM', 'DOMINIO_CM', 'DATA_SIMULADA', 'TESTE',
         'PAPEL', 'NO_TOKEN', 'NO_NOME', 'GESTAO_URL', 'LICENCA_CHAVE_PUBLICA', 'VPS_IP', 'COMPOSE_FILE', 'REDE_PROXY', 'PROXY_MODO',
-        'NGINX_C', 'CERTBOT_C', 'CONF_DIR', 'CERTS_DIR', 'NO_BANCO', 'FONTE_DIR', 'DADOS_DIR', 'SEGREDOS_DIR'}
+        'NGINX_C', 'CERTBOT_C', 'CONF_DIR', 'CERTS_DIR', 'PROXY_CERTS_DIR', 'NO_BANCO', 'FONTE_DIR', 'DADOS_DIR', 'SEGREDOS_DIR'}
 
 def pasta():
     p = Path(config.DADOS_DIR) / '_instalacao'

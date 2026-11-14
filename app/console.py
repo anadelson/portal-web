@@ -346,6 +346,10 @@ def api_ordens(request: Request):
     if not no:
         return JSONResponse({'erro': 'não autorizado'}, status_code=401, headers={'Cache-Control': 'no-store'})
     db.exe(db.PLATAFORMA, 'UPDATE nos SET ultimo_contato=now() WHERE id=%s', (no['id'],))
+    try:
+        credenciais_que_faltam(no)
+    except Exception:  # falha aqui não pode impedir o nó de receber as outras ordens
+        pass
     return JSONResponse({'ordens': ordens.para_no(no)}, headers={'Cache-Control': 'no-store'})
 
 @r.post('/api/no/ordens/{oid}')
@@ -547,6 +551,8 @@ async def instalar_post(request: Request, nid: int):
     lote = IN.novo_lote()
     IN.novo_link(n, 'codigo', g['nome'], lote=lote, token_novo=bool(token))
     IN.novo_link(n, 'segredos', g['nome'], IN.cifrar(IN.pacote_segredos(n, token), senha_pac), lote=lote, token_novo=bool(token))
+    if token:  # token novo = (re)instalação: o banco do nó pode estar vazio; as credenciais esperam na fila até ele conectar
+        credenciais_que_faltam(n, g['nome'], forcar=True)
     log(g, f"Instalação do nó {n['nome']}: pacotes gerados (código {IN.versao()} e segredos cifrados{', com token NOVO do nó' if token else ''}); links de uso único por {IN.VALIDADE_MIN} min"
            + (f'; {antigos} link(s) anterior(es) cancelado(s)' if antigos else ''))
     return ir(f'/nos/{nid}/instalar', 'Pacotes gerados. Os comandos ficam nesta tela enquanto os links valem.' + (' Os links anteriores foram cancelados.' if antigos else ''), request)
@@ -684,18 +690,35 @@ def credenciais(request: Request):
     gestor(request)
     from . import credenciais as CR
     itens = [dict(chave=k, **v, sit=CR.situacao(k)) for k, v in CR.FONTES.items()]
-    return T('credenciais', request, itens=itens, chave_ok=CR.chave_ok())
+    return T('credenciais', request, itens=itens, chave_ok=CR.chave_ok(), nos=_nos_ativos())
+
+def _carga_credencial(r_):
+    return {'fonte': r_['fonte'], 'dados': r_['dados'], 'configurada_em': r_['configurada_em'].isoformat(), 'configurada_por': r_['configurada_por']}
 
 def _credencial_para_nos(fonte, g, apagar=False):
     """Ordem "credencial" para cada nó ativo: leva o valor CIFRADO (o nó usa a mesma CHAVE_CREDENCIAIS); nunca em claro."""
     from . import ordens
-    r_ = None if apagar else db.um(db.LOCAL, 'SELECT dados, configurada_em, configurada_por FROM credenciais_fontes WHERE fonte=%s', (fonte,))
+    r_ = None if apagar else db.um(db.LOCAL, 'SELECT fonte, dados, configurada_em, configurada_por FROM credenciais_fontes WHERE fonte=%s', (fonte,))
     if not apagar and not r_:
         return 0
-    carga = {'fonte': fonte, 'apagar': True} if apagar else {'fonte': fonte, 'dados': r_['dados'], 'configurada_em': r_['configurada_em'].isoformat(), 'configurada_por': r_['configurada_por']}
+    carga = {'fonte': fonte, 'apagar': True} if apagar else _carga_credencial(r_)
     n = 0
     for no in _nos_ativos():
         ordens.enviar('credencial', carga, no_id=no['id'], quem=g['nome'], resumo=f"credencial {fonte} {'apagada' if apagar else 'gravada'}")
+        n += 1
+    return n
+
+def credenciais_que_faltam(no, quem='plataforma', forcar=False):
+    """Manda ao nó (cifradas) as credenciais cadastradas que ele ainda não recebeu: nó novo ou credencial gravada antes de o
+    nó existir. Conta como recebida qualquer ordem dessa fonte para o nó criada depois da gravação (mesmo com erro: não
+    repete a cada minuto; o botão "Reenviar aos nós" refaz). forcar=True (reinstalação com token novo) manda todas."""
+    from . import ordens
+    n = 0
+    for r_ in db.todos(db.LOCAL, 'SELECT fonte, dados, configurada_em, configurada_por FROM credenciais_fontes ORDER BY fonte'):
+        if not forcar and db.um(db.PLATAFORMA, "SELECT 1 FROM ordens WHERE no_id=%s AND tipo='credencial' AND payload->>'fonte'=%s AND criada_em>=%s LIMIT 1",
+                                (no['id'], r_['fonte'], r_['configurada_em'])):
+            continue
+        ordens.enviar('credencial', _carga_credencial(r_), no_id=no['id'], quem=quem, resumo=f"credencial {r_['fonte']} gravada (o nó ainda não tinha)")
         n += 1
     return n
 
@@ -724,6 +747,11 @@ async def credenciais_post(request: Request):
             _credencial_para_nos(fonte, g, apagar=True)
             return ir('/credenciais', 'Credencial apagada. A coleta usa a reserva do .env, se houver; senão, fica desligada.', request)
         return ir('/credenciais', 'Não havia credencial cadastrada.', request)
+    if acao == 'reenviar':
+        nn = _credencial_para_nos(fonte, g)
+        if nn:
+            log(g, f'Credencial da fonte {fonte} reenviada (cifrada) a {nn} nó(s)')
+        return ir('/credenciais', f'Credencial reenviada cifrada a {nn} nó(s). Cada nó grava em cerca de 1 minuto.' if nn else 'Nada a reenviar (sem credencial ou sem nós ativos).', request)
     if acao == 'testar':
         res = await run_in_threadpool(CR.testar, fonte, g['nome'])
         log(g, f'Credencial da fonte {fonte} testada: {res}')

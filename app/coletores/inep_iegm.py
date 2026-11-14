@@ -28,7 +28,7 @@ AVISO_CERT_DIAS = 60
 ND = 'não divulgado pelo INEP'
 
 def certificados():
-    return sorted(Path(config.CERTS_DIR).glob('*.pem'))
+    return sorted(Path(config.CERTS_INTERMEDIARIOS).glob('*.pem'))
 
 def contexto_tls():
     """Raízes confiáveis (certifi) + intermediários públicos de deploy/certs. Verificação de cadeia e de nome ligadas."""

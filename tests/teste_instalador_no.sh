@@ -99,7 +99,7 @@ SAIDA=$(printf 'n\n\nno2.exemplo.test\n%s\n%s\n\n\n1\n\ns\ns\n' "$TOKEN" "$PUB" 
 checa '[ $RC = 0 ]' "VPS compartilhada: instalação sem erro (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
 checa 'echo "$SAIDA" | grep -q "já são usadas por outro sistema"' 'detecta as portas ocupadas'
 checa 'echo "$SAIDA" | grep -q "pasta conf.d no servidor: *.tmp.outro.conf.d" && echo "$SAIDA" | grep -q "container do certbot: *outro-certbot"' 'mostra o nginx descoberto (pastas e certbot)'
-checa 'grep -qxF "PROXY_MODO=existente" $E && grep -qxF "REDE_PROXY=outra-rede" $E && grep -qxF "NGINX_C=outro-nginx" $E && grep -qxF "CERTBOT_C=outro-certbot" $E && grep -qxF "CONF_DIR=/tmp/outro/conf.d" $E && grep -qxF "CERTS_DIR=/tmp/outro/certs" $E' 'usa o nginx existente descoberto (container, certbot, pastas e rede)'
+checa 'grep -qxF "PROXY_MODO=existente" $E && grep -qxF "REDE_PROXY=outra-rede" $E && grep -qxF "NGINX_C=outro-nginx" $E && grep -qxF "CERTBOT_C=outro-certbot" $E && grep -qxF "CONF_DIR=/tmp/outro/conf.d" $E && grep -qxF "PROXY_CERTS_DIR=/tmp/outro/certs" $E && ! grep -q "^CERTS_DIR=" $E' 'usa o nginx existente descoberto (container, certbot, pastas e rede)'
 checa 'echo "$SAIDA" | grep -q "compartilham a pasta do desafio"' 'confere a pasta do desafio do Let'"'"'s Encrypt entre nginx e certbot'
 checa '[ -f /tmp/outro/conf.d/portal-comum.inc ] && ! grep -q "up -d" <(grep "deploy/no/proxy" /tmp/chamadas)' 'instala só o trecho comum no nginx existente, sem subir outro nginx'
 # nginx fora do Docker (nada descoberto): pergunta os dados um a um
@@ -177,6 +177,7 @@ for l in PROXY_MODO=traefik CONF_DIR=/tmp/dk/dynamic REDE_PROXY=dokploy-network 
   checa "grep -qxF '$l' $E" "Dokploy: .env tem $l (descoberto)"
 done
 checa 'grep -q "Environment=PROXY_MODO=traefik" /etc/systemd/system/portal-ativador.service.d/no.conf && grep -q "Environment=TRAEFIK_RESOLVEDOR=letsencrypt" /etc/systemd/system/portal-ativador.service.d/no.conf' 'Dokploy: ativador configurado para o Traefik'
+checa '! grep -q "^CERTS_DIR=" $E' 'Dokploy: .env sem CERTS_DIR (o app usa esse nome para os certificados do INEP)'
 checa '[ "$(ls -A /tmp/dk/dynamic)" = app-de-outro.yml ] && ! grep -q "deploy/no/proxy" /tmp/chamadas' 'Dokploy: nada gravado na pasta do Traefik e nenhum nginx próprio subido'
 checa '! grep -qE "docker (restart|stop|rm)|systemctl restart docker" /tmp/chamadas' 'Dokploy: nenhum container ou o Docker reiniciado'
 # 2ª rodada pedindo a atualização: Docker segurado e solto no fim, fuso mantido
