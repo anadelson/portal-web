@@ -2134,3 +2134,17 @@ Correções:
 - **Ainda não implantado** (aguarda aprovação). O nó do prefbora só recebe as correções com pacote novo. Até lá, os contornos:
   - no nó: `sed -i '/^CERTS_DIR=/d' .env && docker compose up -d app worker`;
   - na gestão: gravar de novo a credencial do IEG-M.
+
+## 14/11/2026 17:01 — Implantação: credenciais-e-certs-no (b2eb825)
+- Aprovação do usuário ("Aprovo, existe snapshot").
+- Executado: backup (bd_pm_bora, bd_cm_bora e plataforma ok), imagem gerada e 28 suítes ok contra a imagem.
+- Reinício adiado para 17h01, depois da janela do Diário; em seguida, `provision atualizar` (sem migração nova) e subida do worker.
+- Conferido:
+  - pm e cm respondem 200 e a gestão 303;
+  - versão certa;
+  - o app acha 1 certificado intermediário do INEP;
+  - sem erros nos logs.
+- prefbora (nó):
+  - a credencial do IEG-M chegou ao nó (ordem 8 feita às 13h34), e o diagnóstico no nó deu legível com HTTP 200;
+  - o teste do painel não fazia requisição porque, no órgão novo, o IEG-M começa em modo **manual**, o padrão do catálogo; o administrador liga em Painel de indicadores → Município e gestão → IEG-M → Modo de atualização;
+  - o INEP no nó continua dependendo do pacote novo ou do contorno no `.env`.
