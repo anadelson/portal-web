@@ -2247,3 +2247,12 @@ Pedido do usuário: Comunicados e Notícias no modelo da imagem enviada; telas d
   - primeira coleta real: pm-bora 25,9 °C agora, 4 dias de previsão; cm-bora reaproveitou a mesma previsão (mesmo município);
   - conferido: as páginas iniciais, /noticias e /comunicados respondem 200 com portal.css v=26, a previsão do tempo e a coluna à direita. A Câmara ainda não tem comunicados cadastrados, por isso o bloco aparece vazio.
 - **Falta:** atualizar o nó do prefbora (pacote novo do console e o instalador; na etapa 8, `s`, para a migração local 004).
+
+## 15/11/2026 — Ajuste da vitrine de Comunicados e da faixa do tempo (código; branch ajuste-vitrine-tempo)
+Pedido do usuário (após ver no ar): Comunicados no mesmo tamanho e posição de antes, mudando só os alinhamentos como na referência; previsão do tempo em faixa de largura total, mais discreta.
+- **Comunicados** volta para a metade da largura, ao lado de "Serviços mais acessados", como era antes. O desenho da referência (destaque com imagem ao lado do texto, 3 cartões, lista) se ajusta à largura da coluna:
+  - em coluna estreita, títulos e botões ficam menores e a lista mostra título e data um embaixo do outro;
+  - no celular, os cartões viram linhas com miniatura à esquerda.
+- **Previsão do tempo:** faixa de uma linha em largura total, sem quadros, com ícones e textos em cinza: agora (temperatura, condição, umidade, vento), os 4 dias (máxima/mínima e chance de chuva) e a fonte (Open-Meteo, CC BY 4.0) com o horário da atualização.
+- portal.css v=27. Testes: `teste_vitrine_tempo` ganhou a checagem "Comunicados ao lado de Serviços"; `teste_vitrine_tempo`, `teste_escala`, `teste_ajustes8` e `teste_fase8` passaram. Capturas no ambiente de teste (dados fictícios) em 1366, 1000 e 390 px: sem rolagem horizontal; o axe não apontou nada.
+- **Não implantado** (aguarda aprovação).

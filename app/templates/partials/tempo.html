@@ -1,12 +1,12 @@
 {# Previsão do tempo (15/11/2026). Dados do Open-Meteo (CC BY 4.0), coletados de hora em hora; sem coleta recente o quadro não aparece. #}
 {% macro tempo_faixa(t, cidade, hid='h-tempo') %}{% if t %}
+{# faixa discreta (ajuste de 15/11/2026): uma linha, sem cartões, cores neutras #}
 <section class="tempo" aria-labelledby="{{ hid }}">
-<div class="t-agora"><span class="t-ico">{{ icone(t.icone, 44) }}</span><div><h2 id="{{ hid }}">Tempo em {{ cidade }}</h2>
-<p class="t-temp">{% if t.temp is not none %}<strong>{{ t.temp }} °C</strong> {% endif %}<span>{{ t.texto }}</span></p>
-<p class="t-det">{% if t.umidade is not none %}{{ icone('gota', 16) }} Umidade {{ t.umidade }}%{% endif %}{% if t.vento is not none %} · {{ icone('vento', 16) }} Vento {{ t.vento }} km/h{% endif %}</p></div></div>
-<ul class="t-dias">{% for d in t.dias %}<li><span class="t-dia" title="{{ d.longo }}">{{ d.rotulo }}</span>{{ icone(d.icone, 28) }}<span class="sr">{{ d.texto }}.</span>
-<span class="t-mm"><strong><span class="sr">máxima </span>{{ d.max }}°</strong> <span><span class="sr">mínima </span>{{ d.min }}°</span></span>{% if d.chuva_prob is not none %}<span class="t-chuva">{{ icone('gota', 14) }} {{ d.chuva_prob }}%<span class="sr"> de chance de chuva</span></span>{% endif %}</li>{% endfor %}</ul>
-<p class="t-fonte">Previsão do Open-Meteo (dados abertos, CC BY 4.0), atualizada em {{ t.atualizado }}.</p>
+<p class="t-agora"><span class="t-ico">{{ icone(t.icone, 22) }}</span><strong id="{{ hid }}" role="heading" aria-level="2">Tempo em {{ cidade }}</strong>
+<span>{% if t.temp is not none %}<b>{{ t.temp }} °C</b>, {% endif %}{{ t.texto|lower }}{% if t.umidade is not none %} · umidade {{ t.umidade }}%{% endif %}{% if t.vento is not none %} · vento {{ t.vento }} km/h{% endif %}</span></p>
+<ul class="t-dias">{% for d in t.dias %}<li><span class="t-dia" title="{{ d.longo }}">{{ d.rotulo }}</span>{{ icone(d.icone, 18) }}<span class="sr">{{ d.texto }}.</span>
+<span class="t-mm"><span class="sr">máxima </span>{{ d.max }}°<span class="t-min"><span class="sr">, mínima </span><span aria-hidden="true">/</span>{{ d.min }}°</span></span>{% if d.chuva_prob is not none %}<span class="t-chuva"><span aria-hidden="true">· </span>{{ d.chuva_prob }}%<span class="sr"> de chance de chuva</span></span>{% endif %}</li>{% endfor %}</ul>
+<p class="t-fonte">Open-Meteo (CC BY 4.0) · {{ t.atualizado }}</p>
 </section>{% endif %}{% endmacro %}
 {% macro tempo_cartao(t, cidade, hid='h-tempo-l') %}{% if t %}
 <section class="lat-caixa tempo-l" aria-labelledby="{{ hid }}"><h2 id="{{ hid }}">Tempo em {{ cidade }}</h2>
