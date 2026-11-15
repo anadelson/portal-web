@@ -15,9 +15,9 @@ TODOS = list(range(7))
 PADRAO = {'fiorilli': (60, 7, 20), 'govbr': (180, 6, 22), 'pncp': (360, 0, 24), 'siconfi': (24 * 60, 0, 24), 'tcesp': (24 * 60, 0, 24),
           'ibge': (7 * 24 * 60, 2, 6), 'cnes': (7 * 24 * 60, 2, 6), 'mds': (7 * 24 * 60, 2, 6), 'pni': (7 * 24 * 60, 2, 6),
           'painel': (60, 7, 20), 'inep': (30 * 24 * 60, 2, 6), 'iegm': (30 * 24 * 60, 2, 6), 'financas': (20 * 60, 1, 5),
-          'youtube': (2, 0, 24), 'redes': (6 * 60, 6, 23)}
+          'youtube': (2, 0, 24), 'redes': (6 * 60, 6, 23), 'tempo': (60, 0, 24)}
 # intervalo mínimo (minutos) entre execuções que o órgão pode escolher
-MINIMO = {'fiorilli': 30, 'govbr': 60, 'painel': 15, 'pncp': 60, 'redes': 60, 'financas': 6 * 60, 'siconfi': 6 * 60, 'tcesp': 6 * 60,
+MINIMO = {'fiorilli': 30, 'govbr': 60, 'painel': 15, 'pncp': 60, 'redes': 60, 'tempo': 30, 'financas': 6 * 60, 'siconfi': 6 * 60, 'tcesp': 6 * 60,
           'ibge': 24 * 60, 'cnes': 24 * 60, 'mds': 24 * 60, 'pni': 24 * 60, 'inep': 24 * 60, 'iegm': 24 * 60}
 # fontes com agenda própria (não editável): o YouTube só consulta dentro da janela de cada transmissão agendada
 FIXAS = {'youtube': 'automática: a cada 2 minutos só dentro da janela de cada transmissão agendada, e uma varredura por dia'}

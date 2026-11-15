@@ -10,6 +10,8 @@
 </section>{% endmacro %}
 {% block classe_main %}home{% endblock %}
 {% from 'partials/cartoes.html' import cartao %}
+{% from 'partials/vitrine.html' import vitrine with context %}
+{% from 'partials/tempo.html' import tempo_faixa with context %}
 {% from 'partials/fileira.html' import fileira_cartoes %}
 
 {% macro retrato(v, grande=False) %}<span class="retrato">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt or ('Foto oficial de ' ~ v.nome) }}">{% else %}<span class="ini" aria-hidden="true">{{ v.nome|iniciais }}</span>{% endif %}{% if not grande %}<span class="chip-partido">{{ v.partido }}</span>{% endif %}</span>{% endmacro %}
@@ -22,11 +24,8 @@
 </nav>{% endif %}
 
 {% elif b.chave == 'comunicados' %}
-<div class="duas faixa-com">
-<section class="caixa com" aria-labelledby="h-com"><h2 id="h-com">Comunicados</h2><p class="sub">Avisos, convocações, convites e notas oficiais {{ 'da Câmara' if leg else 'da Prefeitura' }}.</p>
-{% if d.comunicados %}<ul class="com-lista">{% for c in d.comunicados %}<li><span class="etq">{{ c.tipo }}</span><a href="/comunicados/{{ c.id }}">{{ c.titulo }}</a><small>{{ d.quando(c) }}{% if c.valido_ate %} · válido até {{ c.valido_ate|br }}{% endif %}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</small></li>{% endfor %}</ul>
-{% else %}<p class="vazio">Nenhum comunicado em vigor.</p>{% endif %}
-<div class="acoes"><a class="btn sec" href="/comunicados">Todos os comunicados {{ icone('seta', 18, 'seta') }}</a></div></section>
+<div class="faixa-com pilha">
+{{ vitrine(d.vit_com, 'h-com', 'Comunicados', 'Avisos, convocações, convites e notas oficiais ' ~ ('da Câmara' if leg else 'da Prefeitura') ~ '.', '/comunicados', 'Todos os comunicados', 'Nenhum comunicado em vigor.') }}
 {% if mods.carta %}<section class="caixa" aria-labelledby="h-serv"><h2 id="h-serv">Serviços mais acessados</h2><p class="sub">Os serviços mais consultados no portal neste mês.</p>
 {% if d.servicos_top %}<ul class="serv-top">{% for c in d.servicos_top %}<li><a href="/servicos/{{ c.slug }}"><span class="ico">{{ icone('lista', 22) }}</span><span>{{ c.nome }}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</span></a></li>{% endfor %}</ul>
 {% else %}<p class="vazio">Nenhum serviço publicado na Carta de Serviços ainda.</p>{% endif %}
@@ -113,17 +112,14 @@
 {% elif b.chave == 'sede' and not d.sede_junto %}
 {{ cartao_paco() }}
 
-{% elif b.chave == 'noticias' and d.noticias8 %}{% set n = d.noticias8 %}
+{% elif b.chave == 'noticias' and d.vit_not %}
 <div class="linha-not-paco">
-<section class="noticias9" aria-labelledby="h-not"><h2 id="h-not">Notícias</h2>
-<article class="nd" aria-labelledby="h-nd"><a class="nd-img" href="/conteudo/{{ n.destaque.id }}" tabindex="-1" aria-hidden="true">{{ imagem_noticia(n.destaque, n.destaque.ed, '16/9', 56, False) }}</a>
-<div class="nd-txt"><p class="meta"><span class="ed" style="color:{{ n.destaque.ed.cor }}">{{ n.destaque.ed.nome }}</span> · <time>{{ d.quando(n.destaque) }}</time>{% if n.destaque.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</p>
-<h3 id="h-nd"><a href="/conteudo/{{ n.destaque.id }}">{{ n.destaque.titulo }}</a></h3>{% if n.destaque.resumo %}<p class="res">{{ n.destaque.resumo }}</p>{% endif %}</div></article>
-{% if n.secundarias %}<ul class="ns">{% for c in n.secundarias %}<li><a href="/conteudo/{{ c.id }}"><span class="ns-img">{{ imagem_noticia(c, c.ed, '16/9', 32) }}</span><span class="q">{{ d.quando(c) }}</span><span class="t">{{ c.titulo }}</span></a></li>{% endfor %}</ul>{% endif %}
-{% if n.lista %}<ul class="nt">{% for c in n.lista %}<li><a href="/conteudo/{{ c.id }}">{{ c.titulo }}</a></li>{% endfor %}</ul>{% endif %}
-<a class="btn sec nfim" href="/noticias">Todas as notícias {{ icone('seta', 18, 'seta') }}</a></section>
+{{ vitrine(d.vit_not, 'h-not', 'Notícias', '', '/noticias', 'Todas as notícias') }}
 {% if d.sede_junto %}{{ cartao_paco(True) }}{% endif %}
 </div>
+
+{% elif b.chave == 'tempo' and d.tempo %}
+{{ tempo_faixa(d.tempo, ident.nome_curto or orgao.municipio or 'o município') }}
 
 {% elif b.chave == 'ver' %}
 <section aria-labelledby="h-ver">

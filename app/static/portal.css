@@ -571,3 +571,59 @@ nav.menu a{font-size:var(--fs-menu)}
 .anexos-img{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:12px;margin:0 0 14px}
 .anexos-img figure{margin:0}.anexos-img img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;display:block}.anexos-img figcaption{font-size:var(--fs-meta);color:var(--sub);margin-top:4px}
 .faixa-oculto{background:#7A2E0E;color:#fff;padding:8px 16px;text-align:center;font-size:var(--fs-meta)}
+/* ---------- Vitrine: notícias e comunicados na página inicial (15/11/2026) ---------- */
+.vitrine{container-type:inline-size;background:#fff;border:1px solid var(--bd);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:22px;min-width:0;box-sizing:border-box}
+.linha-not-paco>.vitrine{flex:2 1 560px}.faixa-com.pilha{display:flex;flex-direction:column;gap:20px}
+.v-cab{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}
+.v-cab h2{margin:0;font-size:var(--fs-h2)}.v-cab .sub{margin:4px 0 0;font-size:var(--fs-desc);color:var(--sub)}
+.vitrine a{color:var(--tx);text-decoration:none}.vitrine a:hover .v-tit{text-decoration:underline}
+.v-img{display:block;border-radius:14px;overflow:hidden;background:var(--fd);border:1px solid #EEF1F4}
+.v-img img{width:100%;object-fit:cover;display:block}.v-img img.doc,.ln-img img.doc{object-position:top center;background:#fff}
+.v-meta{display:block;font-size:var(--fs-meta);color:var(--sub)}
+.v-rot{font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--rot,var(--cor))}
+.v-dest{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:center}
+.v-dest .v-txt{display:flex;flex-direction:column;gap:10px;align-items:flex-start;min-width:0}
+.v-dest .v-tit{font-size:var(--fs-h2-destaque);font-weight:700;line-height:1.2;text-wrap:balance}
+.v-dest .v-res{font-size:var(--fs-desc);color:#374151}
+.v-ler{pointer-events:none;margin-top:4px}
+.v-cartoes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.v-cartoes a{height:100%;display:flex;flex-direction:column;gap:8px}
+.v-cartoes .v-tit{font-size:var(--fs-h3);font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.v-cartoes .v-ler{margin-top:auto;align-self:flex-start}
+.v-lista{list-style:none;margin:0;padding:0;border-top:1px solid #EEF1F4}.v-lista li{border-bottom:1px solid #EEF1F4}
+.v-lista a{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px;padding:12px 0}
+.v-lista .v-tit{font-weight:600;font-size:var(--fs-desc);line-height:1.35;flex:1 1 320px}.v-lista .v-meta{flex:0 0 auto}
+@container (max-width:680px){.v-dest{grid-template-columns:minmax(0,1fr);gap:14px}.v-cartoes{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){.vitrine{padding:18px}}
+/* ---------- Previsão do tempo (15/11/2026) ---------- */
+.tempo{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--bd);border-radius:20px;padding:18px 24px}
+.t-agora{display:flex;gap:14px;align-items:center}.t-ico{color:var(--cor);display:flex}
+.tempo h2{margin:0;font-size:var(--fs-h3)}
+.t-temp{margin:2px 0 0;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.t-temp strong{font-size:var(--fs-num);font-variant-numeric:tabular-nums}.t-temp span{font-size:var(--fs-desc);color:var(--sub)}
+.t-det{margin:2px 0 0;font-size:var(--fs-meta);color:var(--sub);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.t-dias{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.t-dias li{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:84px;padding:10px 12px;border-radius:14px;background:var(--fd);font-variant-numeric:tabular-nums}
+.t-dias .ic,.t-dias-l .ic,.t-agora-l .ic{color:var(--cor)}
+.t-dia{font-weight:700;font-size:var(--fs-peq)}.t-mm{font-size:var(--fs-peq)}.t-mm>span{color:var(--sub)}
+.t-chuva{font-size:var(--fs-etq);color:var(--sub);display:inline-flex;gap:3px;align-items:center}
+.t-fonte{flex:1 1 100%;margin:0;font-size:var(--fs-etq);color:var(--sub)}
+/* ---------- Notícias e comunicados em largura total, com coluna à direita (15/11/2026) ---------- */
+.com-lateral{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);gap:32px;align-items:start}
+@media (max-width:1000px){.com-lateral{grid-template-columns:minmax(0,1fr)}}
+.col-principal{min-width:0}
+.com-lateral .materia{max-width:none}
+.com-lateral .texto,.com-lateral .texto-rico,.com-lateral .materia .m-corpo>p{max-width:none}
+.lateral{display:flex;flex-direction:column;gap:20px;min-width:0}
+.lat-caixa{background:#fff;border:1px solid var(--bd);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.lat-caixa h2{margin:0;font-size:var(--fs-h3-g)}.lat-caixa .btn{align-self:flex-start}
+.lat-lista{list-style:none;margin:0;padding:0}.lat-lista li{border-top:1px solid #EEF1F4}.lat-lista li:first-child{border-top:0}
+.lat-lista a{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0;color:var(--tx);text-decoration:none}
+.lat-lista .t{font-weight:600;font-size:var(--fs-desc);line-height:1.35}.lat-lista a:hover .t{text-decoration:underline}.lat-lista small{font-size:var(--fs-meta);color:var(--sub)}
+.t-agora-l{display:flex;gap:12px;align-items:center;margin:0}.t-agora-l>span{display:flex;flex-direction:column}.t-agora-l strong{font-size:var(--fs-num);font-variant-numeric:tabular-nums}.t-agora-l span span{font-size:var(--fs-desc);color:var(--sub)}
+.t-dias-l{list-style:none;margin:0;padding:0}.t-dias-l li{display:grid;grid-template-columns:minmax(64px,auto) 24px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid #EEF1F4;font-size:var(--fs-peq);font-variant-numeric:tabular-nums}
+.lista-com .etq{margin-right:6px}
+/* ---------- Texto rico: recursos novos do editor (15/11/2026) ---------- */
+.texto-rico .al-centro{text-align:center}.texto-rico .al-dir{text-align:right}.texto-rico .al-just{text-align:justify}
+.texto-rico hr{border:0;border-top:1px solid var(--bd);margin:24px 0}.texto-rico mark{background:#FCEFD9;color:inherit;padding:0 2px}
+.texto-rico h4{font-size:var(--fs-h3);margin:18px 0 6px}.texto-rico figure.al-centro img{margin:0 auto;display:block}
+.texto-rico .video{display:block;position:relative;aspect-ratio:16/9;margin:18px 0}.texto-rico .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:12px}

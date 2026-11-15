@@ -7,9 +7,9 @@ import sys, time, traceback
 from datetime import datetime
 from . import config, db
 from . import agenda as AG
-from .coletores import fiorilli, govbr, pncp, siconfi, tcesp, numeros, comum, indicadores, youtube, redes
+from .coletores import fiorilli, govbr, pncp, siconfi, tcesp, numeros, comum, indicadores, youtube, redes, tempo
 
-MODULOS = {'fiorilli': fiorilli, 'govbr': govbr, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp, 'youtube': youtube, 'redes': redes, **indicadores.MODULOS}
+MODULOS = {'fiorilli': fiorilli, 'govbr': govbr, 'pncp': pncp, 'siconfi': siconfi, 'tcesp': tcesp, 'youtube': youtube, 'redes': redes, 'tempo': tempo, **indicadores.MODULOS}
 # fontes do painel de indicadores: só rodam para órgão com o módulo "bi" contratado e ligado
 PAINEL = set(indicadores.MODULOS)
 # padrão quando o órgão não escolheu agenda (ver app/agenda.py, que é a referência); o YouTube usa só esta tabela
@@ -25,7 +25,9 @@ FREQ = {'fiorilli': (60, range(7, 20)), 'govbr': (180, range(6, 22)), 'pncp': (3
         # YouTube: tique de 2 min; o coletor só consulta dentro das janelas da agenda (ou com transmissão ao vivo) e na varredura diária
         'youtube': (2, range(0, 24)),
         # redes sociais: últimas publicações (só com credencial e conta informada), a cada 6 h
-        'redes': (6 * 60, range(6, 23))}
+        'redes': (6 * 60, range(6, 23)),
+        # previsão do tempo (Open-Meteo): de hora em hora; Prefeitura e Câmara do mesmo município compartilham a coleta
+        'tempo': (60, range(0, 24))}
 
 def pronta(f, agora, ultimo):
     """A fonte deve rodar agora? Usa a agenda escolhida pelo órgão no painel (fontes.agenda) ou o padrão do sistema.

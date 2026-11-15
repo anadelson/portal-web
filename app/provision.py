@@ -14,7 +14,7 @@ from pathlib import Path
 import psycopg
 from psycopg.types.json import Jsonb
 from . import config, db
-from .catalogo import MODULOS, COMECA_OCULTO, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, LAYOUT_PADRAO_V2, LAYOUT_PADRAO_V3, serve
+from .catalogo import MODULOS, COMECA_OCULTO, ANTES_DE, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, LAYOUT_PADRAO_V2, LAYOUT_PADRAO_V3, serve
 from .security import hash_senha
 
 AQUI = Path(__file__).parent
@@ -102,6 +102,10 @@ def configurar_youtube(o):
     for fonte in ('youtube', 'redes'):  # Fase 9: redes sociais (últimas publicações) — sem conta/credencial não faz nada
         r = db.exe(db.LOCAL, "INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,%s,'{}',TRUE) ON CONFLICT DO NOTHING RETURNING 1", (o['id'], fonte))
         n += 1 if r else 0
+    # 15/11/2026: previsão do tempo (Open-Meteo, pelo código IBGE do município) para todo órgão
+    if o.get('ibge'):
+        r = db.exe(db.LOCAL, "INSERT INTO fontes (orgao_id, fonte, params, ativo) VALUES (%s,'tempo',%s,TRUE) ON CONFLICT DO NOTHING RETURNING 1", (o['id'], Jsonb({'ibge': str(o['ibge'])})))
+        n += 1 if r else 0
     return n
 
 def completar_identidade(banco, slug, tipo):
@@ -139,6 +143,10 @@ def atualizar_layout(banco, tipo):
     novos = [(k, reg) for k, reg in alvo if k not in usados]
     for k, reg in novos:
         mx = db.um(banco, "SELECT coalesce(max(ordem),0)+1 n FROM blocos WHERE pagina='home' AND regiao<>'rodape'")['n']
+        ref = db.um(banco, "SELECT ordem FROM blocos WHERE pagina='home' AND chave=%s AND regiao=%s", (ANTES_DE.get(k, ''), reg))
+        if ref:  # entra logo antes do bloco de referência (os seguintes descem uma posição)
+            db.exe(banco, "UPDATE blocos SET ordem = ordem + 1 WHERE pagina='home' AND ordem >= %s", (ref['ordem'],))
+            mx = ref['ordem']
         db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem, visivel) VALUES ('home',%s,%s,%s,%s) ON CONFLICT DO NOTHING", (k, reg, mx, k not in COMECA_OCULTO))
     return f"{len(novos)} bloco(s) novo(s) acrescentado(s)" if novos else 'sem blocos novos'
 

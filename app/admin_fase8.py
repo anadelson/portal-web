@@ -153,6 +153,8 @@ async def comunicados_post(request: Request):
             return ir(volta, f'Anexo não enviado: {e}', request)
         a = db.um(b, 'SELECT * FROM comunicado_anexos WHERE id=%s', (aid,))
         auditar(request, f'Comunicado {cid}: anexo enviado ({a["titulo"]}, {a["nome_original"]}, {AX.tamanho(a["bytes"])})')
+        from starlette.concurrency import run_in_threadpool
+        await run_in_threadpool(AX.capa, o, a)  # miniatura já pronta para a página inicial (falha não impede o envio)
         return ir(volta, f'Anexo enviado: {a["titulo"]} ({AX.TIPOS[a["ext"]][1]}, {AX.tamanho(a["bytes"])}).', request)
     if acao == 'situacao' and cid:
         nova = f.get('situacao')

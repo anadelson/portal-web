@@ -33,13 +33,19 @@ def comunicados(banco, limite=5, tipo='', ano=None, so_validos=True):
     return itens
 
 # ---------- notícias (bloco da página inicial: destaque, 3 secundárias, lista de 5) ----------
-def noticias_home(banco):
+def noticias_publicadas(banco, limite=20):
+    """Notícias no ar, da mais recente para a mais antiga ([] no período eleitoral: publicidade institucional)."""
     hoje = config.hoje()
+    if eleicao.em_defeso(banco):
+        return []
+    return db.todos(banco, """SELECT * FROM conteudos WHERE secao='Notícias' AND situacao='publicado' AND (publicar_em IS NULL OR publicar_em <= %s)
+                               AND (tirar_em IS NULL OR tirar_em > %s) AND (publicado_em IS NULL OR publicado_em <= %s)
+                               ORDER BY coalesce(publicado_em, publicar_em::timestamptz, criado_em) DESC, id DESC LIMIT %s""", (hoje, hoje, config.agora(), limite))
+
+def noticias_home(banco):
     if eleicao.em_defeso(banco):  # notícias são publicidade institucional: somem no defeso, sem deixar espaço
         return None
-    itens = db.todos(banco, """SELECT * FROM conteudos WHERE secao='Notícias' AND situacao='publicado' AND (publicar_em IS NULL OR publicar_em <= %s)
-                               AND (tirar_em IS NULL OR tirar_em > %s) AND (publicado_em IS NULL OR publicado_em <= %s)
-                               ORDER BY coalesce(publicado_em, publicar_em::timestamptz, criado_em) DESC, id DESC LIMIT 20""", (hoje, hoje, config.agora()))
+    itens = noticias_publicadas(banco)
     if not itens:
         return None
     dest = next((c for c in itens if c['destaque']), itens[0])
@@ -229,3 +235,36 @@ def mover_exemplos_para_comunicados(banco):
         n += 1
     cfg = db.cfg(banco, 'ajustes8', {}) or {}; cfg['d1'] = True; db.set_cfg(banco, 'ajustes8', cfg)
     return n
+
+
+# ---------- vitrine (15/11/2026): mesmo desenho para notícias e comunicados na página inicial ----------
+# destaque (imagem + texto lado a lado), 3 cartões com imagem e "Continue lendo", e lista de títulos
+def item_noticia(c, ed):
+    return {'url': f"/conteudo/{c['id']}", 'titulo': c['titulo'], 'resumo': c.get('resumo') or '', 'quando': quando(c), 'rotulo': ed['nome'], 'cor': ed['cor'],
+            'exemplo': c.get('exemplo'), 'c': c, 'ed': ed, 'capa': ''}
+
+def item_comunicado(c, capa_arq, cor_orgao):
+    return {'url': f"/comunicados/{c['id']}", 'titulo': c['titulo'], 'resumo': '', 'quando': quando(c), 'rotulo': c['tipo'], 'cor': cor_orgao,
+            'exemplo': c.get('exemplo'), 'c': None, 'ed': {'cor': cor_orgao, 'icone': 'diario', 'nome': c['tipo']},
+            'capa': f'/anexo/{capa_arq}/capa' if capa_arq else '', 'valido_ate': c.get('valido_ate')}
+
+def vitrine(itens, n_cartoes=3, n_lista=5):
+    if not itens:
+        return None
+    return {'destaque': itens[0], 'cartoes': itens[1:1 + n_cartoes], 'lista': itens[1 + n_cartoes:1 + n_cartoes + n_lista]}
+
+def vitrine_comunicados(banco, cor_orgao, limite=8):
+    from . import anexos as AX
+    cs = comunicados(banco, limite)
+    caps = AX.capas(banco, [c['id'] for c in cs])
+    return vitrine([item_comunicado(c, caps.get(c['id']), cor_orgao) for c in cs], 3, 4)
+
+def lateral(banco, mods, nome_org, cor_orgao, ibge, excluir_noticia=None, excluir_comunicado=None):
+    """Coluna ao lado das notícias e dos comunicados: últimas 5 notícias, últimos 5 comunicados e a previsão do tempo."""
+    from . import tempo as T
+    lat = {'noticias': [], 'comunicados': [], 'tempo': T.previsao(ibge)}
+    if mods.get('noticias'):
+        eds = editorias(banco)
+        lat['noticias'] = [item_noticia(c, editoria_de(c, eds, nome_org, cor_orgao)) for c in noticias_publicadas(banco, 6) if c['id'] != excluir_noticia][:5]
+    lat['comunicados'] = [item_comunicado(c, None, cor_orgao) for c in comunicados(banco, 6) if c['id'] != excluir_comunicado][:5]
+    return lat

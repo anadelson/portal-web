@@ -1,22 +1,40 @@
-{# Editor de texto (Fase 9). Sem JS, fica o campo de texto simples. Com JS, o editor grava o HTML no campo oculto `html` (limpo no servidor). #}
+{# Editor de texto (Fase 9; ampliado em 15/11/2026). Sem JS, fica o campo de texto simples. Com JS, o editor grava o HTML no campo oculto `html` (limpo no servidor). #}
+{% macro eb(cmd, rotulo, desenho, atalho='') %}<button type="button" data-cmd="{{ cmd }}" aria-label="{{ rotulo }}" title="{{ rotulo }}{{ ' (' ~ atalho ~ ')' if atalho }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="{{ desenho }}"/></svg></button>{% endmacro %}
 {% macro editor(rotulo, html_atual, texto_atual, nome_texto='texto', linhas=8) %}
 <div class="editor" data-editor>
 <label for="ed-txt-{{ nome_texto }}">{{ rotulo }}</label>
 <textarea id="ed-txt-{{ nome_texto }}" name="{{ nome_texto }}" rows="{{ linhas }}" class="ed-simples">{{ texto_atual }}</textarea>
 <input type="hidden" name="html" value="{{ html_atual }}" data-ed-html>
 <div class="ed-barra" role="toolbar" aria-label="Formatação do texto" hidden>
-<button type="button" data-cmd="h2" aria-label="Título de seção">T2</button><button type="button" data-cmd="h3" aria-label="Subtítulo">T3</button><button type="button" data-cmd="p" aria-label="Parágrafo">¶</button>
-<button type="button" data-cmd="bold" aria-label="Negrito"><b>N</b></button><button type="button" data-cmd="italic" aria-label="Itálico"><i>I</i></button>
-<button type="button" data-cmd="insertUnorderedList" aria-label="Lista com marcadores">• Lista</button><button type="button" data-cmd="insertOrderedList" aria-label="Lista numerada">1. Lista</button>
-<button type="button" data-cmd="link" aria-label="Inserir link">Link</button><button type="button" data-cmd="blockquote" aria-label="Citação">“ ”</button>
-<button type="button" data-cmd="tabela" aria-label="Inserir tabela simples">Tabela</button><button type="button" data-cmd="imagem" aria-label="Inserir imagem">Imagem</button>
-<button type="button" data-cmd="limpar" aria-label="Remover formatação da seleção">Limpar</button></div>
+<span class="ed-grupo"><label class="sr" for="ed-bloco-{{ nome_texto }}">Estilo do parágrafo</label><select id="ed-bloco-{{ nome_texto }}" data-bloco title="Estilo do parágrafo">
+<option value="P">Parágrafo</option><option value="H2">Título de seção</option><option value="H3">Subtítulo</option><option value="H4">Título menor</option><option value="BLOCKQUOTE">Citação</option></select></span>
+<span class="ed-grupo">{{ eb('undo', 'Desfazer', 'M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3', 'Ctrl+Z') }}{{ eb('redo', 'Refazer', 'M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3', 'Ctrl+Y') }}</span>
+<span class="ed-grupo">{{ eb('bold', 'Negrito', 'M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z', 'Ctrl+B') }}{{ eb('italic', 'Itálico', 'M14 5h-4M14 19h-4M14 5l-4 14', 'Ctrl+I') }}{{ eb('underline', 'Sublinhado', 'M7 4v7a5 5 0 0 0 10 0V4M5 20h14', 'Ctrl+U') }}{{ eb('strikeThrough', 'Tachado', 'M5 12h14M16 7a4 3 0 0 0-4-2c-2.5 0-4 1.3-4 3M8 17a4 3 0 0 0 4 2c2.5 0 4-1.3 4-3') }}{{ eb('marca', 'Marca-texto (destacar trecho)', 'M15 4l5 5-9 9H6v-5zM4 20h16') }}{{ eb('superscript', 'Sobrescrito (ex.: 1º, m²)', 'M4 18l7-9M4 9l7 9M15 8a2 2 0 1 1 4 0c0 1.5-4 3-4 4h4') }}{{ eb('subscript', 'Subscrito', 'M4 15l7-9M4 6l7 9M15 16a2 2 0 1 1 4 0c0 1.5-4 3-4 4h4') }}</span>
+<span class="ed-grupo">{{ eb('al-esq', 'Alinhar à esquerda', 'M4 6h16M4 10h10M4 14h16M4 18h10') }}{{ eb('al-centro', 'Centralizar', 'M4 6h16M7 10h10M4 14h16M7 18h10') }}{{ eb('al-dir', 'Alinhar à direita', 'M4 6h16M10 10h10M4 14h16M10 18h10') }}{{ eb('al-just', 'Justificar', 'M4 6h16M4 10h16M4 14h16M4 18h16') }}</span>
+<span class="ed-grupo">{{ eb('insertUnorderedList', 'Lista com marcadores', 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01') }}{{ eb('insertOrderedList', 'Lista numerada', 'M10 6h10M10 12h10M10 18h10M4 5h1v4M4 9h2M4 15a1 1 0 1 1 2 0c0 1-2 1.5-2 3h2') }}{{ eb('outdent', 'Diminuir recuo da lista', 'M20 6H10M20 12H10M20 18H10M7 9l-3 3 3 3') }}{{ eb('indent', 'Aumentar recuo da lista', 'M20 6H10M20 12H10M20 18H10M4 9l3 3-3 3') }}</span>
+<span class="ed-grupo">{{ eb('link', 'Inserir ou editar link', 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1', 'Ctrl+K') }}{{ eb('unlink', 'Remover link', 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1M4 4l16 16') }}</span>
+<span class="ed-grupo">{{ eb('imagem', 'Inserir imagem', 'M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01') }}{{ eb('video', 'Inserir vídeo do YouTube', 'M3 6h18v12H3zM10 9l5 3-5 3z') }}{{ eb('tabela', 'Inserir tabela', 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14') }}{{ eb('hr', 'Linha divisória', 'M4 12h16') }}</span>
+<span class="ed-grupo ed-tab" hidden>{{ eb('lin+', 'Tabela: acrescentar linha abaixo', 'M4 4h16v8H4zM12 15v6M9 18h6') }}{{ eb('col+', 'Tabela: acrescentar coluna à direita', 'M4 4h8v16H4zM18 9v6M15 12h6') }}{{ eb('lin-', 'Tabela: apagar a linha', 'M4 4h16v8H4zM9 18h6') }}{{ eb('col-', 'Tabela: apagar a coluna', 'M4 4h8v16H4zM15 12h6') }}</span>
+<span class="ed-grupo">{{ eb('limpar', 'Remover formatação da seleção', 'M6 5h12M12 5l-3 14M15 15l5 5M20 15l-5 5') }}{{ eb('codigo', 'Ver o código HTML', 'M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14') }}{{ eb('cheio', 'Tela cheia (Esc sai)', 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5') }}</span>
+</div>
 <div class="ed-area" contenteditable="true" role="textbox" aria-multiline="true" aria-label="{{ rotulo }}" hidden></div>
+<textarea class="ed-fonte" aria-label="Código HTML de {{ rotulo }}" spellcheck="false" hidden></textarea>
+<p class="ed-rodape" hidden><span class="ed-conta" aria-live="off"></span><span class="ed-modo"></span></p>
 {# sem <form> aqui: o editor fica dentro do formulário da tela, e form dentro de form fecha o formulário principal antes da hora #}
 <dialog class="ed-img" aria-labelledby="ed-img-t"><div class="campos"><h3 id="ed-img-t">Inserir imagem</h3>
 <label>Arquivo (PNG, JPG ou WEBP, até 3 MB)<input type="file" accept="image/png,image/jpeg,image/webp" data-img-arq></label>
 <label>Texto alternativo (opcional: o que a imagem mostra)<input data-img-alt></label><label>Legenda<input data-img-leg></label><label>Crédito<input data-img-cred></label>
+<fieldset class="ed-alinha"><legend>Posição</legend><label><input type="radio" name="ed-img-pos" value="" checked> Largura do texto</label><label><input type="radio" name="ed-img-pos" value="al-centro"> Centralizada</label></fieldset>
 <p class="ed-img-erro chip erro" role="alert" hidden></p><div class="acoes"><button type="button" class="btn" data-img-ok>Inserir</button><button type="button" class="btn sec" data-img-cancelar>Cancelar</button></div></div></dialog>
-<p class="legal ed-ajuda" hidden>Colar do Word mantém só títulos, negrito, itálico, listas, links e tabelas. O texto é limpo de novo ao salvar.</p>
+<dialog class="ed-img ed-link" aria-labelledby="ed-link-t"><div class="campos"><h3 id="ed-link-t">Link</h3>
+<label>Endereço (https://…, mailto:… ou /página do portal)<input data-link-url inputmode="url"></label>
+<label>Texto do link (vazio = o texto selecionado)<input data-link-txt></label>
+<p class="ed-link-erro chip erro" role="alert" hidden></p><div class="acoes"><button type="button" class="btn" data-link-ok>Aplicar</button><button type="button" class="btn sec" data-link-cancelar>Cancelar</button></div></div></dialog>
+<dialog class="ed-img ed-video" aria-labelledby="ed-video-t"><div class="campos"><h3 id="ed-video-t">Vídeo do YouTube</h3>
+<label>Endereço do vídeo (youtube.com/watch?v=… ou youtu.be/…)<input data-video-url inputmode="url"></label>
+<label>Título do vídeo (lido pelo leitor de tela)<input data-video-tit></label>
+<p class="legal">No portal o vídeo aparece no modo de privacidade do YouTube (youtube-nocookie).</p>
+<p class="ed-video-erro chip erro" role="alert" hidden></p><div class="acoes"><button type="button" class="btn" data-video-ok>Inserir</button><button type="button" class="btn sec" data-video-cancelar>Cancelar</button></div></div></dialog>
+<p class="legal ed-ajuda" hidden>Colar do Word mantém títulos, negrito, itálico, sublinhado, listas, links e tabelas (cores e fontes caem, para o portal ficar legível e acessível). Ctrl+Shift+V cola só o texto. O texto é limpo de novo ao salvar.</p>
 </div>
 {% endmacro %}

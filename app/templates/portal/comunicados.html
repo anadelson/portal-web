@@ -1,7 +1,10 @@
 {% extends 'portal/base.html' %}
 {% block titulo %}Comunicados — {{ ident.nome }}{% endblock %}
+{% from 'partials/lateral.html' import lateral with context %}
+{% from 'partials/cena.html' import cena with context %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Comunicados</span></nav>
+<div class="com-lateral"><div class="col-principal">
 <h1>Comunicados</h1>
 <p class="intro">Avisos, convocações, convites, notas oficiais e editais de chamamento{{ ' da Câmara' if leg else ' da Prefeitura' }}. Notícias ficam na página <a href="/noticias">Notícias</a>.</p>{{ legal_topo(legal) }}
 <form class="filtros" method="get" action="/comunicados" role="search" aria-label="Filtrar comunicados">
@@ -9,5 +12,8 @@
 <label>Ano<select name="ano"><option value="">Todos</option>{% for a in anos %}<option {{ 'selected' if ano == a|string }}>{{ a }}</option>{% endfor %}</select></label>
 <span class="botoes"><button class="btn" type="submit">Filtrar</button><a class="btn sec" href="/comunicados">Limpar</a></span></form>
 <p role="status" style="margin:16px 0 8px"><strong>{{ itens|length }}</strong> comunicado(s)</p>
-<ul class="com-lista">{% for c in itens %}<li><span class="etq">{{ c.tipo }}</span><a href="/comunicados/{{ c.id }}">{{ c.titulo }}</a><small>{{ quando(c) }}{% if c.valido_ate %} · válido até {{ c.valido_ate|br }}{% endif %}{% if n_anexos.get(c.id) %} · {{ n_anexos[c.id] }} arquivo(s){% endif %}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</small></li>{% else %}<li class="vazio">Nenhum comunicado publicado{{ ' com esses filtros' if tipo or ano }}.</li>{% endfor %}</ul>
+{% if itens %}<ul class="lista-not lista-com">{% for c in itens %}<li><a href="/comunicados/{{ c.id }}"><span class="ln-img">{% if capas.get(c.id) %}<img class="doc" src="/anexo/{{ capas[c.id] }}/capa" alt="" loading="lazy" style="aspect-ratio:16/9">{% else %}{{ cena({'cor': tokens.cor, 'icone': 'diario'}, '16/9', 36) }}{% endif %}</span>
+<span class="ln-txt"><span class="meta"><span class="etq">{{ c.tipo }}</span> {{ quando(c) }}{% if c.valido_ate %} · válido até {{ c.valido_ate|br }}{% endif %}{% if n_anexos.get(c.id) %} · {{ n_anexos[c.id] }} arquivo(s){% endif %}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</span><span class="t">{{ c.titulo }}</span></span></a></li>{% endfor %}</ul>
+{% else %}<p class="vazio">Nenhum comunicado publicado{{ ' com esses filtros' if tipo or ano }}.</p>{% endif %}
+</div>{{ lateral(lat, (ident.nome_curto or orgao.municipio or 'o município')) }}</div>
 {% endblock %}
