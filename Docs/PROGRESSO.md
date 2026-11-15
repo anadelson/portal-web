@@ -2299,3 +2299,10 @@ Pedido do usuário: no Diário Oficial o órgão já vem escolhido, de uma lista
 
   Depois da correção, nenhuma tela com desalinhamento. A presença das sessões tem rótulo por leitor de tela (aria-label).
 - admin.js v=7. Testes: `teste_diario_orgaos` (novo) e os testes do Diário ajustados para escolher o órgão na lista. Capturas no ambiente de teste com dados fictícios.
+- **Implantado na gestão em 15/11/2026, 18h20 (Brasília)**, fora da janela do Diário, com aprovação do usuário ("Aprovo, existe snapshot"):
+  - mescla `bc93691`; backup ok (plataforma, bd_pm_bora, bd_cm_bora) às 17h54; versão `alinhamento-diario-orgaos (bc93691)`;
+  - as 31 suítes passaram contra a imagem nova (inclusive o instalador, que tinha falhado uma vez na rodada anterior e passou nas duas seguintes);
+  - `provision atualizar` aplicou a `034_orgao_diario_orgaos` na Prefeitura e na Câmara; sem fontes nem blocos novos;
+  - conferido: portais e login 200; admin.css v=19 com as regras de alinhamento e admin.js com o Pré-formatar; colunas `html` e `orgao_id` criadas; app e worker de pé, sem erros nos logs.
+- **Falta (usuário):** cadastrar os órgãos do Diário da Prefeitura (Diário Oficial → Órgãos, ou "Trazer as secretarias cadastradas") antes do próximo envio de ato; até lá o envio mostra o aviso e é recusado.
+- **Falta:** o nó do prefbora recebe esta versão pelo pacote novo do console e o instalador (etapas 8 e 9: `s`).
