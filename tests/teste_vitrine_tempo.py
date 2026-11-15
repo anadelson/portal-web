@@ -96,6 +96,8 @@ checa(anon.get('/anexo/00000000000000000000000000000000.pdf/capa').status_code =
 home = anon.get('/').text
 blk = home[home.find('aria-labelledby="h-com"'):]
 blk = blk[:blk.find('</section>')]
+fx = home[home.find('<div class="faixa-com">'):]
+checa(fx and fx.find('id="h-com"') < fx.find('id="h-serv"') and 'pilha' not in home, 'Comunicados volta ao lado de Serviços (mesma posição e tamanho de antes)')
 checa('class="v-dest"' in blk and 'Exemplo de comunicado da vitrine 5' in blk[:blk.find('class="v-cartoes"')], 'comunicado mais recente em destaque')
 checa(f"/anexo/{a['arquivo']}/capa" in blk and 'class="doc"' in blk, 'destaque usa a miniatura do PDF')
 checa(blk.count('Continue lendo') == 4 and re.search(r'<ul class="v-cartoes">(.*?)</ul>', blk, re.S).group(1).count('<li>') == 3, 'destaque + 3 cartões com "Continue lendo"')

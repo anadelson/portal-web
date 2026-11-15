@@ -24,7 +24,7 @@
 </nav>{% endif %}
 
 {% elif b.chave == 'comunicados' %}
-<div class="faixa-com pilha">
+<div class="faixa-com">
 {{ vitrine(d.vit_com, 'h-com', 'Comunicados', 'Avisos, convocações, convites e notas oficiais ' ~ ('da Câmara' if leg else 'da Prefeitura') ~ '.', '/comunicados', 'Todos os comunicados', 'Nenhum comunicado em vigor.') }}
 {% if mods.carta %}<section class="caixa" aria-labelledby="h-serv"><h2 id="h-serv">Serviços mais acessados</h2><p class="sub">Os serviços mais consultados no portal neste mês.</p>
 {% if d.servicos_top %}<ul class="serv-top">{% for c in d.servicos_top %}<li><a href="/servicos/{{ c.slug }}"><span class="ico">{{ icone('lista', 22) }}</span><span>{{ c.nome }}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</span></a></li>{% endfor %}</ul>
