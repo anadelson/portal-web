@@ -2267,3 +2267,9 @@ Pedido do usuário: o bloco Comunicados devia continuar como era (lista), mudand
 - portal.css v=29. Removida `fase8.vitrine_comunicados` (sem uso).
 - Testes: `teste_vitrine_tempo` atualizado (lista de comunicados na página inicial, previsão sobre a foto, só 2 dias, página /tempo, faixa quando não há foto, previsão velha some também da página); passaram `teste_vitrine_tempo`, `teste_escala`, `teste_ajustes8`, `teste_ajustes_portal`, `teste_painel_admin` e `teste_fase8`. Capturas no ambiente de teste (dados fictícios), Prefeitura e Câmara, 1366 e 390 px: sem rolagem horizontal; o axe não apontou nada na página inicial nem em /tempo.
 - **Não implantado** (aguarda aprovação).
+
+## 15/11/2026 — Linhas finas na seção Notícias (código; branch noticias-linhas)
+Pedido do usuário: Notícias também separada por linhas finas, inclusive o destaque.
+- Linha fina abaixo do destaque, linhas verticais entre os 3 cartões (no espaço entre eles, para os cartões ficarem com a mesma largura) e as linhas da lista, que já existiam. No celular, os cartões viram linhas separadas por linha horizontal.
+- portal.css v=30. Capturas no ambiente de teste (dados fictícios) em 1366 e 390 px.
+- **Não implantado** (aguarda aprovação; vai junto com comunicados-lista-tempo).
