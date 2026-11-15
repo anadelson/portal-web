@@ -2240,4 +2240,10 @@ Pedido do usuário: Comunicados e Notícias no modelo da imagem enviada; telas d
   - nova suíte `tests/teste_vitrine_tempo.py` (dados fictícios; a previsão de teste é gravada à mão, sem consulta real);
   - `teste_ajustes8` e `teste_fase8` foram atualizados para a marcação nova;
   - nas capturas (ambiente de teste), o axe (WCAG 2.1 AA) não apontou nada na página inicial, na notícia, no comunicado, nas listas e no editor, e não há rolagem horizontal em 1366 e 390 px.
-- **Não implantado** (aguarda aprovação).
+- **Implantado na gestão em 15/11/2026, 12h31 (Brasília)**, com aprovação do usuário ("Aprovo, existe snapshot"):
+  - mescla `acdb02f` no main; backup `deploy/backup.sh` ok (plataforma, bd_pm_bora, bd_cm_bora); versão `vitrine-tempo-editor (acdb02f)`;
+  - as 30 suítes passaram contra a imagem nova;
+  - `provision atualizar` aplicou a 033 e acrescentou, em pm-bora e cm-bora, a fonte `tempo` e o bloco `tempo` antes de Comunicados;
+  - primeira coleta real: pm-bora 25,9 °C agora, 4 dias de previsão; cm-bora reaproveitou a mesma previsão (mesmo município);
+  - conferido: as páginas iniciais, /noticias e /comunicados respondem 200 com portal.css v=26, a previsão do tempo e a coluna à direita. A Câmara ainda não tem comunicados cadastrados, por isso o bloco aparece vazio.
+- **Falta:** atualizar o nó do prefbora (pacote novo do console e o instalador; na etapa 8, `s`, para a migração local 004).
