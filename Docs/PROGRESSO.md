@@ -2277,3 +2277,25 @@ Pedido do usuário: Notícias também separada por linhas finas, inclusive o des
   - as 30 suítes passaram contra a imagem final; `provision atualizar` sem fontes nem blocos novos;
   - conferido: páginas iniciais da Prefeitura e da Câmara com a previsão sobre a foto e portal.css v=30; Comunicados da Prefeitura em duas colunas; /tempo responde 200 nos dois portais. A página mostra 4 dias até a próxima coleta, que passa a trazer 7.
 - **Falta:** o nó do prefbora recebe estas versões pelo pacote novo do console e o instalador (etapas 8 e 9: `s`).
+
+## 15/11/2026 — Diário: órgãos cadastrados, texto formatado com pré-formatação e alinhamento dos campos do painel (código; branch alinhamento-diario-orgaos)
+Pedido do usuário: no Diário Oficial o órgão já vem escolhido, de uma lista cadastrada (para ninguém digitar de um jeito diferente ou errado); o texto do ato com formatação e uma pré-formatação automática aplicada documento por documento; corrigir os campos desalinhados (caixas de marcar em Notícias e no Período eleitoral, os "Horários (dias úteis)" do Diário) depois de analisar todos os formulários dos portais.
+- **Órgãos do Diário (aba nova "Órgãos"):** nome oficial, sigla, caderno (Executivo/Legislativo), "em uso" e órgão padrão; botão para trazer as secretarias já cadastradas na Carta de Serviços. Renomear corrige só os atos ainda fora de edição. Migração `034_orgao_diario_orgaos.sql` (tabela `diario_orgaos`; `diario_atos.orgao_id` e `diario_atos.html`). Nenhum órgão é criado automaticamente: cada órgão cadastra os seus.
+- **Envio do ato:** o órgão é escolhido na lista, agrupada por caderno; o caderno vem do órgão. Já vem escolhido o órgão do último ato que a pessoa enviou; para quem nunca enviou, o padrão. Sem órgão cadastrado: aviso com link e envio recusado. Envio de órgão fora da lista ou fora de uso é recusado.
+- **Texto do ato:** editor do painel (sem imagem nem vídeo; tabela, listas, alinhamento, negrito etc. continuam), HTML limpo no servidor; o texto simples sai dele (busca, Legislação, verificação de CPF completo). Botão **Pré-formatar** (`app/diario_formato.py`):
+  - título centralizado em negrito e ementa recuada (LC 95/1998);
+  - "DECRETA:"/"RESOLVE:" em negrito; CAPÍTULO/SEÇÃO centralizados;
+  - "Art. 1º" até o 9º e "Art. 10." em diante, "§ 1º", "Parágrafo único.", incisos "I –", alíneas "a)";
+  - local e data e assinatura centralizados.
+
+  Nada é inventado; rodar duas vezes dá o mesmo resultado; "Voltar ao texto anterior" desfaz.
+- **PDF da edição:** o texto formatado vai para o PDF (alinhamento, negrito/itálico/sublinhado, listas, tabelas, linha divisória); atos sem formatação (e remessas da Câmara) saem como antes.
+- **Alinhamento dos campos:** auditoria automática de todas as telas com formulário (Prefeitura, Câmara e console da gestão, 1366 e 390 px; 124 telas). Problemas achados e corrigidos na regra geral do `admin.css` (v=19), sem remendo tela a tela:
+  - caixa de marcar/opção abaixo do texto: a altura mínima dos campos valia para ela;
+  - campos lado a lado desnivelados quando os rótulos têm tamanhos diferentes (Horários do Diário, Dados do órgão, Transmissões);
+  - linha da tabela de menus vazando;
+  - campos sem borda na lista de tipos de comunicado;
+  - campos das imagens da identidade e cadastro de feriados com rolagem lateral no celular.
+
+  Depois da correção, nenhuma tela com desalinhamento. A presença das sessões tem rótulo por leitor de tela (aria-label).
+- admin.js v=7. Testes: `teste_diario_orgaos` (novo) e os testes do Diário ajustados para escolher o órgão na lista. Capturas no ambiente de teste com dados fictícios.

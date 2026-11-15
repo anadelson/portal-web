@@ -148,9 +148,13 @@ def gerar_pdf(edicao: dict, atos: list[dict], ident: dict, destino_dir: str, tes
             if a.get('retifica'):
                 el.append(Paragraph(f"<i>RETIFICAÇÃO — {_esc(a['retifica'])}</i>", corpo))
             el.append(Paragraph(f"<i>{_esc(a['ementa'])}</i>", corpo))
-            for par in _esc(a['texto']).split('\n'):
-                if par.strip():
-                    el.append(Paragraph(par, corpo))
+            if a.get('html'):  # texto formatado no editor (15/11/2026): alinhamento, negrito, listas e tabelas vão para o PDF
+                from .diario_formato import elementos_pdf
+                el += elementos_pdf(a['html'], corpo)
+            else:
+                for par in _esc(a['texto']).split('\n'):
+                    if par.strip():
+                        el.append(Paragraph(par, corpo))
             el.append(Spacer(1, 10))
 
     def pagina(canvas, doc):

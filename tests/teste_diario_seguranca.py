@@ -90,7 +90,7 @@ if db.um(PM, 'SELECT count(*) n FROM designacoes WHERE ativo')['n'] != 3: falha(
 post(pm, '/admin/diario/config', {'acao': 'feriado', 'data': '2026-11-10', 'descricao': 'Feriado de teste', 'tipo': 'feriado'})
 post(pm, '/admin/diario/config', {'acao': 'feriado', 'data': '2026-11-11', 'descricao': 'Ponto facultativo de teste', 'tipo': 'ponto_facultativo'})
 def novo_ato(c, caderno, ementa, retifica=''):
-    return post(c, '/admin/diario/ato', {'acao': 'novo', 'caderno': caderno, 'tipo': 'Decreto', 'numero': f'{caderno[:3]}-1/2026', 'orgao': 'Gabinete (teste)', 'ementa': ementa, 'texto': 'Art. 1º Texto fictício de teste.', 'retifica': retifica}, de='/admin/diario')
+    return post(c, '/admin/diario/ato', {'acao': 'novo', 'orgao_id': __import__('apoio').orgao_diario(PM, f'Gabinete (teste {caderno})', caderno), 'tipo': 'Decreto', 'numero': f'{caderno[:3]}-1/2026', 'ementa': ementa, 'texto': 'Art. 1º Texto fictício de teste.', 'retifica': retifica}, de='/admin/diario')
 r = novo_ato(pm, 'executivo', 'Decreto fictício do Executivo')
 if '06/11/2026' not in msg(r): falha(f'ato antes das 16h vai para a edição do dia: {msg(r)}')
 novo_ato(pm, 'legislativo', 'Resolução fictícia (caderno Legislativo)')
