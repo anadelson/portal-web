@@ -4,12 +4,21 @@
 <section class="tempo" aria-labelledby="{{ hid }}">
 <p class="t-agora"><span class="t-ico">{{ icone(t.icone, 22) }}</span><strong id="{{ hid }}" role="heading" aria-level="2">Tempo em {{ cidade }}</strong>
 <span>{% if t.temp is not none %}<b>{{ t.temp }} °C</b>, {% endif %}{{ t.texto|lower }}{% if t.umidade is not none %} · umidade {{ t.umidade }}%{% endif %}{% if t.vento is not none %} · vento {{ t.vento }} km/h{% endif %}</span></p>
-<ul class="t-dias">{% for d in t.dias %}<li><span class="t-dia" title="{{ d.longo }}">{{ d.rotulo }}</span>{{ icone(d.icone, 18) }}<span class="sr">{{ d.texto }}.</span>
+<ul class="t-dias">{% for d in t.dias[:2] %}<li><span class="t-dia" title="{{ d.longo }}">{{ d.rotulo }}</span>{{ icone(d.icone, 18) }}<span class="sr">{{ d.texto }}.</span>
 <span class="t-mm"><span class="sr">máxima </span>{{ d.max }}°<span class="t-min"><span class="sr">, mínima </span><span aria-hidden="true">/</span>{{ d.min }}°</span></span>{% if d.chuva_prob is not none %}<span class="t-chuva"><span aria-hidden="true">· </span>{{ d.chuva_prob }}%<span class="sr"> de chance de chuva</span></span>{% endif %}</li>{% endfor %}</ul>
-<p class="t-fonte">Open-Meteo (CC BY 4.0) · {{ t.atualizado }}</p>
+<p class="t-fonte"><a href="/tempo">Previsão completa</a> · Open-Meteo (CC BY 4.0) · {{ t.atualizado }}</p>
 </section>{% endif %}{% endmacro %}
 {% macro tempo_cartao(t, cidade, hid='h-tempo-l') %}{% if t %}
 <section class="lat-caixa tempo-l" aria-labelledby="{{ hid }}"><h2 id="{{ hid }}">Tempo em {{ cidade }}</h2>
 <p class="t-agora-l">{{ icone(t.icone, 40) }}<span>{% if t.temp is not none %}<strong>{{ t.temp }} °C</strong>{% endif %}<span>{{ t.texto }}</span></span></p>
-<ul class="t-dias-l">{% for d in t.dias[:4] %}<li><span class="t-dia">{{ d.rotulo }}</span>{{ icone(d.icone, 22) }}<span class="sr">{{ d.texto }}.</span><span class="t-mm"><strong><span class="sr">máxima </span>{{ d.max }}°</strong> <span><span class="sr">mínima </span>{{ d.min }}°</span></span>{% if d.chuva_prob is not none %}<span class="t-chuva">{{ d.chuva_prob }}%<span class="sr"> de chance de chuva</span></span>{% endif %}</li>{% endfor %}</ul>
+<ul class="t-dias-l">{% for d in t.dias[:2] %}<li><span class="t-dia">{{ d.rotulo }}</span>{{ icone(d.icone, 22) }}<span class="sr">{{ d.texto }}.</span><span class="t-mm"><strong><span class="sr">máxima </span>{{ d.max }}°</strong> <span><span class="sr">mínima </span>{{ d.min }}°</span></span>{% if d.chuva_prob is not none %}<span class="t-chuva">{{ d.chuva_prob }}%<span class="sr"> de chance de chuva</span></span>{% endif %}</li>{% endfor %}</ul>
+<a class="btn sec" href="/tempo">Previsão completa {{ icone('seta', 18, 'seta') }}</a>
 <p class="t-fonte">Open-Meteo (CC BY 4.0) · {{ t.atualizado }}</p></section>{% endif %}{% endmacro %}
+{# Sobre a foto principal da página inicial (ajuste de 15/11/2026): só hoje e amanhã; o restante fica em /tempo. #}
+{% macro tempo_hero(t, cidade) %}{% if t %}
+<div class="tempo-hero-w"><div class="th-int"><section class="tempo-hero" aria-labelledby="h-tempo-h">
+<h2 id="h-tempo-h" class="sr">Tempo em {{ cidade }}</h2>
+<p class="th-agora">{{ icone(t.icone, 22) }}<span><span class="sr">Agora: </span>{% if t.temp is not none %}<b>{{ t.temp }} °C</b> {% endif %}<span class="th-txt">{{ t.texto }}</span></span></p>
+<ul class="th-dias">{% for d in t.dias[:2] %}<li><span class="t-dia">{{ d.rotulo }}</span>{{ icone(d.icone, 18) }}<span class="sr">{{ d.texto }}, </span><span><span class="sr">máxima </span>{{ d.max }}°<span class="th-min"><span class="sr">, mínima </span><span aria-hidden="true">/</span>{{ d.min }}°</span></span>{% if d.chuva_prob is not none %}<span class="th-chuva">{{ icone('gota', 14) }}{{ d.chuva_prob }}%<span class="sr"> de chance de chuva</span></span>{% endif %}</li>{% endfor %}</ul>
+<a class="th-mais" href="/tempo">Previsão completa<span class="sr"> do tempo em {{ cidade }}</span> {{ icone('seta', 16, 'seta') }}</a>
+</section></div></div>{% endif %}{% endmacro %}

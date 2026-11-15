@@ -1,0 +1,28 @@
+{% extends 'portal/base.html' %}
+{# Previsão do tempo completa (15/11/2026). Dados do Open-Meteo (CC BY 4.0), coletados de hora em hora pelo centro do município (IBGE). #}
+{% block titulo %}Previsão do tempo — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Previsão do tempo</span></nav>
+<h1>Previsão do tempo em {{ cidade }}</h1>
+<p class="intro">Condição agora e a previsão para os próximos dias no município.</p>
+{% if t %}
+<section class="tp-agora" aria-labelledby="h-tp-agora">
+<h2 id="h-tp-agora">Agora</h2>
+<div class="tp-agora-l"><span class="tp-ico">{{ icone(t.icone, 56) }}</span>
+<p><strong class="tp-temp">{% if t.temp is not none %}{{ t.temp }} °C{% else %}—{% endif %}</strong><span>{{ t.texto }}</span></p>
+<dl class="tp-det">{% if t.umidade is not none %}<div><dt>Umidade</dt><dd>{{ t.umidade }}%</dd></div>{% endif %}{% if t.vento is not none %}<div><dt>Vento</dt><dd>{{ t.vento }} km/h</dd></div>{% endif %}</dl></div>
+</section>
+<section aria-labelledby="h-tp-dias">
+<h2 id="h-tp-dias">Próximos dias</h2>
+<ul class="tp-dias">{% for d in t.dias %}<li>
+<p class="tp-dia"><strong>{{ d.rotulo }}</strong> <span>{{ d.longo }}, {{ d.data.strftime('%d/%m') }}</span></p>
+<span class="tp-d-ico">{{ icone(d.icone, 36) }}</span><p class="tp-cond">{{ d.texto }}</p>
+<p class="tp-mm"><span><span class="sr">Máxima </span><strong>{{ d.max }}°</strong></span> <span class="tp-min"><span class="sr">mínima </span>{{ d.min }}°</span></p>
+<p class="tp-chuva">{{ icone('gota', 16) }} {% if d.chuva_prob is not none %}{{ d.chuva_prob }}% de chance de chuva{% else %}chance de chuva não informada{% endif %}{% if d.chuva_mm %} · {{ '%.1f'|format(d.chuva_mm)|replace('.', ',') }} mm{% endif %}</p>
+</li>{% endfor %}</ul>
+</section>
+<p class="legal">Fonte: Open-Meteo (open-meteo.com), dados abertos sob licença CC BY 4.0, para o centro do município informado pelo IBGE. Atualizada em {{ t.atualizado }}. Previsão é estimativa e pode mudar; para alertas oficiais, consulte a Defesa Civil.</p>
+{% else %}
+<p class="vazio">A previsão do tempo não está disponível no momento. Ela é atualizada de hora em hora; tente de novo mais tarde.</p>
+{% endif %}
+{% endblock %}

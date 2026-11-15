@@ -8,7 +8,7 @@ from .. import db
 
 URL = 'https://api.open-meteo.com/v1/forecast'
 URL_IBGE = 'https://servicodados.ibge.gov.br/api/v3/malhas/municipios/{ibge}/metadados'
-DIAS = 4
+DIAS = 7
 FRESCA_MIN = 45  # Prefeitura e Câmara do mesmo município: a segunda coleta dentro deste prazo não consulta de novo
 
 def coordenadas(ibge, p=None):
