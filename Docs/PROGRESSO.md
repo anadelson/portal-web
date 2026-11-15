@@ -2178,3 +2178,17 @@ Correções:
   - nova suíte `tests/teste_ajustes_portal.py`;
   - as suítes antigas que exigiam texto alternativo e "Fotos do bloco" foram atualizadas para a regra nova.
 - **Não implantado** (aguarda aprovação).
+
+## 15/11/2026 21:40 — Implantação: ajustes-noticias-albuns (cbfd56f)
+- Aprovação do usuário ("Aprovo, existe snapshot").
+- Executado: backup (bd_pm_bora, bd_cm_bora e plataforma ok), imagem gerada e 29 suítes ok contra ela.
+- Subida às 21h39, fora da janela do Diário, com `provision atualizar`.
+- Conferido:
+  - migração 032 aplicada nos dois órgãos (sem trava de texto alternativo);
+  - bloco "Galeria de fotos" acrescentado oculto;
+  - os dois portais continuam publicados (sem `portal_oculto`);
+  - pm e cm respondem 200 em / e em /admin/login;
+  - a gestão responde 303;
+  - versão certa;
+  - sem erros nos logs;
+  - timer do ativador ativo (agora confere os domínios em /admin/login).
