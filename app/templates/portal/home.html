@@ -25,9 +25,9 @@
 
 {% elif b.chave == 'comunicados' %}
 <div class="faixa-com">
-{# lista de comunicados (como antes); ajuste de 15/11/2026: tudo alinhado à mesma margem do título — tipo e data em cima, título embaixo #}
+{# lista de comunicados (como antes); ajuste de 15/11/2026: duas colunas — tipo à esquerda (alinhado à direita), título e data à direita, linhas finas entre os itens #}
 <section class="caixa com" aria-labelledby="h-com"><h2 id="h-com">Comunicados</h2><p class="sub">Avisos, convocações, convites e notas oficiais {{ 'da Câmara' if leg else 'da Prefeitura' }}.</p>
-{% if d.comunicados %}<ul class="com-lista">{% for c in d.comunicados %}<li><a href="/comunicados/{{ c.id }}"><span class="cl-meta"><span class="etq">{{ c.tipo }}</span><time>{{ d.quando(c) }}</time>{% if c.valido_ate %}<span>· válido até {{ c.valido_ate|br }}</span>{% endif %}{% if c.exemplo %}<span class="exemplo">exemplo</span>{% endif %}</span><span class="cl-tit">{{ c.titulo }}</span></a></li>{% endfor %}</ul>
+{% if d.comunicados %}<ul class="com-lista">{% for c in d.comunicados %}<li><a href="/comunicados/{{ c.id }}"><span class="cl-tipo"><span class="etq">{{ c.tipo }}</span></span><span class="cl-txt"><span class="cl-tit">{{ c.titulo }}</span><span class="cl-meta"><time>{{ d.quando(c) }}</time>{% if c.valido_ate %}<span>· válido até {{ c.valido_ate|br }}</span>{% endif %}{% if c.exemplo %}<span class="exemplo">exemplo</span>{% endif %}</span></span></a></li>{% endfor %}</ul>
 {% else %}<p class="vazio">Nenhum comunicado em vigor.</p>{% endif %}
 <div class="acoes"><a class="btn sec" href="/comunicados">Todos os comunicados {{ icone('seta', 18, 'seta') }}</a></div></section>
 {% if mods.carta %}<section class="caixa" aria-labelledby="h-serv"><h2 id="h-serv">Serviços mais acessados</h2><p class="sub">Os serviços mais consultados no portal neste mês.</p>

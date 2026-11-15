@@ -108,8 +108,8 @@ blk = blk[:blk.find('</section>')]
 fx = home[home.find('<div class="faixa-com">'):]
 checa(fx and fx.find('id="h-com"') < fx.find('id="h-serv"') and 'pilha' not in home, 'Comunicados volta ao lado de Serviços (mesma posição e tamanho de antes)')
 checa('class="com-lista"' in blk and 'class="v-dest"' not in blk and 'Continue lendo' not in blk, 'Comunicados na página inicial continua lista (não é vitrine)')
-checa(blk.find('Exemplo de comunicado da vitrine 5') < blk.find('Exemplo de comunicado da vitrine 4') and 'class="cl-meta"' in blk and 'Todos os comunicados' in blk and 'exemplo' in blk,
-      'mais recente primeiro; tipo e data acima do título; botão "Todos" e marca de exemplo')
+checa(blk.find('Exemplo de comunicado da vitrine 5') < blk.find('Exemplo de comunicado da vitrine 4') and 'class="cl-tipo"' in blk and 'class="cl-meta"' in blk and 'Todos os comunicados' in blk and 'exemplo' in blk,
+      'mais recente primeiro; tipo numa coluna, título e data na outra; botão "Todos" e marca de exemplo')
 db.exe(PM, "UPDATE comunicados SET situacao='rascunho' WHERE id=%s", (cid,))
 checa(anon.get(f"/anexo/{a['arquivo']}/capa").status_code == 404, 'comunicado fora do ar: miniatura não sai para o público')
 db.exe(PM, "UPDATE comunicados SET situacao='publicado' WHERE id=%s", (cid,))

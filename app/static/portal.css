@@ -383,8 +383,10 @@ body.menu-aberto{overflow:hidden}
 .home .sub{margin:0 0 14px;color:#4B5563}
 .faixa-com{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px}
 .caixa.com h2,.faixa-com h2{font-size:var(--fs-h2);margin:0 0 4px}
-.com-lista{list-style:none;margin:0 0 4px;padding:0}.com-lista li{border-bottom:1px solid #EEF1F4}.com-lista li.vazio{display:block}
-.com-lista a{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px 0;color:var(--tx);text-decoration:none}
+.com-lista{list-style:none;margin:0 0 4px;padding:0}.com-lista li{border-bottom:1px solid #EEF1F4}.com-lista li:first-child{border-top:1px solid #EEF1F4}.com-lista li.vazio{display:block}
+.com-lista a{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:16px;align-items:start;padding:14px 0;color:var(--tx);text-decoration:none}
+.com-lista .cl-tipo{display:flex;justify-content:flex-end;padding-top:2px}
+.com-lista .cl-txt{display:flex;flex-direction:column;gap:4px;min-width:0}
 .com-lista .cl-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:var(--fs-meta);color:var(--sub)}
 .com-lista .cl-tit{font-weight:600;font-size:var(--fs-desc);line-height:1.4}.com-lista a:hover .cl-tit{text-decoration:underline}
 .caixa.com .acoes{margin-top:16px}
