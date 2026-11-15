@@ -4,9 +4,13 @@
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/fotos">Fotos</a><span aria-hidden="true">›</span><span aria-current="page">{{ a.titulo }}</span></nav>
 <h1>{{ a.titulo }}</h1>{% if a.descricao %}<p class="intro">{{ a.descricao }}</p>{% endif %}{{ legal_topo(legal) }}
 <section aria-labelledby="h-gal" class="secao"><h2 id="h-gal" class="sr">Fotos do álbum</h2>
-<ul class="galeria">{% for f in fotos %}<li><a href="{{ f.url }}" data-galeria="{{ loop.index0 }}" aria-label="Ampliar foto {{ loop.index }} de {{ fotos|length }}: {{ f.alt }}"><img src="{{ f.url }}" alt="{{ f.alt }}" loading="lazy"></a>
+<p class="legal">{{ total }} foto(s){% if paginas > 1 %} · página {{ pg }} de {{ paginas }}{% endif %}. Clique numa foto para ampliar.</p>
+<ul class="galeria">{% for f in fotos %}<li><a href="{{ f.url }}" data-galeria="{{ loop.index0 }}" aria-label="Ampliar foto {{ inicio + loop.index }} de {{ total }}: {{ f.alt_portal }}"><img src="{{ f.url }}" alt="{{ f.alt_portal }}" loading="lazy"></a>
 <small>{% if f.titulo %}<strong>{{ f.titulo }}</strong> · {% endif %}{{ f.credito }}<span class="lic">Licença: {{ f.licenca }}</span>{% if f.descricao %}{{ f.descricao }}{% endif %}</small></li>{% endfor %}</ul>
 <dialog class="ampliada" aria-labelledby="amp-leg"><figure><img alt=""><figcaption id="amp-leg"></figcaption></figure><div class="botoes"><button class="btn sec" type="button" data-amp="-1">‹ Anterior</button><span role="status" data-amp-pos></span><button class="btn sec" type="button" data-amp="1">Próxima ›</button><button class="btn" type="button" data-amp-fechar>Fechar</button></div></dialog>
 <script type="application/json" id="fotos-dados">{{ fotos|map(attribute='url')|list|tojson }}</script>
-<script type="application/json" id="fotos-leg">{{ fotos|map(attribute='alt')|list|tojson }}</script></section>
+<script type="application/json" id="fotos-leg">{{ fotos|map(attribute='alt_portal')|list|tojson }}</script>
+{% if paginas > 1 %}<nav class="paginacao" aria-label="Páginas do álbum">{% if pg > 1 %}<a class="btn sec" href="/fotos/{{ a.id }}?p={{ pg - 1 }}#h-gal" rel="prev">‹ Anterior</a>{% endif %}
+{% for i in range(1, paginas + 1) %}{% if i == pg %}<span aria-current="page">{{ i }}</span>{% elif i <= 2 or i > paginas - 2 or (i - pg)|abs <= 1 %}<a href="/fotos/{{ a.id }}?p={{ i }}#h-gal">{{ i }}</a>{% elif i == 3 or i == paginas - 2 %}<span aria-hidden="true">…</span>{% endif %}{% endfor %}
+{% if pg < paginas %}<a class="btn sec" href="/fotos/{{ a.id }}?p={{ pg + 1 }}#h-gal" rel="next">Próxima ›</a>{% endif %}</nav>{% endif %}</section>
 {% endblock %}

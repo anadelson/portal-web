@@ -1,5 +1,9 @@
 {% extends 'admin/base.html' %}{% block h1 %}Funcionalidades{% endblock %}
-{% block conteudo %}<p>Ligar ou desligar tira do menu, das páginas e da busca; os dados ficam guardados. Opcionais só aparecem se estiverem no contrato (console do gestor).</p>
+{% block conteudo %}<section class="cx" aria-labelledby="h-vis"><h2 id="h-vis">Visibilidade do portal</h2>
+<p>Situação: {% if oculto %}<span class="chip alerta">Oculto</span> — só quem entrou neste painel vê o portal; o público vê “Portal em preparação” e os buscadores não indexam.{% else %}<span class="chip ok">Publicado</span> — aberto ao público.{% endif %}</p>
+<p class="legal">Use “oculto” enquanto o portal é configurado. A API pública continua respondendo (outro órgão pode depender dela). Para ver o portal oculto, entre no painel e abra o endereço do portal na mesma janela.</p>
+{% if pode('config') %}<form class="inline" method="post" action="/admin/funcionalidades"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="chave" value="_visibilidade"><input type="hidden" name="oculto" value="{{ '' if oculto else '1' }}"><button class="btn {{ '' if oculto else 'sec' }}">{{ 'Publicar o portal (abrir ao público)' if oculto else 'Ocultar o portal (só a equipe vê)' }}</button></form>{% endif %}</section>
+<p>Ligar ou desligar tira do menu, das páginas e da busca; os dados ficam guardados. Opcionais só aparecem se estiverem no contrato (console do gestor).</p>
 <div class="tabela"><table><thead><tr><th>Funcionalidade</th><th>Oferta</th><th>Situação</th><th></th></tr></thead><tbody>
 {% for m in lista %}<tr><td><strong>{{ m.nome }}</strong><br><small>{{ m.desc }}</small></td><td>{{ {'obr':'Exigida por lei','plano':'Incluída no plano','opc':'Opcional'}[m.oferta] }}</td>
 <td>{% if not m.disponivel %}<span class="chip alerta">Não contratada</span>{% else %}<span class="chip {{ 'ok' if m.ligado else '' }}">{{ 'Ligada' if m.ligado else 'Desligada' }}</span>{% endif %}</td>

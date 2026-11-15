@@ -23,6 +23,18 @@ def br(d):
         return d.strftime('%d/%m/%Y %H:%M')
     return d.strftime('%d/%m/%Y')
 
+def data_hora_form(f, campo='publicado_em'):
+    """Data e hora digitadas em dois campos opcionais (<campo>_data e <campo>_hora; aceita também o antigo <campo> único).
+    Data vazia = None (o sistema usa o momento da aprovação/publicação); hora vazia = 08h00. ValueError se inválida."""
+    d, h = (f.get(campo + '_data') or '').strip(), (f.get(campo + '_hora') or '').strip()
+    if not d and (f.get(campo) or '').strip():
+        v = datetime.fromisoformat(f[campo].strip())
+    elif d:
+        v = datetime.fromisoformat(f"{d}T{h or '08:00'}")
+    else:
+        return None
+    return v.astimezone() if v.tzinfo is None else v  # hora local do servidor (TZ do contêiner)
+
 def moeda(v):
     if v is None:
         return '—'
@@ -204,6 +216,55 @@ class RoteadorPorDominio:
         scope['path'] = novo
         scope['raw_path'] = novo.encode()
         return await self.app(scope, receive, send)
+
+# ---------- Portal oculto enquanto é configurado (14/11/2026) ----------
+# Com a chave ligada (Funcionalidades → Visibilidade do portal), o portal público só abre para quem entrou no painel DESTE
+# órgão; os demais veem "Portal em preparação" (HTTP 503, fora dos buscadores). A API pública (/api/…) segue aberta,
+# porque outro órgão pode depender dela (ex.: a Câmara lê dados da Prefeitura).
+_OCULTO = {}
+LIVRES_OCULTO = ('/_p/api/', '/_p/_em_preparacao')
+
+def portal_oculto(o) -> bool:
+    agora = time.time()
+    c = _OCULTO.get(o['slug'])
+    if c and agora - c[0] < 15:
+        return c[1]
+    try:
+        v = bool(db.cfg(o['banco'], 'portal_oculto', False))
+    except Exception:
+        v = False
+    _OCULTO[o['slug']] = (agora, v)
+    return v
+
+def limpar_cache_oculto(slug=None):
+    _OCULTO.pop(slug, None) if slug else _OCULTO.clear()
+
+def equipe_logada(sessao, o) -> bool:
+    """Sessão do painel deste órgão, ainda dentro do limite de inatividade (mesma regra do painel)."""
+    u = (sessao or {}).get('u')
+    ult = (sessao or {}).get('ultimo')
+    return bool(u and u.get('orgao') == o['slug'] and ult and time.time() - ult <= config.SESSAO_INATIVIDADE_MIN * 60)
+
+class PortalOculto:
+    """Roda depois da sessão e do roteador por domínio (caminho já em /_p/…)."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope['type'] != 'http' or not scope['path'].startswith('/_p/'):
+            return await self.app(scope, receive, send)
+        o = (scope.get('state') or {}).get('orgao')
+        if not o or not portal_oculto(o):
+            return await self.app(scope, receive, send)
+        if not scope['path'].startswith(LIVRES_OCULTO) and not equipe_logada(scope.get('session'), o):
+            scope['path'] = '/_p/_em_preparacao'
+            scope['raw_path'] = b'/_p/_em_preparacao'
+        scope['state']['portal_oculto'] = True
+        async def enviar(msg):
+            if msg['type'] == 'http.response.start':
+                msg = dict(msg, headers=list(msg.get('headers', [])) + [(b'x-robots-tag', b'noindex, nofollow')])
+            await send(msg)
+        return await self.app(scope, receive, enviar)
 
 def situacao_contrato(c, hoje=None):
     hoje = hoje or config.hoje()

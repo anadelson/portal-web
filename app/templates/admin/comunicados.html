@@ -4,11 +4,11 @@
 {% if c or request.query_params.get('novo') %}
 {{ voltar('/admin/comunicados') }}
 <section class="cx form-tela"><form class="campos" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="salvar">{% if c %}<input type="hidden" name="id" value="{{ c.id }}">{% endif %}
-<div class="grade2"><label>Tipo<select name="tipo">{% for t in tipos %}<option {{ 'selected' if c and c.tipo == t }}>{{ t }}</option>{% endfor %}</select></label>
+<div class="grade2"><label>Tipo<select name="tipo">{% for t in tipos + ([c.tipo] if c and c.tipo not in tipos else []) %}<option {{ 'selected' if c and c.tipo == t }}>{{ t }}</option>{% endfor %}</select></label>
 <label>Classificação eleitoral<select name="classe">{% for k, v in classes.items() %}<option value="{{ k }}" {{ 'selected' if (c and c.classe == k) or (not c and k == 'util') }}>{{ v[0] }} — {{ v[1] }}</option>{% endfor %}</select></label></div>
 <label>Título<input name="titulo" value="{{ c.titulo if c else '' }}" maxlength="200" required></label>{{ editor('Texto', c.html if c else '', c.texto if c else '', linhas=6) }}
-<div class="grade2"><label>Data e hora da publicação (vazio = ao publicar)<input type="datetime-local" name="publicado_em" value="{{ c.publicado_em.astimezone().strftime('%Y-%m-%dT%H:%M') if c and c.publicado_em else '' }}"></label>
-<label>Válido até (opcional)<input type="date" name="valido_ate" value="{{ c.valido_ate or '' if c else '' }}"></label></div>
+<fieldset class="data-hora"><legend>Data e hora da publicação (opcional: em branco = no momento de publicar)</legend><div class="grade2"><label>Data<input type="date" name="publicado_em_data" value="{{ c.publicado_em.astimezone().strftime('%Y-%m-%d') if c and c.publicado_em else '' }}"></label><label>Hora (vazia = 08h00)<input type="time" name="publicado_em_hora" value="{{ c.publicado_em.astimezone().strftime('%H:%M') if c and c.publicado_em else '' }}"></label></div></fieldset>
+<label>Válido até (opcional)<input type="date" name="valido_ate" value="{{ c.valido_ate or '' if c else '' }}"></label>
 {{ acoes('Salvar', '/admin/comunicados') }}</form></section>
 <section class="cx form-tela" id="anexos" aria-labelledby="h-anexos"><h2 id="h-anexos">Arquivos anexos{% if c %} ({{ anexos|length }}){% endif %}</h2>
 {% if not c %}<p class="vazio-tela">Salve o comunicado primeiro; depois desta tela você anexa o edital, a planilha, as imagens e os demais arquivos.</p>
@@ -26,14 +26,21 @@
 {% endif %}</section>
 {% else %}
 {{ cab('Avisos, convocações, convites, notas oficiais e editais de chamamento. Notícias ficam em “Notícias e páginas”. Com validade, o comunicado sai da página inicial depois da data.', '/admin/comunicados?novo=1', 'Novo comunicado') }}
-{{ abas_tela('Comunicados', [('/admin/comunicados', 'Comunicados', aba != 'config'), ('/admin/comunicados?aba=config', 'Tipos de comunicado', aba == 'config')]) }}
+{{ abas_tela('Comunicados', [('/admin/comunicados', 'Comunicados', aba not in ('config', 'arquivados')), ('/admin/comunicados?aba=arquivados', 'Arquivados', aba == 'arquivados'), ('/admin/comunicados?aba=config', 'Tipos de comunicado', aba == 'config')]) }}
 {% if aba == 'config' %}
-<section class="cx form-tela"><h2>Tipos de comunicado</h2><form class="campos" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="tipos"><label>Tipos, separados por vírgula (notícia não é aceita)<input name="tipos" value="{{ tipos|join(', ') }}"></label>{{ acoes('Salvar tipos') }}</form></section>
+<section class="cx form-tela"><h2>Tipos de comunicado</h2><p class="legal">Aparecem como etiqueta no portal e no filtro de /comunicados. Renomear um tipo atualiza os comunicados que já o usam. Notícia não é tipo de comunicado.</p>
+<form method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="tipos">
+<ul class="lista-editavel">{% for t in tipos %}<li><label class="sr" for="tp{{ loop.index }}">Tipo {{ loop.index }}</label><input id="tp{{ loop.index }}" name="tipo_{{ loop.index0 }}" value="{{ t }}" maxlength="40" required><input type="hidden" name="antigo_{{ loop.index0 }}" value="{{ t }}">
+<button class="btn sec pequeno" name="remover" value="{{ loop.index0 }}" formnovalidate aria-label="Remover o tipo {{ t }}">Remover</button></li>{% endfor %}</ul>
+<input type="hidden" name="n" value="{{ tipos|length }}">
+<div class="lista-nova"><label>Novo tipo<input name="novo" maxlength="40" placeholder="Ex.: Comunicado de obras"></label><button class="btn sec" name="adicionar" value="1">Adicionar</button></div>
+{{ acoes('Salvar alterações') }}</form></section>
 {% elif itens %}
 <div class="tabela"><table><caption class="sr">Comunicados</caption><thead><tr><th scope="col">Tipo</th><th scope="col">Título</th><th scope="col">Publicação</th><th scope="col">Situação</th><th scope="col">Anexos</th><th scope="col"><span class="sr">Ações</span></th></tr></thead><tbody>
 {% for x in itens %}<tr><td>{{ x.tipo }}</td><td><a href="/admin/comunicados?id={{ x.id }}">{{ x.titulo }}</a>{% if x.valido_ate %}<br><small>válido até {{ x.valido_ate|br }}</small>{% endif %}</td><td>{{ x.publicado_em|br if x.publicado_em else '—' }}</td><td><span class="chip {{ 'ok' if x.situacao == 'publicado' else '' }}">{{ x.situacao }}</span></td><td>{{ n_anexos.get(x.id, 0) or '—' }}</td>
 <td class="acoes-linha"><a class="btn sec" href="/admin/comunicados?id={{ x.id }}">Editar</a><form class="inline" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="situacao"><input type="hidden" name="id" value="{{ x.id }}">{% if x.situacao != 'publicado' %}<button class="btn sec" name="situacao" value="publicado">Publicar</button>{% else %}<button class="btn sec" name="situacao" value="arquivado">Tirar do ar</button>{% endif %}</form></td></tr>{% endfor %}
 </tbody></table></div>
+{% elif aba == 'arquivados' %}<p class="vazio-tela">Nenhum comunicado arquivado.</p>
 {% else %}{{ vazio('Nenhum comunicado cadastrado.', '/admin/comunicados?novo=1', 'Novo comunicado') }}{% endif %}
 {% endif %}
 {% endblock %}

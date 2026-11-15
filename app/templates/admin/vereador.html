@@ -5,7 +5,7 @@
 <div class="midia" style="border:0;padding:0"><div class="prev">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt }}">{% else %}<span class="ini-grande">{{ v.nome|iniciais }}</span>{% endif %}</div>
 <div class="campos-m"><strong>Foto oficial</strong>
 <label>Arquivo (PNG, JPG ou WEBP, até 3 MB)<input type="file" name="foto" accept="image/png,image/jpeg,image/webp" {{ 'disabled' if not pode('editar') }}></label>
-<label>Texto alternativo (obrigatório com foto)<input name="foto_alt" value="{{ v.foto_alt }}" placeholder="Ex.: Retrato oficial de {{ v.nome }}, de terno escuro" {{ 'disabled' if not pode('editar') }}></label>
+<label>Texto alternativo (opcional: o que a foto mostra)<input name="foto_alt" value="{{ v.foto_alt }}" placeholder="Ex.: Retrato oficial de {{ v.nome }}, de terno escuro" {{ 'disabled' if not pode('editar') }}></label>
 <label>Crédito e licença<input name="foto_credito" value="{{ v.foto_credito }}" {{ 'disabled' if not pode('editar') }}></label>
 {% if v.foto_url %}<label style="flex-direction:row;gap:8px;font-weight:400"><input type="checkbox" name="remover_foto" value="1"> Remover a foto (o portal volta a mostrar as iniciais)</label>{% endif %}
 </div></div>

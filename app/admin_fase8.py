@@ -101,10 +101,11 @@ def _rico(f, campo):
 
 # ---------- Comunicados ----------
 @r.get('/comunicados')
-def comunicados(request: Request, id: int = 0):
+def comunicados(request: Request, id: int = 0, aba: str = ''):
     u = exige(request, 'editar'); b = request.state.orgao['banco']
     from . import anexos as AX
-    itens = db.todos(b, 'SELECT * FROM comunicados ORDER BY coalesce(publicado_em, criado_em) DESC, id DESC LIMIT 200')
+    filtro = "situacao='arquivado'" if aba == 'arquivados' else "situacao<>'arquivado'"  # arquivado só na aba "Arquivados"
+    itens = db.todos(b, f'SELECT * FROM comunicados WHERE {filtro} ORDER BY coalesce(publicado_em, criado_em) DESC, id DESC LIMIT 200')
     c = db.um(b, 'SELECT * FROM comunicados WHERE id=%s', (id,)) if id else None
     return T('comunicados', request, u, itens=itens, c=c, tipos=F.tipos_comunicado(b), classes=CLASSES,
              anexos=AX.listar(b, c['id']) if c else [], n_anexos=AX.contagem(b, [x['id'] for x in itens]), aceitos=AX.ACEITOS, max_anexos=AX.MAX_POR_COMUNICADO)
@@ -113,14 +114,27 @@ def comunicados(request: Request, id: int = 0):
 async def comunicados_post(request: Request):
     u = exige(request, 'editar'); f = await ler_form(request); b = request.state.orgao['banco']
     acao = f.get('acao', '')
-    if acao == 'tipos':
+    if acao == 'tipos':  # lista editável: renomear (atualiza os comunicados), remover, adicionar
         exige(request, 'config')
-        tipos = [t.strip()[:40] for t in (f.get('tipos') or '').split(',') if t.strip()]
-        ruins = [t for t in tipos if t.lower() in F.PROIBIDOS]
-        if ruins or not tipos:
-            return ir('/admin/comunicados', 'Notícia não é tipo de comunicado: notícias ficam em Conteúdos. Informe os tipos separados por vírgula.', request)
-        db.set_cfg(b, 'comunicados_tipos', tipos); auditar(request, 'Comunicados: lista de tipos alterada')
-        return ir('/admin/comunicados', 'Tipos salvos.', request)
+        volta = '/admin/comunicados?aba=config'
+        n = int(f.get('n') or 0) if str(f.get('n') or '0').isdigit() else 0
+        rem = int(f['remover']) if str(f.get('remover', '')).isdigit() else None
+        pares = [(f.get(f'antigo_{i}', ''), re.sub(r'\s+', ' ', f.get(f'tipo_{i}', '')).strip()[:40]) for i in range(min(n, 100)) if i != rem]
+        tipos = [novo for _, novo in pares if novo]
+        novo = re.sub(r'\s+', ' ', f.get('novo', '')).strip()[:40]
+        if novo:
+            tipos.append(novo)
+        if any(t.lower() in F.PROIBIDOS for t in tipos):
+            return ir(volta, 'Notícia não é tipo de comunicado: notícias ficam em “Notícias e páginas”.', request)
+        if not tipos:
+            return ir(volta, 'Deixe pelo menos um tipo de comunicado.', request)
+        if len({t.lower() for t in tipos}) != len(tipos):
+            return ir(volta, 'Há dois tipos com o mesmo nome.', request)
+        for antigo, novo_nome in pares:
+            if antigo and novo_nome and antigo != novo_nome:
+                db.exe(b, 'UPDATE comunicados SET tipo=%s WHERE tipo=%s', (novo_nome, antigo))
+        db.set_cfg(b, 'comunicados_tipos', tipos); auditar(request, f"Comunicados: tipos — {', '.join(tipos)[:300]}")
+        return ir(volta, 'Tipo removido.' if rem is not None else 'Tipo adicionado.' if novo else 'Tipos salvos.', request)
     cid = int(f['id']) if f.get('id') else None
     if acao in ('anexo', 'anexo_remover') and cid:
         from . import anexos as AX
@@ -154,12 +168,14 @@ async def comunicados_post(request: Request):
         auditar(request, f'Comunicado {cid}: {nova}')
         return ir('/admin/comunicados', 'Situação alterada.', request)
     tipo, titulo = f.get('tipo', ''), f.get('titulo', '').strip()[:200]
-    if not F.tipo_comunicado_valido(b, tipo):
+    atual = db.um(b, 'SELECT tipo FROM comunicados WHERE id=%s', (cid,)) if cid else None
+    if not F.tipo_comunicado_valido(b, tipo) and not (atual and atual['tipo'] == tipo and tipo.strip().lower() not in F.PROIBIDOS):  # tipo removido da lista: o comunicado antigo mantém o seu
         return ir('/admin/comunicados', 'Tipo inválido. Notícia não pode ser cadastrada como comunicado (use Conteúdos → Notícia).', request)
     if not titulo:
         return ir('/admin/comunicados', 'Informe o título.', request)
     try:
-        pub = datetime.fromisoformat(f['publicado_em']) if f.get('publicado_em') else None
+        from .web import data_hora_form
+        pub = data_hora_form(f)
         val = date.fromisoformat(f['valido_ate']) if f.get('valido_ate') else None
     except ValueError:
         return ir('/admin/comunicados', 'Data inválida.', request)
@@ -236,8 +252,6 @@ async def conheca_post(request: Request):
     if acao == 'foto_editar':
         fid = int(f.get('foto_id') or 0)
         alt = f.get('alt', '').strip()
-        if len(alt) < 5:
-            return ir(volta, 'O texto alternativo é obrigatório (pelo menos 5 caracteres).', request)
         if f.get('capa') == '1':
             db.exe(b, 'UPDATE perfil_fotos SET capa=FALSE WHERE perfil_id=%s', (pid,))
         db.exe(b, 'UPDATE perfil_fotos SET alt=%s, legenda=%s, credito=%s, tem_pessoas=%s, autorizacao_imagem=%s, capa=(capa OR %s) WHERE id=%s AND perfil_id=%s',

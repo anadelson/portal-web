@@ -111,7 +111,7 @@
     dlg.querySelector('[data-img-ok]').addEventListener('click', function (e) {
       e.preventDefault();
       var arq = dlg.querySelector('[data-img-arq]').files[0], alt = dlg.querySelector('[data-img-alt]').value.trim(), erro = dlg.querySelector('.ed-img-erro');
-      if (!arq || alt.length < 5) { erro.textContent = 'Escolha o arquivo e escreva o texto alternativo (pelo menos 5 caracteres).'; erro.hidden = false; return; }
+      if (!arq) { erro.textContent = 'Escolha o arquivo da imagem.'; erro.hidden = false; return; }
       var fd = new FormData(); fd.append('csrf', form.querySelector('[name=csrf]').value); fd.append('arquivo', arq); fd.append('alt', alt);
       fd.append('credito', dlg.querySelector('[data-img-cred]').value);
       fetch('/admin/editor/imagem', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
@@ -159,4 +159,31 @@
     else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
   });
   document.addEventListener('click', function (e) { if (mq.matches && nav.classList.contains('aberto') && !nav.contains(e.target) && e.target !== bt && !bt.contains(e.target)) fechar(); });
+})();
+
+// Ponto focal (14/11/2026): clique na imagem (ou setas do teclado) define foco_x/foco_y; as prévias do formulário acompanham.
+(function () {
+  document.querySelectorAll('[data-foco]').forEach(function (box) {
+    var form = box.closest('form'), area = box.querySelector('.foco-img'), img = area.querySelector('img'), ponto = area.querySelector('.foco-ponto'),
+        ix = box.querySelector('[name=foco_x]'), iy = box.querySelector('[name=foco_y]'), centro = box.querySelector('[data-foco-centro]'), sem = box.querySelector('.foco-sem');
+    if (ix.disabled) return;
+    function aplicar(x, y) {
+      x = Math.max(0, Math.min(100, Math.round(x))); y = Math.max(0, Math.min(100, Math.round(y)));
+      ix.value = x; iy.value = y; ponto.style.left = x + '%'; ponto.style.top = y + '%';
+      form.querySelectorAll('[data-foco-previa]').forEach(function (p) { p.style.objectPosition = x + '% ' + y + '%'; });
+    }
+    area.addEventListener('click', function (e) { var r = img.getBoundingClientRect(); aplicar((e.clientX - r.left) / r.width * 100, (e.clientY - r.top) / r.height * 100); });
+    area.addEventListener('keydown', function (e) {
+      var d = { ArrowLeft: [-5, 0], ArrowRight: [5, 0], ArrowUp: [0, -5], ArrowDown: [0, 5] }[e.key];
+      if (d) { e.preventDefault(); aplicar(+ix.value + d[0], +iy.value + d[1]); }
+    });
+    centro.addEventListener('click', function () { aplicar(50, 50); });
+    var arq = form.querySelector('input[type=file]');
+    if (arq) arq.addEventListener('change', function () {
+      var f = arq.files[0]; if (!f || !/^image\//.test(f.type)) return;
+      var url = URL.createObjectURL(f); img.src = url; area.hidden = false; centro.hidden = false; if (sem) sem.hidden = true;
+      form.querySelectorAll('[data-foco-previa]').forEach(function (p) { p.src = url; });
+      aplicar(50, 50);
+    });
+  });
 })();
