@@ -202,7 +202,7 @@ ok(pm.post('/admin/importar', data={'csrf': tok(pm, '/admin/importar'), 'modelo'
    txt='Escolha o modelo', nome='prefeitura não importa modelos da Câmara')
 # ato no Diário que revoga a Lei 12/2020
 t = tok(pm, '/admin/diario')
-pm.post('/admin/diario/ato', data={'csrf': t, 'acao': 'novo', 'caderno': 'executivo', 'tipo': 'Lei', 'numero': '20/2026', 'orgao': 'Gabinete', 'ementa': 'Lei de teste publicada no Diário (dado fictício de teste)',
+pm.post('/admin/diario/ato', data={'csrf': t, 'acao': 'novo', 'orgao_id': __import__('apoio').orgao_diario(PM, 'Gabinete (teste)'), 'tipo': 'Lei', 'numero': '20/2026', 'ementa': 'Lei de teste publicada no Diário (dado fictício de teste)',
                                    'texto': 'Art. 1º Teste. Art. 2º Revoga-se a Lei 12/2020.', 'rel_tipo_0': 'revoga', 'rel_alvo_0': 'Lei 12/2020'})
 checa(db.um(PM, "SELECT relacoes FROM diario_atos WHERE numero='20/2026'")['relacoes'] == [{'tipo': 'revoga', 'alvo': 'Lei 12/2020'}], 'relação gravada no ato do Diário')
 r = pm.get('/admin/diario'); aid = re.search(r'name="id" value="(\d+)"><button class="btn sec" name="acao" value="aprovar"', r.text).group(1)

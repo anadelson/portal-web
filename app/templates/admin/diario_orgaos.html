@@ -1,0 +1,24 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}Diário Oficial{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_tela('Diário Oficial', [('/admin/diario', 'Edições e atos', False), ('/admin/diario/orgaos', 'Órgãos', True), ('/admin/diario/config', 'Signatários, calendário e lei', False)]) }}
+{{ cab('Órgãos que publicam no Diário. No envio do ato o órgão é escolhido nesta lista (ninguém digita o nome), então ele sai sempre igual em todas as edições. Já vem escolhido o órgão do último ato que a pessoa enviou; para quem ainda não enviou, o órgão padrão.') }}
+<section class="cx"><h2>Órgãos cadastrados</h2>
+{% if orgaos %}<ul class="lista-orgaos">{% for o in orgaos %}<li class="{{ '' if o.ativo else 'inativo' }}">
+{% if pode('config') %}<form method="post" action="/admin/diario/orgaos"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ o.id }}">
+<label>Nome oficial<input name="nome" value="{{ o.nome }}" required maxlength="120"></label>
+<label>Sigla<input name="sigla" value="{{ o.sigla }}" maxlength="20"></label>
+<label>Caderno<select name="caderno"><option value="executivo" {{ 'selected' if o.caderno == 'executivo' }}>Poder Executivo</option><option value="legislativo" {{ 'selected' if o.caderno == 'legislativo' }}>Poder Legislativo</option></select></label>
+<label><input type="checkbox" name="ativo" value="1" {{ 'checked' if o.ativo }}> Em uso</label>
+<button class="btn sec" name="acao" value="salvar">Salvar</button>
+<p class="info">{% if o.padrao %}<span class="chip ok">Padrão</span>{% elif o.ativo %}<button class="btn sec pequeno" name="acao" value="padrao" formnovalidate>Tornar padrão</button>{% endif %}{% if not o.ativo %}<span class="chip">Fora de uso: não aparece no envio</span>{% endif %}<span>{{ o.n }} ato(s) enviados</span></p></form>
+{% else %}<p><strong>{{ o.nome }}</strong>{% if o.sigla %} ({{ o.sigla }}){% endif %} · {{ 'Poder Executivo' if o.caderno == 'executivo' else 'Poder Legislativo' }}{% if o.padrao %} <span class="chip ok">Padrão</span>{% endif %}{% if not o.ativo %} <span class="chip">Fora de uso</span>{% endif %}</p>{% endif %}
+</li>{% endfor %}</ul>
+{% else %}{{ vazio('Nenhum órgão cadastrado ainda. Cadastre abaixo os órgãos que publicam atos (ex.: Gabinete do Prefeito, Secretaria de Administração).') }}{% endif %}
+<p class="legal">Mudar o nome corrige os atos que ainda não entraram numa edição; atos já publicados ficam como saíram. Órgão fora de uso deixa de aparecer no envio, mas continua nos atos antigos.</p></section>
+{% if pode('config') %}<section class="cx form-tela"><h2>Novo órgão</h2>
+<form class="campos" method="post" action="/admin/diario/orgaos"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="novo">
+<div class="grade2"><label>Nome oficial<input name="nome" required maxlength="120" placeholder="Ex.: Gabinete do Prefeito"></label><label>Sigla (opcional)<input name="sigla" maxlength="20"></label>
+<label>Caderno<select name="caderno"><option value="executivo" {{ 'selected' if orgao.tipo != 'legislativo' }}>Poder Executivo</option><option value="legislativo" {{ 'selected' if orgao.tipo == 'legislativo' }}>Poder Legislativo</option></select></label></div>
+<div><button class="btn">Cadastrar órgão</button></div></form>
+{% if secretarias %}<form class="campos" method="post" action="/admin/diario/orgaos" style="margin-top:14px"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="importar">
+<p class="legal">Há {{ secretarias|length }} secretaria(s) no cadastro de secretarias (Carta de Serviços) que ainda não estão aqui: {{ secretarias|map(attribute='nome')|join(', ') }}.</p><div><button class="btn sec">Trazer as secretarias cadastradas</button></div></form>{% endif %}</section>{% endif %}
+{% endblock %}

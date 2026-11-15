@@ -736,13 +736,81 @@ def diario(request: Request):
              corte=agora.time() >= diario_pdf.regras(b)['t_corte'], alvo=diario_pdf.data_alvo(b, agora), modo_teste=AS.modo_teste(),
              alertas=db.todos(b, 'SELECT * FROM diario_alertas WHERE NOT resolvido ORDER BY id DESC LIMIT 10'),
              publicados=db.todos(b, "SELECT a.id, a.tipo, a.numero, a.ementa, e.numero en, e.letra el FROM diario_atos a JOIN diario_edicoes e ON e.id=a.edicao_id WHERE a.situacao='publicado' ORDER BY a.id DESC LIMIT 100"),
-             designacoes={d['caderno']: d for d in db.todos(b, 'SELECT * FROM designacoes WHERE ativo ORDER BY id')})
+             designacoes={d['caderno']: d for d in db.todos(b, 'SELECT * FROM designacoes WHERE ativo ORDER BY id')},
+             orgaos_diario=db.todos(b, 'SELECT * FROM diario_orgaos WHERE ativo ORDER BY caderno, nome'), orgao_escolhido=_orgao_escolhido(b, u))
+
+def _orgao_escolhido(b, u):
+    """Órgão que já vem escolhido no envio: o do último ato que esta pessoa enviou; senão o marcado como padrão."""
+    r = db.um(b, "SELECT a.orgao_id FROM diario_atos a JOIN diario_orgaos o ON o.id=a.orgao_id AND o.ativo WHERE a.autor=%s ORDER BY a.id DESC LIMIT 1", (u['nome'],))
+    if r:
+        return r['orgao_id']
+    r = db.um(b, 'SELECT id FROM diario_orgaos WHERE ativo ORDER BY padrao DESC, nome LIMIT 1')
+    return r['id'] if r else None
+
+@r.post('/diario/preformatar')
+async def diario_preformatar(request: Request):
+    """Pré-formatação automática do texto do ato (o resultado volta para o editor; nada é gravado)."""
+    from fastapi.responses import JSONResponse
+    from . import diario_formato as DF
+    exige(request, 'diario_enviar'); f = await ler_form(request)
+    return JSONResponse({'html': DF.preformatar((f.get('html') or '')[:400_000])})
+
+@r.get('/diario/orgaos')
+def diario_orgaos(request: Request):
+    u = exige(request); b = request.state.orgao['banco']
+    if not modulos_do_orgao(request.state.orgao).get('diario'):
+        raise HTTPException(404)
+    return T('diario_orgaos', request, u, orgaos=db.todos(b, "SELECT o.*, (SELECT count(*) FROM diario_atos a WHERE a.orgao_id=o.id) n FROM diario_orgaos o ORDER BY o.ativo DESC, o.caderno, o.nome"),
+             secretarias=db.todos(b, "SELECT nome, sigla FROM secretarias WHERE ativa AND nome NOT IN (SELECT nome FROM diario_orgaos) ORDER BY nome"))
+
+@r.post('/diario/orgaos')
+async def diario_orgaos_post(request: Request):
+    u = exige(request, 'config'); f = await ler_form(request); b = request.state.orgao['banco']
+    acao = f.get('acao'); volta = '/admin/diario/orgaos'
+    nome = re.sub(r'\s+', ' ', f.get('nome', '')).strip()[:120]
+    sigla = re.sub(r'\s+', ' ', f.get('sigla', '')).strip()[:20]
+    caderno = f.get('caderno') if f.get('caderno') in ('executivo', 'legislativo') else 'executivo'
+    if acao in ('novo', 'salvar') and len(nome) < 3:
+        return ir(volta, 'Informe o nome oficial do órgão (ex.: Gabinete do Prefeito).', request)
+    try:
+        if acao == 'novo':
+            db.exe(b, 'INSERT INTO diario_orgaos (nome, sigla, caderno) VALUES (%s,%s,%s)', (nome, sigla, caderno)); msg = f'Órgão “{nome}” cadastrado.'
+        elif acao == 'salvar':
+            oid = int(f['id'])
+            db.exe(b, 'UPDATE diario_orgaos SET nome=%s, sigla=%s, caderno=%s, ativo=%s WHERE id=%s', (nome, sigla, caderno, f.get('ativo') == '1', oid))
+            db.exe(b, 'UPDATE diario_atos SET orgao=%s WHERE orgao_id=%s AND edicao_id IS NULL', (nome, oid))  # só atos ainda não certificados
+            msg = f'Órgão “{nome}” salvo.'
+        elif acao == 'padrao':
+            oid = int(f['id'])
+            db.exe(b, 'UPDATE diario_orgaos SET padrao=(id=%s)', (oid,)); msg = 'Órgão padrão definido: ele já vem escolhido para quem ainda não enviou atos.'
+        elif acao == 'importar':
+            n = 0
+            for s_ in db.todos(b, "SELECT nome, sigla FROM secretarias WHERE ativa AND nome NOT IN (SELECT nome FROM diario_orgaos)"):
+                db.exe(b, 'INSERT INTO diario_orgaos (nome, sigla, caderno) VALUES (%s,%s,%s) ON CONFLICT (nome) DO NOTHING', (s_['nome'], s_['sigla'], 'legislativo' if request.state.orgao.get('tipo') == 'legislativo' else 'executivo')); n += 1
+            msg = f'{n} secretaria(s) trazida(s) do cadastro de secretarias.'
+        else:
+            raise HTTPException(400)
+    except HTTPException:
+        raise
+    except Exception:
+        return ir(volta, 'Já existe um órgão com esse nome.', request)
+    auditar(request, f'Diário: {msg}')
+    return ir(volta, msg, request)
 
 @r.post('/diario/ato')
 async def diario_ato(request: Request):
     u = exige(request, 'diario_enviar'); f = await ler_form(request)
     b = request.state.orgao['banco']; acao = f.get('acao')
     if acao == 'novo':
+        from . import editor as ED
+        html = ''
+        if (f.get('html') or '').strip():  # texto formatado no editor: limpo no servidor; o texto simples sai dele
+            html, _ = ED.limpar(re.sub(r'<(figure|img)\b[^>]*>.*?</figure>|<img\b[^>]*>', '', f['html'], flags=re.S | re.I))
+            f['texto'] = ED.texto(html)
+        org = db.um(b, 'SELECT * FROM diario_orgaos WHERE id=%s AND ativo', (int(f['orgao_id']),)) if str(f.get('orgao_id', '')).isdigit() else None
+        if not org:
+            return ir('/admin/diario?novo=1', 'Escolha o órgão na lista (os órgãos são cadastrados em Diário Oficial → Órgãos).', request)
+        f['orgao'], f['caderno'] = org['nome'], org['caderno']
         if not (f.get('ementa') and f.get('texto') and f.get('tipo')):
             return ir('/admin/diario', 'Preencha tipo, ementa e texto.', request)
         if re.search(r'\d{3}\.\d{3}\.\d{3}-\d{2}', f['texto'] + f['ementa']):
@@ -751,8 +819,8 @@ async def diario_ato(request: Request):
         alvo = diario_pdf.data_alvo(b, config.agora())
         rels = [{'tipo': f.get(f'rel_tipo_{i}'), 'alvo': f.get(f'rel_alvo_{i}', '').strip()[:60]} for i in range(5)
                 if f.get(f'rel_tipo_{i}') in ('altera', 'revoga', 'regulamenta') and f.get(f'rel_alvo_{i}', '').strip()]
-        db.exe(b, "INSERT INTO diario_atos (caderno, tipo, numero, orgao, ementa, texto, situacao, autor, retifica_ato_id, data_alvo, relacoes) VALUES (%s,%s,%s,%s,%s,%s,'revisao',%s,%s,%s,%s)",
-               (f.get('caderno', 'executivo') if f.get('caderno') in ('executivo', 'legislativo') else 'executivo', f['tipo'], f.get('numero', ''), f.get('orgao', ''), f['ementa'], f['texto'], u["nome"], ret, alvo, Jsonb(rels)))
+        db.exe(b, "INSERT INTO diario_atos (caderno, tipo, numero, orgao, orgao_id, ementa, texto, html, situacao, autor, retifica_ato_id, data_alvo, relacoes) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'revisao',%s,%s,%s,%s)",
+               (f['caderno'], f['tipo'], f.get('numero', ''), f['orgao'], org['id'], f['ementa'], f['texto'], html, u["nome"], ret, alvo, Jsonb(rels)))
         msg = f"Ato enviado para revisão. Edição prevista: {alvo.strftime('%d/%m/%Y')}" + (f" (passou do horário de corte das {diario_pdf.regras(b)['corte_txt']})." if alvo > config.hoje() else '.')
     else:
         aid = int(f['id'])

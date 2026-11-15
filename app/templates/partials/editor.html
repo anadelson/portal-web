@@ -1,7 +1,8 @@
 {# Editor de texto (Fase 9; ampliado em 15/11/2026). Sem JS, fica o campo de texto simples. Com JS, o editor grava o HTML no campo oculto `html` (limpo no servidor). #}
 {% macro eb(cmd, rotulo, desenho, atalho='') %}<button type="button" data-cmd="{{ cmd }}" aria-label="{{ rotulo }}" title="{{ rotulo }}{{ ' (' ~ atalho ~ ')' if atalho }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="{{ desenho }}"/></svg></button>{% endmacro %}
-{% macro editor(rotulo, html_atual, texto_atual, nome_texto='texto', linhas=8) %}
-<div class="editor" data-editor>
+{% macro editor(rotulo, html_atual, texto_atual, nome_texto='texto', linhas=8, preformatar='') %}
+{# preformatar: endereço da pré-formatação automática (Diário Oficial); nesse modo não há imagem nem vídeo no texto #}
+<div class="editor" data-editor{% if preformatar %} data-preformatar="{{ preformatar }}"{% endif %}>
 <label for="ed-txt-{{ nome_texto }}">{{ rotulo }}</label>
 <textarea id="ed-txt-{{ nome_texto }}" name="{{ nome_texto }}" rows="{{ linhas }}" class="ed-simples">{{ texto_atual }}</textarea>
 <input type="hidden" name="html" value="{{ html_atual }}" data-ed-html>
@@ -13,10 +14,12 @@
 <span class="ed-grupo">{{ eb('al-esq', 'Alinhar à esquerda', 'M4 6h16M4 10h10M4 14h16M4 18h10') }}{{ eb('al-centro', 'Centralizar', 'M4 6h16M7 10h10M4 14h16M7 18h10') }}{{ eb('al-dir', 'Alinhar à direita', 'M4 6h16M10 10h10M4 14h16M10 18h10') }}{{ eb('al-just', 'Justificar', 'M4 6h16M4 10h16M4 14h16M4 18h16') }}</span>
 <span class="ed-grupo">{{ eb('insertUnorderedList', 'Lista com marcadores', 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01') }}{{ eb('insertOrderedList', 'Lista numerada', 'M10 6h10M10 12h10M10 18h10M4 5h1v4M4 9h2M4 15a1 1 0 1 1 2 0c0 1-2 1.5-2 3h2') }}{{ eb('outdent', 'Diminuir recuo da lista', 'M20 6H10M20 12H10M20 18H10M7 9l-3 3 3 3') }}{{ eb('indent', 'Aumentar recuo da lista', 'M20 6H10M20 12H10M20 18H10M4 9l3 3-3 3') }}</span>
 <span class="ed-grupo">{{ eb('link', 'Inserir ou editar link', 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1', 'Ctrl+K') }}{{ eb('unlink', 'Remover link', 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1M4 4l16 16') }}</span>
-<span class="ed-grupo">{{ eb('imagem', 'Inserir imagem', 'M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01') }}{{ eb('video', 'Inserir vídeo do YouTube', 'M3 6h18v12H3zM10 9l5 3-5 3z') }}{{ eb('tabela', 'Inserir tabela', 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14') }}{{ eb('hr', 'Linha divisória', 'M4 12h16') }}</span>
+{% if preformatar %}<span class="ed-grupo"><button type="button" class="ed-pref" data-cmd="preformatar" title="Aplica o padrão do Diário: título centralizado, ementa recuada, artigos, parágrafos, incisos, data e assinatura"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5"/></svg> Pré-formatar</button></span>{% endif %}
+<span class="ed-grupo">{% if not preformatar %}{{ eb('imagem', 'Inserir imagem', 'M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01') }}{{ eb('video', 'Inserir vídeo do YouTube', 'M3 6h18v12H3zM10 9l5 3-5 3z') }}{% endif %}{{ eb('tabela', 'Inserir tabela', 'M4 5h16v14H4zM4 10h16M4 15h16M10 5v14') }}{{ eb('hr', 'Linha divisória', 'M4 12h16') }}</span>
 <span class="ed-grupo ed-tab" hidden>{{ eb('lin+', 'Tabela: acrescentar linha abaixo', 'M4 4h16v8H4zM12 15v6M9 18h6') }}{{ eb('col+', 'Tabela: acrescentar coluna à direita', 'M4 4h8v16H4zM18 9v6M15 12h6') }}{{ eb('lin-', 'Tabela: apagar a linha', 'M4 4h16v8H4zM9 18h6') }}{{ eb('col-', 'Tabela: apagar a coluna', 'M4 4h8v16H4zM15 12h6') }}</span>
 <span class="ed-grupo">{{ eb('limpar', 'Remover formatação da seleção', 'M6 5h12M12 5l-3 14M15 15l5 5M20 15l-5 5') }}{{ eb('codigo', 'Ver o código HTML', 'M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14') }}{{ eb('cheio', 'Tela cheia (Esc sai)', 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5') }}</span>
 </div>
+<p class="ed-pref-msg" role="status" hidden></p>
 <div class="ed-area" contenteditable="true" role="textbox" aria-multiline="true" aria-label="{{ rotulo }}" hidden></div>
 <textarea class="ed-fonte" aria-label="Código HTML de {{ rotulo }}" spellcheck="false" hidden></textarea>
 <p class="ed-rodape" hidden><span class="ed-conta" aria-live="off"></span><span class="ed-modo"></span></p>

@@ -68,3 +68,10 @@ def primeiro_acesso(c, email, nova, prefixo='/admin'):
     CODIGOS[email] = re.findall(r'<li>([0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4})</li>', r.text)
     cont = re.search(r'<a class="btn" href="([^"]+)">Já guardei', r.text)
     return c.get(cont.group(1) if cont else f'{prefixo}/', follow_redirects=True)
+
+
+def orgao_diario(banco, nome, caderno='executivo'):
+    """Órgão do Diário (cadastro de TESTE) → id, para o envio de atos (o órgão é escolhido na lista desde 15/11/2026)."""
+    from app import db
+    db.exe(banco, 'INSERT INTO diario_orgaos (nome, caderno) VALUES (%s,%s) ON CONFLICT (nome) DO NOTHING', (nome, caderno))
+    return db.um(banco, 'SELECT id FROM diario_orgaos WHERE nome=%s', (nome,))['id']

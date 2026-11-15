@@ -178,6 +178,24 @@
       if (c === 'tabela') return cmd('insertHTML', '<table><thead><tr><th scope="col">Coluna 1</th><th scope="col">Coluna 2</th><th scope="col">Coluna 3</th></tr></thead><tbody><tr><td><br></td><td><br></td><td><br></td></tr><tr><td><br></td><td><br></td><td><br></td></tr></tbody></table><p><br></p>');
       if (c === 'hr') return cmd('insertHTML', '<hr><p><br></p>');
       if (c === 'limpar') { cmd('removeFormat'); var m = noCursor() && noCursor().closest('mark'); if (m) marcar(); return; }
+      if (c === 'preformatar') {
+        if (!fonte.hidden) verCodigo(false);
+        var msg = ed.querySelector('.ed-pref-msg'), antes = area.innerHTML, fd = new FormData();
+        fd.append('csrf', form.querySelector('[name=csrf]').value); fd.append('html', limpar(area.cloneNode(true)).innerHTML);
+        b.disabled = true;
+        fetch(ed.dataset.preformatar, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d.html) { msg.textContent = 'Nada para pré-formatar: escreva ou cole o texto do ato primeiro.'; msg.hidden = false; return; }
+            area.innerHTML = d.html; estado(); contar();
+            msg.innerHTML = 'Texto pré-formatado no padrão do Diário. Confira e ajuste o que precisar. <button type="button" class="btn sec pequeno">Voltar ao texto anterior</button>';
+            msg.hidden = false;
+            msg.querySelector('button').addEventListener('click', function () { area.innerHTML = antes; msg.hidden = true; estado(); contar(); area.focus(); });
+          })
+          .catch(function () { msg.textContent = 'Não foi possível pré-formatar agora (verifique a conexão).'; msg.hidden = false; })
+          .then(function () { b.disabled = false; });
+        return;
+      }
       if (c === 'imagem') { guardar(); dlg.querySelector('.ed-img-erro').hidden = true; dlg.showModal(); return; }
       cmd(c);
     });

@@ -50,7 +50,7 @@ ok(pm.post('/admin/conteudos/salvar', data={'csrf': t, 'id': cid, 'titulo': 'Tes
 ok(pm.get(f'/conteudo/{cid}'), txt='Teste fluxo', nome='publicado no portal')
 # diário
 t = token(pm, '/admin/diario')
-pm.post('/admin/diario/ato', data={'csrf': t, 'acao': 'novo', 'caderno': 'executivo', 'tipo': 'Decreto', 'numero': '1/2026', 'orgao': 'Gabinete', 'ementa': 'Teste', 'texto': 'Art. 1º Teste.'})
+pm.post('/admin/diario/ato', data={'csrf': t, 'acao': 'novo', 'orgao_id': __import__('apoio').orgao_diario('bd_pm_bora', 'Gabinete (teste)'), 'tipo': 'Decreto', 'numero': '1/2026', 'ementa': 'Teste', 'texto': 'Art. 1º Teste.'})
 r = pm.get('/admin/diario'); aid = re.search(r'name="id" value="(\d+)"><button class="btn sec" name="acao" value="aprovar"', r.text).group(1)
 t = token(pm, '/admin/diario')
 pm.post('/admin/diario/ato', data={'csrf': t, 'acao': 'aprovar', 'id': aid})
