@@ -2255,4 +2255,5 @@ Pedido do usuário (após ver no ar): Comunicados no mesmo tamanho e posição d
   - no celular, os cartões viram linhas com miniatura à esquerda.
 - **Previsão do tempo:** faixa de uma linha em largura total, sem quadros, com ícones e textos em cinza: agora (temperatura, condição, umidade, vento), os 4 dias (máxima/mínima e chance de chuva) e a fonte (Open-Meteo, CC BY 4.0) com o horário da atualização.
 - portal.css v=27. Testes: `teste_vitrine_tempo` ganhou a checagem "Comunicados ao lado de Serviços"; `teste_vitrine_tempo`, `teste_escala`, `teste_ajustes8` e `teste_fase8` passaram. Capturas no ambiente de teste (dados fictícios) em 1366, 1000 e 390 px: sem rolagem horizontal; o axe não apontou nada.
-- **Não implantado** (aguarda aprovação).
+- **Implantado na gestão em 15/11/2026, 12h59 (Brasília)**, com aprovação do usuário ("Aprovo, existe snapshot"): mescla `3217a53`; backup ok (plataforma, bd_pm_bora, bd_cm_bora); versão `ajuste-vitrine-tempo (3217a53)`; as 30 suítes passaram contra a imagem nova; `provision atualizar` sem blocos novos. Conferido: as páginas iniciais da Prefeitura e da Câmara e /comunicados respondem 200, com portal.css v=27, Comunicados ao lado de Serviços e a faixa do tempo nova.
+- **Falta:** o nó do prefbora recebe esta versão junto com a anterior (pacote novo do console e o instalador; na etapa 8, `s`).
