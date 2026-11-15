@@ -2266,10 +2266,14 @@ Pedido do usuário: o bloco Comunicados devia continuar como era (lista), mudand
 - A coluna à direita das notícias e comunicados mostra também só hoje e amanhã, com o link para /tempo.
 - portal.css v=29. Removida `fase8.vitrine_comunicados` (sem uso).
 - Testes: `teste_vitrine_tempo` atualizado (lista de comunicados na página inicial, previsão sobre a foto, só 2 dias, página /tempo, faixa quando não há foto, previsão velha some também da página); passaram `teste_vitrine_tempo`, `teste_escala`, `teste_ajustes8`, `teste_ajustes_portal`, `teste_painel_admin` e `teste_fase8`. Capturas no ambiente de teste (dados fictícios), Prefeitura e Câmara, 1366 e 390 px: sem rolagem horizontal; o axe não apontou nada na página inicial nem em /tempo.
-- **Não implantado** (aguarda aprovação).
+- **Implantado na gestão em 15/11/2026, 13h41** (ver a entrada "Linhas finas na seção Notícias").
 
 ## 15/11/2026 — Linhas finas na seção Notícias (código; branch noticias-linhas)
 Pedido do usuário: Notícias também separada por linhas finas, inclusive o destaque.
 - Linha fina abaixo do destaque, linhas verticais entre os 3 cartões (no espaço entre eles, para os cartões ficarem com a mesma largura) e as linhas da lista, que já existiam. No celular, os cartões viram linhas separadas por linha horizontal.
 - portal.css v=30. Capturas no ambiente de teste (dados fictícios) em 1366 e 390 px.
-- **Não implantado** (aguarda aprovação; vai junto com comunicados-lista-tempo).
+- **Implantado na gestão em 15/11/2026, 13h41 (Brasília)**, junto com comunicados-lista-tempo, com aprovação do usuário ("Aprovo, existe snapshot" e "Sim, implantar juntas"):
+  - mesclas `523f433` e `054b62f` no main; backups ok (plataforma, bd_pm_bora, bd_cm_bora) às 13h21 e 13h28; versão `noticias-linhas (054b62f)`;
+  - as 30 suítes passaram contra a imagem final; `provision atualizar` sem fontes nem blocos novos;
+  - conferido: páginas iniciais da Prefeitura e da Câmara com a previsão sobre a foto e portal.css v=30; Comunicados da Prefeitura em duas colunas; /tempo responde 200 nos dois portais. A página mostra 4 dias até a próxima coleta, que passa a trazer 7.
+- **Falta:** o nó do prefbora recebe estas versões pelo pacote novo do console e o instalador (etapas 8 e 9: `s`).
