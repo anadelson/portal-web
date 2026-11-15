@@ -63,11 +63,20 @@ checa(db.um(db.LOCAL, "SELECT 1 FROM fontes WHERE orgao_id=%s AND fonte='tempo' 
 p = T.previsao(IBGE)
 checa(p and p['temp'] == 22 and p['texto'] == 'Chuva fraca' and p['dias'][0]['rotulo'] == 'Hoje' and p['dias'][0]['texto'] == 'Trovoadas', f'previsão interpretada ({p and p["texto"]})')
 home = anon.get('/').text
-checa('class="tempo"' in home and 'Tempo em' in home and '22 °C' in home and 'Open-Meteo' in home and 'Hoje' in home, 'faixa da previsão na página inicial, com a fonte')
+th = home[home.find('class="tempo-hero"'):]; th = th[:th.find('</section>')]
+checa(-1 < home.find('<section class="hero') < home.find('class="tempo-hero"') < home.find('class="faixa-com"') and '22 °C' in th and 'Hoje' in th and 'Amanhã' in th, 'previsão flutua sobre a foto principal, com hoje e amanhã')
+checa(th.count('<li>') == 2 and 'href="/tempo"' in th and 'class="tempo"' not in home, 'sobre a foto só hoje e amanhã; o resto em /tempo (sem a faixa repetida)')
+pt = anon.get('/tempo')
+checa(pt.status_code == 200 and pt.text.count('<li>\n<p class="tp-dia">') == 4 and 'Open-Meteo' in pt.text and 'CC BY 4.0' in pt.text and '12,0 mm' in pt.text, 'página /tempo com todos os dias, chuva em mm e a fonte')
+db.exe(PM, "UPDATE blocos SET visivel=FALSE WHERE pagina='home' AND chave='hero'")
+h2 = anon.get('/').text
+checa('class="tempo"' in h2 and 'class="tempo-hero"' not in h2 and 'Previsão completa' in h2, 'sem foto principal, a previsão vira faixa discreta no lugar do bloco')
+db.exe(PM, "UPDATE blocos SET visivel=TRUE WHERE pagina='home' AND chave='hero'")
 blocos = [b['chave'] for b in db.todos(PM, "SELECT chave FROM blocos WHERE pagina='home' ORDER BY ordem, id")]
 checa('tempo' in blocos and blocos.index('tempo') == blocos.index('comunicados') - 1, f'bloco "Previsão do tempo" entra logo antes de Comunicados ({blocos[:8]})')
 db.exe(db.LOCAL, "UPDATE dados_publicos SET coletado_em = now() - interval '7 hours' WHERE ibge=%s AND fonte='tempo'", (IBGE,))
-checa(T.previsao(IBGE) is None and 'class="tempo"' not in anon.get('/').text, 'previsão com mais de 6 h some (nunca mostra dado velho como atual)')
+h3 = anon.get('/').text
+checa(T.previsao(IBGE) is None and 'class="tempo' not in h3 and 'não está disponível' in anon.get('/tempo').text, 'previsão com mais de 6 h some (nunca mostra dado velho como atual)')
 db.exe(db.LOCAL, "UPDATE dados_publicos SET coletado_em = now() WHERE ibge=%s AND fonte='tempo'", (IBGE,))
 # bloco novo para órgão que já tinha layout: entra antes de Comunicados
 db.exe(PM, "DELETE FROM blocos WHERE pagina='home' AND chave='tempo'")
@@ -75,7 +84,7 @@ provision.atualizar_layout(PM, 'executivo')
 blocos = [b['chave'] for b in db.todos(PM, "SELECT chave FROM blocos WHERE pagina='home' ORDER BY ordem, id")]
 checa(blocos.index('tempo') == blocos.index('comunicados') - 1, 'atualização acrescenta o bloco antes de Comunicados, sem mexer no resto')
 
-# ---------- 3) comunicados: vitrine com miniatura do 1º anexo (PDF → 1ª página) ----------
+# ---------- 3) comunicados: miniatura do 1º anexo (PDF → 1ª página) na lista /comunicados; lista na página inicial ----------
 def pdf():
     from reportlab.pdfgen import canvas
     b = io.BytesIO(); c = canvas.Canvas(b); c.drawString(72, 760, 'EDITAL DE TESTE (exemplo fictício)'); c.save(); return b.getvalue()
@@ -98,11 +107,9 @@ blk = home[home.find('aria-labelledby="h-com"'):]
 blk = blk[:blk.find('</section>')]
 fx = home[home.find('<div class="faixa-com">'):]
 checa(fx and fx.find('id="h-com"') < fx.find('id="h-serv"') and 'pilha' not in home, 'Comunicados volta ao lado de Serviços (mesma posição e tamanho de antes)')
-checa('class="v-dest"' in blk and 'Exemplo de comunicado da vitrine 5' in blk[:blk.find('class="v-cartoes"')], 'comunicado mais recente em destaque')
-checa(f"/anexo/{a['arquivo']}/capa" in blk and 'class="doc"' in blk, 'destaque usa a miniatura do PDF')
-checa(blk.count('Continue lendo') == 4 and re.search(r'<ul class="v-cartoes">(.*?)</ul>', blk, re.S).group(1).count('<li>') == 3, 'destaque + 3 cartões com "Continue lendo"')
-checa('class="v-lista"' in blk and 'Todos os comunicados' in blk and 'exemplo' in blk, 'lista de títulos, botão "Todos" e marca de exemplo')
-checa('class="cena"' in blk, 'comunicado sem anexo usa o quadro neutro na cor do portal')
+checa('class="com-lista"' in blk and 'class="v-dest"' not in blk and 'Continue lendo' not in blk, 'Comunicados na página inicial continua lista (não é vitrine)')
+checa(blk.find('Exemplo de comunicado da vitrine 5') < blk.find('Exemplo de comunicado da vitrine 4') and 'class="cl-tipo"' in blk and 'class="cl-meta"' in blk and 'Todos os comunicados' in blk and 'exemplo' in blk,
+      'mais recente primeiro; tipo numa coluna, título e data na outra; botão "Todos" e marca de exemplo')
 db.exe(PM, "UPDATE comunicados SET situacao='rascunho' WHERE id=%s", (cid,))
 checa(anon.get(f"/anexo/{a['arquivo']}/capa").status_code == 404, 'comunicado fora do ar: miniatura não sai para o público')
 db.exe(PM, "UPDATE comunicados SET situacao='publicado' WHERE id=%s", (cid,))

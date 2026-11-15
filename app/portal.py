@@ -95,14 +95,14 @@ def home(request: Request):
         n8 = dados['noticias8']
         for c in [n8['destaque']] + n8['secundarias'] + n8['lista']:
             c['ed'] = F8.editoria_de(c, eds, nome_org, ctx['tokens']['cor'])
-    # vitrines (15/11/2026): o mesmo desenho para notícias e comunicados; previsão do tempo pelo IBGE do município
-    dados['vit_com'] = F8.vitrine_comunicados(b, ctx['tokens']['cor'])
+    # vitrine de notícias (15/11/2026); previsão do tempo pelo IBGE do município
     if dados.get('noticias8'):
         n8 = dados['noticias8']
         dados['vit_not'] = F8.vitrine([F8.item_noticia(c, c['ed']) for c in [n8['destaque']] + n8['secundarias'] + n8['lista']], 3, 5)
     from . import tempo as T
     dados['tempo'] = T.previsao(o.get('ibge'))
     vis = [x['chave'] for x in blocos]
+    dados['tempo_hero'] = bool(dados['tempo']) and 'tempo' in vis and 'hero' in vis  # com foto principal, a previsão flutua sobre ela
     dados['sede_junto'] = bool(dados.get('noticias8')) and 'noticias' in vis and 'sede' in vis
     dados['redes_feed'] = (db.cfg(b, 'redes_feed', {}) or {}).get('itens', [])
     from . import municipio
@@ -301,6 +301,13 @@ def midia(request: Request, arquivo: str):
     if arquivo.endswith('.svg'):  # SVG (favicon) já filtrado no envio; aqui nunca executa script
         h['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'"
     return FileResponse(f, media_type=TIPOS[arquivo.rsplit('.', 1)[1]], headers=h)
+
+@r.get('/tempo')
+def tempo(request: Request):
+    """Previsão completa (15/11/2026): a página inicial mostra só hoje e amanhã."""
+    from . import tempo as T
+    ctx = ctx_orgao(request); o = ctx['orgao']
+    return templates.TemplateResponse(request, 'portal/tempo.html', dict(ctx, t=T.previsao(o.get('ibge')), cidade=ctx['ident'].get('nome_curto') or (o.get('municipio') or '').split(' (')[0] or 'o município'))
 
 @r.get('/privacidade')
 def privacidade(request: Request):

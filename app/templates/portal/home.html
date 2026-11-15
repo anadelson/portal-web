@@ -11,7 +11,7 @@
 {% block classe_main %}home{% endblock %}
 {% from 'partials/cartoes.html' import cartao %}
 {% from 'partials/vitrine.html' import vitrine with context %}
-{% from 'partials/tempo.html' import tempo_faixa with context %}
+{% from 'partials/tempo.html' import tempo_faixa, tempo_hero with context %}
 {% from 'partials/fileira.html' import fileira_cartoes %}
 
 {% macro retrato(v, grande=False) %}<span class="retrato">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt or ('Foto oficial de ' ~ v.nome) }}">{% else %}<span class="ini" aria-hidden="true">{{ v.nome|iniciais }}</span>{% endif %}{% if not grande %}<span class="chip-partido">{{ v.partido }}</span>{% endif %}</span>{% endmacro %}
@@ -25,7 +25,11 @@
 
 {% elif b.chave == 'comunicados' %}
 <div class="faixa-com">
-{{ vitrine(d.vit_com, 'h-com', 'Comunicados', 'Avisos, convocações, convites e notas oficiais ' ~ ('da Câmara' if leg else 'da Prefeitura') ~ '.', '/comunicados', 'Todos os comunicados', 'Nenhum comunicado em vigor.') }}
+{# lista de comunicados (como antes); ajuste de 15/11/2026: duas colunas — tipo à esquerda (alinhado à direita), título e data à direita, linhas finas entre os itens #}
+<section class="caixa com" aria-labelledby="h-com"><h2 id="h-com">Comunicados</h2><p class="sub">Avisos, convocações, convites e notas oficiais {{ 'da Câmara' if leg else 'da Prefeitura' }}.</p>
+{% if d.comunicados %}<ul class="com-lista">{% for c in d.comunicados %}<li><a href="/comunicados/{{ c.id }}"><span class="cl-tipo"><span class="etq">{{ c.tipo }}</span></span><span class="cl-txt"><span class="cl-tit">{{ c.titulo }}</span><span class="cl-meta"><time>{{ d.quando(c) }}</time>{% if c.valido_ate %}<span>· válido até {{ c.valido_ate|br }}</span>{% endif %}{% if c.exemplo %}<span class="exemplo">exemplo</span>{% endif %}</span></span></a></li>{% endfor %}</ul>
+{% else %}<p class="vazio">Nenhum comunicado em vigor.</p>{% endif %}
+<div class="acoes"><a class="btn sec" href="/comunicados">Todos os comunicados {{ icone('seta', 18, 'seta') }}</a></div></section>
 {% if mods.carta %}<section class="caixa" aria-labelledby="h-serv"><h2 id="h-serv">Serviços mais acessados</h2><p class="sub">Os serviços mais consultados no portal neste mês.</p>
 {% if d.servicos_top %}<ul class="serv-top">{% for c in d.servicos_top %}<li><a href="/servicos/{{ c.slug }}"><span class="ico">{{ icone('lista', 22) }}</span><span>{{ c.nome }}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</span></a></li>{% endfor %}</ul>
 {% else %}<p class="vazio">Nenhum serviço publicado na Carta de Serviços ainda.</p>{% endif %}
@@ -118,7 +122,7 @@
 {% if d.sede_junto %}{{ cartao_paco(True) }}{% endif %}
 </div>
 
-{% elif b.chave == 'tempo' and d.tempo %}
+{% elif b.chave == 'tempo' and d.tempo and not d.tempo_hero %}
 {{ tempo_faixa(d.tempo, ident.nome_curto or orgao.municipio or 'o município') }}
 
 {% elif b.chave == 'ver' %}
@@ -207,6 +211,7 @@
 </aside>{% endif %}
 </div>
 {% if hr.credito %}<p class="cred">{{ hr.credito }}</p>{% endif %}
+{% if d.tempo_hero %}{{ tempo_hero(d.tempo, ident.nome_curto or orgao.municipio or 'o município') }}{% endif %}
 </section>
 {% endfor %}
 {% endblock %}

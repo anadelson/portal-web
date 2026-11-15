@@ -253,12 +253,6 @@ def vitrine(itens, n_cartoes=3, n_lista=5):
         return None
     return {'destaque': itens[0], 'cartoes': itens[1:1 + n_cartoes], 'lista': itens[1 + n_cartoes:1 + n_cartoes + n_lista]}
 
-def vitrine_comunicados(banco, cor_orgao, limite=8):
-    from . import anexos as AX
-    cs = comunicados(banco, limite)
-    caps = AX.capas(banco, [c['id'] for c in cs])
-    return vitrine([item_comunicado(c, caps.get(c['id']), cor_orgao) for c in cs], 3, 4)
-
 def lateral(banco, mods, nome_org, cor_orgao, ibge, excluir_noticia=None, excluir_comunicado=None):
     """Coluna ao lado das notícias e dos comunicados: últimas 5 notícias, últimos 5 comunicados e a previsão do tempo."""
     from . import tempo as T
