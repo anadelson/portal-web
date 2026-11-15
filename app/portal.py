@@ -95,6 +95,13 @@ def home(request: Request):
         n8 = dados['noticias8']
         for c in [n8['destaque']] + n8['secundarias'] + n8['lista']:
             c['ed'] = F8.editoria_de(c, eds, nome_org, ctx['tokens']['cor'])
+    # vitrines (15/11/2026): o mesmo desenho para notícias e comunicados; previsão do tempo pelo IBGE do município
+    dados['vit_com'] = F8.vitrine_comunicados(b, ctx['tokens']['cor'])
+    if dados.get('noticias8'):
+        n8 = dados['noticias8']
+        dados['vit_not'] = F8.vitrine([F8.item_noticia(c, c['ed']) for c in [n8['destaque']] + n8['secundarias'] + n8['lista']], 3, 5)
+    from . import tempo as T
+    dados['tempo'] = T.previsao(o.get('ibge'))
     vis = [x['chave'] for x in blocos]
     dados['sede_junto'] = bool(dados.get('noticias8')) and 'noticias' in vis and 'sede' in vis
     dados['redes_feed'] = (db.cfg(b, 'redes_feed', {}) or {}).get('itens', [])
@@ -141,7 +148,8 @@ def noticias(request: Request):
         c['ed'] = F8.editoria_de(c, eds, nome_org, ctx['tokens']['cor'])
     if sel.isdigit():
         itens = [c for c in itens if c.get('secretaria_id') == int(sel)]
-    return templates.TemplateResponse(request, 'portal/noticias.html', dict(ctx, itens=itens, editorias=list(eds.values()), sel=sel, quando=F8.quando, legal='noticias'))
+    return templates.TemplateResponse(request, 'portal/noticias.html', dict(ctx, itens=itens, editorias=list(eds.values()), sel=sel, quando=F8.quando, legal='noticias',
+                                      lat=dict(F8.lateral(b, ctx['mods'], nome_org, ctx['tokens']['cor'], o.get('ibge')), noticias=[])))
 
 # /servicos (Carta de Serviços) fica em portal_carta.py (Fase 10)
 
@@ -161,7 +169,8 @@ def conteudo(request: Request, cid: int):
     c['ed'] = F8.editoria_de(c, F8.editorias(o['banco']), 'Câmara' if o['tipo'] == 'legislativo' else 'Prefeitura', ctx['tokens']['cor'])
     noticia = c['tipo'] == 'Notícia'
     pai = ('Notícias', '/noticias') if noticia else {'Serviços': ('Carta de Serviços', '/servicos'), 'Transparência': ('Transparência', '/transparencia'), 'Governo': ('Governo', '/governo')}.get(c['secao'])
-    return templates.TemplateResponse(request, 'portal/conteudo.html', dict(ctx, c=c, pai=pai, noticia=noticia, quando=F8.quando, legal='noticias' if noticia else None))
+    lat = F8.lateral(o['banco'], ctx['mods'], 'Câmara' if o['tipo'] == 'legislativo' else 'Prefeitura', ctx['tokens']['cor'], o.get('ibge'), excluir_noticia=c['id']) if noticia else None
+    return templates.TemplateResponse(request, 'portal/conteudo.html', dict(ctx, c=c, pai=pai, noticia=noticia, quando=F8.quando, legal='noticias' if noticia else None, lat=lat))
 
 # ---------- Câmara ----------
 def _norm(s):

@@ -45,11 +45,12 @@ ESQUEMA = {
     'tcesp': [('municipio', 'Município no portal do TCESP', 'slug', 'nome do município no endereço do TCESP'), ('anos', 'Anos fechados a buscar', 'anos', 'anos anteriores sem dado no sistema contábil')],
     'ibge': [_IBGE], 'cnes': [_IBGE], 'inep': [_IBGE], 'iegm': [_IBGE], 'mds': [_IBGE], 'pni': [_IBGE], 'painel': [_IBGE],
     'youtube': [], 'redes': [],
+    'tempo': [_IBGE, ('lat', 'Latitude (opcional)', 'texto', 'vazio = centro do município informado pelo IBGE'), ('lon', 'Longitude (opcional)', 'texto', 'vazio = centro do município informado pelo IBGE')],
 }
 NOMES = {'fiorilli': 'Sistema contábil (Fiorilli)', 'govbr': 'Portal da transparência (GOVBR — TransparênciaBR)', 'financas': 'Sistema contábil — série mensal (Fiorilli)', 'pncp': 'PNCP (contratações públicas)',
          'siconfi': 'Siconfi (Tesouro Nacional)', 'tcesp': 'TCESP — Transparência', 'ibge': 'IBGE', 'cnes': 'CNES (Ministério da Saúde)', 'inep': 'INEP',
          'iegm': 'TCESP — IEG-M', 'mds': 'MDS', 'pni': 'Ministério da Saúde (vacinação)', 'painel': 'Cálculo do painel (dados já coletados + Siconfi)',
-         'youtube': 'YouTube (transmissões)', 'redes': 'Redes sociais (últimas publicações)', 'portal': 'Este portal (e-SIC e Ouvidoria)', 'manual': 'Lançamento manual'}
+         'youtube': 'YouTube (transmissões)', 'redes': 'Redes sociais (últimas publicações)', 'tempo': 'Previsão do tempo (Open-Meteo)', 'portal': 'Este portal (e-SIC e Ouvidoria)', 'manual': 'Lançamento manual'}
 FORMATO = {'govbr': 'XML dentro de ZIP (exportação do portal; sem login e sem captcha)', 'inep': 'planilha (ZIP com XLSX)', 'painel': 'cálculo interno + JSON', 'portal': 'banco do próprio portal', 'manual': '—'}
 CREDENCIAL = {'iegm': 'iegm', 'youtube': 'youtube', 'redes': 'meta'}
 
@@ -114,6 +115,10 @@ def endpoints(fonte, p):
         return [('YouTube — últimos vídeos', 'GET', 'https://www.googleapis.com/youtube/v3/playlistItems', {'part': 'snippet', 'playlistId': 'UU{canal sem UC}', 'maxResults': 6, 'key': '***'}, ''),
                 ('Instagram — últimas publicações', 'GET', 'https://graph.facebook.com/v21.0/{conta}/media', {'fields': 'caption,media_type,media_url,thumbnail_url,permalink,timestamp', 'limit': 6, 'access_token': '***'}, ''),
                 ('Facebook — últimas publicações', 'GET', 'https://graph.facebook.com/v21.0/{página}/posts', {'fields': 'message,permalink_url,created_time,full_picture', 'limit': 6, 'access_token': '***'}, '')]
+    if fonte == 'tempo':
+        return [('Centro do município (uma vez)', 'GET', f'https://servicodados.ibge.gov.br/api/v3/malhas/municipios/{ib}/metadados', {}, ''),
+                ('Previsão (agora e 4 dias)', 'GET', 'https://api.open-meteo.com/v1/forecast', {'latitude': p.get('lat') or '{centro}', 'longitude': p.get('lon') or '{centro}', 'timezone': 'America/Sao_Paulo', 'forecast_days': 4,
+                 'current': 'temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,is_day', 'daily': 'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,precipitation_sum'}, '')]
     return []
 
 # Campo da fonte → onde vai (lido do código dos coletores)
@@ -135,6 +140,7 @@ MAPEAMENTO = {
     'mds': [('famílias no Bolsa Família, valor repassado, Cadastro Único, BPC', 'Assistência social')],
     'painel': [('RREO Anexo 14: % aplicado em saúde e em educação', 'Mínimos constitucionais'), ('dados já coletados', 'Dinheiro público, Contratações e Gestão')],
     'redes': [('título/legenda, link, data e miniatura (baixada para o portal)', 'Bloco “Nas redes” (suspenso no período eleitoral)')],
+    'tempo': [('temperatura e condição atuais; máxima, mínima, condição e chance de chuva por dia', 'Quadro “Previsão do tempo” (página inicial e coluna das notícias e comunicados)')],
     'youtube': [('liveBroadcastContent, actualStartTime/EndTime, caption', 'Transmissões (ao vivo e gravações)')],
 }
 

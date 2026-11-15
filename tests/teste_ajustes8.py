@@ -53,7 +53,9 @@ r = pub.get('/fale-conosco'); checa('class="intro"' in r.text, 'fale conosco com
 
 # ---------- /noticias: só notícias, filtro por secretaria, cartões horizontais ----------
 r = ok(pub.get('/noticias'), txt='<h1>Notícias</h1>', nome='/noticias título', sem='Notícias e avisos')
-checa('Vacinação contra a gripe' not in r.text and 'Edital de concurso' not in r.text, '/noticias sem comunicados')
+col = r.text.split('<aside', 1)[0]  # a coluna da direita (15/11/2026) lista os comunicados de propósito
+checa('Vacinação contra a gripe' not in col and 'Edital de concurso' not in col, '/noticias sem comunicados na lista')
+checa('class="lateral"' in r.text and 'Comunicados e avisos' in r.text, '/noticias com a coluna da direita (últimos comunicados)')
 ok(entrar(adm, 'admin@pmbora.localhost', 'admin123', 'senhaforte123'), txt='Visão geral', nome='login')
 S = '/admin/carta-secretarias'
 adm.post(S, data={'csrf': tok(adm, S), 'acao': 'secretaria', 'nome': 'Secretaria de Teste da Saúde', 'sigla': 'STS', 'resumo': 'Cuida das unidades de saúde (texto de teste).', 'icone': 'saude'})
@@ -78,10 +80,10 @@ checa('aspect-ratio:21/9' in r.text, 'imagem 21:9 (neutra) no topo')
 # ---------- início: fileira Notícias + Paço e Conheça ----------
 h = pub.get('/').text
 i = h.find('class="linha-not-paco"')
-checa(i > 0 and h.find('class="noticias9"', i) > 0 and h.find('class="paco paco-lado"', i) > 0, 'fileira com Notícias e Paço')
+checa(i > 0 and h.find('aria-labelledby="h-not"', i) > 0 and h.find('class="paco paco-lado"', i) > 0, 'fileira com Notícias e Paço')
 checa(h.count('id="h-sede"') == 1, 'Paço aparece uma vez só')
 blk = h[i:h.find('class="paco paco-lado"', i)]
-checa('class="nd"' in blk and 'Todas as notícias' in blk, 'destaque e botão "Todas as notícias" no cartão')
+checa('class="v-dest"' in blk and 'Todas as notícias' in blk and 'Continue lendo' in blk, 'destaque, "Continue lendo" e botão "Todas as notícias" no cartão')
 checa('class="conheca9"' in h and 'class="c-mosaico' in h and 'Ver perfil' in h and 'Conheça mais' in h, 'Conheça em cartão com mosaico')
 
 # ---------- Ouvidoria e e-SIC ----------

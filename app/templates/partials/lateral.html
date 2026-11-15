@@ -1,0 +1,10 @@
+{# Coluna à direita das notícias e dos comunicados (15/11/2026): últimas notícias, últimos comunicados e previsão do tempo. No celular vai para o fim. #}
+{% from 'partials/tempo.html' import tempo_cartao with context %}
+{% macro lateral(lat, cidade) %}{% if lat %}
+<aside class="lateral" aria-label="Mais do portal">
+{{ tempo_cartao(lat.tempo, cidade) }}
+{% if lat.noticias %}<section class="lat-caixa" aria-labelledby="h-lat-not"><h2 id="h-lat-not">Últimas notícias</h2><ul class="lat-lista">{% for x in lat.noticias %}<li><a href="{{ x.url }}"><span class="t">{{ x.titulo }}</span><small>{{ x.quando }}{% if x.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</small></a></li>{% endfor %}</ul>
+<a class="btn sec" href="/noticias">Todas as notícias {{ icone('seta', 18, 'seta') }}</a></section>{% endif %}
+{% if lat.comunicados %}<section class="lat-caixa" aria-labelledby="h-lat-com"><h2 id="h-lat-com">Comunicados e avisos</h2><ul class="lat-lista">{% for x in lat.comunicados %}<li><a href="{{ x.url }}"><span class="etq">{{ x.rotulo }}</span><span class="t">{{ x.titulo }}</span><small>{{ x.quando }}{% if x.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</small></a></li>{% endfor %}</ul>
+<a class="btn sec" href="/comunicados">Todos os comunicados {{ icone('seta', 18, 'seta') }}</a></section>{% endif %}
+</aside>{% endif %}{% endmacro %}

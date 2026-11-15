@@ -99,11 +99,63 @@ def remover(o, anexo_id, comunicado_id):
     if not a:
         return None
     db.exe(o['banco'], 'DELETE FROM comunicado_anexos WHERE id=%s', (anexo_id,))
-    try:
-        (pasta(o) / a['arquivo']).unlink()
-    except FileNotFoundError:
-        pass
+    for arq in (a['arquivo'], nome_capa(a['arquivo'])):
+        try:
+            (pasta(o) / arq).unlink()
+        except FileNotFoundError:
+            pass
     return a
+
+# ---------- miniatura (15/11/2026): a capa do comunicado no portal é o primeiro anexo (imagem ou 1ª página do PDF) ----------
+CAPA_EXT = ('pdf', 'png', 'jpg', 'webp')
+CAPA_LARGURA = 800
+
+def nome_capa(arquivo):
+    return arquivo.rsplit('.', 1)[0] + '.capa.webp'
+
+def capa(o, a):
+    """Caminho da miniatura do anexo (gera na primeira vez). None se o tipo não tem miniatura ou a geração falhar.
+    PDF: Ghostscript em modo seguro (-dSAFER), só a 1ª página, com tempo-limite; o arquivo veio do painel do próprio órgão."""
+    import shutil, subprocess, tempfile
+    from PIL import Image
+    if a['ext'] not in CAPA_EXT:
+        return None
+    origem, destino = pasta(o) / a['arquivo'], pasta(o) / nome_capa(a['arquivo'])
+    if destino.is_file():
+        return destino
+    if not origem.is_file():
+        return None
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            fonte = origem
+            if a['ext'] == 'pdf':
+                gs = shutil.which('gs')
+                if not gs:
+                    return None
+                fonte = Path(tmp) / 'p1.png'
+                r = subprocess.run([gs, '-dSAFER', '-dBATCH', '-dNOPAUSE', '-dQUIET', '-dFirstPage=1', '-dLastPage=1', '-sDEVICE=png16m', '-r80',
+                                    '-dTextAlphaBits=4', '-dGraphicsAlphaBits=4', f'-sOutputFile={fonte}', str(origem)], capture_output=True, timeout=40)
+                if r.returncode != 0 or not fonte.is_file():
+                    return None
+            with Image.open(fonte) as im:
+                im = im.convert('RGB')
+                im.thumbnail((CAPA_LARGURA, CAPA_LARGURA * 2))
+                parcial = Path(tmp) / 'capa.webp'
+                im.save(parcial, 'WEBP', quality=78)
+            shutil.move(str(parcial), destino)
+        return destino
+    except Exception:
+        return None
+
+def capas(banco, ids):
+    """{comunicado_id: arquivo do 1º anexo com miniatura possível} (ordem do painel)."""
+    if not ids:
+        return {}
+    r = {}
+    for x in db.todos(banco, 'SELECT comunicado_id, arquivo FROM comunicado_anexos WHERE comunicado_id = ANY(%s) AND ext = ANY(%s) ORDER BY comunicado_id, ordem, id',
+                      (list(ids), list(CAPA_EXT))):
+        r.setdefault(x['comunicado_id'], x['arquivo'])
+    return r
 
 def listar(banco, comunicado_id):
     return [dict(a, rotulo=TIPOS[a['ext']][1], imagem=a['ext'] in IMAGENS, tamanho=tamanho(a['bytes']))

@@ -15,8 +15,10 @@ def comunicados(request: Request, tipo: str = '', ano: str = ''):
     anos = [x['a'] for x in db.todos(b, "SELECT DISTINCT extract(year FROM coalesce(publicado_em, criado_em))::int a FROM comunicados WHERE situacao='publicado' ORDER BY 1 DESC")]
     itens = F.comunicados(b, 200, tipo if tipo in F.tipos_comunicado(b) else '', int(ano) if ano.isdigit() else None, so_validos=False)
     from . import anexos as AX
+    o = ctx['orgao']; nome_org = 'Câmara' if o['tipo'] == 'legislativo' else 'Prefeitura'
     return templates.TemplateResponse(request, 'portal/comunicados.html', dict(ctx, itens=itens, tipos=F.tipos_comunicado(b), tipo=tipo, ano=ano, anos=anos, quando=F.quando, legal='comunicados',
-                                      n_anexos=AX.contagem(b, [x['id'] for x in itens])))
+                                      n_anexos=AX.contagem(b, [x['id'] for x in itens]), capas=AX.capas(b, [x['id'] for x in itens]),
+                                      lat=dict(F.lateral(b, ctx['mods'], nome_org, ctx['tokens']['cor'], o.get('ibge')), comunicados=[])))
 
 @r.get('/comunicados/{cid}')
 def comunicado(request: Request, cid: int):
@@ -25,7 +27,9 @@ def comunicado(request: Request, cid: int):
     if not c:
         raise HTTPException(404, 'Comunicado não encontrado.')
     from . import anexos as AX
-    return templates.TemplateResponse(request, 'portal/comunicado.html', dict(ctx, c=c, quando=F.quando, legal='comunicados', anexos=AX.listar(b, c['id'])))
+    o = ctx['orgao']; nome_org = 'Câmara' if o['tipo'] == 'legislativo' else 'Prefeitura'
+    return templates.TemplateResponse(request, 'portal/comunicado.html', dict(ctx, c=c, quando=F.quando, legal='comunicados', anexos=AX.listar(b, c['id']),
+                                      lat=F.lateral(b, ctx['mods'], nome_org, ctx['tokens']['cor'], o.get('ibge'), excluir_comunicado=c['id'])))
 
 @r.get('/anexo/{arquivo}')
 def anexo(request: Request, arquivo: str):
@@ -49,6 +53,26 @@ def anexo(request: Request, arquivo: str):
     disp = 'inline' if inline else 'attachment'
     return FileResponse(f, media_type=mime, filename=f'{nome}.{a["ext"]}', content_disposition_type=disp,
                         headers={'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, max-age=300'})
+
+@r.get('/anexo/{arquivo}/capa')
+def anexo_capa(request: Request, arquivo: str):
+    """Miniatura do anexo (imagem reduzida ou 1ª página do PDF), com a mesma regra de visibilidade do arquivo."""
+    from fastapi.responses import FileResponse
+    from . import anexos as AX
+    if not AX.ARQ_OK.match(arquivo):
+        raise HTTPException(404)
+    o = request.state.orgao; b = o['banco']
+    a = db.um(b, 'SELECT * FROM comunicado_anexos WHERE arquivo=%s', (arquivo,))
+    if not a:
+        raise HTTPException(404)
+    u = request.session.get('u') or {}
+    visivel = any(x['id'] == a['comunicado_id'] for x in F.comunicados(b, 1000, so_validos=False))
+    if not visivel and u.get('orgao') != o['slug']:
+        raise HTTPException(404)
+    f = AX.capa(o, a)
+    if not f:
+        raise HTTPException(404)
+    return FileResponse(f, media_type='image/webp', headers={'X-Content-Type-Options': 'nosniff', 'Cache-Control': ('public, max-age=3600' if visivel else 'private, max-age=60')})
 
 # ---------- Conheça ----------
 @r.get('/conheca')

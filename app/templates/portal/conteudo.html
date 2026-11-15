@@ -1,11 +1,14 @@
 {% extends 'portal/base.html' %}
 {% from 'partials/cena.html' import imagem_noticia with context %}
+{% from 'partials/lateral.html' import lateral with context %}
 {% block titulo %}{{ c.titulo }} — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span>{% if pai %}<a href="{{ pai[1] }}">{{ pai[0] }}</a><span aria-hidden="true">›</span>{% endif %}<span aria-current="page">{{ c.titulo }}</span></nav>
+{% if lat %}<div class="com-lateral"><div class="col-principal">{% endif %}
 <h1>{{ c.titulo }}</h1>{% if c.resumo %}<p class="intro">{{ c.resumo }}</p>{% endif %}{{ legal_topo(legal) }}
 <article class="materia">{% if noticia or (c.imagem or '').startswith('/') %}<div class="m-img">{{ imagem_noticia(c, c.ed, '21/9', 64, False) }}</div>{% endif %}
 <div class="m-corpo"><p class="m-meta">{% if noticia %}Publicado em {% if c.publicado_em %}<time datetime="{{ c.publicado_em.isoformat() }}">{{ quando(c) }}</time>{% else %}{{ quando(c) }}{% endif %} · {{ c.ed.nome }}{% else %}{{ c.tipo }} · atualizado em {{ (c.atualizado_em or c.criado_em)|br }}{% endif %}{% if c.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</p>
-{% if c.html %}<div class="texto-rico">{{ c.html|safe }}</div>{% else %}{% for par in (c.texto or '').split('\n\n') if par.strip() %}<p style="white-space:pre-line">{{ par }}</p>{% endfor %}{% endif %}
+{% if c.html %}<div class="texto-rico">{{ c.html|rico }}</div>{% else %}{% for par in (c.texto or '').split('\n\n') if par.strip() %}<p style="white-space:pre-line">{{ par }}</p>{% endfor %}{% endif %}
 {% if noticia %}<a class="btn sec" href="/noticias">{{ icone('seta', 18, 'seta-esq') }} Voltar para notícias</a>{% endif %}</div></article>
+{% if lat %}</div>{{ lateral(lat, (ident.nome_curto or orgao.municipio or 'o município')) }}</div>{% endif %}
 {% endblock %}

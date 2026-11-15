@@ -1,0 +1,17 @@
+{# Vitrine (15/11/2026): o mesmo desenho para Notícias e Comunicados na página inicial.
+   Destaque (imagem + texto lado a lado), 3 cartões com imagem e "Continue lendo", lista de títulos e o botão "Todos".
+   Cada cartão é um link só (o "Continue lendo" é visual: o nome do link é o título). #}
+{% from 'partials/cena.html' import cena, imagem_noticia with context %}
+{% macro v_imagem(x, razao='16/9', tam=44, lazy=True) %}{% if x.capa %}<img class="doc" src="{{ x.capa }}" alt="" style="aspect-ratio:{{ razao }}"{% if lazy %} loading="lazy"{% endif %}>{% elif x.c %}{{ imagem_noticia(x.c, x.ed, razao, tam, lazy) }}{% else %}{{ cena(x.ed, razao, tam) }}{% endif %}{% endmacro %}
+{% macro v_meta(x) %}<span class="v-meta"><span class="v-rot" style="--rot:{{ x.cor }}">{{ x.rotulo }}</span> · <time>{{ x.quando }}</time>{% if x.valido_ate %} · válido até {{ x.valido_ate|br }}{% endif %}{% if x.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</span>{% endmacro %}
+{% macro vitrine(v, hid, titulo, sub, url_todos, rot_todos, vazio='') %}
+<section class="vitrine" aria-labelledby="{{ hid }}">
+<div class="v-cab"><div><h2 id="{{ hid }}">{{ titulo }}</h2>{% if sub %}<p class="sub">{{ sub }}</p>{% endif %}</div><a class="btn sec" href="{{ url_todos }}">{{ rot_todos }} {{ icone('seta', 18, 'seta') }}</a></div>
+{% if v %}{% set x = v.destaque %}
+<a class="v-dest" href="{{ x.url }}"><span class="v-img">{{ v_imagem(x, '16/9', 64, False) }}</span>
+<span class="v-txt">{{ v_meta(x) }}<span class="v-tit">{{ x.titulo }}</span>{% if x.resumo %}<span class="v-res">{{ x.resumo }}</span>{% endif %}<span class="btn v-ler" aria-hidden="true">Continue lendo {{ icone('seta', 18, 'seta') }}</span></span></a>
+{% if v.cartoes %}<ul class="v-cartoes">{% for x in v.cartoes %}<li><a href="{{ x.url }}"><span class="v-img">{{ v_imagem(x, '16/9', 40) }}</span>{{ v_meta(x) }}<span class="v-tit">{{ x.titulo }}</span><span class="btn sec v-ler" aria-hidden="true">Continue lendo {{ icone('seta', 18, 'seta') }}</span></a></li>{% endfor %}</ul>{% endif %}
+{% if v.lista %}<ul class="v-lista">{% for x in v.lista %}<li><a href="{{ x.url }}"><span class="v-tit">{{ x.titulo }}</span>{{ v_meta(x) }}</a></li>{% endfor %}</ul>{% endif %}
+{% elif vazio %}<p class="vazio">{{ vazio }}</p>{% endif %}
+</section>
+{% endmacro %}

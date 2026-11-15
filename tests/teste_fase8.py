@@ -164,13 +164,13 @@ for k in range(9):
     noticia(f'Notícia de teste {k}', f'2026-11-0{k % 5 + 1}T0{k}:1{k}')
 dest = noticia('Notícia em destaque de teste', '2026-10-20T09:44', destaque=True, capa=True)
 h = pm.get('/').text
-blk = h[h.find('class="noticias9'):] if 'class="noticias9' in h else ''
-checa(blk and blk.find('Notícia em destaque de teste') < blk.find('class="ns"'), 'notícia marcada como destaque vem primeiro (mesmo mais antiga)')
+blk = h[h.find('aria-labelledby="h-not"'):] if 'aria-labelledby="h-not"' in h else ''  # vitrine (15/11/2026)
+checa(blk and blk.find('Notícia em destaque de teste') < blk.find('class="v-cartoes"'), 'notícia marcada como destaque vem primeiro (mesmo mais antiga)')
 checa('20/10/2026, 09h44' in blk, 'data e hora da notícia no formato 08/11/2026, 09h44')
 checa('object-position:30% 40%' in blk and 'alt="Foto de teste da capa"' in blk, 'capa 16:9 com ponto focal e texto alternativo')
-sec = re.findall(r'<ul class="ns">(.*?)</ul>', blk, re.S)
+sec = re.findall(r'<ul class="v-cartoes">(.*?)</ul>', blk, re.S)
 checa(sec and sec[0].count('<li>') == 3, 'três notícias secundárias')
-tit = re.findall(r'<ul class="nt">(.*?)</ul>', blk, re.S)
+tit = re.findall(r'<ul class="v-lista">(.*?)</ul>', blk, re.S)
 checa(tit and tit[0].count('<li>') == 5, 'lista com cinco títulos')
 checa('Todas as notícias' in blk and 'class="btn' in blk, 'botão "Todas as notícias"')
 checa(db.um(PM, 'SELECT count(*) n FROM conteudos WHERE destaque')['n'] == 1, 'só uma notícia em destaque')

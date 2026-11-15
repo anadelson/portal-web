@@ -2192,3 +2192,52 @@ Correções:
   - versão certa;
   - sem erros nos logs;
   - timer do ativador ativo (agora confere os domínios em /admin/login).
+
+## 15/11/2026 — Vitrine de notícias e comunicados, coluna à direita, previsão do tempo e editor ampliado (código; branch vitrine-tempo-editor)
+Pedido do usuário: Comunicados e Notícias no modelo da imagem enviada; telas do admin e páginas de notícias e comunicados em 100% da largura; editor de texto com mais formatação; coluna com as 5 últimas notícias e os 5 últimos comunicados; previsão do tempo no portal.
+- **Vitrine na página inicial** (o mesmo desenho para Notícias e Comunicados):
+  - destaque com imagem e texto lado a lado;
+  - 3 cartões com imagem, data, título e "Continue lendo";
+  - lista de títulos e o botão "Todos";
+  - cada cartão é um link só;
+  - o desenho se ajusta à largura disponível (container query);
+  - Comunicados passa a ocupar a largura toda, com "Serviços mais acessados" logo abaixo.
+- **Miniatura do comunicado:** vem do 1º anexo em PDF (1ª página, gerada pelo Ghostscript em modo seguro, com tempo-limite) ou imagem.
+  - Sem anexo assim, mostra o quadro neutro na cor do portal.
+  - A miniatura (`/anexo/<arquivo>/capa`) segue a mesma regra de visibilidade do anexo.
+  - Não houve mudança de esquema.
+- **Notícias e comunicados em largura total** (página da notícia, página do comunicado e as duas listas), com coluna à direita:
+  - previsão do tempo;
+  - últimas 5 notícias (some no período eleitoral);
+  - últimos 5 comunicados.
+  - No celular, a coluna vai para o fim.
+- **Previsão do tempo:**
+  - nova fonte `tempo` (Open-Meteo, dados abertos CC BY 4.0, sem chave), pelo centro do município informado pelo IBGE (código IBGE do órgão; nada específico de Borá);
+  - roda de hora em hora, e Prefeitura e Câmara do mesmo município compartilham a coleta;
+  - previsão com mais de 6 h não aparece;
+  - novo bloco da página inicial "Previsão do tempo", que entra logo antes de Comunicados;
+  - testado o acesso a partir da VPS: o Open-Meteo responde e o INMET não.
+  - Migrações:
+    - 033 (controle) e `migrations_local/004` (nó) incluem `tempo` na lista de fontes;
+    - as migrações 009, 011, 014, 016 e 024 passaram a ter a lista completa, porque são reaplicadas em ordem. Antes faltava `govbr` nelas, o que quebraria a atualização de um nó com fonte GOVBR.
+- **Editor de texto** (notícias, comunicados, páginas, Conheça):
+  - estilo do parágrafo (Título de seção, Subtítulo, Título menor, Citação);
+  - desfazer/refazer;
+  - sublinhado, tachado, marca-texto, sobrescrito e subscrito;
+  - alinhamento (por classe, nunca `style`);
+  - recuo de lista;
+  - link com diálogo próprio (Ctrl+K) e botão para remover link;
+  - linha divisória;
+  - tabela com acrescentar/apagar linha e coluna;
+  - imagem centralizada;
+  - vídeo do YouTube (vira player youtube-nocookie no portal);
+  - ver o código HTML;
+  - tela cheia;
+  - contagem de palavras.
+  - O servidor continua limpando tudo por lista fechada (nh3).
+- **Admin em largura total:** as telas com editor (notícia, comunicado etc.) saem do limite de 760 px, com os campos curtos em colunas.
+- **Testes:**
+  - nova suíte `tests/teste_vitrine_tempo.py` (dados fictícios; a previsão de teste é gravada à mão, sem consulta real);
+  - `teste_ajustes8` e `teste_fase8` foram atualizados para a marcação nova;
+  - nas capturas (ambiente de teste), o axe (WCAG 2.1 AA) não apontou nada na página inicial, na notícia, no comunicado, nas listas e no editor, e não há rolagem horizontal em 1366 e 390 px.
+- **Não implantado** (aguarda aprovação).
