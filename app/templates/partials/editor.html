@@ -15,7 +15,7 @@
 {# sem <form> aqui: o editor fica dentro do formulário da tela, e form dentro de form fecha o formulário principal antes da hora #}
 <dialog class="ed-img" aria-labelledby="ed-img-t"><div class="campos"><h3 id="ed-img-t">Inserir imagem</h3>
 <label>Arquivo (PNG, JPG ou WEBP, até 3 MB)<input type="file" accept="image/png,image/jpeg,image/webp" data-img-arq></label>
-<label>Texto alternativo (obrigatório: o que a imagem mostra)<input data-img-alt minlength="5"></label><label>Legenda<input data-img-leg></label><label>Crédito<input data-img-cred></label>
+<label>Texto alternativo (opcional: o que a imagem mostra)<input data-img-alt></label><label>Legenda<input data-img-leg></label><label>Crédito<input data-img-cred></label>
 <p class="ed-img-erro chip erro" role="alert" hidden></p><div class="acoes"><button type="button" class="btn" data-img-ok>Inserir</button><button type="button" class="btn sec" data-img-cancelar>Cancelar</button></div></div></dialog>
 <p class="legal ed-ajuda" hidden>Colar do Word mantém só títulos, negrito, itálico, listas, links e tabelas. O texto é limpo de novo ao salvar.</p>
 </div>

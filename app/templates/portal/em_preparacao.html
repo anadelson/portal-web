@@ -1,0 +1,11 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow">
+<title>Portal em preparação — {{ ident.nome or orgao.nome }}</title>
+<style>:root{--cor:{{ cor }};--fs-prep-h1:1.5rem}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px 16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#F4F7F9;color:#1F2933}
+main{max-width:560px;width:100%;background:#fff;border:1px solid #DCE1E6;border-top:6px solid var(--cor);border-radius:16px;padding:32px 28px;text-align:center}
+img{max-width:96px;height:auto;margin-bottom:12px}h1{font-size:var(--fs-prep-h1);margin:0 0 8px}p{line-height:1.55;margin:0 0 12px;color:#3E4C59}
+a.btn{display:inline-block;margin-top:8px;padding:10px 18px;border-radius:10px;background:var(--cor);color:#fff;text-decoration:none;font-weight:600}a.btn:focus-visible{outline:3px solid #F0B429;outline-offset:2px}</style></head>
+<body><main>{% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="Brasão">{% endif %}
+<h1>{{ ident.nome or orgao.nome }}</h1>
+<p><strong>O novo portal está em preparação</strong> e ainda não está aberto ao público.</p>
+<p>Enquanto isso, os canais oficiais de atendimento continuam funcionando normalmente.</p>
+<p><a class="btn" href="/admin/login">Entrar (equipe do órgão)</a></p></main></body></html>

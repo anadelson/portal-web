@@ -14,7 +14,7 @@ from pathlib import Path
 import psycopg
 from psycopg.types.json import Jsonb
 from . import config, db
-from .catalogo import MODULOS, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, LAYOUT_PADRAO_V2, LAYOUT_PADRAO_V3, serve
+from .catalogo import MODULOS, COMECA_OCULTO, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, LAYOUT_PADRAO_V2, LAYOUT_PADRAO_V3, serve
 from .security import hash_senha
 
 AQUI = Path(__file__).parent
@@ -133,13 +133,13 @@ def atualizar_layout(banco, tipo):
     if atual in (LAYOUT_PADRAO_V1.get(tipo), LAYOUT_PADRAO_V2.get(tipo), LAYOUT_PADRAO_V3.get(tipo)):
         db.exe(banco, "DELETE FROM blocos WHERE pagina='home' AND chave <> ALL(%s)", ([k for k, _ in alvo],))
         for i, (k, reg) in enumerate(alvo):
-            db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES ('home',%s,%s,%s) ON CONFLICT (pagina, chave) DO UPDATE SET regiao=EXCLUDED.regiao, ordem=EXCLUDED.ordem", (k, reg, i))
+            db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem, visivel) VALUES ('home',%s,%s,%s,%s) ON CONFLICT (pagina, chave) DO UPDATE SET regiao=EXCLUDED.regiao, ordem=EXCLUDED.ordem", (k, reg, i, k not in COMECA_OCULTO))
         return 'padrão novo aplicado'
     usados = {k for k, _ in atual}
     novos = [(k, reg) for k, reg in alvo if k not in usados]
     for k, reg in novos:
         mx = db.um(banco, "SELECT coalesce(max(ordem),0)+1 n FROM blocos WHERE pagina='home' AND regiao<>'rodape'")['n']
-        db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES ('home',%s,%s,%s) ON CONFLICT DO NOTHING", (k, reg, mx))
+        db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem, visivel) VALUES ('home',%s,%s,%s,%s) ON CONFLICT DO NOTHING", (k, reg, mx, k not in COMECA_OCULTO))
     return f"{len(novos)} bloco(s) novo(s) acrescentado(s)" if novos else 'sem blocos novos'
 
 ORGAOS = [(o['slug'], o['nome'], o['tipo'], (lambda o=o: config.env(o['dominio_env'], o['dominio_padrao'])), o['banco'], o['plano'], o['cor'], o['opcionais'])
@@ -187,7 +187,7 @@ def preparar_orgao(o, identidade=None, fontes=None, email_admin=None, senha_hash
     F8.migrar_conheca(banco, db.cfg(banco, 'identidade', {}))
     if not db.um(banco, 'SELECT 1 FROM blocos LIMIT 1'):
         for i, (k, reg) in enumerate(LAYOUT_PADRAO[tipo]):
-            db.exe(banco, 'INSERT INTO blocos (pagina, chave, regiao, ordem) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING', ('home', k, reg, i))
+            db.exe(banco, 'INSERT INTO blocos (pagina, chave, regiao, ordem, visivel) VALUES (%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING', ('home', k, reg, i, k not in COMECA_OCULTO))
     if not db.um(banco, 'SELECT 1 FROM usuarios LIMIT 1'):
         email = email_admin or f'admin@{dominio}'
         db.exe(banco, "INSERT INTO usuarios (nome, email, setor, perfil, escopo, senha_hash) VALUES (%s,%s,%s,'admin','Órgão inteiro',%s)", ('Administrador do órgão', email, 'Administração', senha_hash or hash_senha(config.SENHA_INICIAL_ADMIN)))

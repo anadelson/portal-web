@@ -94,12 +94,16 @@
 <section class="conheca9" aria-labelledby="h-conheca"><div class="c-txt">
 <div class="c-marca">{% if ident.brasao and ident.brasao.url %}<img src="{{ ident.brasao.url }}" alt="Brasão do Município de {{ ident.nome_curto or '' }}" width="72" height="63">{% endif %}<p class="rotulo">{{ cx.rotulo or ('Conheça ' ~ (ident.nome_curto or 'a cidade')) }}</p></div>
 <h2 id="h-conheca">{{ cx.titulo }}</h2>{% if cx.texto %}<p>{{ cx.texto }}</p>{% endif %}
-{% if d.mun_numeros %}<dl class="c-num">{% for n in d.mun_numeros[:6] %}<div><dt>{{ n.rotulo }}{% if not n.manual and n.periodo %} ({{ n.periodo }}){% endif %}{% if n.manual %}*{% endif %}</dt><dd>{{ n.valor }}</dd></div>{% endfor %}</dl>
+{% if d.mun_numeros %}<dl class="c-num">{% for n in d.mun_numeros[:8] %}<div><dt>{{ n.rotulo }}{% if not n.manual and n.periodo %} ({{ n.periodo }}){% endif %}{% if n.manual %}*{% endif %}</dt><dd>{{ n.valor }}</dd></div>{% endfor %}</dl>
 <p class="legal">Fonte: IBGE, atualizado automaticamente{% if d.mun_numeros|selectattr('manual')|list %}; * informado pela {{ 'Câmara' if leg else 'Prefeitura' }}{% endif %}.</p>
 {% elif cx.numeros %}<dl class="c-num">{% for n in cx.numeros %}<div><dt>{{ n[0] }}</dt><dd>{{ n[1] }}</dd></div>{% endfor %}</dl>{% if cx.fonte %}<p class="legal">{{ cx.fonte }}</p>{% endif %}{% endif %}
-<div class="acoes"><a class="btn" href="/conheca">Conheça mais {{ icone('seta', 18, 'seta') }}</a>{% if mods.bi %}<a class="btn sec" href="/painel">{{ ident.nome_curto }} em números</a>{% endif %}</div></div>
+<div class="acoes"><a class="btn" href="/conheca">Conheça mais {{ icone('seta', 18, 'seta') }}</a>{% if mods.bi %}<a class="btn sec" href="/painel">{{ ident.nome_curto }} em números</a>{% endif %}{% if d.albuns and not d.bloco_fotos %}<a class="btn sec" href="/fotos">Galeria de fotos</a>{% endif %}</div></div>
 {% if d.perfis %}<ul class="c-mosaico n{{ d.perfis|length }}">{% for p in d.perfis %}<li><a href="/conheca/{{ p.slug }}">{% if p.capa %}<img src="{{ p.capa.url }}" alt="" loading="lazy">{% else %}<span class="sem-foto" aria-hidden="true"></span>{% endif %}<span class="leg"><span>{{ p.titulo }}</span><span class="ver">Ver perfil</span></span></a></li>{% endfor %}</ul>{% endif %}
 </section>
+
+{% elif b.chave == 'fotos' and d.albuns %}
+<section class="galeria-home" aria-labelledby="h-fotos"><div class="cab"><h2 id="h-fotos">Galeria de fotos</h2><a class="mais" href="/fotos">Todos os álbuns {{ icone('seta', 18, 'seta') }}</a></div>
+<ul class="albuns">{% for a in d.albuns %}<li><a href="/fotos/{{ a.id }}"><img src="{{ a.capa.url }}" alt="" loading="lazy"><span><strong>{{ a.titulo }}</strong><small style="display:block;color:var(--sub)">{{ a.n }} foto(s)</small></span></a></li>{% endfor %}</ul></section>
 
 {% elif b.chave == 'redes' and d.redes_feed and not defeso %}
 <section class="redes-feed" aria-labelledby="h-redes"><div class="cab"><h2 id="h-redes">Nas redes</h2></div>

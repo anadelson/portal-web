@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from . import config, portal, admin, console, transparencia, admin_leg, portal_leg, remessa, portal_painel, admin_painel, portal_fase8, admin_fase8, admin_fase9, portal_fase9, admin_carta, portal_carta
-from .web import RoteadorPorDominio, templates
+from .web import RoteadorPorDominio, PortalOculto, templates
 
 app = FastAPI(title=config.NOME_PLATAFORMA, docs_url=None, redoc_url=None, openapi_url=None)
 app.mount('/static', StaticFiles(directory=str(Path(__file__).parent / 'static')), name='static')
@@ -72,6 +72,7 @@ class Cabecalhos:
         return await self.app(scope, receive, enviar)
 
 # Ordem: a sessão precisa existir antes do roteamento (middlewares rodam de fora para dentro: último adicionado = mais externo)
+app.add_middleware(PortalOculto)  # mais interno: já tem a sessão e o caminho /_p/…
 app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, session_cookie='sessao', same_site='lax', https_only=config.COOKIE_SEGURO, max_age=8 * 3600)
 app.add_middleware(RoteadorPorDominio)
 app.add_middleware(Cabecalhos)

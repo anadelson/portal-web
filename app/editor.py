@@ -25,12 +25,8 @@ def limpar(html):
     limpo = nh3.clean(bruto, tags=TAGS, attributes=ATRIBUTOS, attribute_filter=_filtro, url_schemes={'https', 'mailto'},
                       link_rel='noopener noreferrer', strip_comments=True)
     limpo = re.sub(r'<img(?![^>]*\bsrc=)[^>]*>', '', limpo)  # imagem cujo endereço foi recusado
-    problemas = []
-    for m in re.finditer(r'<img\b[^>]*>', limpo):
-        alt = re.search(r'\balt="([^"]*)"', m.group(0))
-        if not alt or len(H.unescape(alt.group(1)).strip()) < 5:
-            problemas.append('Há imagem sem texto alternativo (pelo menos 5 caracteres).')
-            break
+    problemas = []  # texto alternativo opcional (14/11/2026): imagem sem alt fica como decorativa (alt="")
+    limpo = re.sub(r'<img\b(?![^>]*\balt=)', '<img alt=""', limpo)
     if bruto.count('<img') > limpo.count('<img'):
         problemas.append('Imagens de fora do portal foram removidas: envie a imagem pelo botão “Imagem” do editor.')
     limpo = re.sub(r'<p>\s*</p>', '', limpo).strip()

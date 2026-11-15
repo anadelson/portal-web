@@ -1,0 +1,11 @@
+{# Ponto focal (14/11/2026): em vez de digitar números, clica-se na imagem no ponto que não pode ser cortado.
+   As prévias com [data-foco-previa] no mesmo formulário acompanham na hora. Funciona também com a imagem recém-escolhida no campo de arquivo. #}
+{% macro foco(url, fx=50, fy=50, desligado=False) %}{% set fx = fx if fx is not none else 50 %}{% set fy = fy if fy is not none else 50 %}
+<div class="foco" data-foco>
+<p class="foco-tit"><strong>Ponto principal da imagem</strong> <small>(opcional)</small></p>
+<p class="legal">Nas telas menores a imagem é recortada. Clique no que não pode sumir (um rosto, o prédio, o brasão); os recortes ficam centralizados nesse ponto. Sem clicar, vale o centro.</p>
+<div class="foco-img" {{ 'hidden' if not url }} tabindex="0" role="application" aria-label="Ponto principal da imagem: clique na imagem ou use as setas do teclado"><img src="{{ url or '' }}" alt=""><span class="foco-ponto" style="left:{{ fx }}%;top:{{ fy }}%" aria-hidden="true"></span></div>
+<p class="foco-sem legal" {{ 'hidden' if url }}>Escolha a imagem acima para marcar o ponto principal.</p>
+<input type="hidden" name="foco_x" value="{{ fx }}" {{ 'disabled' if desligado }}><input type="hidden" name="foco_y" value="{{ fy }}" {{ 'disabled' if desligado }}>
+<button type="button" class="btn sec pequeno" data-foco-centro {{ 'hidden' if not url }}>Voltar ao centro</button>
+</div>{% endmacro %}

@@ -113,7 +113,8 @@ no_ar() {  # HTTPS responde pelo nginx local com certificado válido para o dom�
   # A recarga do nginx é gradual (processos antigos terminam o que atendem): tenta algumas vezes antes de dar como falha.
   local cod i
   for ((i = 1; i <= ${TENTATIVAS:-5}; i++)); do
-    if cod=$($CURL -sS -o /dev/null -w '%{http_code}' --max-time 20 --resolve "$1:443:127.0.0.1" "https://$1/" 2>>"$LOG") && [[ "$cod" =~ ^[234][0-9][0-9]$ ]]; then
+    # confere em /admin/login: responde mesmo com o portal oculto (que dá 503 em /)
+    if cod=$($CURL -sS -o /dev/null -w '%{http_code}' --max-time 20 --resolve "$1:443:127.0.0.1" "https://$1/admin/login" 2>>"$LOG") && [[ "$cod" =~ ^[234][0-9][0-9]$ ]]; then
       return 0
     fi
     log "conferência do HTTPS de $1: tentativa $i sem sucesso"

@@ -113,11 +113,12 @@ t = tok(pm, '/admin/conheca')
 r = pm.post('/admin/conheca', data={'csrf': t, 'acao': 'perfil', 'titulo': 'Praça de teste', 'categoria': 'Lugares', 'classe': 'util', 'publicado': '1'}, follow_redirects=True)
 pid = int(re.search(r'/admin/conheca\?id=(\d+)', str(r.url)).group(1))
 t = tok(pm, f'/admin/conheca?id={pid}')
-ok(pm.post('/admin/conheca', data={'csrf': t, 'acao': 'foto', 'id': pid, 'alt': ''}, files={'arquivo': ('a.png', png(), 'image/png')}, follow_redirects=True), txt='texto alternativo', nome='foto sem alt recusada')
+pm.post('/admin/conheca', data={'csrf': t, 'acao': 'foto', 'id': pid, 'alt': ''}, files={'arquivo': ('a.png', png(), 'image/png')}, follow_redirects=True)
+checa(db.um(PM, "SELECT 1 FROM perfil_fotos WHERE perfil_id=%s AND alt=''", (pid,)), 'foto sem texto alternativo é aceita (opcional desde 14/11/2026)')
 t = tok(pm, f'/admin/conheca?id={pid}')
 ok(pm.post('/admin/conheca', data={'csrf': t, 'acao': 'foto', 'id': pid, 'alt': 'Pessoas reunidas na praça de teste', 'tem_pessoas': '1'}, files={'arquivo': ('a.png', png(), 'image/png')}, follow_redirects=True),
    txt='não aparece no portal', nome='foto com pessoas sem autorização avisada')
-foto = db.um(PM, 'SELECT * FROM perfil_fotos WHERE perfil_id=%s', (pid,))
+foto = db.um(PM, 'SELECT * FROM perfil_fotos WHERE perfil_id=%s AND tem_pessoas ORDER BY id LIMIT 1', (pid,))
 slug = db.um(PM, 'SELECT slug FROM perfis WHERE id=%s', (pid,))['slug']
 checa(foto['url'] not in pm.get(f'/conheca/{slug}').text, 'foto com pessoas sem autorização NÃO publica')
 t = tok(pm, f'/admin/conheca?id={pid}')
@@ -156,8 +157,9 @@ def noticia(titulo, quando, destaque=False, capa=False):
     pm.post('/admin/conteudos/salvar', data={'csrf': t, 'id': cid, 'titulo': titulo, 'classe': 'pub', 'acao': 'aprovar'})
     return cid
 t = tok(pm, '/admin/conteudos/novo')
-ok(pm.post('/admin/conteudos/salvar', data={'csrf': t, 'tipo': 'Notícia', 'secao': 'Notícias', 'titulo': 'Sem alt', 'classe': 'pub', 'acao': 'rascunho'},
-           files={'capa': ('c.png', png(160, 90), 'image/png')}, follow_redirects=True), txt='texto alternativo', nome='capa sem alt recusada')
+pm.post('/admin/conteudos/salvar', data={'csrf': t, 'tipo': 'Notícia', 'secao': 'Notícias', 'titulo': 'Sem alt', 'classe': 'pub', 'acao': 'rascunho'},
+        files={'capa': ('c.png', png(160, 90), 'image/png')}, follow_redirects=True)
+checa((db.um(PM, "SELECT imagem FROM conteudos WHERE titulo='Sem alt'") or {}).get('imagem', '').startswith('/'), 'capa sem texto alternativo é aceita (opcional desde 14/11/2026)')
 for k in range(9):
     noticia(f'Notícia de teste {k}', f'2026-11-0{k % 5 + 1}T0{k}:1{k}')
 dest = noticia('Notícia em destaque de teste', '2026-10-20T09:44', destaque=True, capa=True)

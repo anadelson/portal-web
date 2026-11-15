@@ -130,6 +130,8 @@ REDES = {'instagram': 'Instagram', 'facebook': 'Facebook', 'youtube': 'YouTube',
 HOSTS_REDE = {'instagram': ('instagram.com',), 'facebook': ('facebook.com', 'fb.com'), 'youtube': ('youtube.com', 'youtu.be'), 'x': ('x.com', 'twitter.com'),
               'tiktok': ('tiktok.com',), 'whatsapp': ('wa.me', 'whatsapp.com'), 'linkedin': ('linkedin.com',)}
 LICENCAS = ['CC BY 4.0', 'CC BY-SA 4.0', 'CC0 (domínio público)', 'Uso institucional (cedida ao órgão)', 'Todos os direitos reservados']
+FOTOS_POR_PAGINA = 48   # miniaturas por página na tela do álbum (painel); no portal, PORTAL_FOTOS_POR_PAGINA
+MAX_FOTOS_ENVIO = 20    # fotos por envio (o proxy aceita até 25 MB por requisição)
 COR = re.compile(r'^#[0-9A-Fa-f]{6}$')
 
 def checar_cores(cor, dest):
@@ -265,6 +267,25 @@ async def ident_fotos(request: Request):
     from .admin import salvar_midia
     acao = f.get('acao', ''); aid = _int(f.get('album_id'))
     volta = f'/admin/identidade?aba=fotos' + (f'&album={aid}' if aid else '')
+    if acao == 'categorias':  # lista editável: renomear, suspender no defeso, remover, adicionar
+        volta = '/admin/identidade?aba=fotos&sub=categorias'
+        rem = _int(f.get('remover'))
+        if rem:
+            db.exe(b, 'DELETE FROM foto_categorias WHERE id=%s', (rem,)); auditar(request, f'Fotos: categoria {rem} removida (álbuns ficam sem categoria)')
+            return ir(volta, 'Categoria removida. Os álbuns dela ficaram sem categoria.', request)
+        n = _int(f.get('n')) or 0
+        lista = [(_int(f.get(f'cat_id_{i}')), re.sub(r'\s+', ' ', f.get(f'cat_nome_{i}', '')).strip()[:60], f.get(f'cat_susp_{i}') == '1') for i in range(min(n, 200))]
+        novo = re.sub(r'\s+', ' ', f.get('novo', '')).strip()[:60]
+        nomes = [x[1].lower() for x in lista if x[1]] + ([novo.lower()] if novo else [])
+        if len(set(nomes)) != len(nomes):
+            return ir(volta, 'Há duas categorias com o mesmo nome.', request)
+        for cid_, nome, susp in lista:
+            if cid_ and nome:
+                db.exe(b, 'UPDATE foto_categorias SET nome=%s, suspender_defeso=%s WHERE id=%s', (nome, susp, cid_))
+        if novo:
+            db.exe(b, 'INSERT INTO foto_categorias (nome, suspender_defeso) VALUES (%s,%s)', (novo, f.get('novo_susp') == '1'))
+        auditar(request, 'Fotos: categorias alteradas' + (f' (nova: {novo})' if novo else ''))
+        return ir(volta, 'Categoria adicionada.' if novo else 'Categorias salvas.', request)
     if acao == 'categoria':
         nome = re.sub(r'\s+', ' ', f.get('nome', '')).strip()[:60]
         if not nome:
@@ -285,39 +306,49 @@ async def ident_fotos(request: Request):
         return ir(f'/admin/identidade?aba=fotos&album={aid}', 'Álbum salvo.', request)
     if not aid:
         raise HTTPException(400)
-    if acao == 'foto':
-        alt = f.get('alt', '').strip()
+    if acao == 'foto':  # uma ou várias fotos por envio; crédito, licença, categoria e autorização valem para todas
         if f.get('licenca') not in LICENCAS:
-            return ir(volta, 'Escolha a licença da foto.', request)
-        try:
-            url = await salvar_midia(request, u, f.get('arquivo'), 'album', alt, f.get('credito', '').strip())
-        except ValueError as e:
-            return ir(volta, str(e), request)
+            return ir(volta, 'Escolha a licença das fotos.', request)
+        arquivos = [x for x in (await request.form()).getlist('arquivo') if getattr(x, 'filename', '')]
+        if not arquivos:
+            return ir(volta, 'Escolha pelo menos uma foto.', request)
+        if len(arquivos) > MAX_FOTOS_ENVIO:
+            return ir(volta, f'Envie no máximo {MAX_FOTOS_ENVIO} fotos por vez.', request)
         pessoas, autoriz = f.get('tem_pessoas') == '1', f.get('autorizacao') == '1'
-        primeira = not db.um(b, 'SELECT 1 FROM album_fotos WHERE album_id=%s', (aid,))
-        db.exe(b, '''INSERT INTO album_fotos (album_id, url, titulo, descricao, credito, licenca, alt, categoria_id, tem_pessoas, autorizacao_imagem, principal)
-                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''', (aid, url, f.get('titulo', '')[:160], f.get('descricao', '')[:1000], f.get('credito', '')[:200],
-                                                                  f['licenca'], alt[:300], _int(f.get('categoria_id')), pessoas, autoriz, primeira))
-        auditar(request, f'Fotos: foto enviada ao álbum {aid}' + (' (com pessoas, sem autorização: não publica)' if pessoas and not autoriz else ''))
-        return ir(volta, 'Foto enviada.' + (' Ela só aparece no portal com a autorização de uso de imagem registrada.' if pessoas and not autoriz else ''), request)
+        ok, erros = 0, []
+        for arq in arquivos:
+            try:
+                url = await salvar_midia(request, u, arq, 'album', f.get('alt', '').strip(), f.get('credito', '').strip())
+            except ValueError as e:
+                erros.append(f'{arq.filename}: {e}'); continue
+            primeira = not db.um(b, 'SELECT 1 FROM album_fotos WHERE album_id=%s', (aid,))
+            db.exe(b, '''INSERT INTO album_fotos (album_id, url, titulo, descricao, credito, licenca, alt, categoria_id, tem_pessoas, autorizacao_imagem, principal)
+                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''', (aid, url, f.get('titulo', '')[:160], f.get('descricao', '')[:1000], f.get('credito', '')[:200],
+                                                                      f['licenca'], f.get('alt', '').strip()[:300], _int(f.get('categoria_id')), pessoas, autoriz, primeira))
+            ok += 1
+        auditar(request, f'Fotos: {ok} foto(s) enviada(s) ao álbum {aid}' + (' (com pessoas, sem autorização: não publicam)' if pessoas and not autoriz else '') + (f'; {len(erros)} recusada(s)' if erros else ''))
+        msg = f'{ok} foto(s) enviada(s).' + (' Elas só aparecem no portal com a autorização de uso de imagem registrada.' if ok and pessoas and not autoriz else '')
+        if erros:
+            msg += ' Não enviadas: ' + '; '.join(erros)[:400]
+        return ir(volta + '#fotos', msg, request)
     fid = _int(f.get('foto_id'))
     x = db.um(b, 'SELECT * FROM album_fotos WHERE id=%s AND album_id=%s', (fid, aid)) if fid else None
     if not x:
         raise HTTPException(404)
     if acao == 'foto_editar':
         alt = f.get('alt', '').strip()
-        if len(alt) < 5 or f.get('licenca') not in LICENCAS:
-            return ir(volta, 'Texto alternativo (5+ caracteres) e licença são obrigatórios.', request)
+        if f.get('licenca') not in LICENCAS:
+            return ir(volta, 'Escolha a licença da foto.', request)
         db.exe(b, '''UPDATE album_fotos SET titulo=%s, descricao=%s, credito=%s, licenca=%s, alt=%s, categoria_id=%s, tem_pessoas=%s, autorizacao_imagem=%s WHERE id=%s''',
                (f.get('titulo', '')[:160], f.get('descricao', '')[:1000], f.get('credito', '')[:200], f['licenca'], alt[:300], _int(f.get('categoria_id')),
                 f.get('tem_pessoas') == '1', f.get('autorizacao') == '1', fid))
-        auditar(request, f'Fotos: foto {fid} alterada'); return ir(volta, 'Foto salva.', request)
+        auditar(request, f'Fotos: foto {fid} alterada'); return ir(f'{volta}&foto={fid}#foto', 'Foto salva.', request)
     if acao == 'foto_excluir':
         db.exe(b, 'DELETE FROM album_fotos WHERE id=%s', (fid,)); auditar(request, f'Fotos: foto {fid} excluída')
         return ir(volta, 'Foto excluída.', request)
     if acao == 'principal':
         db.exe(b, 'UPDATE album_fotos SET principal=(id=%s) WHERE album_id=%s', (fid, aid)); auditar(request, f'Fotos: foto {fid} é a principal do álbum {aid}')
-        return ir(volta, 'Foto principal do álbum definida.', request)
+        return ir(f'{volta}&foto={fid}#foto', 'Esta foto agora é a capa do álbum.', request)
     if acao == 'destaque_portal':
         exige(request, 'config')
         if x['tem_pessoas'] and not x['autorizacao_imagem']:

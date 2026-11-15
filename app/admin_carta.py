@@ -9,7 +9,7 @@ from .web import ler_form, ir, exige, auditar
 from .admin import T
 
 r = APIRouter(prefix='/_a')
-ABAS = [('minhas', 'Rascunhos e devolvidas'), ('validacao', 'Em validação'), ('autorizadas', 'Autorizadas'), ('publicadas', 'Publicadas'), ('revisar', 'A revisar'), ('todas', 'Todas')]
+ABAS = [('minhas', 'Rascunhos e devolvidas'), ('validacao', 'Em validação'), ('autorizadas', 'Autorizadas'), ('publicadas', 'Publicadas'), ('revisar', 'A revisar'), ('todas', 'Todas'), ('arquivadas', 'Arquivadas')]  # arquivada só aparece em "Arquivadas"
 
 def _escopo(u):
     """Redator e validador veem só a própria secretaria."""
@@ -25,11 +25,12 @@ def lista(request: Request, aba: str = 'minhas'):
     u = _usuario(request); b = request.state.orgao['banco']
     esc = _escopo(u)
     cond = {'minhas': "s.situacao IN ('rascunho','devolvido')", 'validacao': "s.situacao='em_validacao'", 'autorizadas': "s.situacao='autorizado'",
-            'publicadas': "s.publicado_dados IS NOT NULL AND s.situacao<>'arquivado'", 'revisar': 's.revisar_em < %(hoje)s', 'todas': 'TRUE'}.get(aba, 'TRUE')
+            'publicadas': "s.publicado_dados IS NOT NULL AND s.situacao<>'arquivado'", 'revisar': "s.revisar_em < %(hoje)s AND s.situacao<>'arquivado'", 'todas': "s.situacao<>'arquivado'",
+            'arquivadas': "s.situacao='arquivado'"}.get(aba, "s.situacao<>'arquivado'")
     sql = f"SELECT s.*, sec.nome secretaria FROM servicos s LEFT JOIN secretarias sec ON sec.id=s.secretaria_id WHERE {cond}" + (' AND s.secretaria_id=%(esc)s' if esc else '') + ' ORDER BY s.atualizado_em DESC'
     itens = db.todos(b, sql, {'hoje': config.hoje(), 'esc': esc})
     cont = {k: db.um(b, f"SELECT count(*) n FROM servicos s WHERE {c}" + (' AND s.secretaria_id=%(esc)s' if esc else ''), {'hoje': config.hoje(), 'esc': esc})['n']
-            for k, c in [('validacao', "s.situacao='em_validacao'"), ('autorizadas', "s.situacao='autorizado'"), ('revisar', 's.revisar_em < %(hoje)s')]}
+            for k, c in [('validacao', "s.situacao='em_validacao'"), ('autorizadas', "s.situacao='autorizado'"), ('revisar', "s.revisar_em < %(hoje)s AND s.situacao<>'arquivado'")]}
     sem_sec = u['perfil'] in ('redator', 'validador') and not u.get('secretaria_id')
     return T('carta', request, u, itens=itens, aba=aba if aba in dict(ABAS) else 'minhas', abas=ABAS, cont=cont, situacoes=CT.SITUACOES, sem_sec=sem_sec,
              vencidas=CT.vencidas(b, esc), tem_secretarias=bool(db.um(b, 'SELECT 1 FROM secretarias LIMIT 1')))

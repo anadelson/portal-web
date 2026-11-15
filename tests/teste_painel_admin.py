@@ -79,7 +79,7 @@ for aba, h1 in (('tema', 'Identidade visual'), ('imagens', 'Identidade visual'),
 t = pm.get('/admin/identidade?aba=dados').text
 checa('conheca_titulo' not in t and 'Proteção de dados (LGPD)' in t, 'Dados do órgão sem o bloco do Conheça, com grupos de campos')
 t = pm.get('/admin/identidade?aba=conheca').text
-checa('name="conheca_titulo"' in t and 'Fotos do bloco' in t and 'href="/admin/conheca"' in t, 'Conheça: texto do bloco, fotos e aba Perfis')
+checa('name="conheca_titulo"' in t and 'Fotos do bloco' not in t and 'href="/admin/conheca"' in t, 'Conheça: texto do bloco e aba Perfis (sem fotos próprias desde 14/11/2026)')
 checa('uso=conheca' not in pm.get('/admin/identidade?aba=imagens').text, 'fotos do Conheça fora de "Brasão, mascote e fundos"')
 r = pm.post('/admin/identidade', data={'csrf': tok(pm, '/admin/identidade?aba=conheca'), 'volta': '/admin/identidade?aba=conheca', 'conheca_titulo': 'Título de teste', 'conheca_rotulo': 'Conheça', 'conheca_texto': 'Texto de teste.'}, follow_redirects=False)
 checa(r.headers.get('location', '').endswith('/admin/identidade?aba=conheca'), 'salvar o bloco volta para a tela do Conheça')

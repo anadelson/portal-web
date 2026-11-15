@@ -197,3 +197,25 @@ caption.titulo-lista{caption-side:top;text-align:left;font-weight:700;font-size:
 .dados-senha+form.campos{margin-top:14px}
 /* Cadastro de órgão: o atributo hidden precisa vencer o display dos rótulos e grades (campos da Câmara e de outro sistema somem de verdade) */
 .cadastro-orgao [hidden]{display:none!important}
+/* ponto focal por clique (14/11/2026) */
+.foco{display:flex;flex-direction:column;gap:6px;margin:4px 0}.foco-tit{margin:0}
+.foco-img{position:relative;display:inline-block;max-width:420px;cursor:crosshair;border-radius:8px;line-height:0;outline-offset:3px}
+.foco-img img{width:100%;height:auto;border-radius:8px;display:block}
+.foco-ponto{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #0B3D6E,0 2px 8px rgba(0,0,0,.4);background:rgba(11,61,110,.35);pointer-events:none}
+.foco .btn.pequeno{align-self:flex-start;padding:6px 12px;font-size:.9rem}
+fieldset.data-hora{border:0;padding:0;margin:0;min-width:0}fieldset.data-hora legend{font-weight:600;padding:0;margin-bottom:6px}
+/* listas editáveis: tipos de comunicado, categorias de álbum (14/11/2026) */
+.lista-editavel{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:8px}
+.lista-editavel li{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 10px;border:1px solid #DCE1E6;border-radius:10px;background:#fff}
+.lista-editavel li>input[type=text],.lista-editavel li>input:not([type]){flex:1 1 220px;min-width:0}
+.lista-editavel .opc,.lista-nova .opc{flex-direction:row;gap:6px;font-weight:400;display:flex;align-items:center}
+.lista-nova{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin:8px 0 14px}.lista-nova>label:first-child{flex:1 1 260px}
+.btn.pequeno{padding:6px 12px;font-size:.9rem}
+/* álbum: grade de miniaturas (14/11/2026) */
+.grade-fotos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.grade-fotos a{position:relative;display:block;border:1px solid #DCE1E6;border-radius:10px;overflow:hidden;background:#fff;color:inherit;text-decoration:none}
+.grade-fotos a:hover,.grade-fotos a:focus-visible{border-color:#0B3D6E;box-shadow:0 0 0 2px #0B3D6E}
+.grade-fotos img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.grade-fotos .gf-leg{display:block;padding:6px 8px;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grade-fotos .gf-chip{position:absolute;top:6px;left:6px;font-size:.75rem}
+.paginas{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:14px}

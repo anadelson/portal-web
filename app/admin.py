@@ -178,7 +178,8 @@ def painel(request: Request):
 def conteudos(request: Request, sit: str = ''):
     u = exige(request)
     b = request.state.orgao['banco']
-    itens = db.todos(b, 'SELECT * FROM conteudos ' + ('WHERE situacao=%s ' if sit else '') + 'ORDER BY atualizado_em DESC', (sit,) if sit else ())
+    # "Todos" = tudo menos o arquivado; arquivado só na aba "Arquivado"
+    itens = db.todos(b, 'SELECT * FROM conteudos ' + ('WHERE situacao=%s ' if sit else "WHERE situacao<>'arquivado' ") + 'ORDER BY atualizado_em DESC', (sit,) if sit else ())
     for c in itens:
         c['suspenso'] = eleicao.suspenso(c, b)
     return T('conteudos', request, u, itens=itens, sit=sit)
@@ -235,15 +236,12 @@ async def conteudo_salvar(request: Request):
             except ValueError as e:
                 return ir(volta, str(e), request)
             alt = f.get('imagem_alt', '').strip()
-        if img.startswith('/') and len(alt) < 5:
-            return ir(volta, 'A imagem de capa precisa de texto alternativo (o que ela mostra), com pelo menos 5 caracteres.', request)
         foco = lambda k: max(0, min(100, int(f.get(k) or 50))) if str(f.get(k) or '50').isdigit() else 50
         try:
-            pub_em = datetime.fromisoformat(f['publicado_em']) if f.get('publicado_em') else None
+            from .web import data_hora_form
+            pub_em = data_hora_form(f)
         except ValueError:
             return ir(volta, 'Data e hora da publicação inválidas.', request)
-        if pub_em and pub_em.tzinfo is None:
-            pub_em = pub_em.astimezone()  # hora local do servidor (TZ do contêiner)
         destaque = f.get('destaque') == '1' and tipo == 'Notícia'
         from . import editor as ED
         html, texto = '', f.get('texto', '')
@@ -352,12 +350,19 @@ def funcionalidades(request: Request):
             continue
         disponivel = m[3] != 'opc' or k in contratados
         lista.append({'chave': k, 'nome': m[1], 'desc': m[2], 'oferta': m[3], 'disponivel': disponivel, 'ligado': m[3] == 'obr' or (disponivel and ligados.get(k, True))})
-    return T('funcionalidades', request, u, lista=lista)
+    return T('funcionalidades', request, u, lista=lista, oculto=bool(db.cfg(o['banco'], 'portal_oculto', False)))
 
 @r.post('/funcionalidades')
 async def funcionalidades_post(request: Request):
     u = exige(request, 'config'); f = await ler_form(request)
-    o = request.state.orgao; k = f['chave']
+    o = request.state.orgao; k = f.get('chave', '')
+    if k == '_visibilidade':  # portal oculto enquanto é configurado (só quem entrou no painel deste órgão vê o portal)
+        oculto = f.get('oculto') == '1'
+        db.set_cfg(o['banco'], 'portal_oculto', oculto)
+        from .web import limpar_cache_oculto
+        limpar_cache_oculto(o['slug'])
+        auditar(request, 'Visibilidade do portal: ' + ('OCULTO (só a equipe com o painel aberto vê)' if oculto else 'PUBLICADO (aberto ao público)'))
+        return ir('/admin/funcionalidades', 'Portal oculto: só a equipe, com o painel aberto, vê o portal.' if oculto else 'Portal publicado: aberto ao público.', request)
     if k not in MOD or MOD[k][3] == 'obr':
         raise HTTPException(400)
     lig = db.cfg(o['banco'], 'modulos_ligados', {}) or {}
@@ -520,8 +525,7 @@ MAX_CONHECA = 4
 async def salvar_midia(request, u, arquivo, uso, alt, credito):
     """Valida e guarda uma imagem enviada (PNG/JPG/WEBP, até 3 MB) em DADOS_DIR/<órgão>/midia. Devolve a URL pública."""
     from .imagens import validar_upload, LIMITE_UPLOAD
-    if not alt or len(alt) < 5:
-        raise ValueError('Escreva o texto alternativo da imagem (o que ela mostra), com pelo menos 5 caracteres.')
+    # texto alternativo é opcional (pedido do órgão, 14/11/2026): vazio = imagem decorativa (alt=""), ou o portal usa o título ao lado
     dados = await arquivo.read(LIMITE_UPLOAD + 1)
     ext = validar_upload(dados)
     o = request.state.orgao
@@ -558,8 +562,14 @@ def identidade(request: Request, aba: str = 'dados', album: int = 0):
         cats = db.todos(b, 'SELECT * FROM foto_categorias ORDER BY nome')
         albs = db.todos(b, 'SELECT a.*, (SELECT count(*) FROM album_fotos WHERE album_id=a.id) n, c.nome categoria FROM albuns a LEFT JOIN foto_categorias c ON c.id=a.categoria_id ORDER BY a.ordem, a.id DESC')
         al = db.um(b, 'SELECT * FROM albuns WHERE id=%s', (album,)) if album else None
-        extra = dict(categorias=cats, albuns=albs, album=al, licencas=F9.LICENCAS,
-                     fotos=db.todos(b, 'SELECT * FROM album_fotos WHERE album_id=%s ORDER BY principal DESC, ordem, id', (album,)) if al else [])
+        # álbum com centenas de fotos: grade de miniaturas paginada; cada foto é editada na sua própria tela (?foto=id)
+        q = request.query_params
+        pg = max(1, int(q.get('pg'))) if str(q.get('pg', '')).isdigit() else 1
+        total = db.um(b, 'SELECT count(*) n FROM album_fotos WHERE album_id=%s', (album,))['n'] if al else 0
+        foto = db.um(b, 'SELECT * FROM album_fotos WHERE id=%s AND album_id=%s', (int(q['foto']), album)) if al and str(q.get('foto', '')).isdigit() else None
+        extra = dict(categorias=cats, albuns=albs, album=al, licencas=F9.LICENCAS, foto=foto, pg=pg, paginas=max(1, -(-total // F9.FOTOS_POR_PAGINA)), total_fotos=total,
+                     fotos=db.todos(b, 'SELECT * FROM album_fotos WHERE album_id=%s ORDER BY principal DESC, ordem, id LIMIT %s OFFSET %s',
+                                    (album, F9.FOTOS_POR_PAGINA, (pg - 1) * F9.FOTOS_POR_PAGINA)) if al else [])
     return T('identidade', request, u, aba=aba, abas=ABAS_ID, campos=CAMPOS_ID, usos=USOS, cx=cx, max_conheca=MAX_CONHECA, **extra,
              redes_txt='\n'.join(f'{a} | {b}' for a, b in ident.get('redes', [])),
              numeros_txt='\n'.join(f'{a} | {b}' for a, b in cx.get('numeros', [])))
@@ -625,8 +635,6 @@ async def identidade_midia(request: Request):
         if tem_arquivo:
             url = await salvar_midia(request, u, arq, uso, alt, credito)
         elif atual and atual.get('url'):
-            if not alt or len(alt) < 5:
-                raise ValueError('O texto alternativo é obrigatório (pelo menos 5 caracteres).')
             url = atual['url']
         else:
             raise ValueError('Escolha o arquivo da imagem.')
@@ -691,8 +699,6 @@ async def vereador_adm_post(request: Request, vid: int):
             foto, alt, cred = '', '', ''
         elif arq is not None and hasattr(arq, 'read') and getattr(arq, 'filename', ''):
             foto = await salvar_midia(request, u, arq, 'vereador', alt, cred)
-        elif foto and len(alt) < 5:
-            raise ValueError('A foto precisa de texto alternativo (pelo menos 5 caracteres).')
     except ValueError as e:
         return ir(f'/admin/vereadores/{vid}', str(e), request)
     db.exe(b, 'UPDATE vereadores SET apelido=%s, partido=%s, bio=%s, contato=%s, foto_url=%s, foto_alt=%s, foto_credito=%s WHERE id=%s',

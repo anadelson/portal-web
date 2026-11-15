@@ -276,7 +276,7 @@ checa(c and '<script' not in c['html'] and 'style=' not in c['html'] and 'class=
 checa(c and 'Texto forte' in c['texto'], 'texto puro derivado do HTML')
 t = tok(pm, f"/admin/conteudos/{c['id']}")
 r = pm.post('/admin/conteudos/salvar', data={'csrf': t, 'id': c['id'], 'tipo': 'Página', 'secao': 'Serviços', 'titulo': 'Teste do editor', 'texto': '', 'html': '<p>x</p><figure><img src="/midia/' + 'a' * 32 + '.png" alt=""></figure>', 'classe': 'serv', 'acao': 'rascunho'}, follow_redirects=True)
-checa('sem texto alternativo' in r.text, 'imagem sem texto alternativo é recusada')
+checa('sem texto alternativo' not in r.text and 'alt=""' in (db.um(PM, 'SELECT html FROM conteudos WHERE id=%s', (c['id'],))['html']), 'imagem sem texto alternativo é aceita como decorativa (opcional desde 14/11/2026)')
 r = pm.post('/admin/editor/imagem', data={'csrf': tok(pm, '/admin/conteudos/novo'), 'alt': 'Imagem de teste do editor', 'credito': 'Teste'}, files={'arquivo': ('i.png', png(), 'image/png')})
 img = r.json().get('url', '')
 checa(img.startswith('/midia/'), 'envio de imagem do editor')

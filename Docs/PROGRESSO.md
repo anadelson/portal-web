@@ -2148,3 +2148,33 @@ Correções:
   - a credencial do IEG-M chegou ao nó (ordem 8 feita às 13h34), e o diagnóstico no nó deu legível com HTTP 200;
   - o teste do painel não fazia requisição porque, no órgão novo, o IEG-M começa em modo **manual**, o padrão do catálogo; o administrador liga em Painel de indicadores → Município e gestão → IEG-M → Modo de atualização;
   - o INEP no nó continua dependendo do pacote novo ou do contorno no `.env`.
+
+## 15/11/2026 — Ajustes pedidos pelo órgão: notícias, comunicados, álbuns, Conheça e portal oculto (ramo `ajustes-noticias-albuns`, código)
+- **Data da notícia e do comunicado:** dois campos opcionais (data e hora) no lugar do `datetime-local`, que o navegador bloqueava quando ficava meio preenchido. Data em branco = momento da aprovação/publicação; hora em branco = 08h00.
+- **Texto alternativo opcional** em todas as imagens do painel:
+  - capa da notícia, álbuns, perfis do Conheça, vereadores, imagens da identidade e imagens no corpo do texto;
+  - vazio = imagem decorativa (`alt=""`); na galeria, usa o título da foto ou "Foto N do álbum …";
+  - a migração 032 remove a trava de 5 caracteres no banco (`album_fotos` e `perfil_fotos`).
+- **Ponto focal:** no lugar dos dois números, clique na imagem (ou setas do teclado). As prévias dos recortes acompanham na hora, inclusive para a imagem recém-escolhida.
+- **Arquivados:** "Todos" deixa de mostrar o que está arquivado em notícias/páginas, comunicados (nova aba "Arquivados") e Carta de Serviços (nova aba "Arquivadas").
+- **Tipos de comunicado e categorias de álbum:** lista editável (adicionar, renomear, remover) no lugar do texto separado por vírgulas.
+  - Renomear um tipo atualiza os comunicados que o usam; um comunicado antigo mantém o tipo removido.
+  - Remover uma categoria deixa os álbuns dela sem categoria.
+- **Comunicados no portal:** título à esquerda e etiqueta do tipo à direita.
+- **Conheça:**
+  - sai do painel a seção "Fotos do bloco", que o portal não usava mais (as fotos ao lado são as dos perfis em destaque);
+  - gentílico e fundação/emancipação voltam a aparecer (o bloco mostrava só 6 números; agora até 8);
+  - botão "Galeria de fotos" quando há álbum publicado e o bloco da galeria está desligado.
+- **Álbuns:**
+  - no painel, grade de miniaturas paginada (48 por página), edição de uma foto por vez e envio de até 20 fotos de uma vez;
+  - no portal, álbum paginado (40 por página).
+- **Bloco novo "Galeria de fotos"** na página inicial. Entra oculto; o órgão liga e posiciona em Página inicial.
+- **Portal oculto enquanto é configurado** (Funcionalidades → Visibilidade do portal):
+  - quem não entrou no painel do órgão vê "Portal em preparação" (HTTP 503, `noindex`);
+  - a equipe vê o portal com uma faixa de aviso;
+  - a API pública e o login seguem abertos;
+  - o ativador passou a conferir o domínio por `/admin/login`, para não retirar o domínio de um portal oculto.
+- **Testes:**
+  - nova suíte `tests/teste_ajustes_portal.py`;
+  - as suítes antigas que exigiam texto alternativo e "Fotos do bloco" foram atualizadas para a regra nova.
+- **Não implantado** (aguarda aprovação).

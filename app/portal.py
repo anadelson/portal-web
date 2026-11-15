@@ -86,6 +86,9 @@ def home(request: Request):
     dados['servicos_top'] = CT.mais_acessados(b, 6) if ctx['mods'].get('carta') else []
     dados['noticias8'] = F8.noticias_home(b) if ctx['mods'].get('noticias') else None
     dados['perfis'] = F8.perfis(b, destaque=True)[:3]
+    from . import portal_fase9 as P9  # galeria: últimos álbuns; sem o bloco "Galeria de fotos" visível, o Conheça mostra o botão
+    dados['albuns'] = P9.albuns_publicos(b, limite=4)
+    dados['bloco_fotos'] = any(x['chave'] == 'fotos' for x in blocos)
     eds = F8.editorias(b)
     nome_org = 'Câmara' if o['tipo'] == 'legislativo' else 'Prefeitura'
     if dados.get('noticias8'):
@@ -328,3 +331,12 @@ async def acesso_enviar(request: Request):
     db.exe(ctx['orgao']['banco'], 'INSERT INTO esic (protocolo, tipo, categoria, assunto, texto, nome, email, servico_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
            (prot, tipo, f.get('categoria', ''), f['assunto'][:200], f['texto'][:5000], f['nome'][:120], f['email'][:120], sid))
     return ir(f'/acesso?protocolo={prot}', f'Recebido. Guarde o protocolo {prot}.', request)
+
+
+# Portal oculto enquanto é configurado: o filtro (web.PortalOculto) manda para cá quem não entrou no painel deste órgão
+@r.api_route('/_em_preparacao', methods=['GET', 'POST', 'HEAD'])
+def em_preparacao(request: Request):
+    o = request.state.orgao
+    ident = db.cfg(o['banco'], 'identidade', {}) or {}
+    return templates.TemplateResponse(request, 'portal/em_preparacao.html', dict(request=request, orgao=o, ident=ident, cor=ident.get('cor') or o['cor']),
+                                      status_code=503, headers={'Retry-After': '86400', 'Cache-Control': 'no-store'})
