@@ -158,3 +158,22 @@
     atualiza();
   });
 })();
+
+/* Rodapé (16/11/2026): o mascote nunca cobre texto — reduz a altura até caber na área livre abaixo da coluna do lado escolhido */
+(function () {
+  var fx = document.querySelector('.f2-faixa'), m = fx && fx.querySelector('.f2-masc img');
+  if (!m) return;
+  var dir = fx.querySelector('.f2-masc').classList.contains('dir');
+  function ajustar() {
+    m.style.height = '';
+    if (window.innerWidth < 768) return;  // no celular a faixa reserva espaço para o mascote (CSS)
+    var cols = fx.querySelectorAll('.f2 .fcol'); if (!cols.length) return;
+    var c = dir ? cols[cols.length - 1] : cols[0], fim = c.lastElementChild || c;
+    var livre = fx.getBoundingClientRect().bottom - fim.getBoundingClientRect().bottom - 24;
+    var alvo = parseFloat(getComputedStyle(m).height);
+    if (livre < alvo) m.style.height = Math.max(0, Math.floor(livre)) + 'px';
+    m.hidden = livre < 48;  // sem espaço útil: não mostra
+  }
+  if (m.complete) ajustar(); else m.addEventListener('load', ajustar);
+  window.addEventListener('resize', ajustar);
+})();

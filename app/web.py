@@ -328,9 +328,30 @@ LARGURA_PADRAO = 1760
 def largura_css(v):
     return 'none' if v == 'tela' else f'{int(v)}px'
 
+IMAGENS_IDENT = ('brasao', 'mascote', 'hero', 'login', 'rodape')
+
+def ident_valida(o, ident):
+    """Imagem cujo arquivo não existe mais vira "sem imagem" (o fallback de cada lugar), nunca <img> quebrada."""
+    from pathlib import Path
+    from .imagens import existe_midia
+    pasta = Path(config.DADOS_DIR) / o['slug'] / 'midia'
+    for k in IMAGENS_IDENT:
+        if isinstance(ident.get(k), dict) and not existe_midia(pasta, ident[k].get('url')):
+            ident[k] = None
+    sd = ident.get('sede')
+    if isinstance(sd, dict) and isinstance(sd.get('foto'), dict) and not existe_midia(pasta, sd['foto'].get('url')):
+        sd['foto'] = None
+    fav = ident.get('favicon')
+    if isinstance(fav, dict) and not existe_midia(pasta, fav.get('32')):
+        ident['favicon'] = None
+    cx = ident.get('conheca')
+    if isinstance(cx, dict) and isinstance(cx.get('fotos'), list):
+        cx['fotos'] = [x for x in cx['fotos'] if isinstance(x, dict) and existe_midia(pasta, x.get('url'))]
+    return ident
+
 def ctx_orgao(request: Request, **extra):
     o = request.state.orgao
-    ident = db.cfg(o['banco'], 'identidade', {}) or {}
+    ident = ident_valida(o, db.cfg(o['banco'], 'identidade', {}) or {})
     mods = modulos_do_orgao(o)
     cor = ident.get('cor') or o['cor']
     tokens = {'cor': cor, 'cor_escura': mistura(cor, '#000000', .3), 'cor_clara': mistura(cor, '#FFFFFF', .88),
@@ -345,9 +366,12 @@ def ctx_orgao(request: Request, **extra):
     except Exception:  # banco ainda sem a migração da Fase 8
         barras = {'institucional': [], 'portal': []}
     acess = db.cfg(o['banco'], 'acessibilidade', {}) or {}
+    from . import rodape as ROD
+    rod = ROD.conf(o['banco'])
     d = dict(request=request, orgao=o, ident=ident, mods=mods, cor=cor, tokens=tokens, vizinhos=vizinhos(o), leg=o['tipo'] == 'legislativo', atual=request.url.path[3:] or '/', ao_vivo=ao_vivo,
              defeso=defeso, eleicao=eleicao.conf(o['banco']), hoje=config.hoje(), barras=barras, vlibras=acess.get('vlibras', True),
-             aviso_faixa=db.cfg(o['banco'], 'aviso_faixa', {}) or {})
+             aviso_faixa=db.cfg(o['banco'], 'aviso_faixa', {}) or {},
+             rod=rod, rod_style=ROD.css_vars(ident, o['tipo']), masc_rodape=ROD.mascote_visivel(ident, rod, defeso))
     d.update(extra)
     return d
 
@@ -429,7 +453,7 @@ def tela_acesso(request, passo=None, console=False):
         return {'console': True, 'nome': f'{config.NOME_PLATAFORMA} — plataforma', 'titulo': v.get('titulo') or 'Console do gestor', 'brasao': '', 'cor': '#1B1E30',
                 'fundo': v.get('fundo'), 'passo': passo, 'acao': '/login', 'esqueci': '/esqueci', 'govbr': '/govbr', 'voltar': '/login', 'contato': ''}
     o = request.state.orgao
-    ident = db.cfg(o['banco'], 'identidade', {}) or {}
+    ident = ident_valida(o, db.cfg(o['banco'], 'identidade', {}) or {})
     nome = ident.get('nome') or o['nome']
     return {'console': False, 'nome': nome, 'titulo': ident.get('login_titulo') or f'Área restrita — {nome}', 'brasao': (ident.get('brasao') or {}).get('url', ''),
             'cor': ident.get('cor') or o['cor'], 'fundo': ident.get('login'), 'passo': passo, 'acao': '/admin/login', 'esqueci': '/admin/esqueci',

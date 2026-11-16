@@ -220,26 +220,40 @@ form.campos input,form.campos select,form.campos textarea{font:inherit;font-weig
 .migalha{font-size:var(--fs-peq);color:var(--sub);display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
 
 /* Rodapé em 4 faixas */
-footer.rodape{background:var(--escuro);color:#C9D1D9;font-size:var(--fs-desc)}
+/* Cores do rodapé: padrão por tipo de órgão; com cor escolhida no painel (Tema e cores), o <footer> recebe as variáveis no atributo style */
+footer.rodape{--rod:var(--escuro);--rod-rgb:23 33 43;--rod-f1:#1E2B37;--rod-bd:#2E3A46;--rod-f4:#121A22;--rod-borda:#3A4856;--rod-borda2:#4B5A68;--rod-viz:#3A4856;--rod-bd3:#2E3A46;--rod-tit:#F0B429}
+body.legislativo footer.rodape{--rod:#16291A;--rod-rgb:22 41 26;--rod-f1:#1F3A22;--rod-bd:#2C4A30;--rod-f4:#0F1F12;--rod-borda:#3A4856;--rod-borda2:#4B5A68;--rod-viz:#3A5A3E;--rod-bd3:#2E3A46;--rod-tit:#F7C948}
+footer.rodape{background:var(--rod);color:#C9D1D9;font-size:var(--fs-desc)}
 footer.rodape a{color:#fff;text-underline-offset:3px}
-.f1{background:#1E2B37;border-bottom:1px solid #2E3A46}.f1 .int{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;justify-content:space-between;padding-top:22px;padding-bottom:22px}
+.f1{background:var(--rod-f1);border-bottom:1px solid var(--rod-bd)}.f1 .int{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;justify-content:space-between;padding-top:22px;padding-bottom:22px}
 .f-id{display:flex;align-items:center;gap:14px;min-width:0}.f-id>span:last-child{display:flex;flex-direction:column}.f-id strong{font-size:var(--fs-h3-g);color:#fff;line-height:1.2}.f-id span span{font-size:var(--fs-peq)}
 .f-bras{width:60px;height:60px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}.f-bras img{width:46px;height:auto}
 .f-bot{display:flex;flex-wrap:wrap;gap:10px}
 .f-radar,.f-aval{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:0 16px;border-radius:10px;font-weight:700;font-size:var(--fs-peq);text-decoration:none}
-footer.rodape .f-radar{background:#F0B429;color:#17212B}footer.rodape .f-aval{border:1px solid #4B5A68;color:#fff}
+footer.rodape .f-radar{background:#F0B429;color:#17212B}footer.rodape .f-aval{border:1px solid var(--rod-borda2);color:#fff}
 .f2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:32px 40px;padding-top:40px;padding-bottom:28px}
-.fcol{min-width:0}.fcol h2{margin:0 0 12px;font-size:var(--fs-meta);font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#F0B429}
+.fcol{min-width:0}.fcol h2{margin:0 0 12px;font-size:var(--fs-meta);font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--rod-tit)}
 .fcol ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}.fcol ul a{display:inline-block;padding:5px 0;color:#C9D1D9;text-decoration:none}.fcol ul a:hover{color:#fff;text-decoration:underline}
-.f-ic{gap:10px!important}.f-ic li{display:flex;gap:10px;align-items:flex-start;line-height:1.45}.f-ic .ic{color:#F0B429;margin-top:2px}
-.f-viz{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid #3A4856;background:#1E2B37;text-decoration:none}
+.f-ic{gap:10px!important}.f-ic li{display:flex;gap:10px;align-items:flex-start;line-height:1.45}.f-ic .ic{color:var(--rod-tit);margin-top:2px}
+.f-viz{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--rod-viz);background:var(--rod-f1);text-decoration:none}
 .f-viz span{display:flex;flex-direction:column}.f-viz small{font-size:var(--fs-etq);color:#C9D1D9}
-.f3{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding-top:18px;padding-bottom:18px;border-top:1px solid #2E3A46}
-.f-redes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:var(--fs-peq)}.f-redes a,.f-topo{padding:6px 12px;border:1px solid #3A4856;border-radius:999px;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:8px;min-height:40px}
-.f4{background:#121A22}.f4 .int{display:flex;flex-wrap:wrap;gap:6px 24px;justify-content:space-between;padding-top:16px;padding-bottom:24px;font-size:var(--fs-meta);line-height:1.5;color:#AEB8C2}
+.f3{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding-top:18px;padding-bottom:18px;border-top:1px solid var(--rod-bd3)}
+.f-redes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:var(--fs-peq)}.f-redes a,.f-topo{padding:6px 12px;border:1px solid var(--rod-borda);border-radius:999px;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:8px;min-height:40px}
+.f4{background:var(--rod-f4)}.f4 .int{display:flex;flex-wrap:wrap;gap:6px 24px;justify-content:space-between;padding-top:16px;padding-bottom:24px;font-size:var(--fs-meta);line-height:1.5;color:#AEB8C2}
 .f-legal{display:flex;flex-direction:column;gap:4px}.f-legal a{display:inline-flex;align-items:center;gap:6px;color:#C9D1D9;font-weight:600}.f-cred{max-width:70ch}
-body.legislativo footer.rodape{background:#16291A}body.legislativo .f1{background:#1F3A22;border-color:#2C4A30}body.legislativo .f4{background:#0F1F12}body.legislativo .f-viz{background:#1F3A22;border-color:#3A5A3E}
-body.legislativo .f2 .fcol h2,body.legislativo .f-ic .ic{color:#F7C948}
+
+/* Faixa das colunas em camadas (16/11/2026): 0 imagem de fundo, 1 camada da cor do rodapé, 2 mascote, 3 textos */
+.f2-faixa{position:relative;isolation:isolate;overflow:hidden}
+.f2-fundo{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover}
+.f2-camada{position:absolute;inset:0;z-index:1;background-color:rgb(var(--rod-rgb) / var(--rodape-camada,1))}
+.f2-masc{position:absolute;inset:0;z-index:2;pointer-events:none}.f2-masc .int{position:relative;height:100%}
+.f2-masc img{position:absolute;bottom:0;height:var(--masc-alt,220px);width:auto;max-width:22%;object-fit:contain;object-position:bottom;opacity:var(--masc-op,1)}
+.f2-masc.esq img{left:var(--margem)}.f2-masc.dir img{right:var(--margem)}
+.f2-faixa>.f2{position:relative;z-index:3}
+@media (max-width:767px){.f2-masc{display:none}.f2-masc.cel{display:block}.f2-masc.cel img{height:min(var(--masc-alt,220px),140px);max-width:45%}.f2-faixa.com-masc-cel>.f2{padding-bottom:calc(min(var(--masc-alt,220px),140px) + 16px)}}
+.hc .f2-fundo,.hc .f2-masc{display:none}
+@media (prefers-contrast:more){.f2-fundo,.f2-masc{display:none}.f2-camada{background-color:rgb(var(--rod-rgb))}}
+@media print{.f2-fundo,.f2-masc{display:none}}
 
 /* Preferências de acessibilidade */
 .sub a{text-decoration:underline!important;text-underline-offset:3px}
@@ -439,7 +453,7 @@ nav.menu{flex:1 1 auto;min-width:0}nav.menu ul{flex-wrap:nowrap;justify-content:
 div.avaliar{margin-top:32px}div.avaliar form.aval-form{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--bd);border-radius:14px;padding:14px 18px}
 div.avaliar form.aval-form details{flex:1 1 100%}div.avaliar form.aval-form textarea{width:100%;font:inherit;padding:8px;border:1px solid #6B7684;border-radius:8px;margin-top:6px}
 .aval-msg{margin:0;background:#E7F4EC;border:1px solid #9BD3AE;color:#14532D;border-radius:14px;padding:14px 18px;font-weight:600}
-.f-mascote{height:56px;width:auto;margin-left:8px}.f-redes a{display:inline-flex;align-items:center;gap:6px;min-height:44px}
+.f-redes a{display:inline-flex;align-items:center;gap:6px;min-height:44px}
 @media (max-width:640px){.f-redes .rede-nome{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}}
 /* Fase 9 — Nas redes e álbuns */
 .redes-feed .feed{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:14px}
