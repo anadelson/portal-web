@@ -168,20 +168,41 @@ def provedor_para(designacao, etapa):
     raise NaoConfigurado('Signatário com token/cartão (A3): baixe o PDF, assine no seu computador e envie o arquivo assinado.')
 
 # ---------- assinar e validar ----------
-def assinar(pdf: bytes, etapa: str, designacao, motivo: str, local: str) -> bytes:
-    """Acrescenta uma assinatura PAdES (atualização incremental) com carimbo do tempo e, quando possível, LTV."""
+def assinar(pdf: bytes, etapa: str, designacao, motivo: str, local: str, carimbo: dict | None = None) -> bytes:
+    """Acrescenta uma assinatura PAdES (atualização incremental) com carimbo do tempo e, quando possível, LTV.
+    `carimbo` (Diário, 16/11/2026): o campo da assinatura ganha um carimbo visível em cada página (carimbo_assinatura.py),
+    com titular e AC do próprio certificado e a hora gravada na assinatura."""
     from pyhanko.sign import signers, fields
     from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
     signer = provedor_para(designacao, etapa).signer()
     ts = carimbador()
     vc = contexto_validacao()
     campo = f'Assinatura_{etapa}_{secrets.token_hex(3)}'
+    momento = None
+    if carimbo:
+        from . import carimbo_assinatura as CA
+        CA.ajustes_pyhanko()
+        momento = CA.agora()
+        cert = signer.signing_cert
+        titular = cert.subject.native.get('common_name') or cert.subject.human_friendly
+        ac = cert.issuer.native.get('common_name') or cert.issuer.human_friendly
+
+    class _PdfSigner(signers.PdfSigner):
+        """Usa na assinatura exatamente a hora mostrada no carimbo (o pyHanko pegaria a hora de novo, segundos depois)."""
+        def init_signing_session(self, pdf_out, existing_fields_only=False):
+            sessao = super().init_signing_session(pdf_out, existing_fields_only)
+            if momento is not None:
+                sessao.system_time = momento
+            return sessao
+
     def tentar(ltv):
         meta = signers.PdfSignatureMetadata(field_name=campo, md_algorithm='sha256', subfilter=fields.SigSeedSubFilter.PADES, reason=motivo[:120], location=local[:80],
                                             embed_validation_info=ltv, validation_context=vc if ltv else None, use_pades_lta=False)
         w = IncrementalPdfFileWriter(io.BytesIO(pdf))
+        if carimbo:
+            CA.criar_campo(w, campo, carimbo, titular, ac, momento, ts is not None)
         out = io.BytesIO()
-        signers.sign_pdf(w, meta, signer=signer, timestamper=ts, output=out)
+        _PdfSigner(meta, signer=signer, timestamper=ts).sign_pdf(w, output=out)
         return out.getvalue()
     try:
         return tentar(True)
@@ -211,6 +232,7 @@ def validar(pdf: bytes):
                         'carimbo': ts.timestamp.isoformat() if ts is not None and getattr(ts, 'timestamp', None) else None,
                         'carimbo_valido': bool(ts and ts.valid and ts.intact) if ts is not None else False,
                         'data_assinante': st.signer_reported_dt.isoformat() if getattr(st, 'signer_reported_dt', None) else None,
+                        'modificacao': getattr(getattr(st, 'modification_level', None), 'name', None), 'docmdp_ok': getattr(st, 'docmdp_ok', None),
                         'resumo': st.summary() if hasattr(st, 'summary') else ''})
         except Exception as e:
             res.append({'campo': sig.field_name, 'signatario': '?', 'integra': False, 'valida': False, 'confiavel': False, 'carimbo': None, 'carimbo_valido': False, 'erro': type(e).__name__})
