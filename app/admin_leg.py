@@ -5,7 +5,7 @@ import re
 from datetime import date, datetime
 from fastapi import APIRouter, Request, HTTPException
 from psycopg.types.json import Jsonb
-from . import config, db, legislativo as L, importar
+from . import config, db, legislativo as L, importar, aprovacao as AP
 from .admin import T
 from .catalogo import PODE
 from .coletores.comum import chave
@@ -176,7 +176,7 @@ def comissao(request: Request, cid: str):
 @r.post('/comissoes/{cid}')
 async def comissao_post(request: Request, cid: str):
     u = exige(request, 'editar'); b = leg_only(request); f = await ler_form(request)
-    acao = f.get('acao'); pub = u['perfil'] in PODE['publicar']
+    acao = f.get('acao'); pub = AP.pode_publicar(b, 'legislativo', u)
     try:
         if acao == 'salvar':
             if not f.get('nome'):
@@ -255,7 +255,7 @@ def sessao(request: Request, sid: str):
 @r.post('/sessoes/{sid}')
 async def sessao_post(request: Request, sid: str):
     u = exige(request, 'editar'); b = leg_only(request); f = await ler_form(request)
-    acao = f.get('acao'); pub = u['perfil'] in PODE['publicar']
+    acao = f.get('acao'); pub = AP.pode_publicar(b, 'legislativo', u)
     try:
         if acao == 'criar':
             if not f.get('nome') or not f.get('data'):
@@ -390,7 +390,7 @@ async def contas_post(request: Request):
                         (sid, ordem, f"Julgamento das contas do Prefeito, exercício {c['exercicio']} ({c['responsavel']}) — parecer prévio do TCESP: {c['tce_parecer'] or 'a informar'}", c['id']))['id']
             db.exe(b, 'UPDATE contas_julgamento SET pauta_item_id=%s WHERE id=%s', (it, c['id']))
             msg = 'Incluído na pauta (o parecer do TCESP só deixa de prevalecer por 2/3 dos membros — Constituição, art. 31, § 2º).'
-        elif acao == 'publicar' and u['perfil'] in PODE['publicar']:
+        elif acao == 'publicar' and AP.pode_publicar(b, 'legislativo', u):
             db.exe(b, 'UPDATE contas_julgamento SET publicado=TRUE WHERE id=%s', (int(f['contas']),)); msg = 'Publicado no portal.'
         else:
             raise HTTPException(403)

@@ -89,7 +89,7 @@ def perfil(request: Request, slug: str):
         raise HTTPException(404, 'Perfil não encontrado.')
     outros = [x for x in F.perfis(b) if x['id'] != p['id']][:3]
     return templates.TemplateResponse(request, 'portal/perfil.html', dict(ctx, p=p, fotos=F.fotos(b, p['id']), outros=outros,
-        videos=db.todos(b, 'SELECT * FROM perfil_videos WHERE perfil_id=%s ORDER BY ordem, id', (p['id'],)), legal='conheca'))
+        videos=db.todos(b, 'SELECT * FROM perfil_videos WHERE perfil_id=%s AND NOT aguarda_aprovacao ORDER BY ordem, id', (p['id'],)), legal='conheca'))
 
 # ---------- Legislação ----------
 def _leg_prefeitura(o):

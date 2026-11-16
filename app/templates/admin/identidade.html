@@ -104,16 +104,24 @@
 {% set sub = q.get('sub', '') %}
 {% if album or q.get('novo') %}
 {{ voltar('/admin/identidade?aba=fotos', 'Voltar aos álbuns') }}
+{% set direto = pode_publicar('fotos', (album.autor if album else '') or none) %}
+{% if album and (album.aguarda_aprovacao or album.comentario) %}<section class="cx form-tela situacao-aprov" aria-labelledby="h-sit"><h2 id="h-sit">Situação: <span class="chip {{ 'alerta' if album.aguarda_aprovacao }}">{{ 'Aguardando aprovação' if album.aguarda_aprovacao else 'Devolvido' }}</span></h2>
+{% if album.comentario and not album.aguarda_aprovacao %}<p class="msg" style="background:#FCEFD9">Comentário de quem aprova: {{ album.comentario }}</p>{% endif %}
+{% if album.aguarda_aprovacao and direto %}<form class="campos" method="post" action="/admin/identidade/fotos"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="album_id" value="{{ album.id }}">
+<p class="legal">Ao aprovar, o álbum vai ao ar com as fotos marcadas “aguardando aprovação”.</p>
+<label>Comentário para quem enviou (obrigatório para devolver)<textarea name="comentario" rows="2" maxlength="2000"></textarea></label>
+<div class="acoes"><button class="btn" name="acao" value="aprovar">Aprovar e publicar</button><button class="btn sec" name="acao" value="devolver">Devolver</button></div></form>{% endif %}</section>{% endif %}
 <section class="cx form-tela"><h2>Dados do álbum</h2><form class="campos" method="post" action="/admin/identidade/fotos"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="album">{% if album %}<input type="hidden" name="album_id" value="{{ album.id }}">{% endif %}
 <label>Título<input name="titulo" value="{{ album.titulo if album else '' }}" maxlength="160" required></label><label>Descrição<textarea name="descricao" rows="2">{{ album.descricao if album else '' }}</textarea></label>
 <label>Categoria<select name="categoria_id"><option value="">—</option>{% for c in categorias %}<option value="{{ c.id }}" {{ 'selected' if album and album.categoria_id == c.id }}>{{ c.nome }}</option>{% endfor %}</select></label>
-<label class="opc" style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="publicado" value="1" {{ 'checked' if album and album.publicado }}> Publicado</label>{{ acoes('Salvar álbum', '/admin/identidade?aba=fotos') }}</form></section>
+<label class="opc" style="flex-direction:row;gap:6px;font-weight:400"><input type="checkbox" name="publicado" value="1" {{ 'checked' if album and (album.publicado or album.aguarda_aprovacao) }}> {{ 'Publicado' if direto else 'Publicar (vai para aprovação)' }}</label>
+<p class="legal">Publicação de fotos e álbuns: {{ quem_aprova('fotos') }}.{% if not direto and album and album.publicado %} Se você alterar este álbum, ele sai do ar até a nova aprovação; fotos novas ficam fora do ar até a aprovação.{% endif %}</p>{{ acoes('Salvar álbum', '/admin/identidade?aba=fotos') }}</form></section>
 {% if album %}{% set base = '/admin/identidade?aba=fotos&album=' ~ album.id %}
 {% if foto %}{% set x = foto %}
 <section class="cx form-tela" id="foto"><div class="tela-cab"><h2 style="margin:0">Foto {{ x.titulo or ('nº ' ~ x.id) }}</h2><a class="btn sec" href="{{ base }}&amp;pg={{ pg }}#fotos">Voltar às fotos</a></div>
 <form class="campos" method="post" action="/admin/identidade/fotos"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="album_id" value="{{ album.id }}"><input type="hidden" name="foto_id" value="{{ x.id }}">
 <img src="{{ x.url }}" alt="" style="max-width:520px;width:100%;border-radius:10px">
-<p>{% if x.principal %}<span class="chip ok">capa do álbum</span> {% endif %}{% if x.tem_pessoas and not x.autorizacao_imagem %}<span class="chip erro">Não publica: falta a autorização de uso de imagem.</span>{% endif %}</p>
+<p>{% if x.aguarda_aprovacao %}<span class="chip alerta">aguardando aprovação</span> {% endif %}{% if x.principal %}<span class="chip ok">capa do álbum</span> {% endif %}{% if x.tem_pessoas and not x.autorizacao_imagem %}<span class="chip erro">Não publica: falta a autorização de uso de imagem.</span>{% endif %}</p>
 <div class="grade2"><label>Título<input name="titulo" value="{{ x.titulo }}"></label><label>Crédito<input name="credito" value="{{ x.credito }}"></label></div>
 <label>Texto alternativo (opcional)<input name="alt" value="{{ x.alt }}"></label><label>Descrição<input name="descricao" value="{{ x.descricao }}"></label>
 <div class="grade2"><label>Licença<select name="licenca">{% for l in licencas %}<option {{ 'selected' if x.licenca == l }}>{{ l }}</option>{% endfor %}</select></label><label>Categoria da foto<select name="categoria_id"><option value="">a do álbum</option>{% for c in categorias %}<option value="{{ c.id }}" {{ 'selected' if x.categoria_id == c.id }}>{{ c.nome }}</option>{% endfor %}</select></label></div>
@@ -122,7 +130,7 @@
 {% else %}
 <section class="cx" id="fotos"><div class="tela-cab"><h2 style="margin:0">Fotos do álbum ({{ total_fotos }})</h2>{% if paginas > 1 %}<span class="legal">página {{ pg }} de {{ paginas }}</span>{% endif %}</div>
 {% if fotos %}<ul class="grade-fotos">{% for x in fotos %}<li><a href="{{ base }}&amp;foto={{ x.id }}&amp;pg={{ pg }}#foto"><img src="{{ x.url }}" alt="" loading="lazy">
-<span class="gf-leg">{{ x.titulo or ('Foto nº ' ~ x.id) }}</span>{% if x.principal %}<span class="chip ok gf-chip">capa</span>{% elif x.tem_pessoas and not x.autorizacao_imagem %}<span class="chip erro gf-chip" title="Falta a autorização de uso de imagem">não publica</span>{% endif %}<span class="sr"> — editar</span></a></li>{% endfor %}</ul>
+<span class="gf-leg">{{ x.titulo or ('Foto nº ' ~ x.id) }}</span>{% if x.aguarda_aprovacao %}<span class="chip alerta gf-chip">aguardando aprovação</span>{% elif x.principal %}<span class="chip ok gf-chip">capa</span>{% elif x.tem_pessoas and not x.autorizacao_imagem %}<span class="chip erro gf-chip" title="Falta a autorização de uso de imagem">não publica</span>{% endif %}<span class="sr"> — editar</span></a></li>{% endfor %}</ul>
 {% if paginas > 1 %}<nav class="paginas" aria-label="Páginas de fotos">{% if pg > 1 %}<a class="btn sec" href="{{ base }}&amp;pg={{ pg - 1 }}#fotos">‹ Anterior</a>{% endif %}<span>{{ pg }} / {{ paginas }}</span>{% if pg < paginas %}<a class="btn sec" href="{{ base }}&amp;pg={{ pg + 1 }}#fotos">Próxima ›</a>{% endif %}</nav>{% endif %}
 {% else %}<p class="vazio-tela">Nenhuma foto ainda. Envie abaixo.</p>{% endif %}</section>
 <section class="cx form-tela"><form class="campos" method="post" action="/admin/identidade/fotos" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="album_id" value="{{ album.id }}"><input type="hidden" name="acao" value="foto"><h2>Enviar fotos</h2>
@@ -145,7 +153,7 @@
 <div class="lista-nova"><label>Nova categoria<input name="novo" maxlength="60" placeholder="Ex.: Eventos, Turismo, Obras"></label><label class="opc"><input type="checkbox" name="novo_susp" value="1"> Suspender no período eleitoral</label><button class="btn sec" name="adicionar" value="1">Adicionar</button></div>
 {{ acoes('Salvar alterações') }}</form></section>
 {% elif albuns %}<div class="tabela"><table><caption class="sr">Álbuns</caption><thead><tr><th scope="col">Álbum</th><th scope="col">Categoria</th><th scope="col">Fotos</th><th scope="col">Situação</th><th scope="col"><span class="sr">Ações</span></th></tr></thead><tbody>
-{% for a in albuns %}<tr><td><a href="/admin/identidade?aba=fotos&amp;album={{ a.id }}">{{ a.titulo }}</a></td><td>{{ a.categoria or '—' }}</td><td>{{ a.n }}</td><td>{{ 'publicado' if a.publicado else 'não publicado' }}</td><td class="acoes-linha"><a class="btn sec" href="/admin/identidade?aba=fotos&amp;album={{ a.id }}">Editar</a></td></tr>{% endfor %}</tbody></table></div>
+{% for a in albuns %}<tr><td><a href="/admin/identidade?aba=fotos&amp;album={{ a.id }}">{{ a.titulo }}</a></td><td>{{ a.categoria or '—' }}</td><td>{{ a.n }}</td><td>{% if a.aguarda_aprovacao %}<span class="chip alerta">aguardando aprovação</span>{% elif a.publicado %}publicado{% else %}não publicado{% endif %}</td><td class="acoes-linha"><a class="btn sec" href="/admin/identidade?aba=fotos&amp;album={{ a.id }}">Editar</a></td></tr>{% endfor %}</tbody></table></div>
 {% else %}{{ vazio('Nenhum álbum cadastrado.', '/admin/identidade?aba=fotos&novo=1', 'Novo álbum') }}{% endif %}
 {% endif %}
 {% endif %}

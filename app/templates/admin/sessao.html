@@ -24,10 +24,10 @@
 <section class="cx"><h2>4. Ata</h2><form class="campos" method="post" action="/admin/sessoes/{{ s.id }}" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}"><label>Texto da ata<textarea name="ata" rows="8">{{ s.ata }}</textarea></label><div class="grade2"><label>PDF da ata assinada (opcional)<input type="file" name="arquivo" accept="application/pdf"></label><label>Descrição do PDF<input name="descricao"></label></div><button class="btn sec" name="acao" value="ata">Salvar ata</button></form>
 {% if docs %}<ul>{% for d in docs %}<li><a href="/documento/{{ d.arquivo }}">{{ d.titulo }}</a></li>{% endfor %}</ul>{% endif %}</section>
 
-{% if pode('publicar') %}<section class="cx"><h2>5. Publicação no portal (separada)</h2><form class="acoes" method="post" action="/admin/sessoes/{{ s.id }}"><input type="hidden" name="csrf" value="{{ C }}">
+{% if pode_publicar('legislativo') %}<section class="cx"><h2>5. Publicação no portal (separada)</h2><form class="acoes" method="post" action="/admin/sessoes/{{ s.id }}"><input type="hidden" name="csrf" value="{{ C }}">
 <button class="btn" name="acao" value="pub_pauta" {{ 'disabled' if s.pauta_publicada }}>{{ 'Pauta publicada' if s.pauta_publicada else 'Publicar pauta' }}</button>
 <button class="btn" name="acao" value="pub_presenca" {{ 'disabled' if s.presenca_publicada }}>{{ 'Presença publicada' if s.presenca_publicada else 'Publicar presença' }}</button>
 <button class="btn" name="acao" value="pub_votacao" {{ 'disabled' if s.votacao_publicada }}>{{ 'Votação publicada' if s.votacao_publicada else 'Publicar votação nominal' }}</button>
 <button class="btn" name="acao" value="pub_ata" {{ 'disabled' if s.ata_publicada }}>{{ 'Ata publicada' if s.ata_publicada else 'Publicar ata' }}</button></form>
-<p class="legal">Depois de publicada, a votação não pode mais ser alterada. O perfil de cada vereador soma só presenças e votos de sessões publicadas.</p></section>{% endif %}
+<p class="legal">Depois de publicada, a votação não pode mais ser alterada. O perfil de cada vereador soma só presenças e votos de sessões publicadas.</p></section>{% else %}<section class="cx"><h2>5. Publicação no portal (separada)</h2><p class="legal">Publicação dos atos da Câmara: {{ quem_aprova('legislativo') }}. Você registra; quem aprova confere e publica.</p></section>{% endif %}
 {% endif %}<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.sessoes }}</p>{% endblock %}

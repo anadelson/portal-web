@@ -1,0 +1,22 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, acoes with context %}
+{% block h1 %}Aprovação para publicar{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+{{ cab('Escolha, módulo a módulo, se o que é escrito no painel vai direto ao ar ou se precisa da aprovação de alguém antes. A escolha vale para tudo o que for publicado a partir de agora; o que já está no ar não muda.') }}
+<form method="post" action="/admin/aprovacao" class="politicas"><input type="hidden" name="csrf" value="{{ C }}">
+{% for k, nome, desc in modulos %}{% set p = pol[k] %}
+<section class="cx form-tela pol" aria-labelledby="h-{{ k }}"><h2 id="h-{{ k }}">{{ nome }}</h2><p class="legal">{{ desc }}</p>
+<fieldset class="pol-modo"><legend>Para publicar</legend>
+<label><input type="radio" name="{{ k }}_modo" value="direto" {{ 'checked' if not p.exige }}> <span><strong>Publica direto</strong> — quem escreve (editor, publicador ou administrador) publica sem pedir aprovação.</span></label>
+<label><input type="radio" name="{{ k }}_modo" value="aprovacao" {{ 'checked' if p.exige }}> <span><strong>Exige aprovação</strong> — quem não está na lista abaixo envia para aprovação; só quem aprova publica.</span></label></fieldset>
+<div class="pol-quem">
+<fieldset><legend>Quem aprova: perfis</legend><div class="pol-opcoes">{% for pf in perfis_aprov %}<label><input type="checkbox" name="{{ k }}_perfil_{{ pf }}" value="1" {{ 'checked' if pf in p.perfis }}> <span>{{ PERFIS[pf] }}</span></label>{% endfor %}</div></fieldset>
+<fieldset><legend>Quem aprova: pessoas (além dos perfis)</legend>{% if pessoas %}<div class="pol-opcoes">{% for x in pessoas %}<label><input type="checkbox" name="{{ k }}_usuario_{{ x.id }}" value="1" {{ 'checked' if x.id in p.usuarios }}> <span>{{ x.nome }} <small>({{ PERFIS[x.perfil] }})</small></span></label>{% endfor %}</div>{% else %}<p class="legal">Nenhum usuário ativo com perfil que possa aprovar.</p>{% endif %}</fieldset>
+<label><input type="checkbox" name="{{ k }}_outro" value="1" {{ 'checked' if p.outro_aprova }}> <span>Quem escreveu não aprova o próprio conteúdo (outra pessoa da lista precisa aprovar)</span></label>
+</div>
+<p class="legal pol-atual">Hoje: {{ quem_aprova(k) }}{{ ' · quem escreveu não aprova o próprio' if p.exige and p.outro_aprova }}.</p>
+</section>{% endfor %}
+{{ acoes('Salvar política de aprovação') }}</form>
+<section class="cx"><h2>Com regras próprias (não mudam aqui)</h2><ul>{% for n, d in regras %}<li><strong>{{ n }}:</strong> {{ d }}</li>{% endfor %}</ul>
+<p class="legal">As travas do período eleitoral valem nos dois modos: conteúdo vedado não vai ao ar no defeso, mesmo publicado direto.</p></section>
+<p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.aprovacao }}</p>
+{% endblock %}
