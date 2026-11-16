@@ -1,5 +1,5 @@
 {% extends 'admin/base.html' %}{% from 'partials/editor.html' import editor %}{% from 'partials/foco.html' import foco %}{% block h1 %}{{ c.titulo if c else 'Novo conteúdo' }}{% endblock %}
-{% block conteudo %}{% set editavel = pode('editar') and (not c or c.situacao in ('rascunho','devolvido','revisao')) %}
+{% block conteudo %}{% set direto = pode_publicar('conteudos', c.autor if c else u.nome) %}{% set editavel = pode('editar') and (not c or c.situacao in ('rascunho','devolvido','revisao') or (direto and c.situacao in ('publicado','agendado'))) %}
 {% if c and c.situacao == 'devolvido' and c.comentario %}<p class="msg" style="background:#FCEFD9">Comentário do publicador: {{ c.comentario }}</p>{% endif %}
 <form class="campos" method="post" action="/admin/conteudos/salvar" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="id" value="{{ c.id if c else '' }}">
 {% if c %}<p>Situação: <span class="chip">{{ SITUACOES[c.situacao] }}</span> · autor: {{ c.autor }}</p>{% endif %}
@@ -24,12 +24,15 @@
 {% for k, v in CLASSES.items() %}<label style="flex-direction:row;gap:8px;font-weight:400"><input type="radio" name="classe" value="{{ k }}" {{ 'checked' if c and c.classe == k }} required> <span><strong>{{ v[0] }}</strong> — no defeso: {{ v[1] }}</span></label>{% endfor %}</fieldset>
 <label>Publicar em (vazio = ao aprovar)<input type="date" name="publicar_em" value="{{ c.publicar_em or '' if c else '' }}"></label>
 <label>Tirar do ar em (opcional)<input type="date" name="tirar_em" value="{{ c.tirar_em or '' if c else '' }}"></label>
-{% if c and c.situacao == 'revisao' and pode('publicar') %}<label>Comentário para o autor (obrigatório para devolver)<textarea name="comentario" rows="2"></textarea></label>{% endif %}
+{% if c and c.situacao == 'revisao' and direto %}<label>Comentário para o autor (obrigatório para devolver)<textarea name="comentario" rows="2"></textarea></label>{% endif %}
 <div class="acoes">
-{% if editavel and (not c or c.situacao in ('rascunho','devolvido')) %}<button class="btn sec" name="acao" value="rascunho">Salvar rascunho</button><button class="btn" name="acao" value="revisao">Enviar para revisão</button>{% endif %}
-{% if c and c.situacao == 'revisao' and pode('publicar') %}<button class="btn" name="acao" value="aprovar">Aprovar e publicar</button><button class="btn sec" name="acao" value="devolver">Devolver ao autor</button>{% endif %}
-{% if c and c.situacao in ('publicado','agendado') and pode('publicar') %}<button class="btn perigo" name="acao" value="arquivar">Tirar do ar e arquivar</button>{% endif %}
-</div></form>
+{% set pol = politica('conteudos') %}{% set exige = pol.exige %}
+{% if editavel and (not c or c.situacao in ('rascunho','devolvido')) %}<button class="btn sec" name="acao" value="rascunho">Salvar rascunho</button>{% if direto %}<button class="btn" name="acao" value="publicar">Publicar</button>{% endif %}{% if exige %}<button class="btn{{ ' sec' if direto }}" name="acao" value="revisao">Enviar para aprovação</button>{% endif %}{% endif %}
+{% if editavel and c and c.situacao in ('publicado','agendado') %}<button class="btn" name="acao" value="publicar">Salvar alterações (continua publicado)</button>{% endif %}
+{% if c and c.situacao == 'revisao' and direto %}<button class="btn" name="acao" value="aprovar">Aprovar e publicar</button><button class="btn sec" name="acao" value="devolver">Devolver ao autor</button>{% endif %}
+{% if c and c.situacao in ('publicado','agendado') and direto %}<button class="btn perigo" name="acao" value="arquivar">Tirar do ar e arquivar</button>{% endif %}
+</div>
+<p class="legal">Publicação de notícias e páginas: {{ quem_aprova('conteudos') }}.{% if exige and not direto %} {% if pol.outro_aprova and c and c.autor == u.nome %}Quem escreveu não aprova o próprio conteúdo: envie para aprovação.{% else %}Envie para aprovação quando estiver pronto.{% endif %}{% endif %}</p></form>
 
 {% if versoes %}<section class="cx" style="margin-top:18px"><h2>Histórico de versões</h2><ul>{% for v in versoes %}<li>{{ v.quando|br }} · {{ v.quem }} · {{ v.obs }}{% if v.dados and not loop.first %} · <a href="/admin/conteudos/{{ c.id }}/versao/{{ v.id }}">comparar com o atual e restaurar</a>{% endif %}</li>{% endfor %}</ul></section>{% endif %}
 <p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.noticias }}</p>{% endblock %}

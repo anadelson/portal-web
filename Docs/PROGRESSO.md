@@ -2306,3 +2306,20 @@ Pedido do usuário: no Diário Oficial o órgão já vem escolhido, de uma lista
   - conferido: portais e login 200; admin.css v=19 com as regras de alinhamento e admin.js com o Pré-formatar; colunas `html` e `orgao_id` criadas; app e worker de pé, sem erros nos logs.
 - **Falta (usuário):** cadastrar os órgãos do Diário da Prefeitura (Diário Oficial → Órgãos, ou "Trazer as secretarias cadastradas") antes do próximo envio de ato; até lá o envio mostra o aviso e é recusado.
 - **Falta:** o nó do prefbora recebe esta versão pelo pacote novo do console e o instalador (etapas 8 e 9: `s`).
+
+## 15/11/2026 — Aprovação para publicar: política por módulo (código; branch politica-aprovacao)
+Pedido do usuário: parametrizar a aprovação. Conforme a política, o conteúdo vai direto ao ar ou passa por autorização; no painel, escolher se publicar exige autorização e quem autoriza. Vale para tudo no portal, exceto o que tem regras próprias (como o Diário Oficial).
+- **Tela nova "Aprovação para publicar"** (Administração; só o administrador do órgão): para cada módulo, "Publica direto" ou "Exige aprovação". Com aprovação, quem aprova pode ser definido por perfil (Administrador, Publicador, Editor, Procuradoria) e/ou por pessoa. Há ainda a opção "quem escreveu não aprova o próprio". Aprovação sem ninguém para aprovar é recusada. Cada mudança vai para a auditoria. A política fica na configuração do órgão (`config.aprovacao`), sem código por órgão (`app/aprovacao.py`).
+- **Módulos:** Notícias e páginas; Comunicados; Conheça a cidade e Fotos e álbuns (Prefeitura); atos da Câmara no portal (pauta, presença, votação e ata, pautas e pareceres das comissões, contas; só na Câmara).
+- **Padrão = o que já acontecia:** notícias, comunicados e atos da Câmara com aprovação de Administrador/Publicador; Conheça e Fotos publicam direto. Nada muda até o administrador mudar.
+- **Com aprovação:**
+  - quem não aprova envia para aprovação. Tentar publicar direto vira pedido de aprovação;
+  - quem aprova publica direto, aprova ou devolve (devolver exige comentário, que o autor vê);
+  - quem não aprova altera algo já no ar: o item sai do ar até a nova aprovação (nada entra no ar sem aprovação);
+  - foto ou vídeo incluído ou alterado por quem não aprova fica fora do ar até a aprovação do perfil ou álbum;
+  - o menu mostra quantos itens esperam aprovação (Comunicados, Conheça e Fotos, além das Notícias).
+- **Publica direto:** quem edita publica (botão "Publicar") e corrige o que já está no ar sem tirar do ar.
+- **Ficam com regras próprias (aparecem na tela, sem mudar):** Diário Oficial, Carta de Serviços, exceção do período eleitoral (Procuradoria) e moderação das manifestações do cidadão. As travas do período eleitoral valem nos dois modos.
+- Comunicados ganharam as situações "Em aprovação" e "Devolvido". Migração `035_orgao_aprovacao.sql` (só colunas e situações novas; nada é apagado). admin.css v=20. Teste novo `teste_aprovacao` (pessoas e conteúdos fictícios).
+- Testes: as 32 suítes passaram contra o código (a `teste_aprovacao` também com data simulada). Captura da tela nova no ambiente de teste em 1366 e 390 px, sem desalinhamento nem rolagem lateral.
+- **Falta:** implantar na gestão (com aprovação e snapshot) e depois no nó do prefbora.

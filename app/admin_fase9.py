@@ -265,6 +265,7 @@ def _int(v):
 async def ident_fotos(request: Request):
     u = exige(request, 'editar'); f = await ler_form(request); b = request.state.orgao['banco']
     from .admin import salvar_midia
+    from . import aprovacao as AP
     acao = f.get('acao', ''); aid = _int(f.get('album_id'))
     volta = f'/admin/identidade?aba=fotos' + (f'&album={aid}' if aid else '')
     if acao == 'categorias':  # lista editável: renomear, suspender no defeso, remover, adicionar
@@ -297,15 +298,36 @@ async def ident_fotos(request: Request):
         t = f.get('titulo', '').strip()[:160]
         if not t:
             return ir(volta, 'Informe o título do álbum.', request)
-        vals = (t, f.get('descricao', '')[:2000], _int(f.get('categoria_id')), f.get('publicado') == '1')
+        antes = db.um(b, 'SELECT publicado, autor FROM albuns WHERE id=%s', (aid,)) if aid else None
+        publicado, aguarda, aviso = AP.salvar_item(b, 'fotos', u, (antes or {}).get('autor') or u['nome'], bool(antes and antes['publicado']), f.get('publicado') == '1')
+        vals = (t, f.get('descricao', '')[:2000], _int(f.get('categoria_id')), publicado)
         if aid:
             db.exe(b, 'UPDATE albuns SET titulo=%s, descricao=%s, categoria_id=%s, publicado=%s WHERE id=%s', vals + (aid,))
         else:
-            aid = db.exe(b, 'INSERT INTO albuns (titulo, descricao, categoria_id, publicado) VALUES (%s,%s,%s,%s) RETURNING id', vals)['id']
-        auditar(request, f'Fotos: álbum “{t}” salvo')
-        return ir(f'/admin/identidade?aba=fotos&album={aid}', 'Álbum salvo.', request)
+            aid = db.exe(b, 'INSERT INTO albuns (titulo, descricao, categoria_id, publicado, autor) VALUES (%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
+        if aguarda is not None:
+            db.exe(b, "UPDATE albuns SET aguarda_aprovacao=%s, comentario=CASE WHEN %s THEN '' ELSE comentario END WHERE id=%s", (aguarda, aguarda, aid))
+        auditar(request, f'Fotos: álbum “{t}” salvo' + (' (aguarda aprovação)' if aguarda else ''))
+        return ir(f'/admin/identidade?aba=fotos&album={aid}', 'Álbum salvo.' + aviso, request)
     if not aid:
         raise HTTPException(400)
+    alb = db.um(b, 'SELECT * FROM albuns WHERE id=%s', (aid,))
+    if not alb:
+        raise HTTPException(404)
+    pendente = AP.item_novo_pendente(b, 'fotos', u, alb['autor'] or None)
+    if acao in ('aprovar', 'devolver'):
+        if not AP.pode_publicar(b, 'fotos', u, alb['autor'] or None) or not alb['aguarda_aprovacao']:
+            raise HTTPException(403)
+        if acao == 'aprovar':
+            db.exe(b, "UPDATE albuns SET publicado=TRUE, aguarda_aprovacao=FALSE, comentario='' WHERE id=%s", (aid,))
+            db.exe(b, 'UPDATE album_fotos SET aguarda_aprovacao=FALSE WHERE album_id=%s', (aid,))
+            auditar(request, f"Fotos: álbum “{alb['titulo']}” aprovado e publicado por {u['nome']}")
+            return ir(volta, 'Álbum aprovado e publicado, com as fotos que esperavam aprovação.', request)
+        if not f.get('comentario', '').strip():
+            return ir(volta, 'Para devolver, escreva o comentário para quem enviou.', request)
+        db.exe(b, 'UPDATE albuns SET aguarda_aprovacao=FALSE, comentario=%s WHERE id=%s', (f['comentario'].strip()[:2000], aid))
+        auditar(request, f"Fotos: álbum “{alb['titulo']}” devolvido")
+        return ir(volta, 'Álbum devolvido. As fotos que esperavam aprovação continuam fora do ar.', request)
     if acao == 'foto':  # uma ou várias fotos por envio; crédito, licença, categoria e autorização valem para todas
         if f.get('licenca') not in LICENCAS:
             return ir(volta, 'Escolha a licença das fotos.', request)
@@ -322,12 +344,14 @@ async def ident_fotos(request: Request):
             except ValueError as e:
                 erros.append(f'{arq.filename}: {e}'); continue
             primeira = not db.um(b, 'SELECT 1 FROM album_fotos WHERE album_id=%s', (aid,))
-            db.exe(b, '''INSERT INTO album_fotos (album_id, url, titulo, descricao, credito, licenca, alt, categoria_id, tem_pessoas, autorizacao_imagem, principal)
-                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''', (aid, url, f.get('titulo', '')[:160], f.get('descricao', '')[:1000], f.get('credito', '')[:200],
-                                                                      f['licenca'], f.get('alt', '').strip()[:300], _int(f.get('categoria_id')), pessoas, autoriz, primeira))
+            db.exe(b, '''INSERT INTO album_fotos (album_id, url, titulo, descricao, credito, licenca, alt, categoria_id, tem_pessoas, autorizacao_imagem, principal, aguarda_aprovacao)
+                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''', (aid, url, f.get('titulo', '')[:160], f.get('descricao', '')[:1000], f.get('credito', '')[:200],
+                                                                      f['licenca'], f.get('alt', '').strip()[:300], _int(f.get('categoria_id')), pessoas, autoriz, primeira, pendente))
             ok += 1
+        if ok and pendente:
+            db.exe(b, 'UPDATE albuns SET aguarda_aprovacao=TRUE WHERE id=%s', (aid,))
         auditar(request, f'Fotos: {ok} foto(s) enviada(s) ao álbum {aid}' + (' (com pessoas, sem autorização: não publicam)' if pessoas and not autoriz else '') + (f'; {len(erros)} recusada(s)' if erros else ''))
-        msg = f'{ok} foto(s) enviada(s).' + (' Elas só aparecem no portal com a autorização de uso de imagem registrada.' if ok and pessoas and not autoriz else '')
+        msg = f'{ok} foto(s) enviada(s).' + (' Elas só aparecem no portal com a autorização de uso de imagem registrada.' if ok and pessoas and not autoriz else '') + (' Elas ficam fora do ar até a aprovação.' if ok and pendente else '')
         if erros:
             msg += ' Não enviadas: ' + '; '.join(erros)[:400]
         return ir(volta + '#fotos', msg, request)
@@ -339,10 +363,13 @@ async def ident_fotos(request: Request):
         alt = f.get('alt', '').strip()
         if f.get('licenca') not in LICENCAS:
             return ir(volta, 'Escolha a licença da foto.', request)
-        db.exe(b, '''UPDATE album_fotos SET titulo=%s, descricao=%s, credito=%s, licenca=%s, alt=%s, categoria_id=%s, tem_pessoas=%s, autorizacao_imagem=%s WHERE id=%s''',
+        db.exe(b, '''UPDATE album_fotos SET titulo=%s, descricao=%s, credito=%s, licenca=%s, alt=%s, categoria_id=%s, tem_pessoas=%s, autorizacao_imagem=%s, aguarda_aprovacao=(aguarda_aprovacao OR %s) WHERE id=%s''',
                (f.get('titulo', '')[:160], f.get('descricao', '')[:1000], f.get('credito', '')[:200], f['licenca'], alt[:300], _int(f.get('categoria_id')),
-                f.get('tem_pessoas') == '1', f.get('autorizacao') == '1', fid))
-        auditar(request, f'Fotos: foto {fid} alterada'); return ir(f'{volta}&foto={fid}#foto', 'Foto salva.', request)
+                f.get('tem_pessoas') == '1', f.get('autorizacao') == '1', pendente, fid))
+        if pendente:
+            db.exe(b, 'UPDATE albuns SET aguarda_aprovacao=TRUE WHERE id=%s', (aid,))
+        auditar(request, f'Fotos: foto {fid} alterada' + (' (aguarda aprovação)' if pendente else ''))
+        return ir(f'{volta}&foto={fid}#foto', 'Foto salva.' + (' Ela fica fora do ar até a aprovação.' if pendente else ''), request)
     if acao == 'foto_excluir':
         db.exe(b, 'DELETE FROM album_fotos WHERE id=%s', (fid,)); auditar(request, f'Fotos: foto {fid} excluída')
         return ir(volta, 'Foto excluída.', request)
@@ -408,4 +435,4 @@ async def versao_restaurar(request: Request, cid: int, vid: int):
     from psycopg.types.json import Jsonb
     db.exe(b, 'INSERT INTO conteudo_versoes (conteudo_id, quem, obs, dados) VALUES (%s,%s,%s,%s)', (cid, u['nome'], f"Restaurou a versão de {v['quando'].astimezone().strftime('%d/%m/%Y %H:%M')}", Jsonb(d)))
     auditar(request, f'Conteúdo {cid}: versão {vid} restaurada (volta como rascunho)')
-    return ir(f'/admin/conteudos/{cid}', 'Versão restaurada como rascunho. Envie para revisão quando estiver pronto.', request)
+    return ir(f'/admin/conteudos/{cid}', 'Versão restaurada como rascunho. Publique ou envie para aprovação quando estiver pronto.', request)

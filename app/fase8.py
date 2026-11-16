@@ -85,8 +85,8 @@ def slug(t):
     return re.sub(r'[^a-z0-9]+', '-', s).strip('-')[:80] or 'perfil'
 
 def foto_publicavel(f):
-    """LGPD/imagem: foto com pessoas identificáveis só publica com autorização de uso registrada."""
-    return not f['tem_pessoas'] or f['autorizacao_imagem']
+    """LGPD/imagem: foto com pessoas identificáveis só publica com autorização de uso registrada; foto à espera de aprovação não publica."""
+    return (not f['tem_pessoas'] or f['autorizacao_imagem']) and not f.get('aguarda_aprovacao')
 
 def perfis(banco, categoria='', q='', destaque=False):
     sql, p = 'SELECT * FROM perfis WHERE publicado', []

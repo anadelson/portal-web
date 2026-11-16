@@ -3,6 +3,19 @@
 {% block conteudo %}{% set C = csrf_token(request) %}{% set aba = request.query_params.get('aba', '') %}
 {% if c or request.query_params.get('novo') %}
 {{ voltar('/admin/comunicados') }}
+{% set direto = pode_publicar('comunicados', c.autor if c else u.nome) %}
+{% if c %}<section class="cx form-tela situacao-aprov" aria-labelledby="h-sit"><h2 id="h-sit">Situação: <span class="chip {{ 'ok' if c.situacao == 'publicado' }}">{{ SIT_COMUNICADO[c.situacao] }}</span></h2>
+{% if c.situacao == 'devolvido' and c.comentario %}<p class="msg" style="background:#FCEFD9">Comentário de quem aprova: {{ c.comentario }}</p>{% endif %}
+<p class="legal">Publicação de comunicados: {{ quem_aprova('comunicados') }}.{% if not direto and politica('comunicados').outro_aprova and c.autor == u.nome %} Quem escreveu não aprova o próprio comunicado.{% endif %}{% if not direto and c.situacao == 'publicado' %} Se você alterar este comunicado, ele sai do ar até a nova aprovação.{% endif %}</p>
+<form class="campos" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="situacao"><input type="hidden" name="id" value="{{ c.id }}">
+{% if c.situacao == 'revisao' and direto %}<label>Comentário para o autor (obrigatório para devolver)<textarea name="comentario" rows="2" maxlength="2000"></textarea></label>{% endif %}
+<div class="acoes">
+{% if c.situacao in ('rascunho','devolvido') and direto %}<button class="btn" name="situacao" value="publicado">Publicar</button>{% endif %}
+{% if c.situacao in ('rascunho','devolvido') and politica('comunicados').exige %}<button class="btn{{ ' sec' if direto }}" name="situacao" value="revisao">Enviar para aprovação</button>{% endif %}
+{% if c.situacao == 'revisao' and direto %}<button class="btn" name="situacao" value="publicado">Aprovar e publicar</button><button class="btn sec" name="situacao" value="devolvido">Devolver ao autor</button>{% endif %}
+{% if c.situacao == 'revisao' and not direto %}<button class="btn sec" name="situacao" value="rascunho">Retirar o pedido (volta a rascunho)</button>{% endif %}
+{% if c.situacao == 'publicado' and direto %}<button class="btn perigo" name="situacao" value="arquivado">Tirar do ar</button>{% endif %}
+</div></form></section>{% endif %}
 <section class="cx form-tela"><form class="campos" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="salvar">{% if c %}<input type="hidden" name="id" value="{{ c.id }}">{% endif %}
 <div class="grade2"><label>Tipo<select name="tipo">{% for t in tipos + ([c.tipo] if c and c.tipo not in tipos else []) %}<option {{ 'selected' if c and c.tipo == t }}>{{ t }}</option>{% endfor %}</select></label>
 <label>Classificação eleitoral<select name="classe">{% for k, v in classes.items() %}<option value="{{ k }}" {{ 'selected' if (c and c.classe == k) or (not c and k == 'util') }}>{{ v[0] }} — {{ v[1] }}</option>{% endfor %}</select></label></div>
@@ -38,8 +51,8 @@
 {{ acoes('Salvar alterações') }}</form></section>
 {% elif itens %}
 <div class="tabela"><table><caption class="sr">Comunicados</caption><thead><tr><th scope="col">Tipo</th><th scope="col">Título</th><th scope="col">Publicação</th><th scope="col">Situação</th><th scope="col">Anexos</th><th scope="col"><span class="sr">Ações</span></th></tr></thead><tbody>
-{% for x in itens %}<tr><td>{{ x.tipo }}</td><td><a href="/admin/comunicados?id={{ x.id }}">{{ x.titulo }}</a>{% if x.valido_ate %}<br><small>válido até {{ x.valido_ate|br }}</small>{% endif %}</td><td>{{ x.publicado_em|br if x.publicado_em else '—' }}</td><td><span class="chip {{ 'ok' if x.situacao == 'publicado' else '' }}">{{ x.situacao }}</span></td><td>{{ n_anexos.get(x.id, 0) or '—' }}</td>
-<td class="acoes-linha"><a class="btn sec" href="/admin/comunicados?id={{ x.id }}">Editar</a><form class="inline" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="situacao"><input type="hidden" name="id" value="{{ x.id }}">{% if x.situacao != 'publicado' %}<button class="btn sec" name="situacao" value="publicado">Publicar</button>{% else %}<button class="btn sec" name="situacao" value="arquivado">Tirar do ar</button>{% endif %}</form></td></tr>{% endfor %}
+{% for x in itens %}<tr><td>{{ x.tipo }}</td><td><a href="/admin/comunicados?id={{ x.id }}">{{ x.titulo }}</a>{% if x.valido_ate %}<br><small>válido até {{ x.valido_ate|br }}</small>{% endif %}</td><td>{{ x.publicado_em|br if x.publicado_em else '—' }}</td><td><span class="chip {{ 'ok' if x.situacao == 'publicado' else ('alerta' if x.situacao in ('revisao','devolvido') else '') }}">{{ SIT_COMUNICADO[x.situacao] }}</span></td><td>{{ n_anexos.get(x.id, 0) or '—' }}</td>
+<td class="acoes-linha"><a class="btn sec" href="/admin/comunicados?id={{ x.id }}">{{ 'Analisar' if x.situacao == 'revisao' and pode_publicar('comunicados', x.autor) else 'Editar' }}</a>{% set xd = pode_publicar('comunicados', x.autor) %}{% if x.situacao in ('rascunho','devolvido','publicado') %}<form class="inline" method="post" action="/admin/comunicados"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="situacao"><input type="hidden" name="id" value="{{ x.id }}">{% if x.situacao == 'publicado' %}{% if xd %}<button class="btn sec" name="situacao" value="arquivado">Tirar do ar</button>{% endif %}{% elif xd %}<button class="btn sec" name="situacao" value="publicado">Publicar</button>{% elif politica('comunicados').exige %}<button class="btn sec" name="situacao" value="revisao">Enviar para aprovação</button>{% endif %}</form>{% endif %}</td></tr>{% endfor %}
 </tbody></table></div>
 {% elif aba == 'arquivados' %}<p class="vazio-tela">Nenhum comunicado arquivado.</p>
 {% else %}{{ vazio('Nenhum comunicado cadastrado.', '/admin/comunicados?novo=1', 'Novo comunicado') }}{% endif %}

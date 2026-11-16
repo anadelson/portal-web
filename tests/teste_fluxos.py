@@ -43,7 +43,7 @@ for p in ['/admin/conteudos', '/admin/conteudos/novo', '/admin/conteudos/1', '/a
 # fluxo de conteúdo
 t = token(pm, '/admin/conteudos/novo')
 r = pm.post('/admin/conteudos/salvar', data={'csrf': t, 'tipo': 'Notícia', 'secao': 'Notícias', 'titulo': 'Teste fluxo', 'resumo': 'r', 'texto': 't', 'classe': 'util', 'acao': 'revisao'}, follow_redirects=True)
-ok(r, txt='Enviou para revisão', nome='conteudo revisao')
+ok(r, txt='Enviou para aprovação', nome='conteudo revisao')
 cid = int(re.search(r'/admin/conteudos/(\d+)">Teste fluxo', r.text).group(1))
 t = token(pm, f'/admin/conteudos/{cid}')
 ok(pm.post('/admin/conteudos/salvar', data={'csrf': t, 'id': cid, 'titulo': 'Teste fluxo', 'classe': 'util', 'acao': 'aprovar'}, follow_redirects=True), txt='Aprovou e publicou', nome='aprovar')

@@ -156,19 +156,36 @@ async def comunicados_post(request: Request):
         from starlette.concurrency import run_in_threadpool
         await run_in_threadpool(AX.capa, o, a)  # miniatura já pronta para a página inicial (falha não impede o envio)
         return ir(volta, f'Anexo enviado: {a["titulo"]} ({AX.TIPOS[a["ext"]][1]}, {AX.tamanho(a["bytes"])}).', request)
+    from . import aprovacao as AP
     if acao == 'situacao' and cid:
         nova = f.get('situacao')
-        if nova not in ('publicado', 'arquivado', 'rascunho'):
+        if nova not in ('publicado', 'arquivado', 'rascunho', 'revisao', 'devolvido'):
             raise HTTPException(400)
+        c = db.um(b, 'SELECT * FROM comunicados WHERE id=%s', (cid,))
+        if not c:
+            raise HTTPException(404)
+        direto = AP.pode_publicar(b, 'comunicados', u, c['autor'])
+        if nova in ('publicado', 'arquivado', 'devolvido') and not direto:  # publicar, tirar do ar e devolver: só quem publica
+            raise HTTPException(403)
+        if nova == 'rascunho' and not direto and c['situacao'] not in ('revisao', 'devolvido'):  # quem não publica só retira o próprio pedido
+            raise HTTPException(403)
+        if nova == 'revisao' and c['situacao'] not in ('rascunho', 'devolvido'):
+            return ir(f'/admin/comunicados?id={cid}', 'Só rascunho ou comunicado devolvido vai para aprovação.', request)
+        if nova == 'devolvido':
+            if c['situacao'] != 'revisao':
+                raise HTTPException(400)
+            if not f.get('comentario', '').strip():
+                return ir(f'/admin/comunicados?id={cid}', 'Para devolver, escreva o comentário para o autor.', request)
         if nova == 'publicado':
-            exige(request, 'publicar')
-            c = db.um(b, 'SELECT * FROM comunicados WHERE id=%s', (cid,))
             from . import eleicao
-            if c and c['classe'] in VEDADAS and eleicao.em_defeso(b):
+            if c['classe'] in VEDADAS and eleicao.em_defeso(b):
                 return ir(f'/admin/comunicados?id={cid}', 'Período eleitoral: esta classificação não pode ser publicada até o fim do defeso.', request)
-        db.exe(b, "UPDATE comunicados SET situacao=%s, publicado_em=CASE WHEN %s='publicado' THEN coalesce(publicado_em, now()) ELSE publicado_em END WHERE id=%s", (nova, nova, cid))
-        auditar(request, f'Comunicado {cid}: {nova}')
-        return ir('/admin/comunicados', 'Situação alterada.', request)
+        db.exe(b, "UPDATE comunicados SET situacao=%s, comentario=%s, publicado_em=CASE WHEN %s='publicado' THEN coalesce(publicado_em, now()) ELSE publicado_em END WHERE id=%s",
+               (nova, f.get('comentario', '').strip()[:2000] if nova == 'devolvido' else ('' if nova in ('publicado', 'revisao') else c['comentario']), nova, cid))
+        msg = {'publicado': ('Comunicado aprovado e publicado.' if c['situacao'] == 'revisao' else 'Comunicado publicado.'), 'arquivado': 'Comunicado tirado do ar.',
+               'rascunho': 'Comunicado voltou a rascunho.', 'revisao': 'Comunicado enviado para aprovação.', 'devolvido': 'Comunicado devolvido ao autor.'}[nova]
+        auditar(request, f"Comunicado {cid}: {nova}" + (' (aprovado)' if nova == 'publicado' and c['situacao'] == 'revisao' else ''))
+        return ir('/admin/comunicados', msg, request)
     tipo, titulo = f.get('tipo', ''), f.get('titulo', '').strip()[:200]
     atual = db.um(b, 'SELECT tipo FROM comunicados WHERE id=%s', (cid,)) if cid else None
     if not F.tipo_comunicado_valido(b, tipo) and not (atual and atual['tipo'] == tipo and tipo.strip().lower() not in F.PROIBIDOS):  # tipo removido da lista: o comunicado antigo mantém o seu
@@ -186,12 +203,23 @@ async def comunicados_post(request: Request):
     if html is None:
         return ir(f'/admin/comunicados?id={cid}' if cid else '/admin/comunicados', texto, request)
     vals = (tipo, titulo, texto[:20000], html, pub, val, classe)
+    antes = db.um(b, 'SELECT situacao, autor FROM comunicados WHERE id=%s', (cid,)) if cid else None
+    direto = AP.pode_publicar(b, 'comunicados', u, antes['autor'] if antes else u['nome'])
+    volta_aprov = bool(antes) and antes['situacao'] in ('publicado', 'revisao') and not direto  # mudou sem poder publicar: sai do ar e espera aprovação
     if cid:
         db.exe(b, 'UPDATE comunicados SET tipo=%s, titulo=%s, texto=%s, html=%s, publicado_em=%s, valido_ate=%s, classe=%s WHERE id=%s', vals + (cid,))
+        if volta_aprov:
+            db.exe(b, "UPDATE comunicados SET situacao='revisao' WHERE id=%s", (cid,))
     else:
         cid = db.exe(b, 'INSERT INTO comunicados (tipo, titulo, texto, html, publicado_em, valido_ate, classe, autor) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (u['nome'],))['id']
-    auditar(request, f'Comunicado salvo: {tipo} — {titulo}')
-    return ir(f'/admin/comunicados?id={cid}', 'Comunicado salvo como rascunho. Publique quando estiver pronto.' if not f.get('id') else 'Comunicado salvo.', request)
+    auditar(request, f'Comunicado salvo: {tipo} — {titulo}' + (' (voltou para aprovação)' if volta_aprov else ''))
+    if volta_aprov:
+        msg = 'Comunicado salvo. A alteração precisa de aprovação: ele fica fora do ar até ser aprovado.' if antes['situacao'] == 'publicado' else 'Comunicado salvo; continua em aprovação.'
+    elif not f.get('id'):
+        msg = 'Comunicado salvo como rascunho. ' + ('Publique quando estiver pronto.' if direto else 'Envie para aprovação quando estiver pronto.')
+    else:
+        msg = 'Comunicado salvo.'
+    return ir(f'/admin/comunicados?id={cid}', msg, request)
 
 # ---------- Conheça ----------
 @r.get('/conheca')
@@ -210,6 +238,7 @@ def _youtube_id(v):
 @r.post('/conheca')
 async def conheca_post(request: Request):
     u = exige(request, 'editar'); f = await ler_form(request); b = request.state.orgao['banco']
+    from . import aprovacao as AP, eleicao
     acao, pid = f.get('acao', ''), int(f['id']) if f.get('id') else None
     volta = f'/admin/conheca?id={pid}' if pid else '/admin/conheca'
     if acao == 'perfil':
@@ -224,19 +253,45 @@ async def conheca_post(request: Request):
         html, desc = _rico(f, 'descricao')
         if html is None:
             return ir(volta, desc, request)
+        antes = db.um(b, 'SELECT publicado, autor FROM perfis WHERE id=%s', (pid,)) if pid else None
+        publicado, aguarda, aviso = AP.salvar_item(b, 'conheca', u, (antes or {}).get('autor') or u['nome'], bool(antes and antes['publicado']), f.get('publicado') == '1')
         vals = (titulo, desc[:20000], cat, classe,
-                int(f.get('ordem') or 100), f.get('publicado') == '1', destaque)
+                int(f.get('ordem') or 100), publicado, destaque)
         if pid:
             db.exe(b, 'UPDATE perfis SET titulo=%s, descricao=%s, categoria=%s, classe=%s, ordem=%s, publicado=%s, destaque=%s, html=%s WHERE id=%s', vals + (html, pid))
         else:
             s, i = F.slug(titulo), 2
             while db.um(b, 'SELECT 1 FROM perfis WHERE slug=%s', (s,)):
                 s = f'{F.slug(titulo)}-{i}'; i += 1
-            pid = db.exe(b, 'INSERT INTO perfis (titulo, descricao, categoria, classe, ordem, publicado, destaque, slug, html) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (s, html))['id']
-        auditar(request, f'Conheça: perfil “{titulo}” salvo')
-        return ir(f'/admin/conheca?id={pid}', 'Perfil salvo.', request)
+            pid = db.exe(b, 'INSERT INTO perfis (titulo, descricao, categoria, classe, ordem, publicado, destaque, slug, html, autor) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id', vals + (s, html, u['nome']))['id']
+        if aguarda is not None:
+            db.exe(b, "UPDATE perfis SET aguarda_aprovacao=%s, comentario=CASE WHEN %s THEN '' ELSE comentario END WHERE id=%s", (aguarda, aguarda, pid))
+        auditar(request, f'Conheça: perfil “{titulo}” salvo' + (' (aguarda aprovação)' if aguarda else ''))
+        return ir(f'/admin/conheca?id={pid}', 'Perfil salvo.' + aviso, request)
     if not pid:
         raise HTTPException(400)
+    perfil = db.um(b, 'SELECT * FROM perfis WHERE id=%s', (pid,))
+    if not perfil:
+        raise HTTPException(404)
+    pendente = AP.item_novo_pendente(b, 'conheca', u, perfil['autor'] or None)
+    if pendente and acao in ('foto', 'foto_editar', 'video'):  # o perfil entra na fila de aprovação; a foto/vídeo fica fora do ar até lá
+        db.exe(b, "UPDATE perfis SET aguarda_aprovacao=TRUE WHERE id=%s", (pid,))
+    if acao in ('aprovar', 'devolver'):
+        if not AP.pode_publicar(b, 'conheca', u, perfil['autor'] or None) or not perfil['aguarda_aprovacao']:
+            raise HTTPException(403)
+        if acao == 'aprovar':
+            if perfil['classe'] in VEDADAS and eleicao.em_defeso(b):
+                return ir(volta, 'Período eleitoral: esta classificação não pode ser publicada até o fim do defeso.', request)
+            db.exe(b, "UPDATE perfis SET publicado=TRUE, aguarda_aprovacao=FALSE, comentario='' WHERE id=%s", (pid,))
+            db.exe(b, 'UPDATE perfil_fotos SET aguarda_aprovacao=FALSE WHERE perfil_id=%s', (pid,))
+            db.exe(b, 'UPDATE perfil_videos SET aguarda_aprovacao=FALSE WHERE perfil_id=%s', (pid,))
+            auditar(request, f"Conheça: perfil “{perfil['titulo']}” aprovado e publicado por {u['nome']}")
+            return ir(volta, 'Perfil aprovado e publicado, com as fotos e vídeos que esperavam aprovação.', request)
+        if not f.get('comentario', '').strip():
+            return ir(volta, 'Para devolver, escreva o comentário para quem enviou.', request)
+        db.exe(b, 'UPDATE perfis SET aguarda_aprovacao=FALSE, comentario=%s WHERE id=%s', (f['comentario'].strip()[:2000], pid))
+        auditar(request, f"Conheça: perfil “{perfil['titulo']}” devolvido")
+        return ir(volta, 'Perfil devolvido. O que esperava aprovação continua fora do ar.', request)
     if acao == 'foto':
         arq = f.get('arquivo')
         try:
@@ -247,19 +302,20 @@ async def conheca_post(request: Request):
         capa = f.get('capa') == '1' or not db.um(b, 'SELECT 1 FROM perfil_fotos WHERE perfil_id=%s', (pid,))
         if capa:
             db.exe(b, 'UPDATE perfil_fotos SET capa=FALSE WHERE perfil_id=%s', (pid,))
-        db.exe(b, 'INSERT INTO perfil_fotos (perfil_id, url, alt, legenda, credito, tem_pessoas, autorizacao_imagem, capa) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
-               (pid, url, f.get('alt', '').strip()[:300], f.get('legenda', '').strip()[:200], f.get('credito', '').strip()[:200], pessoas, autoriz, capa))
+        db.exe(b, 'INSERT INTO perfil_fotos (perfil_id, url, alt, legenda, credito, tem_pessoas, autorizacao_imagem, capa, aguarda_aprovacao) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+               (pid, url, f.get('alt', '').strip()[:300], f.get('legenda', '').strip()[:200], f.get('credito', '').strip()[:200], pessoas, autoriz, capa, pendente))
         auditar(request, f'Conheça: foto enviada ao perfil {pid}' + (' (com pessoas, autorização ' + ('registrada' if autoriz else 'NÃO registrada: não publica') + ')' if pessoas else ''))
-        return ir(volta, 'Foto enviada.' + (' Ela não aparece no portal até a autorização de uso de imagem ser registrada.' if pessoas and not autoriz else ''), request)
+        return ir(volta, 'Foto enviada.' + (' Ela não aparece no portal até a autorização de uso de imagem ser registrada.' if pessoas and not autoriz else '')
+                  + (' Ela fica fora do ar até a aprovação.' if pendente else ''), request)
     if acao == 'foto_editar':
         fid = int(f.get('foto_id') or 0)
         alt = f.get('alt', '').strip()
         if f.get('capa') == '1':
             db.exe(b, 'UPDATE perfil_fotos SET capa=FALSE WHERE perfil_id=%s', (pid,))
-        db.exe(b, 'UPDATE perfil_fotos SET alt=%s, legenda=%s, credito=%s, tem_pessoas=%s, autorizacao_imagem=%s, capa=(capa OR %s) WHERE id=%s AND perfil_id=%s',
-               (alt[:300], f.get('legenda', '')[:200], f.get('credito', '')[:200], f.get('tem_pessoas') == '1', f.get('autorizacao') == '1', f.get('capa') == '1', fid, pid))
-        auditar(request, f'Conheça: foto {fid} do perfil {pid} alterada')
-        return ir(volta, 'Foto atualizada.', request)
+        db.exe(b, 'UPDATE perfil_fotos SET alt=%s, legenda=%s, credito=%s, tem_pessoas=%s, autorizacao_imagem=%s, capa=(capa OR %s), aguarda_aprovacao=(aguarda_aprovacao OR %s) WHERE id=%s AND perfil_id=%s',
+               (alt[:300], f.get('legenda', '')[:200], f.get('credito', '')[:200], f.get('tem_pessoas') == '1', f.get('autorizacao') == '1', f.get('capa') == '1', pendente, fid, pid))
+        auditar(request, f'Conheça: foto {fid} do perfil {pid} alterada' + (' (aguarda aprovação)' if pendente else ''))
+        return ir(volta, 'Foto atualizada.' + (' Ela fica fora do ar até a aprovação.' if pendente else ''), request)
     if acao == 'foto_excluir':
         db.exe(b, 'DELETE FROM perfil_fotos WHERE id=%s AND perfil_id=%s', (int(f.get('foto_id') or 0), pid)); auditar(request, f'Conheça: foto excluída do perfil {pid}')
         return ir(volta, 'Foto excluída.', request)
@@ -267,9 +323,9 @@ async def conheca_post(request: Request):
         vid = _youtube_id(f.get('youtube'))
         if not vid:
             return ir(volta, 'Informe o endereço de um vídeo do YouTube.', request)
-        db.exe(b, 'INSERT INTO perfil_videos (perfil_id, youtube_id, titulo) VALUES (%s,%s,%s)', (pid, vid, f.get('titulo', '').strip()[:200]))
-        auditar(request, f'Conheça: vídeo {vid} no perfil {pid}')
-        return ir(volta, 'Vídeo incluído.', request)
+        db.exe(b, 'INSERT INTO perfil_videos (perfil_id, youtube_id, titulo, aguarda_aprovacao) VALUES (%s,%s,%s,%s)', (pid, vid, f.get('titulo', '').strip()[:200], pendente))
+        auditar(request, f'Conheça: vídeo {vid} no perfil {pid}' + (' (aguarda aprovação)' if pendente else ''))
+        return ir(volta, 'Vídeo incluído.' + (' Ele fica fora do ar até a aprovação.' if pendente else ''), request)
     if acao == 'video_excluir':
         db.exe(b, 'DELETE FROM perfil_videos WHERE id=%s AND perfil_id=%s', (int(f.get('video_id') or 0), pid))
         return ir(volta, 'Vídeo excluído.', request)

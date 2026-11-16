@@ -17,7 +17,7 @@ def fotos_publicas(b, album):
     if album['categoria_id'] in sus:
         return []
     return [f for f in db.todos(b, 'SELECT * FROM album_fotos WHERE album_id=%s ORDER BY principal DESC, ordem, id', (album['id'],))
-            if (not f['tem_pessoas'] or f['autorizacao_imagem']) and f['categoria_id'] not in sus]
+            if (not f['tem_pessoas'] or f['autorizacao_imagem']) and f['categoria_id'] not in sus and not f.get('aguarda_aprovacao')]
 
 def com_alt(fotos, album):
     """Texto alternativo é opcional: sem ele, a galeria usa o título da foto ou "Foto N do álbum …"."""

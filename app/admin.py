@@ -16,7 +16,11 @@ def pendencias(b):
     return db.um(b, "SELECT (SELECT count(*) FROM conteudos WHERE situacao='revisao') revisao, (SELECT count(*) FROM esic WHERE situacao <> 'respondido') esic, (SELECT count(*) FROM opinioes WHERE situacao='pendente') + (SELECT count(*) FROM tribuna_inscricoes WHERE situacao='pendente') opinioes")
 
 def ctx(request, u, **kw):
-    c = ctx_orgao(request, u=u, pode=lambda p: u['perfil'] in PODE[p], pend=pendencias(request.state.orgao['banco']), **kw)
+    from . import aprovacao as AP
+    o = request.state.orgao; b = o['banco']
+    pend = dict(pendencias(b) or {}, **AP.pendentes(b, o))
+    c = ctx_orgao(request, u=u, pode=lambda p: u['perfil'] in PODE[p], pend=pend,
+                  pode_publicar=lambda mod, autor=None: AP.pode_publicar(b, mod, u, autor), quem_aprova=lambda mod: AP.quem_aprova(b, mod), politica=lambda mod: AP.politica(b, mod), **kw)
     return c
 
 def T(nome, request, u, **kw):
@@ -26,6 +30,7 @@ def T(nome, request, u, **kw):
 from . import acesso as AC
 TIPOS_CONTEUDO = ['Notícia', 'Página', 'Banner', 'Documento']  # avisos e similares são Comunicados (Fase 8)
 templates.env.globals['TIPOS_CONTEUDO'] = TIPOS_CONTEUDO
+templates.env.globals['SIT_COMUNICADO'] = {'rascunho': 'Rascunho', 'revisao': 'Em aprovação', 'devolvido': 'Devolvido', 'publicado': 'Publicado', 'arquivado': 'Arquivado'}
 
 @r.get('/login')
 def login(request: Request):
@@ -216,8 +221,14 @@ async def conteudo_salvar(request: Request):
         return ir(f"/admin/conteudos/{cid or 'novo'}", 'Escolha a classificação eleitoral.', request)
     pub = f.get('publicar_em') or None
     tirar = f.get('tirar_em') or None
-    if acao in ('rascunho', 'revisao'):
+    from . import aprovacao as AP
+    direto = AP.pode_publicar(b, 'conteudos', u, c['autor'] if c else u['nome'])
+    if acao == 'publicar' and not direto:  # sem permissão de publicar direto: vai para aprovação
+        acao = 'revisao'
+    if acao in ('rascunho', 'revisao', 'publicar'):
         if not pode('editar'):
+            raise HTTPException(403)
+        if c and c['situacao'] in ('publicado', 'agendado', 'arquivado') and not direto:
             raise HTTPException(403)
         if not f.get('titulo'):
             return ir(f"/admin/conteudos/{cid or 'novo'}", 'Informe o título.', request)
@@ -250,7 +261,8 @@ async def conteudo_salvar(request: Request):
             if probs:
                 return ir(volta, ' '.join(probs), request)
             texto = ED.texto(html)
-        vals = (tipo, f.get('secao', 'Notícias'), f['titulo'], f.get('resumo', ''), texto, html, f['classe'], acao, pub, tirar, img, alt[:300], foco('foco_x'), foco('foco_y'), destaque, pub_em)
+        guarda = 'rascunho' if acao == 'publicar' else acao  # "publicar": salva e publica logo abaixo (mesma regra da aprovação)
+        vals = (tipo, f.get('secao', 'Notícias'), f['titulo'], f.get('resumo', ''), texto, html, f['classe'], guarda, pub, tirar, img, alt[:300], foco('foco_x'), foco('foco_y'), destaque, pub_em)
         if c:
             db.exe(b, 'UPDATE conteudos SET tipo=%s, secao=%s, titulo=%s, resumo=%s, texto=%s, html=%s, classe=%s, situacao=%s, publicar_em=%s, tirar_em=%s, imagem=%s, imagem_alt=%s, foco_x=%s, foco_y=%s, destaque=%s, publicado_em=%s, atualizado_em=now() WHERE id=%s', vals + (cid,))
         else:
@@ -259,17 +271,20 @@ async def conteudo_salvar(request: Request):
         db.exe(b, 'UPDATE conteudos SET secretaria_id=%s WHERE id=%s', (sec_id, cid))
         if destaque:  # uma notícia em destaque por vez
             db.exe(b, 'UPDATE conteudos SET destaque=FALSE WHERE destaque AND id<>%s', (cid,))
-        obs = 'Salvou rascunho' if acao == 'rascunho' else 'Enviou para revisão'
-    elif acao in ('aprovar', 'devolver', 'arquivar'):
-        if not pode('publicar') or not c:
+        obs = 'Salvou rascunho' if acao == 'rascunho' else 'Enviou para aprovação'
+        if acao == 'publicar':
+            c = db.um(b, 'SELECT * FROM conteudos WHERE id=%s', (cid,))
+    if acao in ('aprovar', 'devolver', 'arquivar', 'publicar'):
+        if not c or not AP.pode_publicar(b, 'conteudos', u, c['autor']):
             raise HTTPException(403)
-        if acao == 'aprovar':
+        if acao in ('aprovar', 'publicar'):
             if f['classe'] in VEDADAS and eleicao.em_defeso(b) and eleicao.conf(b).get('bloquear', True) and not c['excecao_eleitoral']:
                 return ir(f'/admin/conteudos/{cid}', 'Período eleitoral: esta classificação não pode ser publicada até o fim do defeso.', request)
             nova = 'agendado' if pub and date.fromisoformat(pub) > config.hoje() else 'publicado'
             db.exe(b, 'UPDATE conteudos SET situacao=%s, classe=%s, publicar_em=coalesce(%s::date, %s::date), tirar_em=%s, publicado_em=coalesce(publicado_em, CASE WHEN %s::date IS NULL THEN now() ELSE %s::date + time \'08:00\' END), atualizado_em=now() WHERE id=%s',
                    (nova, f['classe'], pub, config.hoje(), tirar, pub, pub, cid))
-            obs = 'Aprovou e ' + ('agendou' if nova == 'agendado' else 'publicou')
+            obs = {('publicar', 'publicado'): 'Publicou', ('publicar', 'agendado'): 'Agendou a publicação',
+                   ('aprovar', 'publicado'): 'Aprovou e publicou', ('aprovar', 'agendado'): 'Aprovou e agendou'}[(acao, nova)]
         elif acao == 'devolver':
             if not f.get('comentario'):
                 return ir(f'/admin/conteudos/{cid}', 'Para devolver, escreva o comentário para o autor.', request)
@@ -278,7 +293,7 @@ async def conteudo_salvar(request: Request):
         else:
             db.exe(b, "UPDATE conteudos SET situacao='arquivado', atualizado_em=now() WHERE id=%s", (cid,))
             obs = 'Arquivou (tirou do ar)'
-    else:
+    elif acao not in ('rascunho', 'revisao'):
         raise HTTPException(400)
     snap = db.um(b, 'SELECT titulo, resumo, texto, html, imagem, imagem_alt, classe FROM conteudos WHERE id=%s', (cid,))
     db.exe(b, 'INSERT INTO conteudo_versoes (conteudo_id, quem, obs, dados) VALUES (%s,%s,%s,%s)', (cid, u['nome'], obs, Jsonb(snap) if snap else None))
@@ -334,6 +349,32 @@ async def pagina_inicial_post(request: Request):
             db.exe(b, 'UPDATE blocos SET ordem=%s WHERE id=%s', (bl[i]['ordem'], bl[j]['id']))
     auditar(request, f'Alterou a página inicial: {info[0]} ({acao})')
     return ir('/admin/pagina-inicial', 'Página inicial atualizada.', request)
+
+# ---------- política de aprovação para publicar ----------
+def _aprovadores_possiveis(b):
+    from . import aprovacao as AP
+    return db.todos(b, "SELECT id, nome, perfil FROM usuarios WHERE situacao='ativo' AND perfil = ANY(%s) ORDER BY nome", (AP.PERFIS_APROVADORES,))
+
+@r.get('/aprovacao')
+def aprovacao(request: Request):
+    u = exige(request, 'config')
+    from . import aprovacao as AP
+    o = request.state.orgao; b = o['banco']
+    return T('aprovacao', request, u, modulos=AP.modulos(o), pol=AP.todas(b, o), perfis_aprov=AP.PERFIS_APROVADORES, pessoas=_aprovadores_possiveis(b), regras=AP.REGRAS_PROPRIAS)
+
+@r.post('/aprovacao')
+async def aprovacao_post(request: Request):
+    u = exige(request, 'config'); f = await ler_form(request)
+    from . import aprovacao as AP
+    o = request.state.orgao; b = o['banco']
+    try:
+        nova = AP.validar(f, o, [x['id'] for x in _aprovadores_possiveis(b)])
+    except ValueError as e:
+        return ir('/admin/aprovacao', str(e), request)
+    atual = db.cfg(b, 'aprovacao', {}) or {}
+    db.set_cfg(b, 'aprovacao', dict(atual, **nova))
+    auditar(request, 'Aprovação para publicar: ' + '; '.join(f"{AP.NOMES[k]} = {AP.quem_aprova(b, k)}" + (' (quem escreveu não aprova)' if v['outro_aprova'] else '') for k, v in nova.items())[:900])
+    return ir('/admin/aprovacao', 'Política de aprovação salva. Vale a partir de agora para tudo o que for publicado.', request)
 
 # ---------- funcionalidades ----------
 @r.get('/funcionalidades')
