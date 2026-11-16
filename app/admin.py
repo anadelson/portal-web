@@ -560,7 +560,8 @@ CAMPOS_ID = [('nome', 'Nome do órgão'), ('prefixo', 'Linha acima do nome no ca
              ('login_titulo', 'Título da tela de login (vazio = “Entrar no painel”)'), ('hero_rotulo', 'Destaque: rótulo'), ('hero_titulo', 'Destaque: título'),
              ('hero_texto', 'Destaque: texto'), ('busca_dica', 'Destaque: exemplo na busca'), ('creditos', 'Créditos das fotos (rodapé)')]
 COR = re.compile(r'^#[0-9A-Fa-f]{6}$')
-USOS = {'brasao': 'Brasão', 'mascote': 'Mascote', 'hero': 'Imagem de fundo do destaque (página inicial)', 'login': 'Imagem de fundo da tela de login', 'sede': 'Foto da sede', 'conheca': 'Foto do “Conheça a cidade”'}
+USOS = {'brasao': 'Brasão', 'mascote': 'Mascote', 'hero': 'Imagem de fundo do destaque (página inicial)', 'login': 'Imagem de fundo da tela de login', 'sede': 'Foto da sede', 'conheca': 'Foto do “Conheça a cidade”',
+        'rodape': 'Imagem de fundo do rodapé'}
 MAX_CONHECA = 4
 
 async def salvar_midia(request, u, arquivo, uso, alt, credito):
@@ -592,8 +593,25 @@ def identidade(request: Request, aba: str = 'dados', album: int = 0):
     if aba == 'tema':
         cor, dest = ident.get('cor') or o['cor'], ident.get('cor_destaque') or '#F0B429'
         from .web import LARGURAS, LARGURA_PADRAO
+        from . import rodape as ROD
+        rod = ROD.cor_de(ident, o['tipo'])
         extra = dict(cor=cor, dest=dest, c_cor=F9.contraste(cor, '#FFFFFF'), c_dest=F9.contraste(dest, F9.TEXTO_ESCURO), erros_cor=F9.checar_cores(cor.upper(), dest.upper()),
-                     larguras=LARGURAS, largura=ident.get('largura') if ident.get('largura') in LARGURAS else LARGURA_PADRAO)
+                     larguras=LARGURAS, largura=ident.get('largura') if ident.get('largura') in LARGURAS else LARGURA_PADRAO,
+                     cor_rodape=rod, rodape_padrao=ROD.cor_padrao(o['tipo']), c_rodape=ROD.contraste(rod, ROD.TEXTO), erros_rodape=ROD.checar_cor(rod, o['tipo']),
+                     rodape_titulo=ROD.TITULO.get(o['tipo']), rodape_tons=ROD.tons(rod))
+    elif aba == 'imagens':
+        from . import rodape as ROD, imagens as IMG
+        rod = ROD.cor_de(ident, o['tipo']); fundo = ident.get('rodape') or {}
+        extra = dict(rod=ROD.conf(b), rod_cor=rod, rod_rgb=ROD.tons(rod)['rgb'], rod_titulo=ROD.TITULO.get(o['tipo']), rod_texto=ROD.TEXTO,
+                     rod_lum95=fundo.get('lum95'), rod_minimo=ROD.minimo_seguro(rod, fundo.get('lum95'), o['tipo']) if fundo.get('url') else 0,
+                     rod_lim=(ROD.ALTURA_MIN, ROD.ALTURA_MAX, ROD.ALTURA_CEL),
+                     anteriores={k: IMG.tem_anterior(ident, k) for k in USOS})
+    elif aba == 'favicon':
+        from . import imagens as IMG
+        extra = dict(fav_anterior=IMG.tem_anterior(ident, 'favicon'))
+    if aba == 'conheca':
+        from . import imagens as IMG
+        extra = dict(extra, anteriores={'conheca': IMG.tem_anterior(ident, 'conheca')})
     elif aba == 'redes':
         redes = ident.get('redes_v2') or [{'tipo': next((k for k, v in F9.REDES.items() if v.lower() == n.lower()), 'outra'), 'url': url, 'ordem': (i + 1) * 10, 'conta': ''} for i, (n, url) in enumerate(ident.get('redes', []))]
         extra = dict(redes=redes, tipos_rede=F9.REDES)
@@ -651,7 +669,8 @@ async def identidade_post(request: Request):
 @r.post('/identidade/midia')
 async def identidade_midia(request: Request):
     u = exige(request, 'config'); f = await ler_form(request)
-    b = request.state.orgao['banco']
+    o = request.state.orgao; b = o['banco']
+    from . import imagens as IMG, rodape as ROD
     uso = f.get('uso', '')
     if uso not in USOS:
         raise HTTPException(400)
@@ -661,31 +680,88 @@ async def identidade_midia(request: Request):
     arq = f.get('arquivo')
     tem_arquivo = arq is not None and hasattr(arq, 'read') and getattr(arq, 'filename', '')
     i = int(f.get('indice') or 0)
+    acao = f.get('acao')
     if uso == 'conheca':
         fotos = (ident.setdefault('conheca', {})).setdefault('fotos', [])
-        if f.get('acao') == 'remover':
+        if acao == 'remover':
             if 0 <= i < len(fotos):
-                fotos.pop(i)
+                IMG.guardar_anterior(ident, 'conheca', fotos.pop(i))
             db.set_cfg(b, 'identidade', ident)
-            auditar(request, 'Removeu foto do “Conheça a cidade”')
-            return ir(volta, 'Foto removida.', request)
+            auditar(request, 'Removeu foto do “Conheça a cidade” (o arquivo continua na biblioteca de mídia)')
+            return ir(volta, 'Foto removida. O arquivo continua na biblioteca de mídia.', request)
+        if acao == 'restaurar':
+            if len(fotos) >= MAX_CONHECA:
+                return ir(volta, f'O mosaico aceita até {MAX_CONHECA} fotos: remova uma antes de restaurar.', request)
+            volta_item = IMG.restaurar_anterior(ident, 'conheca', None)
+            if volta_item:
+                fotos.append(volta_item)
+                db.set_cfg(b, 'identidade', ident)
+                auditar(request, 'Restaurou foto anterior do “Conheça a cidade”')
+            return ir(volta, 'Foto anterior restaurada.' if volta_item else 'Não há foto anterior.', request)
         atual = fotos[i] if 0 <= i < len(fotos) else None
     else:
         atual = (ident.get('sede') or {}).get('foto') if uso == 'sede' else ident.get(uso)
+
+    def grava(item):
+        if uso == 'sede':
+            ident.setdefault('sede', {})['foto'] = item
+        else:
+            ident[uso] = item
+
+    if uso != 'conheca' and acao in ('remover', 'restaurar'):
+        if acao == 'remover':
+            if not (atual and atual.get('url')):
+                return ir(volta, 'Não há imagem para remover.', request)
+            IMG.guardar_anterior(ident, uso, atual); grava(None)
+            txt = f'Removeu a imagem: {USOS[uso]} (o arquivo continua na biblioteca de mídia)'
+            msg = f'{USOS[uso]}: imagem removida. O arquivo continua na biblioteca de mídia.'
+        else:
+            item = IMG.restaurar_anterior(ident, uso, atual if atual and atual.get('url') else None)
+            if not item:
+                return ir(volta, 'Não há imagem anterior para restaurar.', request)
+            grava(item)
+            txt, msg = f'Restaurou a imagem anterior: {USOS[uso]}', f'{USOS[uso]}: imagem anterior restaurada.'
+        ident['revisado_em'] = config.hoje().isoformat()
+        db.set_cfg(b, 'identidade', ident)
+        auditar(request, txt)
+        return ir(volta, msg, request)
     try:
         if tem_arquivo:
-            url = await salvar_midia(request, u, arq, uso, alt, credito)
+            if uso == 'rodape':  # fundo do rodapé: WebP 1920 e 960 px + trecho mais claro (para o contraste)
+                from .imagens import validar_upload, LIMITE_UPLOAD
+                dados = await arq.read(LIMITE_UPLOAD + 1)
+                validar_upload(dados)
+                pasta = Path(config.DADOS_DIR) / o['slug'] / 'midia'; pasta.mkdir(parents=True, exist_ok=True)
+                v = ROD.gerar_versoes(dados, pasta)
+                lum95 = ROD.luminancia_p95(dados)
+                for w, (nome, n) in v.items():
+                    db.exe(b, 'INSERT INTO midias (arquivo, uso, alt, credito, bytes, enviado_por) VALUES (%s,%s,%s,%s,%s,%s)', (nome, f'rodape-{w}', '', credito[:300], n, u['nome']))
+                url, url_960 = f'/midia/{v[1920][0]}', f'/midia/{v[960][0]}'
+            else:
+                url = await salvar_midia(request, u, arq, uso, alt, credito)
         elif atual and atual.get('url'):
             url = atual['url']
         else:
             raise ValueError('Escolha o arquivo da imagem.')
     except ValueError as e:
         return ir(volta, str(e), request)
+    except Exception:
+        return ir(volta, 'Não foi possível ler a imagem. Envie PNG, JPG ou WEBP.', request)
     item = {'url': url, 'alt': alt[:300], 'credito': credito[:300]}
-    if uso in ('hero', 'login', 'sede'):  # ponto focal: define o recorte da imagem em cada formato de tela
+    if uso in ('hero', 'login', 'sede', 'rodape'):  # ponto focal: define o recorte da imagem em cada formato de tela
         fx, fy = f.get('foco_x', '50'), f.get('foco_y', '50')
         item['foco_x'] = max(0, min(100, int(fx))) if str(fx).isdigit() else 50
         item['foco_y'] = max(0, min(100, int(fy))) if str(fy).isdigit() else 50
+    if uso == 'rodape':
+        item['decorativa'] = f.get('decorativa') == '1'
+        if item['decorativa']:
+            item['alt'] = ''
+        if tem_arquivo:
+            item['url_960'], item['lum95'] = url_960, lum95
+        else:
+            item['url_960'], item['lum95'] = (atual or {}).get('url_960', url), (atual or {}).get('lum95')
+    if tem_arquivo and atual and atual.get('url') and uso != 'conheca':
+        IMG.guardar_anterior(ident, uso, atual)  # trocar também guarda a anterior (pode ser restaurada)
     if uso == 'conheca':
         item['legenda'] = f.get('legenda', '')[:120]
         if atual is not None:
@@ -694,13 +770,17 @@ async def identidade_midia(request: Request):
             fotos.append(item)
         else:
             return ir(volta, f'O mosaico aceita até {MAX_CONHECA} fotos.', request)
-    elif uso == 'sede':
-        ident.setdefault('sede', {})['foto'] = item
     else:
-        ident[uso] = item
+        grava(item)
     ident['revisado_em'] = config.hoje().isoformat()
     db.set_cfg(b, 'identidade', ident)
     auditar(request, f'Atualizou a imagem: {USOS[uso]}')
+    if uso == 'rodape':
+        c = ROD.conf(b); cor = ROD.cor_de(ident, o['tipo']); m = ROD.minimo_seguro(cor, item.get('lum95'), o['tipo'])
+        if c['camada'] < m:  # nova imagem mais clara: a camada sobe para o mínimo seguro (nunca publica abaixo de AA)
+            c['camada'] = m; db.set_cfg(b, 'rodape', c)
+            auditar(request, f'Rodapé: camada de cor ajustada para {m}% (mínimo seguro de contraste da nova imagem)')
+            return ir(volta, f'{USOS[uso]} atualizada. A camada de cor subiu para {m}%, o mínimo com contraste AA para esta imagem.', request)
     return ir(volta, f'{USOS[uso]} atualizada.', request)
 
 # ---------- Câmara: vereadores ----------

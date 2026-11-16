@@ -50,3 +50,34 @@ def validar_upload(dados: bytes) -> str:
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'otimizar':
         otimizar()
+
+# ---- Identidade: remover sem apagar e restaurar a anterior (16/11/2026) ----
+# Remover só desvincula a imagem da configuração; o arquivo e a linha da biblioteca de mídia ficam.
+# `identidade.anteriores[uso]` guarda as últimas imagens desvinculadas ou trocadas (a mais recente no fim).
+MAX_ANTERIORES = 5
+
+def guardar_anterior(ident, uso, item):
+    if item:
+        h = ident.setdefault('anteriores', {}).setdefault(uso, [])
+        if not h or h[-1] != item:
+            h.append(item)
+        del h[:-MAX_ANTERIORES]
+
+def tem_anterior(ident, uso):
+    return bool(((ident or {}).get('anteriores') or {}).get(uso))
+
+def restaurar_anterior(ident, uso, atual):
+    """Tira a última anterior do histórico e devolve; a atual (se houver) vai para o histórico no lugar."""
+    h = ((ident.get('anteriores') or {}).get(uso)) or []
+    if not h:
+        return None
+    volta = h.pop()
+    if atual:
+        h.append(atual)
+    return volta
+
+def existe_midia(pasta, url):
+    """Imagem enviada pelo painel cujo arquivo sumiu (cópia de banco sem a pasta de mídia, por exemplo) não vira <img> quebrada."""
+    if not isinstance(url, str) or not url.startswith('/midia/'):
+        return bool(url)
+    return (Path(pasta) / url[7:]).is_file()

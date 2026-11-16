@@ -1,0 +1,44 @@
+{# Seção Rodapé (16/11/2026): faixa das colunas com imagem de fundo, camada da cor do rodapé e mascote. Prévia ao vivo e contraste AA. #}
+{% set fundo = ident.rodape or {} %}{% set masc = ident.mascote or {} %}{% set tem_m = masc.url %}{% set C = csrf_token(request) %}{% set pode_cfg = pode('config') %}
+<section class="cx form-tela" id="rodape" aria-labelledby="h-rodape"><h2 id="h-rodape">Rodapé</h2>
+<p class="legal">Faixa das colunas do rodapé (Atendimento, Acesso à informação, Institucional, Privacidade e acessibilidade). Camadas, de baixo para cima: imagem de fundo, cor do rodapé com transparência, mascote e textos (sempre por cima). A cor vem de <a href="/admin/identidade?aba=tema">Tema e cores</a>.</p>
+<div class="rod-grade">
+<div>
+<fieldset class="cor-campo"><legend>Imagem de fundo</legend>
+<div class="rod-img">{% if fundo.url %}<img src="{{ fundo.url_960 or fundo.url }}" alt="" width="160" height="96">{% else %}<span class="rod-sem legal">Sem imagem: o rodapé usa a cor sólida.</span>{% endif %}
+<div class="acoes" style="margin:0"><a class="btn sec" href="/admin/identidade?aba=imagens&amp;uso=rodape">{{ 'Trocar imagem' if fundo.url else 'Enviar imagem' }}</a></div></div>
+{% if pode_cfg and (fundo.url or anteriores.get('rodape')) %}<form method="post" action="/admin/identidade/midia"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="uso" value="rodape"><input type="hidden" name="volta" value="/admin/identidade?aba=imagens#rodape">
+{% if anteriores.get('rodape') %}<button class="btn sec" name="acao" value="restaurar">Restaurar a anterior</button>{% endif %}{% if fundo.url %}{{ remover_img() }}{% endif %}</form>{% endif %}
+</fieldset>
+
+<form class="campos" method="post" action="/admin/identidade/rodape" id="form-rodape" data-rgb="{{ rod_rgb }}" data-titulo="{{ rod_titulo }}" data-texto="{{ rod_texto }}" data-lum95="{{ rod_lum95 if rod_lum95 is not none else '' }}" data-fundo="{{ '1' if fundo.url else '' }}">
+<input type="hidden" name="csrf" value="{{ C }}">
+<fieldset class="cor-campo"><legend>Camada da cor do rodapé</legend>
+{% if fundo.url %}<p class="legal" style="margin:0 0 6px">0% mostra a imagem inteira; 100% cobre com a cor sólida. Abaixo do mínimo seguro ({{ rod_minimo }}% para esta imagem e esta cor) o painel não deixa salvar.</p>
+{% else %}<p class="legal" style="margin:0 0 6px">Sem imagem de fundo, a cor é sólida.</p>{% endif %}
+<label class="rod-desl" for="r-cam">Opacidade da camada <span><input type="range" id="r-cam" name="camada" min="0" max="100" step="5" value="{{ rod.camada if fundo.url else 100 }}" {{ 'disabled' if not fundo.url or not pode_cfg }} aria-describedby="r-aa"><output id="o-cam" for="r-cam">{{ rod.camada if fundo.url else 100 }}%</output></span></label>
+<p id="r-aa" class="rod-aa" aria-live="polite"></p></fieldset>
+
+<fieldset class="cor-campo"><legend>Mascote no rodapé</legend>
+{% if not tem_m %}<p class="chip alerta">Envie um mascote (cartão “Mascote” acima) para ligar estes controles.</p>{% endif %}
+{% set dm = 'disabled' if not tem_m or not pode_cfg else '' %}
+<label class="linha-check"><input type="checkbox" id="r-exib" name="mascote_exibir" value="1" {{ 'checked' if rod.mascote_exibir }} {{ dm }}> Exibir no rodapé</label>
+<fieldset class="opcoes rod-lados"><legend>Lado</legend>
+<label class="linha-check"><input type="radio" name="mascote_lado" value="esq" {{ 'checked' if rod.mascote_lado != 'dir' }} {{ dm }}> Esquerda</label>
+<label class="linha-check"><input type="radio" name="mascote_lado" value="dir" {{ 'checked' if rod.mascote_lado == 'dir' }} {{ dm }}> Direita</label></fieldset>
+<label class="rod-desl" for="r-alt">Altura máxima <span><input type="range" id="r-alt" name="mascote_altura" min="{{ rod_lim[0] }}" max="{{ rod_lim[1] }}" step="10" value="{{ rod.mascote_altura }}" {{ dm }}><output id="o-alt" for="r-alt">{{ rod.mascote_altura }} px</output></span></label>
+<label class="rod-desl" for="r-op">Opacidade do mascote <span><input type="range" id="r-op" name="mascote_opacidade" min="0" max="100" step="5" value="{{ rod.mascote_opacidade }}" {{ dm }}><output id="o-op" for="r-op">{{ rod.mascote_opacidade }}%</output></span></label>
+<label class="linha-check"><input type="checkbox" id="r-cel" name="mascote_celular" value="1" {{ 'checked' if rod.mascote_celular }} {{ dm }}> Mostrar no celular (até {{ rod_lim[2] }} px, sem cobrir texto)</label>
+<label class="linha-check"><input type="checkbox" name="mascote_suspender_eleitoral" value="1" {{ 'checked' if rod.mascote_suspender_eleitoral }} {{ dm }}> Suspender o mascote no período eleitoral</label>
+<p class="legal" style="margin:0">Se o mascote não couber na área livre abaixo da coluna, o portal reduz o tamanho sozinho: ele nunca cobre texto nem bloqueia cliques.</p></fieldset>
+{% if pode_cfg %}<div class="acoes"><button class="btn" id="r-salvar">Salvar rodapé</button></div>{% endif %}
+</form>
+</div>
+
+<div class="rod-previa"><div class="rod-prev-cab"><p class="legal" style="margin:0">Prévia ao vivo</p><div role="group" aria-label="Formato da prévia"><button type="button" class="btn sec pequeno" aria-pressed="true" data-pv="d">Computador</button> <button type="button" class="btn sec pequeno" aria-pressed="false" data-pv="c">Celular</button></div></div>
+<div class="rod-pv{{ ' sem-f' if not fundo.url }}{{ ' sem-m' if not tem_m or not rod.mascote_exibir }}{{ ' dir' if rod.mascote_lado == 'dir' }}{{ ' m-cel' if rod.mascote_celular }}" id="rod-pv" aria-hidden="true"
+ style="--rgb:{{ rod_rgb }};--tit:{{ rod_titulo }};--a:{{ (rod.camada / 100) if fundo.url else 1 }};--alt:{{ rod.mascote_altura }}px;--op:{{ rod.mascote_opacidade / 100 }}">
+{% if fundo.url %}<img class="pv-f" src="{{ fundo.url_960 or fundo.url }}" alt="" style="object-position:{{ fundo.foco_x|default(50) }}% {{ fundo.foco_y|default(50) }}%">{% endif %}<div class="pv-cam"></div>{% if tem_m %}<img class="pv-m" src="{{ masc.url }}" alt="">{% endif %}
+<div class="pv-cols"><div><b>Atendimento</b><i>{{ ident.endereco or 'Endereço' }}</i><i>{{ ident.horario or 'Horário' }}</i><i>{{ ident.telefone or 'Telefone' }}</i></div><div><b>Acesso à informação</b><i>Portal da Transparência</i><i>e-SIC</i><i>Ouvidoria</i></div><div><b>Institucional</b><i>Notícias</i><i>Comunicados</i><i>Fale conosco</i></div><div><b>Privacidade e acessibilidade</b><i>Política de privacidade</i><i>Acessibilidade</i><i>Mapa do site</i></div></div></div>
+<p class="legal" style="margin:8px 0 0">A prévia é ilustrativa (textos resumidos). O portal mostra o rodapé completo.</p></div>
+</div></section>

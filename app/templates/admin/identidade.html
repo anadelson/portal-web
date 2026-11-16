@@ -1,17 +1,22 @@
 {% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% from 'partials/foco.html' import foco %}
 {% block h1 %}{% set exe = orgao.tipo == 'executivo' %}{% set grupo = 'visual' if aba in ('tema', 'imagens', 'favicon') else ('fotos' if aba == 'fotos' else ('conheca' if exe and aba in ('conheca', 'municipio') else 'orgao')) %}{% if grupo == 'visual' %}Identidade visual{% elif grupo == 'fotos' %}{% if album %}{{ album.titulo }}{% elif request.query_params.get('novo') %}Novo álbum{% else %}Fotos e álbuns{% endif %}{% elif grupo == 'conheca' %}Conheça {{ ident.nome_curto or 'a cidade' }}{% else %}Dados do órgão{% endif %}{% endblock %}
 {% block conteudo %}{% set exe = orgao.tipo == 'executivo' %}{% set grupo = 'visual' if aba in ('tema', 'imagens', 'favicon') else ('fotos' if aba == 'fotos' else ('conheca' if exe and aba in ('conheca', 'municipio') else 'orgao')) %}{% set pode_cfg = pode('config') %}{% set C = csrf_token(request) %}{% set q = request.query_params %}
+{% macro remover_img(rotulo='Remover imagem') %}<details class="confirma"><summary class="btn perigo">{{ rotulo }}</summary><div class="confirma-cx" role="group" aria-label="Confirmar remoção">
+<p>O portal ficará sem esta imagem. O arquivo continua na biblioteca de mídia e pode ser reutilizado.</p><button class="btn perigo" name="acao" value="remover" formnovalidate>Sim, remover</button></div></details>{% endmacro %}
 {% macro form_midia(uso, titulo, atual, indice=None, legenda=False, volta='') %}
 <form class="midia" method="post" action="/admin/identidade/midia" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="uso" value="{{ uso }}"><input type="hidden" name="volta" value="{{ volta }}">{% if indice is not none %}<input type="hidden" name="indice" value="{{ indice }}">{% endif %}
 <div class="prev">{% if atual and atual.url %}<img src="{{ atual.url }}" alt="{{ atual.alt }}">{% else %}<span>sem imagem</span>{% endif %}</div>
 <div class="campos-m"><strong>{{ titulo }}</strong>
 <label>Arquivo<input type="file" name="arquivo" accept="image/png,image/jpeg,image/webp" {{ 'disabled' if not pode('config') }}></label>
 <label>Texto alternativo (opcional)<input name="alt" value="{{ atual.alt if atual else '' }}" {{ 'disabled' if not pode('config') }}></label>
-{% if uso in ('hero', 'login', 'sede') %}{{ foco(atual.url if atual else '', atual.foco_x if atual and atual.foco_x is defined else 50, atual.foco_y if atual and atual.foco_y is defined else 50, not pode('config')) }}
+{% if uso == 'rodape' %}<label class="linha-check"><input type="checkbox" name="decorativa" value="1" {{ 'checked' if not atual or atual.decorativa is not defined or atual.decorativa }} {{ 'disabled' if not pode('config') }}> Imagem decorativa (dispensa o texto alternativo)</label>
+<p class="legal">No envio o portal gera versões WebP de 1920 e 960 px e mede o trecho mais claro da imagem para conferir o contraste dos textos do rodapé.</p>{% endif %}
+{% if uso in ('hero', 'login', 'sede', 'rodape') %}{{ foco(atual.url if atual else '', atual.foco_x if atual and atual.foco_x is defined else 50, atual.foco_y if atual and atual.foco_y is defined else 50, not pode('config')) }}
 {% if atual and atual.url %}<div class="recortes" aria-label="Prévia dos recortes">{% for r, n in [('16/9', 'computador'), ('4/5', 'celular'), ('1/1', 'quadrado')] %}<figure><img src="{{ atual.url }}" alt="" data-foco-previa style="aspect-ratio:{{ r }};object-position:{{ atual.foco_x|default(50) }}% {{ atual.foco_y|default(50) }}%"><figcaption>{{ n }}</figcaption></figure>{% endfor %}</div>{% endif %}{% endif %}
 {% if legenda %}<label>Legenda<input name="legenda" value="{{ atual.legenda if atual else '' }}" {{ 'disabled' if not pode('config') }}></label>{% endif %}
 <label>Crédito e licença<input name="credito" value="{{ atual.credito if atual else '' }}" placeholder="Ex.: Foto: Fulano / Prefeitura · uso institucional" {{ 'disabled' if not pode('config') }}></label>
-{% if pode('config') %}<span class="acoes"><button class="btn" name="acao" value="salvar">Salvar</button>{% if indice is not none and atual %}<button class="btn perigo" name="acao" value="remover" formnovalidate>Remover</button>{% endif %}</span>{% endif %}
+{% if pode('config') %}<span class="acoes"><button class="btn" name="acao" value="salvar">Salvar</button>{% if anteriores is defined and anteriores.get(uso) %}<button class="btn sec" name="acao" value="restaurar" formnovalidate>Restaurar a anterior</button>{% endif %}</span>
+{% if atual and atual.url %}{{ remover_img() }}{% endif %}{% endif %}
 </div></form>
 {% endmacro %}
 {% if grupo == 'visual' %}
@@ -41,23 +46,29 @@
 {% for nome, rot, v, alvo in [('cor', 'Cor principal', cor, '#FFFFFF'), ('cor_destaque', 'Cor de destaque', dest, '#17212B')] %}
 <fieldset class="cor-campo" data-alvo="{{ alvo }}"><legend>{{ rot }}</legend><div class="cor-linha"><input type="color" value="{{ v }}" aria-label="{{ rot }}: seletor" {{ 'disabled' if not pode_cfg }}><input name="{{ nome }}" value="{{ v }}" pattern="#[0-9A-Fa-f]{6}" aria-label="{{ rot }}: código hexadecimal" {{ 'disabled' if not pode_cfg }}>
 <span class="aa" aria-live="polite">{% set c = c_cor if nome == 'cor' else c_dest %}contraste {{ '%.1f'|format(c) }}:1 <span class="chip {{ 'ok' if c >= 4.5 else 'erro' }}">{{ 'AA' if c >= 4.5 else 'abaixo de 4,5:1' }}</span></span></div></fieldset>{% endfor %}
-{% if erros_cor %}<p class="chip erro">{{ erros_cor|join(' ') }}</p>{% endif %}
+<fieldset class="cor-campo" data-alvo="#C9D1D9" data-var="--p-rod"><legend>Cor do rodapé</legend><div class="cor-linha"><input type="color" value="{{ cor_rodape }}" aria-label="Cor do rodapé: seletor" {{ 'disabled' if not pode_cfg }}><input name="cor_rodape" value="{{ cor_rodape }}" pattern="#[0-9A-Fa-f]{6}" aria-label="Cor do rodapé: código hexadecimal" {{ 'disabled' if not pode_cfg }}>
+<span class="aa" aria-live="polite">contraste {{ '%.1f'|format(c_rodape) }}:1 <span class="chip {{ 'ok' if c_rodape >= 4.5 else 'erro' }}">{{ 'AA' if c_rodape >= 4.5 else 'abaixo de 4,5:1' }}</span></span></div>
+<p class="legal" style="margin:6px 0 0">Fundo do rodapé, com o texto das colunas por cima. As faixas do nome e do © acompanham em tons próximos; o salvamento confere também os títulos, a faixa do nome e a do ©. Padrão: <code>{{ rodape_padrao }}</code>{{ ' (em uso)' if cor_rodape == rodape_padrao }}.</p>
+{% if pode_cfg and cor_rodape != rodape_padrao %}<label class="linha-check"><input type="checkbox" name="rodape_padrao" value="1"> Voltar à cor padrão ({{ rodape_padrao }})</label>{% endif %}</fieldset>
+{% if erros_cor %}<p class="chip erro">{{ erros_cor|join(' ') }}</p>{% endif %}{% if erros_rodape %}<p class="chip erro">Cor do rodapé: {{ erros_rodape|join('; ') }}</p>{% endif %}
 <fieldset class="cor-campo"><legend>Largura máxima do conteúdo</legend><p class="legal" style="margin:0 0 8px">O portal ocupa toda a largura da tela até este limite (com margem lateral que cresce com a tela). Vale para cabeçalho, barras, destaque, conteúdo e rodapé. Os textos longos mantêm a largura de leitura confortável (cerca de 70 caracteres por linha).</p>
 <div style="display:flex;gap:14px;flex-wrap:wrap">{% for l in larguras %}<label style="flex-direction:row;gap:6px;font-weight:400;min-height:44px;align-items:center"><input type="radio" name="largura" value="{{ l }}" {{ 'checked' if largura == l }} {{ '' if pode_cfg else 'disabled' }}> {{ 'Tela toda' if l == 'tela' else l ~ ' px' }}{% if l == 1760 %} (padrão){% endif %}</label>{% endfor %}</div></fieldset>
 {% if pode_cfg %}<button class="btn">Salvar tema</button>{% endif %}</form>
 <div class="previa-tema" id="previa-tema" style="--p-cor:{{ cor }};--p-dest:{{ dest }}"><p class="legal">Prévia ao vivo</p><div class="pv-cab">Transparência · Diário Oficial · Legislação</div>
-<div class="pv-corpo"><span class="pv-btn">Botão primário</span><span class="pv-btn sec">Secundário</span><span class="pv-dest">Destaque</span></div><div class="pv-cartao">Cartão de indicador <strong>R$ 22,7 mi</strong></div></div></div></section>
+<div class="pv-corpo"><span class="pv-btn">Botão primário</span><span class="pv-btn sec">Secundário</span><span class="pv-dest">Destaque</span></div><div class="pv-cartao">Cartão de indicador <strong>R$ 22,7 mi</strong></div>
+<div class="pv-rod" style="--p-rod:{{ cor_rodape }};--p-rod-tit:{{ rodape_titulo }}"><b>Atendimento</b><span>Segunda a sexta, 8h às 17h</span><span>Portal da Transparência · Ouvidoria</span></div></div></div></section>
 
 
 {% elif aba == 'imagens' %}
-{% set USOS_VIS = [('brasao', 'Brasão', ident.brasao), ('mascote', 'Mascote (rodapé, ao lado do nome)', ident.mascote), ('hero', 'Fundo do destaque (página inicial)', ident.hero), ('login', 'Fundo da tela de login', ident.login), ('sede', 'Foto da sede', (ident.sede or {}).foto)] %}
+{% set USOS_VIS = [('brasao', 'Brasão', ident.brasao), ('mascote', 'Mascote (rodapé)', ident.mascote), ('hero', 'Fundo do destaque (página inicial)', ident.hero), ('login', 'Fundo da tela de login', ident.login), ('rodape', 'Fundo do rodapé', ident.rodape), ('sede', 'Foto da sede', (ident.sede or {}).foto)] %}
 {% set uso_q = q.get('uso', '') %}
 {% if uso_q in dict(usos) and uso_q != 'conheca' %}{% for k, t, at in USOS_VIS if k == uso_q %}
 {{ voltar('/admin/identidade?aba=imagens', 'Voltar às imagens') }}
 <section class="cx form-tela"><h2>{{ t }}</h2><p class="legal">PNG, JPG ou WEBP, até 3 MB. Texto alternativo opcional.{% if k in ('hero', 'login', 'sede') %} O ponto focal define o recorte em cada formato de tela (prévias abaixo).{% endif %}</p>
 <div class="midias">{{ form_midia(k, t, at, volta='/admin/identidade?aba=imagens') }}</div></section>{% endfor %}
 {% else %}
-<ul class="grade-imagens">{% for k, t, at in USOS_VIS %}<li><a href="/admin/identidade?aba=imagens&amp;uso={{ k }}"><span class="mini">{% if at and at.url %}<img src="{{ at.url }}" alt="">{% else %}<span>sem imagem</span>{% endif %}</span><strong>{{ t }}</strong><span class="ed">{{ 'Trocar ou editar' if at and at.url else 'Enviar imagem' }}</span></a></li>{% endfor %}</ul>
+<ul class="grade-imagens">{% for k, t, at in USOS_VIS %}<li><a href="/admin/identidade?aba=imagens&amp;uso={{ k }}"><span class="mini">{% if at and at.url %}<img src="{{ at.url }}" alt="">{% else %}<span>sem imagem</span>{% endif %}</span><strong>{{ t }}</strong><span class="ed">{{ 'Trocar, editar ou remover' if at and at.url else 'Enviar imagem' }}</span></a></li>{% endfor %}</ul>
+{% include 'admin/_rodape.html' %}
 {% endif %}
 
 {% elif aba == 'favicon' %}
@@ -65,10 +76,10 @@
 <div class="fav-grade"><form class="campos" method="post" action="/admin/identidade/favicon" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}">
 <label>PNG quadrado, pelo menos 180×180 (ideal 512×512)<input type="file" name="png" accept="image/png" required {{ 'disabled' if not pode_cfg }}></label>
 <label>SVG (opcional; sem scripts nem links externos)<input type="file" name="svg" accept="image/svg+xml" {{ 'disabled' if not pode_cfg }}></label>
-{% if pode_cfg %}<div class="acoes"><button class="btn" name="acao" value="enviar">Gerar favicon</button>{% if ident.favicon %}<button class="btn perigo" name="acao" value="remover" formnovalidate>Remover</button>{% endif %}</div>{% endif %}
+{% if pode_cfg %}<div class="acoes"><button class="btn" name="acao" value="enviar">Gerar favicon</button>{% if fav_anterior %}<button class="btn sec" name="acao" value="restaurar" formnovalidate>Restaurar o anterior</button>{% endif %}</div>{% if ident.favicon %}{{ remover_img('Remover favicon') }}{% endif %}{% endif %}
 <p class="legal">Gera 16, 32 (abas), 180 (iPhone) e 512 px (Android e atalhos).</p></form>
 <div>{% if ident.favicon %}<div class="aba-nav" aria-label="Prévia na aba do navegador"><span class="aba-x"><img src="{{ ident.favicon['32'] }}" alt="" width="16" height="16">{{ ident.nome or orgao.nome }}</span></div>
-<p>{% for t in ['16', '32', '180', '512'] %}<img src="{{ ident.favicon[t] }}" alt="Favicon {{ t }} px" width="{{ [t|int, 96]|min }}" height="{{ [t|int, 96]|min }}" style="margin-right:10px;vertical-align:bottom">{% endfor %}</p>{% else %}<p>Sem favicon próprio: o navegador mostra o ícone padrão.</p>{% endif %}</div></div></section>
+<p>{% for t in ['16', '32', '180', '512'] %}<img src="{{ ident.favicon[t] }}" alt="Favicon {{ t }} px" width="{{ [t|int, 96]|min }}" height="{{ [t|int, 96]|min }}" style="margin-right:10px;vertical-align:bottom">{% endfor %}</p>{% else %}<p>Sem favicon próprio: o portal usa o ícone padrão da plataforma.</p>{% endif %}</div></div></section>
 
 {% elif aba == 'redes' %}
 <section class="cx">

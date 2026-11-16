@@ -54,11 +54,12 @@
   function contraste(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
   form.querySelectorAll('.cor-campo').forEach(function (fs) {
     var cor = fs.querySelector('input[type=color]'), hex = fs.querySelector('input[name]'), aa = fs.querySelector('.aa'), alvo = fs.dataset.alvo;
+    if (!cor || !hex || !aa) return;  // grupo sem cor (largura máxima)
     function atualizar(v) {
       if (!/^#[0-9A-Fa-f]{6}$/.test(v)) return;
       var c = contraste(v, alvo), ok = c >= 4.5;
       aa.innerHTML = 'contraste ' + c.toFixed(1).replace('.', ',') + ':1 <span class="chip ' + (ok ? 'ok' : 'erro') + '">' + (ok ? 'AA' : 'abaixo de 4,5:1') + '</span>';
-      prev.style.setProperty(hex.name === 'cor' ? '--p-cor' : '--p-dest', v);
+      prev.style.setProperty(fs.dataset.var || (hex.name === 'cor' ? '--p-cor' : '--p-dest'), v);
     }
     cor.addEventListener('input', function () { hex.value = cor.value.toUpperCase(); atualizar(hex.value); });
     hex.addEventListener('input', function () { if (/^#[0-9A-Fa-f]{6}$/.test(hex.value)) cor.value = hex.value; atualizar(hex.value); });
@@ -320,4 +321,46 @@
       aplicar(50, 50);
     });
   });
+})();
+
+/* Identidade — seção Rodapé: prévia ao vivo (camada, mascote, celular) e contraste AA no pior trecho da imagem de fundo */
+(function () {
+  var form = document.getElementById('form-rodape'), pv = document.getElementById('rod-pv');
+  if (!form || !pv) return;
+  var $ = function (i) { return document.getElementById(i); };
+  function lin(x) { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }
+  function lum(c) { return 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]); }
+  function ct(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  function hex(h) { return [1, 3, 5].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
+  var ROD = form.dataset.rgb.split(' ').map(Number), TIT = hex(form.dataset.titulo), TX = hex(form.dataset.texto),
+      tem = !!form.dataset.fundo, g = 255 * (form.dataset.lum95 === '' ? 1 : parseFloat(form.dataset.lum95)), salvar = $('r-salvar');
+  function fundo(a) { return ROD.map(function (v) { return Math.round(a * v + (1 - a) * g); }); }
+  function pior(a) { var f = fundo(a); return [ct(f, TX), ct(f, TIT)]; }
+  function minimo() { for (var a = 0; a <= 100; a += 5) { var p = pior(a / 100); if (Math.min(p[0], p[1]) >= 4.5) return a; } return 100; }
+  function br(n) { return n.toFixed(1).replace('.', ','); }
+  function at() {
+    var cam = $('r-cam'), a = tem ? cam.value / 100 : 1;
+    pv.style.setProperty('--a', a); $('o-cam').textContent = (tem ? cam.value : 100) + '%';
+    pv.style.setProperty('--alt', $('r-alt').value + 'px'); $('o-alt').textContent = $('r-alt').value + ' px';
+    pv.style.setProperty('--op', $('r-op').value / 100); $('o-op').textContent = $('r-op').value + '%';
+    var lado = form.querySelector('[name=mascote_lado]:checked');
+    pv.classList.toggle('dir', !!lado && lado.value === 'dir');
+    if (!$('r-exib').disabled) pv.classList.toggle('sem-m', !$('r-exib').checked);
+    pv.classList.toggle('m-cel', $('r-cel').checked);
+    var aa = $('r-aa');
+    if (!tem) { aa.innerHTML = ''; if (salvar) salvar.disabled = false; return; }
+    var p = pior(a), ok = Math.min(p[0], p[1]) >= 4.5, m = minimo();
+    aa.innerHTML = 'Contraste no trecho mais claro da imagem: textos ' + br(p[0]) + ':1 · títulos ' + br(p[1]) + ':1 <span class="chip ' + (ok ? 'ok">AA' : 'erro">abaixo de 4,5:1') + '</span>' +
+      (ok ? '' : '<br><span class="chip erro">Mínimo seguro: ' + m + '%</span> <button type="button" class="btn sec pequeno" id="r-min">Usar o mínimo seguro</button>');
+    if (salvar) salvar.disabled = !ok;
+    var b = $('r-min'); if (b) b.onclick = function () { cam.value = m; at(); cam.focus(); };
+  }
+  form.addEventListener('input', at); form.addEventListener('change', at);
+  document.querySelectorAll('[data-pv]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('[data-pv]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      pv.classList.toggle('cel', b.dataset.pv === 'c');
+    });
+  });
+  at();
 })();

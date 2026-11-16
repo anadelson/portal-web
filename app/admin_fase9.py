@@ -158,10 +158,51 @@ async def ident_cores(request: Request):
     v = f.get('largura', '')
     larg = 'tela' if v == 'tela' else (int(v) if str(v).isdigit() and int(v) in LARGURAS else LARGURA_PADRAO)
     antes_l = ident.get('largura') or LARGURA_PADRAO
+    from . import rodape as ROD
+    tipo = request.state.orgao['tipo']
+    rod_antes = ROD.cor_de(ident, tipo)
+    rod = ROD.cor_padrao(tipo) if f.get('rodape_padrao') == '1' else ((f.get('cor_rodape') or '').upper() or rod_antes)
+    erros_rod = ROD.checar_cor(rod, tipo)
+    if erros_rod:
+        return ir('/admin/identidade?aba=tema', f'Recusado (acessibilidade AA): cor do rodapé {rod}: ' + '; '.join(erros_rod) + '.', request)
     ident['cor'], ident['cor_destaque'], ident['largura'] = cor, dest, larg
+    ident['cor_rodape'] = '' if rod == ROD.cor_padrao(tipo) else rod  # vazio = cor padrão do tipo de órgão
     db.set_cfg(b, 'identidade', ident)
-    auditar(request, f'Identidade: cores {antes[0]}/{antes[1]} → {cor}/{dest}; largura máxima {antes_l} → {larg}')
-    return ir('/admin/identidade?aba=tema', 'Tema salvo.', request)
+    auditar(request, f'Identidade: cores {antes[0]}/{antes[1]} → {cor}/{dest}; rodapé {rod_antes} → {rod}; largura máxima {antes_l} → {larg}')
+    msg = 'Tema salvo.'
+    fundo = ident.get('rodape') or {}
+    if fundo.get('url'):  # com imagem no rodapé, a camada nunca fica abaixo do mínimo seguro para a nova cor
+        c = ROD.conf(b); m = ROD.minimo_seguro(rod, fundo.get('lum95'), tipo)
+        if c['camada'] < m:
+            c['camada'] = m; db.set_cfg(b, 'rodape', c)
+            auditar(request, f'Rodapé: camada de cor ajustada para {m}% (mínimo seguro com a nova cor)')
+            msg += f' A camada de cor do rodapé subiu para {m}%, o mínimo com contraste AA.'
+    return ir('/admin/identidade?aba=tema', msg, request)
+
+@r.post('/identidade/rodape')
+async def ident_rodape(request: Request):
+    """Seção Rodapé: transparência da camada de cor e mascote (lado, tamanho, transparência, celular, período eleitoral)."""
+    u = exige(request, 'config'); f = await ler_form(request); o = request.state.orgao; b = o['banco']
+    from . import rodape as ROD
+    ident = db.cfg(b, 'identidade', {}) or {}
+    antes, novo = ROD.conf(b), ROD.validar(f)
+    fundo = ident.get('rodape') or {}
+    if fundo.get('url'):
+        m = ROD.minimo_seguro(ROD.cor_de(ident, o['tipo']), fundo.get('lum95'), o['tipo'])
+        if novo['camada'] < m:
+            t, h = ROD.contraste_camada(ROD.cor_de(ident, o['tipo']), fundo.get('lum95'), novo['camada'], o['tipo'])
+            return ir('/admin/identidade?aba=imagens#rodape', f'Recusado (acessibilidade AA): com a camada em {novo["camada"]}% o contraste fica em '
+                      f'{min(t, h):.1f}:1 (mínimo 4,5:1). Use pelo menos {m}%.'.replace('.', ',', 1), request)
+    else:
+        novo['camada'] = antes['camada']  # sem imagem de fundo a cor é sólida; o valor guardado não muda
+    if not ((ident.get('mascote') or {}).get('url')):
+        for k in novo:
+            if k.startswith('mascote_'):
+                novo[k] = antes[k]  # sem mascote os controles ficam desativados
+    db.set_cfg(b, 'rodape', novo)
+    mud = [f'{k}: {antes[k]} → {novo[k]}' for k in novo if antes.get(k) != novo[k]]
+    auditar(request, 'Rodapé: ' + ('; '.join(mud) if mud else 'salvo sem mudanças'))
+    return ir('/admin/identidade?aba=imagens#rodape', 'Rodapé salvo.', request)
 
 FAVICON_TAMANHOS = (16, 32, 180, 512)
 SVG_PROIBIDO = re.compile(r'<\s*(script|foreignObject|iframe|object|embed)|\son\w+\s*=|javascript:|xlink:href\s*=\s*["\'](?!#)|href\s*=\s*["\'](?!#)', re.I)
@@ -186,9 +227,17 @@ async def ident_favicon(request: Request):
     u = exige(request, 'config'); f = await ler_form(request); o = request.state.orgao; b = o['banco']
     from .imagens import LIMITE_UPLOAD
     ident = db.cfg(b, 'identidade', {}) or {}
+    from . import imagens as IMG
     if f.get('acao') == 'remover':
-        ident.pop('favicon', None); db.set_cfg(b, 'identidade', ident); auditar(request, 'Identidade: favicon removido')
-        return ir('/admin/identidade?aba=favicon', 'Favicon removido (o navegador volta ao ícone padrão).', request)
+        IMG.guardar_anterior(ident, 'favicon', ident.pop('favicon', None)); db.set_cfg(b, 'identidade', ident)
+        auditar(request, 'Identidade: favicon removido (os arquivos continuam na biblioteca de mídia)')
+        return ir('/admin/identidade?aba=favicon', 'Favicon removido: o portal volta ao ícone padrão da plataforma. Os arquivos continuam guardados.', request)
+    if f.get('acao') == 'restaurar':
+        fav = IMG.restaurar_anterior(ident, 'favicon', ident.get('favicon'))
+        if not fav:
+            return ir('/admin/identidade?aba=favicon', 'Não há favicon anterior para restaurar.', request)
+        ident['favicon'] = fav; db.set_cfg(b, 'identidade', ident); auditar(request, 'Identidade: favicon anterior restaurado')
+        return ir('/admin/identidade?aba=favicon', 'Favicon anterior restaurado.', request)
     png, svg = f.get('png'), f.get('svg')
     pasta = Path(config.DADOS_DIR) / o['slug'] / 'midia'; pasta.mkdir(parents=True, exist_ok=True)
     try:
@@ -207,6 +256,7 @@ async def ident_favicon(request: Request):
             (pasta / nome).write_bytes(sd); fav['svg'] = f'/midia/{nome}'
     except ValueError as e:
         return ir('/admin/identidade?aba=favicon', str(e), request)
+    IMG.guardar_anterior(ident, 'favicon', ident.get('favicon'))
     ident['favicon'] = fav; db.set_cfg(b, 'identidade', ident)
     auditar(request, 'Identidade: favicon atualizado (' + ', '.join(fav) + ')')
     return ir('/admin/identidade?aba=favicon', 'Favicon gerado nos tamanhos 16, 32, 180 e 512.', request)
