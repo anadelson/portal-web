@@ -12,7 +12,7 @@
 
 <section class="cx"><h2>2. Presença</h2><p class="legal">Nada vem preenchido: registre o que aconteceu na sessão (só no dia da sessão ou depois).</p>
 <form method="post" action="/admin/sessoes/{{ s.id }}"><input type="hidden" name="csrf" value="{{ C }}"><div class="tabela"><table><caption class="sr">Presença</caption><thead><tr><th scope="col">Vereador(a)</th><th scope="col">Presente</th><th scope="col">Ausente</th><th scope="col">Justificada</th></tr></thead><tbody>
-{% for m in membros %}<tr><th scope="row">{{ m.nome }}{% if m.id == pres_id %} <span class="chip">Presidente</span>{% endif %}</th>{% for o in ['presente','ausente','justificada'] %}<td><input type="radio" name="pres_{{ m.id }}" value="{{ o }}" {{ 'checked' if pres.get(m.id) == o }} aria-label="{{ m.nome }}: {{ o }}"></td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+{% for m in membros %}<tr><th scope="row">{{ m.nome }}{% if m.id == pres_id %} <span class="chip">Presidente</span>{% endif %}</th>{% for o in ['presente','ausente','justificada'] %}<td><label class="celula-opcao" for="pres-{{ m.id }}-{{ o }}"><input type="radio" id="pres-{{ m.id }}-{{ o }}" name="pres_{{ m.id }}" value="{{ o }}" {{ 'checked' if pres.get(m.id) == o }}><span class="sr">{{ m.nome }}: {{ o }}</span></label></td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
 <button class="btn sec" name="acao" value="presenca" style="margin-top:8px">Salvar presença</button></form></section>
 
 <section class="cx"><h2>3. Votação nominal</h2><p class="legal">Sim, Não, Abstenção ou Ausente para cada vereador. O Presidente só vota em caso de empate (maioria simples); nos quóruns qualificados o voto dele é computado.</p>

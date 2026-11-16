@@ -5,11 +5,14 @@
 <p>O portal ficará sem esta imagem. O arquivo continua na biblioteca de mídia e pode ser reutilizado.</p><button class="btn perigo" name="acao" value="remover" formnovalidate>Sim, remover</button></div></details>{% endmacro %}
 {% macro form_midia(uso, titulo, atual, indice=None, legenda=False, volta='') %}
 <form class="midia" method="post" action="/admin/identidade/midia" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="uso" value="{{ uso }}"><input type="hidden" name="volta" value="{{ volta }}">{% if indice is not none %}<input type="hidden" name="indice" value="{{ indice }}">{% endif %}
-<div class="prev">{% if atual and atual.url %}<img src="{{ atual.url }}" alt="{{ atual.alt }}">{% else %}<span>sem imagem</span>{% endif %}</div>
+<div class="prev" data-previa-quadro>{% if atual and atual.url %}<img src="{{ atual.url }}" alt="{{ atual.alt }}">{% else %}<span>sem imagem</span>{% endif %}</div>
 <div class="campos-m"><strong>{{ titulo }}</strong>
-<label>Arquivo<input type="file" name="arquivo" accept="image/png,image/jpeg,image/webp" {{ 'disabled' if not pode('config') }}></label>
-<label>Texto alternativo (opcional)<input name="alt" value="{{ atual.alt if atual else '' }}" {{ 'disabled' if not pode('config') }}></label>
-{% if uso == 'rodape' %}<label class="linha-check"><input type="checkbox" name="decorativa" value="1" {{ 'checked' if not atual or atual.decorativa is not defined or atual.decorativa }} {{ 'disabled' if not pode('config') }}> Imagem decorativa (dispensa o texto alternativo)</label>
+{% set sfx = uso ~ ('-' ~ indice if indice is not none else '') %}
+<label for="arq-{{ sfx }}">Arquivo<input type="file" id="arq-{{ sfx }}" name="arquivo" accept="image/png,image/jpeg,image/webp" data-previa-local {{ 'disabled' if not pode('config') }}></label>
+{% set deco = uso == 'rodape' and (not atual or atual.decorativa is not defined or atual.decorativa) %}
+{% if uso == 'rodape' %}<label class="linha-check" for="deco-{{ sfx }}"><input type="checkbox" id="deco-{{ sfx }}" name="decorativa" value="1" data-decorativa="alt-{{ sfx }}" {{ 'checked' if deco }} {{ 'disabled' if not pode('config') }}><span>Imagem decorativa (dispensa o texto alternativo)</span></label>{% endif %}
+<label for="alt-{{ sfx }}">Texto alternativo (opcional)<input id="alt-{{ sfx }}" name="alt" value="{{ atual.alt if atual else '' }}" {{ 'disabled' if not pode('config') or deco }}></label>
+{% if uso == 'rodape' %}<p class="legal nota-decorativa" id="nota-alt-{{ sfx }}" {{ '' if deco else 'hidden' }}>Imagem decorativa: o texto alternativo não é necessário (o leitor de tela ignora a imagem).</p>
 <p class="legal">No envio o portal gera versões WebP de 1920 e 960 px e mede o trecho mais claro da imagem para conferir o contraste dos textos do rodapé.</p>{% endif %}
 {% if uso in ('hero', 'login', 'sede', 'rodape') %}{{ foco(atual.url if atual else '', atual.foco_x if atual and atual.foco_x is defined else 50, atual.foco_y if atual and atual.foco_y is defined else 50, not pode('config')) }}
 {% if atual and atual.url %}<div class="recortes" aria-label="Prévia dos recortes">{% for r, n in [('16/9', 'computador'), ('4/5', 'celular'), ('1/1', 'quadrado')] %}<figure><img src="{{ atual.url }}" alt="" data-foco-previa style="aspect-ratio:{{ r }};object-position:{{ atual.foco_x|default(50) }}% {{ atual.foco_y|default(50) }}%"><figcaption>{{ n }}</figcaption></figure>{% endfor %}</div>{% endif %}{% endif %}
