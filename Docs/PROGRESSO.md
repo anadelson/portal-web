@@ -2432,3 +2432,4 @@ Pedido: `Docs/PEDIDO-DIARIO-CAPA.md`. O protótipo citado estava em `Docs/diario
   - `validacao-e-texto.json`: comparação do texto e validação pyHanko das 5 assinaturas.
   - Tudo gerado no ambiente de teste, com a cadeia de certificados de TESTE.
 - **Não implantado:** aguarda aprovação. A imagem precisa ser reconstruída (pyphen) antes de subir.
+- Testes: as 34 suítes passaram contra o código (inclui a nova `teste_diario_capa`). **Não implantado:** aguarda aprovação do usuário (e snapshot).
