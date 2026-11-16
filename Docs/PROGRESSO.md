@@ -2360,3 +2360,10 @@ Pedido do usuário: "publique mesmo o teste, mas com legenda de edição teste -
 - **Opção do órgão:** Diário Oficial → Signatários, calendário e lei → "Edições de teste no portal" (padrão: mostrar; registrada na auditoria). Desligada, a edição de teste some da lista, da página inicial, do PDF público e da verificação.
 - Nada muda para as edições oficiais. Ao passar para o modo oficial, as edições de teste continuam sendo apagadas (numeração oficial começa do nº 1). portal.css v=32.
 - Testes: `teste_fluxos` e `teste_diario_seguranca` atualizados para a regra nova (legenda na lista, na página inicial e na verificação; PDF lido de verdade, com a legenda na capa e na marca d'água; opção desligada esconde tudo, inclusive o PDF; auditoria). As 33 suítes passaram contra o código. Capturas em `Docs/avaliacao-diario-teste/` (ambiente de teste, ato fictício).
+- **Implantado na gestão em 16/11/2026, 09h05 (Brasília)**, fora da janela do Diário, com aprovação do usuário ("Aprovo, existe snapshot"):
+  - mescla `e2d4e41`; backup ok (plataforma, bd_pm_bora, bd_cm_bora) às 08h54; versão `diario-teste-publico (e2d4e41)`;
+  - as 33 suítes passaram contra a imagem nova; sem migração nova (o `provision atualizar` não aplicou nada);
+  - conferido: portais, /diario, /diario/verificar e login 200; portal.css v=32 com o estilo da legenda; opção "mostrar edições de teste" ligada (padrão) na Prefeitura; /admin/diario/config pede login (303); app e worker de pé, sem erros nos logs.
+  - /diario ainda mostra "Nenhuma edição": a Prefeitura não tem edição publicada.
+- **Falta (usuário):** fazer a edição pelo painel (Diário Oficial: Abrir edição → Fechar → Assinar cada etapa → Publicar). Em modo teste a rotina automática não abre edições. Depois disso, a edição aparece no portal com a legenda.
+- **Falta:** o nó do prefbora recebe esta versão pelo pacote novo do console e o instalador (etapas 8 e 9: `s`).
