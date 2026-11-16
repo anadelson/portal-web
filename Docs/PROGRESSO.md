@@ -2452,3 +2452,7 @@ O usuário não via a Edição nº 1 refeita, embora o servidor já entregasse o
 - O PDF abre no navegador (inline) com `Cache-Control: no-cache` e ETag: sempre confere com o servidor. O PDF baixado no painel para assinar com token também leva a versão e não fica em cache (`no-store`).
 - Teste `teste_diario_seguranca` confere o `?v=` e os cabeçalhos.
 - Testes: as 34 suítes passaram contra o código. **Não implantado:** aguarda aprovação do usuário (e snapshot).
+- **Implantado na gestão em 16/11/2026, 13h15 (Brasília)**, fora da janela do Diário, com aprovação do usuário ("Aprovo, existe snapshot"):
+  - mescla `6bd3ec0`; backup ok (plataforma, bd_pm_bora, bd_cm_bora) às 13h03; versão `diario-pdf-cache (6bd3ec0)`;
+  - as 34 suítes passaram contra a imagem nova; sem migração nova;
+  - conferido: o link do Diário e da página inicial é `/diario/1.pdf?v=79c0212b002a`; o PDF responde inline, com `Cache-Control: no-cache` e ETag, e é o da Edição nº 1 refeita (234.336 bytes); portais 200; app e worker de pé, sem erros nos logs.
