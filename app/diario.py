@@ -2,7 +2,7 @@
 
 - capa conforme a Lei 910, art. 6º (brasão, título, lei de instituição, data, número, responsável);
 - página onde cada ato começa (retorno da remessa da Câmara);
-- MODO TESTE: marca d'água "SEM VALOR OFICIAL — TESTE" em todas as páginas;
+- MODO TESTE: marca d'água "EDIÇÃO TESTE — NÃO HOMOLOGADA — SEM VALIDADE" em todas as páginas (LEGENDA_TESTE);
 - PDF/A-2b para arquivo permanente (Lei 910, art. 8º; decreto, art. 5º, VI), convertido ANTES de assinar;
 - calendário: sem edição em fins de semana, feriados e dias sem expediente; ponto facultativo conta como dia útil; corte no horário do órgão (padrão 16h).
 """

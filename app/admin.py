@@ -854,7 +854,7 @@ def diario(request: Request):
     agora = config.agora()
     return T('diario', request, u, atos=db.todos(b, "SELECT * FROM diario_atos WHERE situacao <> 'publicado' ORDER BY id DESC"),
              eds=db.todos(b, 'SELECT * FROM diario_edicoes ORDER BY id DESC LIMIT 20'), aberta=DS.em_andamento(b), prox=DS.proxima_ordinaria(b),
-             corte=agora.time() >= diario_pdf.regras(b)['t_corte'], alvo=diario_pdf.data_alvo(b, agora), modo_teste=AS.modo_teste(),
+             corte=agora.time() >= diario_pdf.regras(b)['t_corte'], alvo=diario_pdf.data_alvo(b, agora), modo_teste=AS.modo_teste(), diario_teste_publico=diario_pdf.mostrar_teste(b),
              alertas=db.todos(b, 'SELECT * FROM diario_alertas WHERE NOT resolvido ORDER BY id DESC LIMIT 10'),
              publicados=db.todos(b, "SELECT a.id, a.tipo, a.numero, a.ementa, e.numero en, e.letra el FROM diario_atos a JOIN diario_edicoes e ON e.id=a.edicao_id WHERE a.situacao='publicado' ORDER BY a.id DESC LIMIT 100"),
              designacoes={d['caderno']: d for d in db.todos(b, 'SELECT * FROM designacoes WHERE ativo ORDER BY id')},
@@ -963,7 +963,7 @@ async def diario_edicao(request: Request):
     try:
         if acao in ('abrir', 'extra'):
             e = DS.abrir(b, u['nome'], extra=acao == 'extra')
-            msg = f"Edição nº {e['numero']}{e['letra']} aberta" + (' em MODO TESTE (sem valor oficial).' if e['modo_teste'] else '.')
+            msg = f"Passo 1 de 4: edição nº {e['numero']}{e['letra']} criada" + (' em MODO TESTE (sem valor oficial)' if e['modo_teste'] else '') + '. Próximo: fechar a edição e gerar o PDF.'
         elif acao == 'invalidar':
             e = db.um(b, 'SELECT * FROM diario_edicoes WHERE id=%s', (int(f['id']),))
             DS.invalidar(o, e, f.get('ato', ''), f.get('comunicado', ''), f.get('prorrogacao', ''), u['nome'])
@@ -976,25 +976,26 @@ async def diario_edicao(request: Request):
                 if e['situacao'] != 'montagem':
                     raise ValueError('A edição já está fechada.')
                 n, cod, pdfa = DS.fechar(o, e, u['nome'])
-                msg = f"Edição fechada com {n} ato(s). Código {cod}. {'PDF/A-2b gerado.' if pdfa else 'Atenção: conversão para PDF/A indisponível.'} Agora assine as etapas."
+                msg = f"Edição fechada com {n} ato(s). Código {cod}. {'PDF/A-2b gerado.' if pdfa else 'Atenção: conversão para PDF/A indisponível.'} Passo 3 de 4: assine as etapas."
             elif acao == 'assinar':
                 rot, completa = await run_in_threadpool(DS.assinar_etapa, o, e, u['nome'])  # pyHanko usa asyncio.run: fora do laço
-                msg = f'{rot}: assinada.' + (' Edição totalmente assinada.' if completa else '')
+                msg = f'{rot}: assinada.' + (' Edição totalmente assinada. Passo 4 de 4: publicar.' if completa else ' Próximo: assinar a etapa seguinte.')
             elif acao == 'a3':
                 arq = f.get('arquivo')
                 if arq is None or not getattr(arq, 'filename', ''):
                     raise ValueError('Escolha o PDF assinado.')
                 rot, completa = await run_in_threadpool(DS.receber_a3, o, e, await arq.read(30 * 1024 * 1024), u['nome'])
-                msg = f'{rot}: assinatura recebida e validada.' + (' Edição totalmente assinada.' if completa else '')
+                msg = f'{rot}: assinatura recebida e validada.' + (' Edição totalmente assinada. Passo 4 de 4: publicar.' if completa else ' Próximo: assinar a etapa seguinte.')
             elif acao == 'publicar':
                 teste = DS.publicar(o, e, u['nome'])
-                msg = f"Edição nº {e['numero']}{e['letra']} " + ('concluída em MODO TESTE: não aparece como oficial no portal.' if teste else 'publicada.')
+                msg = f"Edição nº {e['numero']}{e['letra']} " + (('publicada em MODO TESTE, no portal com a legenda “' + diario_pdf.LEGENDA_TESTE + '”.') if teste and diario_pdf.mostrar_teste(b) else
+                                                                  ('concluída em MODO TESTE: não aparece no portal (opção “Edições de teste no portal” desligada).' if teste else 'publicada.'))
             elif acao == 'reabrir':
                 if any(x['feita'] for x in e['assinaturas']):
                     raise ValueError('Edição já assinada não pode ser reaberta: use retificação ou edição extra.')
                 db.exe(b, 'UPDATE diario_atos SET edicao_id=NULL, pagina=NULL WHERE edicao_id=%s', (e['id'],))
                 db.exe(b, "UPDATE diario_edicoes SET situacao='montagem', pdf_arquivo=NULL, sha256=NULL, codigo=NULL, assinaturas='[]', assinatura='pendente' WHERE id=%s", (e['id'],))
-                msg = 'Edição reaberta para ajustes (ainda não assinada nem publicada).'
+                msg = 'Fechamento desfeito: a edição voltou ao passo 2 e aceita novos atos aprovados (ainda não assinada nem publicada).'
             else:
                 raise HTTPException(400)
     except AS.NaoConfigurado as ex:
