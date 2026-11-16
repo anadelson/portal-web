@@ -65,7 +65,9 @@ def fechar(o, e, quem):
             a['retifica'] = f"retifica {a['rt']} {a['rn']}, publicado na edição nº {a['ren']}{a['rel'] or ''} de {a['red'].strftime('%d/%m/%Y') if a['red'] else '?'}{', página ' + str(a['rp']) if a['rp'] else ''}"
     ident = dict(db.cfg(b, 'identidade', {}) or {}, dominio=o['dominio'])
     conf = db.cfg(b, 'diario', {}) or {}
-    caminho, _, cod, paginas = D.gerar_pdf(e, atos, ident, str(Path(config.DADOS_DIR) / o['slug'] / 'diario'), teste=e['modo_teste'], brasao=brasao_arquivo(o, ident), lei=conf.get('lei'))
+    ini = db.um(b, 'SELECT min(data) d FROM diario_edicoes WHERE modo_teste=%s', (e['modo_teste'],))['d']  # "Ano I" a partir da 1ª edição do órgão
+    caminho, _, cod, paginas = D.gerar_pdf(e, atos, ident, str(Path(config.DADOS_DIR) / o['slug'] / 'diario'), teste=e['modo_teste'], brasao=brasao_arquivo(o, ident),
+                                           lei=D.regras(b).get('lei') or conf.get('lei'), orgao=o, ano_inicio=ini.year if ini else None)
     pdfa = D.para_pdfa(caminho)
     for aid, pag in paginas.items():
         db.exe(b, 'UPDATE diario_atos SET pagina=%s WHERE id=%s', (pag, aid))
@@ -102,7 +104,13 @@ def assinar_etapa(o, e, quem):
         raise ValueError('Todas as etapas já estão assinadas.')
     ident = db.cfg(b, 'identidade', {}) or {}
     pdf = Path(e['pdf_arquivo']).read_bytes()
-    novo = A.assinar(pdf, x['etapa'], designacao(b, x['etapa']), f"{x['rotulo']} — Diário Oficial nº {e['numero']}{e['letra']}", ident.get('nome_curto') or o['municipio'])
+    cad = [y['etapa'] for y in e['assinaturas'] if y['etapa'] != 'final']
+    from . import diario_layout as L
+    tk = L.tokens(ident.get('cor') or o.get('cor'))
+    carimbo = {'rotulo': 'Assinatura final da edição' if x['etapa'] == 'final' else A.ETAPAS[x['etapa']], 'lado': 'dir' if x['etapa'] == 'final' else 'esq',
+               'indice': cad.index(x['etapa']) if x['etapa'] in cad else 0, 'n_cadernos': len(cad), 'cor': tk['cor'], 'esc': tk['esc']}
+    novo = A.assinar(pdf, x['etapa'], designacao(b, x['etapa']), f"{x['rotulo']} — Diário Oficial nº {e['numero']}{e['letra']}", ident.get('nome_curto') or o['municipio'],
+                     carimbo=carimbo)
     return x['rotulo'], _concluir_etapa(b, e, x['etapa'], novo, quem, A.validar(novo))
 
 def receber_a3(o, e, dados: bytes, quem):
