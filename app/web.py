@@ -173,6 +173,8 @@ def legal_topo(ctx, chave):
         txt = D.base_legal(D.regras(ctx['orgao']['banco']), BASE_LEGAL[chave])
     return Markup(f'<p class="legal legal-topo"><strong>Base legal:</strong> {escape(txt)}</p>')
 templates.env.globals['lei_diario'] = lei_diario
+from .diario import LEGENDA_TESTE as _LEG_TESTE
+templates.env.globals['legenda_teste'] = _LEG_TESTE
 templates.env.globals['regras_diario'] = regras_diario
 templates.env.globals['legal_topo'] = legal_topo
 

@@ -16,6 +16,14 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Flowable, Image
 from . import config, db
 
+# Edições de TESTE (16/11/2026): podem aparecer no portal, sempre com esta legenda (no portal e no PDF), para o órgão ver como fica.
+# Nunca são apresentadas como oficiais; ao passar para DIARIO_MODO=oficial, são apagadas (diario_servico.limpar_teste).
+LEGENDA_TESTE = 'Edição teste — não homologada — sem validade'
+
+def mostrar_teste(banco) -> bool:
+    """Opção do órgão (Diário Oficial → Signatários, calendário e lei): mostrar no portal as edições de teste, com a legenda. Padrão: sim."""
+    return bool((db.cfg(banco, 'diario', {}) or {}).get('mostrar_teste', True))
+
 LEI_PADRAO = 'lei municipal'  # o órgão informa a lei em Diário Oficial → Signatários, calendário e lei
 
 # ---------- calendário ----------
@@ -133,7 +141,7 @@ def gerar_pdf(edicao: dict, atos: list[dict], ident: dict, destino_dir: str, tes
            Paragraph(f"{_esc(ident.get('nome', ''))} · {_esc(ident.get('endereco', ''))}{' · CNPJ ' + _esc(ident['cnpj']) if ident.get('cnpj') else ''}", sub),
            Paragraph(f'Código de verificação: <b>{codigo}</b> · confira a autenticidade no Portal ({_esc(ident.get("dominio", ""))}/diario/verificar)', sub)]
     if teste:
-        el += [Spacer(1, 20), Paragraph('<b>EDIÇÃO DE TESTE — SEM VALOR OFICIAL</b>', ParagraphStyle('x', parent=centro, textColor='#9B1C1C', fontSize=14))]
+        el += [Spacer(1, 20), Paragraph(f'<b>{LEGENDA_TESTE.upper()}</b>', ParagraphStyle('x', parent=centro, textColor='#9B1C1C', fontSize=14))]
     el.append(PageBreak())
     if not atos:
         el.append(Paragraph('SEM ATOS OFICIAIS A SEREM PUBLICADOS NESTA DATA', sec))
@@ -164,10 +172,10 @@ def gerar_pdf(edicao: dict, atos: list[dict], ident: dict, destino_dir: str, tes
         canvas.drawRightString(A4[0] - 2 * cm, 1.2 * cm, f'Código de verificação: {codigo} · página {doc.page}')
         if teste:
             canvas.setFillColorRGB(0.75, 0.1, 0.1, alpha=0.18)
-            canvas.setFont('Helvetica-Bold', 44)
+            canvas.setFont('Helvetica-Bold', 30)
             canvas.translate(A4[0] / 2, A4[1] / 2)
             canvas.rotate(45)
-            canvas.drawCentredString(0, 0, 'SEM VALOR OFICIAL — TESTE')
+            canvas.drawCentredString(0, 0, LEGENDA_TESTE.upper())
         canvas.restoreState()
     doc = SimpleDocTemplate(caminho, pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm, topMargin=2 * cm, bottomMargin=2 * cm,
                             title=f'Diário Oficial de {municipio} nº {numero}' + (' (TESTE)' if teste else ''), author=ident.get('nome', ''))

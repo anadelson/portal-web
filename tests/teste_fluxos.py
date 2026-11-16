@@ -58,8 +58,9 @@ for a in ['abrir', 'fechar', 'assinar', 'assinar', 'publicar']:
     t = token(pm, '/admin/diario'); r = pm.post('/admin/diario/edicao', data={'csrf': t, 'acao': a}, follow_redirects=True)
 ok(r, txt='MODO TESTE', nome='diario concluir (teste)')
 cod = db.um('bd_pm_bora', "SELECT codigo FROM diario_edicoes WHERE situacao='publicada' ORDER BY id DESC LIMIT 1")['codigo']
-ok(pm.get('/diario'), txt='Nenhuma edição oficial publicada', nome='edição de teste fora da lista oficial')
-r = ok(pm.get(f'/diario/verificar?codigo={cod}'), txt='EDIÇÃO DE TESTE', nome='verificar teste')
+# 16/11/2026: a edição de teste aparece no portal (opção do órgão, padrão sim), sempre com a legenda; com a opção desligada, fica fora
+ok(pm.get('/diario'), txt='Edição teste — não homologada — sem validade', nome='edição de teste no portal com a legenda')
+r = ok(pm.get(f'/diario/verificar?codigo={cod}'), txt='Edição teste — não homologada — sem validade', nome='verificar teste')
 eid = re.search(r'/diario/(\d+)\.pdf', r.text).group(1)
 rp = pm.get(f'/diario/{eid}.pdf'); ok(rp, nome='pdf'); assert rp.content[:4] == b'%PDF'
 # eleição: simular defeso

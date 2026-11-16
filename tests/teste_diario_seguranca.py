@@ -123,8 +123,26 @@ if len(sigs) != 3 or not all(s['integra'] and s['valida'] and s['carimbo'] for s
 if 'TESTE' not in sigs[0]['signatario']: falha('signatário de teste')
 r = post(pm, '/admin/diario/edicao', {'acao': 'publicar'}, de='/admin/diario')
 if 'MODO TESTE' not in msg(r): falha(f'conclusão em teste: {msg(r)}')
-ok(pm.get('/diario'), txt='Nenhuma edição oficial publicada', nome='teste nunca vira oficial')
-r = ok(pm.get(f"/diario/verificar?codigo={e['codigo']}"), txt='EDIÇÃO DE TESTE', nome='verificação')
+# 16/11/2026: edição de teste no portal só com a legenda (nunca como oficial); com a opção do órgão desligada, fica fora do portal
+LEG = 'Edição teste — não homologada — sem validade'
+r = ok(pm.get('/diario'), txt=LEG, nome='teste no portal com a legenda')
+if f'nº {e["numero"]}' not in r.text or r.text.count(LEG) < 2: falha('lista: edição de teste sem a legenda na linha')
+if LEG not in pm.get('/').text: falha('página inicial: edição de teste sem a legenda')
+from pyhanko.pdf_utils.reader import PdfFileReader
+with open(e['pdf_arquivo'], 'rb') as fh:
+    rd = PdfFileReader(fh, strict=False); pg = rd.root['/Pages']['/Kids'][0].get_object()
+    cont = pg['/Contents']; cont = [c.get_object() for c in cont] if isinstance(cont, list) or hasattr(cont, '__iter__') and not hasattr(cont, 'data') else [cont.get_object()]
+    txt = b''.join(c.data for c in cont).decode('latin-1')
+if txt.count('HOMOLOGADA') < 2 or txt.count('SEM VALIDADE') < 2: falha('PDF de teste sem a legenda na capa e na marca d\'água')
+r = post(pm, '/admin/diario/config', {'acao': 'teste_publico'}, de='/admin/diario/config')
+if 'não aparecem mais' not in msg(r): falha(f'desligar edições de teste no portal: {msg(r)}')
+ok(pm.get('/diario'), txt='Nenhuma edição oficial publicada', nome='opção desligada: teste fora do portal')
+ok(pm.get(f"/diario/{e['id']}.pdf"), cod=404, nome='opção desligada: PDF de teste fora do portal')
+if LEG in pm.get('/').text: falha('opção desligada: legenda na página inicial')
+r = post(pm, '/admin/diario/config', {'acao': 'teste_publico', 'mostrar_teste': '1'}, de='/admin/diario/config')
+if 'aparecem no portal com a legenda' not in msg(r): falha(f'religar edições de teste: {msg(r)}')
+if not db.um(PM, "SELECT count(*) n FROM auditoria WHERE acao LIKE 'Diário: edições de teste no portal%%'")['n'] >= 2: falha('auditoria da opção')
+r = ok(pm.get(f"/diario/verificar?codigo={e['codigo']}"), txt=LEG, nome='verificação')
 for t_ in ('Responsavel pelo Diario - TESTE', 'Prefeito(a) - TESTE', 'validar.iti.gov.br', e['sha256'], 'Íntegra e válida', 'PDF/A-2b'):
     if t_ not in r.text: falha(f'verificação sem "{t_}"')
 # ---------- extra, retificação ----------
