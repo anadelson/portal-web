@@ -1025,7 +1025,7 @@ def diario_config(request: Request):
     u = exige(request)
     b = request.state.orgao['banco']
     return T('diario_config', request, u, desig=db.todos(b, 'SELECT * FROM designacoes ORDER BY ativo DESC, caderno, id DESC'), etapas=AS.ETAPAS,
-             feriados=db.todos(b, 'SELECT * FROM feriados WHERE data >= %s ORDER BY data', (config.hoje().replace(month=1, day=1),)), conf=db.cfg(b, 'diario', {}) or {}, modo_teste=AS.modo_teste(), rd=diario_pdf.regras(b))
+             feriados=db.todos(b, 'SELECT * FROM feriados WHERE data >= %s ORDER BY data', (config.hoje().replace(month=1, day=1),)), conf=db.cfg(b, 'diario', {}) or {}, mostrar_teste=diario_pdf.mostrar_teste(b), modo_teste=AS.modo_teste(), rd=diario_pdf.regras(b))
 
 @r.post('/diario/config')
 async def diario_config_post(request: Request):
@@ -1053,6 +1053,12 @@ async def diario_config_post(request: Request):
             conf = db.cfg(b, 'diario', {}) or {}
             conf['lei'] = f.get('lei', '')[:200]
             db.set_cfg(b, 'diario', conf); msg = 'Texto da lei de instituição salvo.'
+        elif acao == 'teste_publico':  # edições de teste no portal, com a legenda (16/11/2026)
+            conf = db.cfg(b, 'diario', {}) or {}
+            antes = diario_pdf.mostrar_teste(b)
+            conf['mostrar_teste'] = f.get('mostrar_teste') == '1'; db.set_cfg(b, 'diario', conf)
+            auditar(request, f"Diário: edições de teste no portal {'sim' if antes else 'não'} → {'sim' if conf['mostrar_teste'] else 'não'}")
+            msg = ('As edições de teste publicadas aparecem no portal com a legenda “' + diario_pdf.LEGENDA_TESTE + '”.') if conf['mostrar_teste'] else 'As edições de teste não aparecem mais no portal.'
         elif acao == 'regras':  # etapa 3: lei, decreto, base legal e horários do órgão
             novo, erros = diario_pdf.validar_regras(f)
             if erros:

@@ -116,12 +116,12 @@ def home(request: Request):
         dados['proxima_tv'] = db.um(b, 'SELECT * FROM transmissoes WHERE NOT ao_vivo AND previsto_para > now() ORDER BY previsto_para LIMIT 1')
     if o['tipo'] == 'executivo':
         F8.sincronizar(b)
-        dados['pub'] = {'ultima_edicao': db.um(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND NOT modo_teste ORDER BY data DESC, numero DESC LIMIT 1") if ctx['mods'].get('diario') else None,
+        dados['pub'] = {'ultima_edicao': db.um(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND (NOT modo_teste OR %s) ORDER BY data DESC, numero DESC LIMIT 1", (diario_teste(b),)) if ctx['mods'].get('diario') else None,
                         'licitacoes': db.um(b, "SELECT count(*) n FROM licitacoes WHERE ano=%s", (hoje.year,))['n'],
                         'modalidades': [r['m'] for r in db.todos(b, "SELECT DISTINCT modalidade m FROM licitacoes WHERE ano=%s AND modalidade<>'' ORDER BY 1", (hoje.year,))],
                         'legislacao': db.um(b, 'SELECT count(*) n FROM legislacao')['n']}
     if ctx['mods'].get('diario'):
-        dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND NOT modo_teste ORDER BY data DESC, numero DESC, letra DESC LIMIT 4")
+        dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND (NOT modo_teste OR %s) ORDER BY data DESC, numero DESC, letra DESC LIMIT 4", (diario_teste(b),))
     destaque = [x for x in blocos if x['regiao'] == 'destaque']
     principal = [x for x in blocos if x['regiao'] == 'principal']
     lateral = [x for x in blocos if x['regiao'] == 'lateral']
@@ -257,17 +257,21 @@ def emenda(request: Request, ano: int, num: int):
     return templates.TemplateResponse(request, 'portal/emenda.html', dict(ctx, e=e, passos=passos, tot=tot, legal='emendas'))
 
 # ---------- Diário Oficial ----------
+def diario_teste(b):
+    from .diario import mostrar_teste
+    return mostrar_teste(b)
+
 @r.get('/diario')
 def diario(request: Request):
     ctx = ctx_orgao(request); precisa(ctx, 'diario')
     b = ctx['orgao']['banco']
-    eds = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao IN ('publicada','invalidada') AND NOT modo_teste ORDER BY data DESC, numero DESC, letra DESC LIMIT 100")
+    eds = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao IN ('publicada','invalidada') AND (NOT modo_teste OR %s) ORDER BY data DESC, numero DESC, letra DESC LIMIT 100", (diario_teste(b),))
     return templates.TemplateResponse(request, 'portal/diario.html', dict(ctx, edicoes=eds, invalidadas=[e for e in eds if e['situacao'] == 'invalidada'], legal='diario'))
 
 @r.get('/diario/{eid}.pdf')
 def diario_pdf(request: Request, eid: int):
     ctx = ctx_orgao(request); precisa(ctx, 'diario')
-    e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE id=%s AND situacao IN ('publicada','invalidada')", (eid,))
+    e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE id=%s AND situacao IN ('publicada','invalidada') AND (NOT modo_teste OR %s)", (eid, diario_teste(ctx['orgao']['banco'])))
     if not e or not e['pdf_arquivo'] or not Path(e['pdf_arquivo']).exists():
         raise HTTPException(404, 'Edição não encontrada.')
     return FileResponse(e['pdf_arquivo'], media_type='application/pdf', filename=f"diario-oficial-{e['numero']}{e['letra']}{'-TESTE' if e['modo_teste'] else ''}.pdf")
@@ -276,7 +280,7 @@ def diario_pdf(request: Request, eid: int):
 def diario_verificar(request: Request, codigo: str = ''):
     from . import assinatura as A
     ctx = ctx_orgao(request); precisa(ctx, 'diario')
-    e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE codigo=%s AND situacao IN ('publicada','invalidada')", (codigo.strip().upper()[:20],)) if codigo else None
+    e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE codigo=%s AND situacao IN ('publicada','invalidada') AND (NOT modo_teste OR %s)", (codigo.strip().upper()[:20], diario_teste(ctx['orgao']['banco']))) if codigo else None
     sigs = []
     if e and e['pdf_arquivo'] and Path(e['pdf_arquivo']).is_file():
         try:
