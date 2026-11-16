@@ -2456,3 +2456,13 @@ O usuário não via a Edição nº 1 refeita, embora o servidor já entregasse o
   - mescla `6bd3ec0`; backup ok (plataforma, bd_pm_bora, bd_cm_bora) às 13h03; versão `diario-pdf-cache (6bd3ec0)`;
   - as 34 suítes passaram contra a imagem nova; sem migração nova;
   - conferido: o link do Diário e da página inicial é `/diario/1.pdf?v=79c0212b002a`; o PDF responde inline, com `Cache-Control: no-cache` e ETag, e é o da Edição nº 1 refeita (234.336 bytes); portais 200; app e worker de pé, sem erros nos logs.
+
+## 16/11/2026 — Limpeza de espaço na VPS (pedido do usuário: "faça a limpeza")
+- Antes: disco 36 GB de 48 GB (76%), 12 GB livres.
+- Removido, só o que era ferramenta de teste deste projeto:
+  - ambiente de teste das capturas (`portal-vit-app`, `portal-vit-db`, rede `portal-vit`) e o volume anônimo do banco de teste (dados fictícios; conferido pela data de criação e pelo conteúdo antes de apagar);
+  - imagem do Playwright (3,3 GB; volta a ser baixada, com permissão, quando precisar de captura);
+  - cache de build do Docker (0,9 GB).
+- Depois: disco 32 GB (67%), **16 GB livres**. Memória disponível 1,9 GB. Portais 200; app, worker e banco de pé.
+- Não mexi em imagens nem em volumes de outros sistemas da VPS (pmuinix, wg-config etc.), mesmo os que aparecem como "não usados".
+- Ainda pendente: backup fora da VPS (os backups do portal ficam só no disco dela).
