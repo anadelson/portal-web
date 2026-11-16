@@ -14,7 +14,7 @@
 <p>Impressão digital do arquivo (SHA-256): <code>{{ e.sha256 }}</code></p>
 {% if sigs %}<div class="tabela"><table><caption class="sr">Assinaturas digitais</caption><thead><tr><th scope="col">Etapa</th><th scope="col">Signatário (certificado)</th><th scope="col">Carimbo do tempo</th><th scope="col">Resultado</th></tr></thead><tbody>
 {% for s in sigs %}<tr><td>{{ etapas.get(s.campo.split('_')[1], s.campo) if '_' in s.campo else s.campo }}</td><td>{{ s.signatario }}</td><td>{{ s.carimbo[:19]|replace('T', ' ') if s.carimbo else '—' }}{% if s.carimbo and not s.carimbo_valido %} (não validado){% endif %}</td><td><span class="chip {{ 'ok' if s.valida and s.integra else 'erro' }}">{{ 'Íntegra e válida' if s.valida and s.integra else 'Inválida' }}</span>{% if s.valida and not s.confiavel and not e.modo_teste %} <span class="chip alerta">cadeia não confiável</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
-<p style="margin-top:14px"><a class="btn" href="/diario/{{ e.id }}.pdf">Baixar a edição</a> <a class="btn sec" href="https://validar.iti.gov.br/">Validar no ITI (validar.iti.gov.br)</a></p>
+<p style="margin-top:14px"><a class="btn" href="/diario/{{ e.id }}.pdf{% if e.sha256 %}?v={{ e.sha256[:12] }}{% endif %}">Baixar a edição</a> <a class="btn sec" href="https://validar.iti.gov.br/">Validar no ITI (validar.iti.gov.br)</a></p>
 <p class="legal">No validador do ITI, envie o PDF baixado. Edições de teste não são reconhecidas pelo ITI (certificados de teste).</p>
 {% elif codigo %}<p class="msg" style="background:#FBE4D8">Nenhuma edição com o código {{ codigo }}.</p>{% endif %}
 {% endblock %}

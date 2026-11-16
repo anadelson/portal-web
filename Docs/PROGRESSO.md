@@ -2445,3 +2445,9 @@ Pedido: `Docs/PEDIDO-DIARIO-CAPA.md`. O protótipo citado estava em `Docs/diario
   - mantidos número, data, código `9FD6-BC8A-AEDC`, ato e situação; PDF anterior guardado como `diario-2026-11-16-1-TESTE.anterior.pdf`; registrado na auditoria;
   - PDF novo (capa, 2 colunas, linha da MP, carimbos) assinado de novo com os certificados de teste. As 2 assinaturas estão íntegras, válidas e confiáveis, com carimbo do tempo;
   - conferido: /diario/1.pdf entrega o PDF novo (sha256 79c0212b…, igual ao gravado); /diario/verificar?c=9FD6-BC8A-AEDC mostra as assinaturas válidas (cadeia de TESTE) e a legenda. Imagens em `Docs/avaliacao-diario/producao-edicao-1-pagina-*.png`.
+
+## 16/11/2026 — Diário: PDF sempre na versão atual (código; branch diario-pdf-cache)
+O usuário não via a Edição nº 1 refeita, embora o servidor já entregasse o PDF novo. O link era sempre o mesmo (`/diario/1.pdf`), o PDF era baixado como anexo com o mesmo nome e não tinha cabeçalho de cache, então o navegador reaproveitava a cópia antiga.
+- Links do PDF no portal (lista do Diário, página inicial e verificação) levam a versão: `?v=` com o início do sha256 da edição. Edição refeita ou retificada gera endereço novo.
+- O PDF abre no navegador (inline) com `Cache-Control: no-cache` e ETag: sempre confere com o servidor. O PDF baixado no painel para assinar com token também leva a versão e não fica em cache (`no-store`).
+- Teste `teste_diario_seguranca` confere o `?v=` e os cabeçalhos.
