@@ -2367,3 +2367,32 @@ Pedido do usuário: "publique mesmo o teste, mas com legenda de edição teste -
   - /diario ainda mostra "Nenhuma edição": a Prefeitura não tem edição publicada.
 - **Falta (usuário):** fazer a edição pelo painel (Diário Oficial: Abrir edição → Fechar → Assinar cada etapa → Publicar). Em modo teste a rotina automática não abre edições. Depois disso, a edição aparece no portal com a legenda.
 - **Falta:** o nó do prefbora recebe esta versão pelo pacote novo do console e o instalador (etapas 8 e 9: `s`).
+
+## 16/11/2026 — Caixas de marcar e botões de opção: componente padrão do painel e do console (código; branch caixas-selecao)
+Bug relatado pelo usuário em Identidade → Fundo do rodapé: a caixa "Imagem decorativa" herdava `width:100%` dos campos de texto, ficava centralizada e empurrava o rótulo para fora do cartão, uma palavra por linha.
+- **Causa:** a regra de largura total dos campos (`.campos-m :is(input,select,textarea)`, e também a borda, a altura mínima e o tamanho de fonte de `.campos-m input`, `form.campos input` e `.inline input`) valia também para checkbox e radio.
+- **Correção no componente padrão (admin.css, vale para o painel e o console):**
+  - largura, borda, altura e fonte dos campos só valem para texto, select e textarea (`:not([type=checkbox],[type=radio])`);
+  - caixa de marcar e botão de opção ficam na mesma linha do texto, alinhados à esquerda, com 18 px e alinhados à primeira linha;
+  - o rótulo inteiro é clicável e o texto quebra abaixo de si mesmo, sem sair do cartão;
+  - as duas regras antigas de alinhamento foram unificadas.
+  - Campo desativado agora parece desativado (fundo cinza).
+- **Fundo do rodapé:**
+  - "Imagem decorativa" vem antes do texto alternativo, com `<label for>`;
+  - marcada, desativa o texto alternativo e mostra a nota "o texto alternativo não é necessário".
+- **Todas as imagens da Identidade:** ao escolher o arquivo, a prévia local aparece no quadro (antes "sem imagem"), com o selo "Prévia (não salva)", antes de salvar.
+- **Varredura de 132 telas** (Prefeitura, Câmara e console; 1366 e 390 px), com a auditoria de formulários ampliada (rótulo fora do cartão, rótulo espremido). Telas afetadas e corrigidas:
+  - Identidade → Fundo do rodapé (Prefeitura e Câmara): caixa esticada e rótulo fora do cartão;
+  - Sessão da Câmara → Presença: botões de opção sem `<label>` (só `aria-label`). Ganharam `<label for>` com o texto para leitor de tela e área de toque de 44 px;
+  - Sessão da Câmara, em 390 px: o campo "Vídeo" vazava e causava rolagem lateral. Os campos de formulários em linha agora cabem na largura.
+- **Achados sem relação com caixas/opções (não alterados):** console → Cadastrar órgão (lista "Tipo" 7 px desnivelada em 1366); Comunicados → configuração em 390 px (linha 8 px desalinhada); Redes sociais em 390 px (campos da tabela passam da largura, dentro da tabela com rolagem).
+- admin.css v=22, admin.js v=9. Capturas antes/depois em 1366 e 390 px e relatórios da auditoria em `Docs/avaliacao-caixas-selecao/` (ambiente de teste, dados fictícios).
+- **Junto (Diário, pedido do usuário "onde publico a edição do teste"):** o aviso de MODO TESTE da tela Diário Oficial ainda dizia "SEM VALOR OFICIAL — TESTE" e "Nada é publicado no portal", desatualizado desde a versão `diario-teste-publico`. Agora mostra a legenda nova e o passo a passo para o Administrador: Abrir edição de hoje → Fechar e gerar PDF/A → Assinar (cada etapa) → Concluir edição de TESTE. Captura `diario-aviso-modo-teste-1366.png`. Em produção (só leitura), a Prefeitura continua sem nenhuma edição aberta, e `admin@pmbora.conectatech.tech` tem perfil Administrador.
+- **Diário: nomes dos botões mais específicos** (pedido do usuário: "Abrir edição de hoje" dava a entender reabrir ou refazer algo). As ações enviadas ao servidor não mudam, só os textos:
+  - "Abrir edição de hoje" → **Criar a edição de hoje**; "Abrir edição extra" → **Criar edição extra**;
+  - "Fechar e gerar PDF/A" → **Fechar a edição e gerar o PDF (inclui os atos aprovados)**;
+  - "Assinar no servidor: …" → **Assinar: …**;
+  - "Concluir edição de TESTE" / "Publicar edição" → **Publicar a edição de teste (com a legenda)** / **Publicar a edição**;
+  - "Reabrir" → **Desfazer o fechamento (voltar a incluir atos)**.
+  - O quadro "Edição em andamento" mostra os **4 passos** (Criar a edição · Fechar e gerar o PDF · Assinar · Publicar) com o passo atual destacado (`aria-current="step"`). As mensagens dizem o passo e o próximo, e a de publicação em teste diz se a edição aparece no portal com a legenda. Capturas dos 4 passos em `Docs/avaliacao-caixas-selecao/diario-passos/`.
+- Testes: as 33 suítes passaram contra o código (o `teste_diario_orgaos` confere a regra nova do componente). **Não implantado:** aguarda aprovação do usuário (e snapshot).
