@@ -152,6 +152,11 @@ if 'aparecem no portal com a legenda' not in msg(r): falha(f'religar edições d
 if not db.um(PM, "SELECT count(*) n FROM auditoria WHERE acao LIKE 'Diário: edições de teste no portal%%'")['n'] >= 2: falha('auditoria da opção')
 r = ok(pm.get(f"/diario/verificar?codigo={e['codigo']}"), txt=LEG, nome='verificação')
 ok(pm.get(f"/diario/verificar?c={e['codigo']}"), txt=e['codigo'], nome='verificação pelo QR Code da capa (?c=)')
+# PDF sempre na versão atual: link com ?v= (início do sha256), abre no navegador e não reaproveita cópia antiga
+_v = e['sha256'][:12]
+if f"/diario/{e['id']}.pdf?v={_v}" not in pm.get('/diario').text: falha('link do PDF sem a versão (?v=)')
+_r = pm.get(f"/diario/{e['id']}.pdf?v={_v}")
+if not (_r.headers.get('cache-control') == 'no-cache' and _r.headers.get('content-disposition', '').startswith('inline') and _r.headers.get('etag')): falha(f'PDF: cabeçalhos {dict(_r.headers)}')
 for t_ in ('Responsavel pelo Diario - TESTE', 'Prefeito(a) - TESTE', 'validar.iti.gov.br', e['sha256'], 'Íntegra e válida', 'PDF/A-2b'):
     if t_ not in r.text: falha(f'verificação sem "{t_}"')
 # ---------- extra, retificação ----------

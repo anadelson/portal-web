@@ -274,7 +274,10 @@ def diario_pdf(request: Request, eid: int):
     e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE id=%s AND situacao IN ('publicada','invalidada') AND (NOT modo_teste OR %s)", (eid, diario_teste(ctx['orgao']['banco'])))
     if not e or not e['pdf_arquivo'] or not Path(e['pdf_arquivo']).exists():
         raise HTTPException(404, 'Edição não encontrada.')
-    return FileResponse(e['pdf_arquivo'], media_type='application/pdf', filename=f"diario-oficial-{e['numero']}{e['letra']}{'-TESTE' if e['modo_teste'] else ''}.pdf")
+    # abre no navegador (inline) e sempre confere com o servidor (no-cache + ETag): edição de teste refeita ou PDF trocado aparece na hora.
+    # O link leva a versão (?v=início do sha256), então uma cópia antiga em cache nunca é reaproveitada.
+    return FileResponse(e['pdf_arquivo'], media_type='application/pdf', content_disposition_type='inline', headers={'Cache-Control': 'no-cache'},
+                        filename=f"diario-oficial-{e['numero']}{e['letra']}{'-TESTE' if e['modo_teste'] else ''}.pdf")
 
 @r.get('/diario/verificar')
 def diario_verificar(request: Request, codigo: str = '', c: str = ''):

@@ -1013,7 +1013,7 @@ def diario_edicao_pdf(request: Request, eid: int):
     if not e or not e['pdf_arquivo'] or not Path(e['pdf_arquivo']).is_file():
         raise HTTPException(404)
     auditar(request, f"Baixou a edição nº {e['numero']}{e['letra']} para assinar")
-    return _FR(e['pdf_arquivo'], media_type='application/pdf', filename=f"diario-{e['numero']}{e['letra']}-para-assinar.pdf")
+    return _FR(e['pdf_arquivo'], media_type='application/pdf', headers={'Cache-Control': 'no-store'}, filename=f"diario-{e['numero']}{e['letra']}-para-assinar.pdf")
 
 @r.post('/diario/alertas')
 async def diario_alertas(request: Request):
