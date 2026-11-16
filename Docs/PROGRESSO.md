@@ -2451,3 +2451,4 @@ O usuário não via a Edição nº 1 refeita, embora o servidor já entregasse o
 - Links do PDF no portal (lista do Diário, página inicial e verificação) levam a versão: `?v=` com o início do sha256 da edição. Edição refeita ou retificada gera endereço novo.
 - O PDF abre no navegador (inline) com `Cache-Control: no-cache` e ETag: sempre confere com o servidor. O PDF baixado no painel para assinar com token também leva a versão e não fica em cache (`no-store`).
 - Teste `teste_diario_seguranca` confere o `?v=` e os cabeçalhos.
+- Testes: as 34 suítes passaram contra o código. **Não implantado:** aguarda aprovação do usuário (e snapshot).
