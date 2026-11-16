@@ -45,7 +45,7 @@ fieldset{border:1px solid var(--bd);border-radius:12px;padding:12px 14px;display
 .midias{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:14px}
 form.midia{display:flex;flex-wrap:wrap;gap:14px;border:1px solid var(--bd);border-radius:12px;padding:12px;margin:0}
 .prev{flex:0 0 140px;height:120px;border-radius:10px;background:#F3F5F8;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--sub);font-size:var(--fs-meta)}.prev img{width:100%;height:100%;object-fit:cover}
-.campos-m{flex:1 1 220px;display:grid;gap:8px}.campos-m label{display:flex;flex-direction:column;gap:3px;font-weight:600;font-size:var(--fs-rotulo)}.campos-m input{font:inherit;font-weight:400;padding:7px 9px;border:1px solid #6B7684;border-radius:8px}
+.campos-m{flex:1 1 220px;display:grid;gap:8px}.campos-m label{display:flex;flex-direction:column;gap:3px;font-weight:600;font-size:var(--fs-rotulo)}.campos-m input:not([type=checkbox],[type=radio]){font:inherit;font-weight:400;padding:7px 9px;border:1px solid #6B7684;border-radius:8px}
 :focus-visible{outline:3px solid #F0B429;outline-offset:2px;box-shadow:0 0 0 2px #fff,0 0 0 7px #17212B}
 /* Fase 9 — abas e sub-abas do painel */
 nav.abas{display:flex;gap:2px;border-bottom:2px solid var(--bd);margin:0 0 16px;overflow-x:auto}
@@ -118,7 +118,7 @@ fieldset.opcoes{flex-direction:row!important;flex-wrap:wrap;gap:6px 14px!importa
 
 /* escala aplicada (10/11/2026): títulos, campos com tamanho próprio (não herdam o rótulo), notas nunca abaixo de 12 px, botões 15 px/600 com 40 px */
 header.barra h1,.principal h1{font-size:var(--fs-tela)}.principal h2{font-size:var(--fs-secao)}.principal h3{font-size:var(--fs-sub)}
-form.campos input,form.campos select,form.campos textarea,.inline select,.inline input,.campos-m input,.principal input:not([type=checkbox]):not([type=radio]):not([type=color]),.principal select,.principal textarea{font-size:var(--fs-campo);min-height:var(--alt-btn)}
+form.campos input:not([type=checkbox],[type=radio]),form.campos select,form.campos textarea,.inline select,.inline input:not([type=checkbox],[type=radio]),.campos-m input:not([type=checkbox],[type=radio]),.principal input:not([type=checkbox]):not([type=radio]):not([type=color]),.principal select,.principal textarea{font-size:var(--fs-campo);min-height:var(--alt-btn)}
 .principal input[type=file]{padding:6px 0}
 .principal label{font-size:var(--fs-rotulo)}.principal small,.principal .ajuda,.principal .nota{font-size:var(--fs-nota)}
 .btn,.principal button{font-size:var(--fs-btn);font-weight:600;min-height:var(--alt-btn)}
@@ -247,14 +247,12 @@ fieldset.ed-alinha{border:0;padding:0;margin:0;display:flex;gap:14px;flex-wrap:w
    1) caixa de marcar/opção: na linha do texto, tamanho fixo (a altura mínima dos campos não vale para ela); 2) campos lado a lado na mesma altura
    mesmo com rótulos de tamanhos diferentes (o rótulo fica junto do campo); 3) caixa de texto grande ocupa a linha inteira; 4) linhas da tabela de menus quebram em vez de vazar */
 input[type=checkbox],input[type=radio]{min-height:0!important;width:18px;height:18px;margin:0;flex:none;accent-color:var(--cor)}
-label:has(>input[type=checkbox]),label:has(>input[type=radio]){flex-direction:row!important;align-items:flex-start!important;gap:8px!important;font-weight:400}
-label:has(>input[type=checkbox])>input,label:has(>input[type=radio])>input{margin-top:calc((1lh - 18px) / 2)}
 .grade2>label:not(:has(>input[type=checkbox],>input[type=radio],>:is(input,select,textarea,span)~:is(small,p))){justify-content:flex-end}
 .grade2>label:has(>textarea){grid-column:1/-1}
 .linha-menu{flex-wrap:wrap}
 .principal :is(input:not([type=checkbox],[type=radio],[type=color],[type=file],[type=hidden],[type=range],[type=submit]),select,textarea){font:inherit;font-weight:400;padding:8px 10px;border:1px solid #6B7684;border-radius:8px;background:#fff;max-width:100%;box-sizing:border-box}
 .principal input[type=file]{max-width:100%;min-width:0}
-.campos-m{min-width:0}.campos-m :is(input,select,textarea){width:100%;min-width:0;box-sizing:border-box}
+.campos-m{min-width:0}.campos-m :is(input:not([type=checkbox],[type=radio]),select,textarea){width:100%;min-width:0;box-sizing:border-box}
 .lista-nova>label:first-child{display:flex;flex-direction:column;gap:3px;font-weight:600}
 .inline{flex-wrap:wrap;max-width:100%}
 .ed-barra .ed-pref{display:inline-flex;align-items:center;gap:6px;padding:0 12px;background:var(--cor);color:#fff;border-color:var(--cor)}
@@ -281,7 +279,7 @@ label:has(>input[type=checkbox])>input,label:has(>input[type=radio])>input{margi
 /* Rodapé (16/11/2026): cor no tema, seção Rodapé com prévia ao vivo, remover imagem com confirmação */
 .pv-rod{margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--p-rod,#17212B);color:#C9D1D9;display:flex;flex-direction:column;gap:2px;font-size:var(--fs-meta)}
 .pv-rod b{color:var(--p-rod-tit,#F0B429);font-size:var(--fs-etq);letter-spacing:.08em;text-transform:uppercase}
-.linha-check{flex-direction:row!important;gap:8px;align-items:center;font-weight:400!important;min-height:44px}
+.linha-check{padding:8px 0}
 details.confirma{margin-top:8px}details.confirma>summary{list-style:none;display:inline-flex;cursor:pointer}details.confirma>summary::-webkit-details-marker{display:none}
 .confirma-cx{margin-top:10px;padding:12px 14px;border-radius:12px;background:var(--al-fd,#FCEFD9);display:flex;flex-direction:column;gap:10px;align-items:flex-start}.confirma-cx p{margin:0}
 .rod-grade{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:20px;align-items:start}@media (max-width:1000px){.rod-grade{grid-template-columns:1fr}}
@@ -299,3 +297,21 @@ details.confirma{margin-top:8px}details.confirma>summary{list-style:none;display
 .rod-pv .pv-cols{position:relative;z-index:3;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,110px),1fr));gap:14px;padding:18px 16px 140px;color:#C9D1D9}
 .rod-pv.cel .pv-cols{grid-template-columns:1fr;padding-bottom:18px}.rod-pv.cel.m-cel:not(.sem-m) .pv-cols{padding-bottom:110px}
 .rod-pv .pv-cols b{display:block;color:var(--tit);font-size:var(--fs-exemplo);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}.rod-pv .pv-cols i{display:block;font-style:normal}
+
+/* Caixa de marcar e botão de opção — componente padrão do painel e do console (16/11/2026).
+   A largura total e a altura dos campos valem só para texto, select e textarea (regras acima com :not([type=checkbox],[type=radio])).
+   Caixa e texto na mesma linha, à esquerda; o rótulo inteiro é clicável e quebra abaixo de si mesmo, sem sair do cartão. */
+label:has(> input:is([type=checkbox],[type=radio])){display:flex;flex-direction:row!important;align-items:flex-start!important;justify-content:flex-start;gap:8px!important;font-weight:400;text-align:left;min-width:0;max-width:100%;cursor:pointer}
+label:has(> input:is([type=checkbox],[type=radio])) > input:is([type=checkbox],[type=radio]){flex:0 0 auto;width:18px;height:18px;min-width:0;min-height:0;margin:calc((1lh - 18px) / 2) 0 0;padding:0;accent-color:var(--cor)}
+label:has(> input:is([type=checkbox],[type=radio])) > span{min-width:0;overflow-wrap:anywhere}
+.nota-decorativa{margin:0}
+.prev{position:relative}.prev .prev-nota{position:absolute;left:6px;bottom:6px;padding:2px 8px;border-radius:999px;background:var(--tx);color:#fff;font-size:var(--fs-etq);font-weight:700;white-space:nowrap}
+.campos-m input:disabled,.principal :is(input,select,textarea):disabled:not([type=checkbox],[type=radio]){background:#EEF0F3;color:var(--sub);border-color:#C9D1D9;cursor:not-allowed}
+label.celula-opcao{justify-content:center;align-items:center!important;min-width:44px;min-height:44px;margin:0}label.celula-opcao>input{margin:0!important}
+.inline>label{max-width:100%;min-width:0}.inline :is(input:not([type=checkbox],[type=radio]),select){max-width:100%;min-width:0;box-sizing:border-box}
+/* Diário: os 4 passos para publicar a edição (16/11/2026) */
+.passos-diario{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.passos-diario li{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border:1px solid var(--bd);border-radius:999px;background:#fff;color:var(--sub);font-size:var(--fs-rotulo)}
+.passos-diario .n{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#EEF0F3;color:var(--tx);font-weight:700}
+.passos-diario li.atual{border-color:var(--cor);color:var(--tx);font-weight:700}.passos-diario li.atual .n{background:var(--cor);color:#fff}
+.passos-diario li.feito .n{background:#E3F2E9;color:#146C43}

@@ -118,11 +118,12 @@ with tempfile.TemporaryDirectory() as tmp:
 # ---------- 6) alinhamento dos campos (regra geral do painel) ----------
 css = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'app', 'static', 'admin.css')).read()
 checa('input[type=checkbox],input[type=radio]{min-height:0!important' in css, 'caixa de marcar sem a altura mínima dos campos')
-checa('label:has(>input[type=checkbox]),label:has(>input[type=radio]){flex-direction:row!important;align-items:flex-start!important' in css, 'caixa de marcar na linha do texto')
+checa('label:has(> input:is([type=checkbox],[type=radio])){display:flex;flex-direction:row!important;align-items:flex-start!important' in css, 'caixa de marcar na linha do texto')
+checa('.campos-m :is(input:not([type=checkbox],[type=radio]),select,textarea){width:100%' in css, 'largura total só para campos de texto (16/11/2026)')
 checa('.grade2>label:not(:has(>input[type=checkbox],>input[type=radio],' in css and 'justify-content:flex-end' in css, 'campos lado a lado na mesma altura')
 cf = pm.get('/admin/diario/config').text
 checa('<form class="inline" method="post" action="/admin/diario/config"><input type="hidden" name="csrf" value="' not in cf.split('Calendário')[1].split('</section>')[0], 'cadastro de feriado em grade (sem rolagem no celular)')
-checa('admin.css?v=21' in cf and 'admin.js?v=8' in cf, 'versões novas do CSS e do JS do painel')
+checa('admin.css?v=22' in cf and 'admin.js?v=9' in cf, 'versões novas do CSS e do JS do painel')
 
 print('ERROS:', len(erros))
 for e in erros:

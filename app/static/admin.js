@@ -364,3 +364,24 @@
   });
   at();
 })();
+
+/* Identidade — imagens (16/11/2026): prévia local do arquivo escolhido no quadro (antes de salvar) e "decorativa" desativa o texto alternativo */
+(function () {
+  document.querySelectorAll('input[type=file][data-previa-local]').forEach(function (arq) {
+    var quadro = arq.form && arq.form.querySelector('[data-previa-quadro]');
+    if (!quadro) return;
+    arq.addEventListener('change', function () {
+      var f = arq.files && arq.files[0];
+      if (!f || !/^image\/(png|jpeg|webp)$/.test(f.type)) return;
+      var img = document.createElement('img'); img.src = URL.createObjectURL(f); img.alt = 'Prévia da imagem escolhida (ainda não salva)';
+      quadro.textContent = ''; quadro.appendChild(img);
+      var nota = document.createElement('span'); nota.className = 'prev-nota'; nota.textContent = 'Prévia (não salva)'; quadro.appendChild(nota);
+    });
+  });
+  document.querySelectorAll('input[type=checkbox][data-decorativa]').forEach(function (cx) {
+    var alt = document.getElementById(cx.dataset.decorativa), nota = document.getElementById('nota-' + cx.dataset.decorativa);
+    if (!alt) return;
+    function at() { alt.disabled = cx.checked || cx.disabled; if (nota) nota.hidden = !cx.checked; }
+    cx.addEventListener('change', at); at();
+  });
+})();
