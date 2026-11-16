@@ -2400,3 +2400,36 @@ Bug relatado pelo usuário em Identidade → Fundo do rodapé: a caixa "Imagem d
   - mescla `3ef50c0`; backup ok (plataforma, bd_pm_bora, bd_cm_bora) às 10h33; versão `caixas-selecao (3ef50c0)`; nenhuma edição do Diário estava em andamento;
   - as 33 suítes passaram contra a imagem nova; sem migração nova;
   - conferido: portais, /diario e login 200; admin.css v=22 com o componente de caixas, os passos do Diário e a presença; admin.js com a prévia local; app e worker de pé, sem erros nos logs.
+
+## 16/11/2026 — Diário: capa nova, miolo em 2 colunas e carimbos laterais das assinaturas (código; branch diario-capa)
+Pedido: `Docs/PEDIDO-DIARIO-CAPA.md`. O protótipo citado estava em `Docs/diario-prototipo-2colunas.html`, não em `Docs/referencia/prototipos/`. Decisões do usuário: baixar a Public Sans (OFL, repositório uswds/public-sans) e o pyphen 0.17.0 (PyPI); os Poderes seguem na mesma página.
+- **Capa** (`diario_layout.desenhar_capa`, separada do miolo):
+  - faixa de identidade na cor do órgão (a escurecida, se o branco não der 4,5:1) com brasão no círculo, órgão · UF, "DIÁRIO OFICIAL", "Eletrônico do Município de …" e a lei de instituição;
+  - cartão da edição: nº, "Ano I" em romanos a partir da 1ª edição, data por extenso, dia da semana, páginas e atos com contagens reais, Ordinária/Extra e responsável;
+  - "Nesta edição": por Poder, com ementa em até 2 linhas e "pág. N". Continua em "Sumário (continuação)" se não couber;
+  - tarja de TESTE; bloco de autenticidade com QR Code (`/diario/verificar?c=CÓDIGO`, que já mostra o resultado); linha institucional com o CNPJ inteiro.
+- **Miolo** (2 colunas, 7 mm entre elas, fio fino):
+  - **preenchimento sequencial**: a coluna da esquerda enche até o fim e só então a direita; depois, a página seguinte;
+  - cabeçalho com fio na cor principal; caixa do Poder (largura total, cor principal); caixas por tipo (Leis, Leis Complementares, Decretos, Portarias, Resoluções, Editais, Licitações e Contratos etc.); atos agrupados por tipo dentro de cada Poder;
+  - ato com ementa em itálico recuada 6 mm, corpo em Helvetica 9,5 pt justificado com hifenização em português, assinatura centralizada e registro em 8,5 pt depois de fio pontilhado;
+  - título e caixa do tipo nunca ficam sozinhos no pé da coluna;
+  - Poderes na mesma página (decisão do usuário): só a última página de um Poder seguido de outro tem as colunas equilibradas, para a caixa do Poder seguinte entrar logo abaixo, na largura total.
+- **Quebras de linha do texto de origem** (`diario_texto.py`): as linhas são juntadas em parágrafos, com quebra mantida depois de ponto e dois-pontos e antes de Art., §, Parágrafo, incisos, alíneas e chamadas (RESOLVE:). "Publique-se / e / Cumpra-se." fica numa linha. Assinatura e registro são separados. O texto não muda: comparado na Edição nº 1 (anterior = nova = cadastro). Regra com antes/depois em `Docs/avaliacao-diario/regra-quebras-de-linha.md`. Só há 1 ato real; os outros 2 exemplos são fictícios.
+- **Rodapé em todas as páginas:** a linha de sempre e, abaixo, a linha da MP nº 2.200-2/2001 com o endereço de verificação. A marca d'água de teste continua em todas as páginas.
+- **Carimbos laterais** (`carimbo_assinatura.py`):
+  - **Formato:** são a aparência do próprio campo de assinatura, com um widget por página, criado na mesma atualização em que a assinatura é aplicada. Os cadernos ficam na esquerda, empilhados, de baixo para cima; a assinatura final fica na direita, de cima para baixo.
+  - **Dados:** vêm do certificado (titular e AC). A data e a hora são as gravadas na assinatura, porque a sessão do pyHanko usa a hora mostrada.
+  - **Fonte:** Public Sans embutida inteira, para manter o PDF/A.
+  - **Validação (pyHanko):** todas as assinaturas ficam íntegras, válidas e confiáveis. Para as anteriores, o acréscimo é "preenchimento de formulário" (FORM_FILLING), permitido.
+  - **Testado e descartado:** anotações comuns invalidavam a análise das assinaturas anteriores (modificação "não reconhecida").
+  - **Ajustes no pyHanko:** dois, aplicados só nessas assinaturas, para aceitar o campo com vários widgets.
+  - **Token A3:** a assinatura feita pelo próprio programa do signatário não recebe o carimbo do sistema.
+- Testes: `teste_diario_capa` (novo: quebras, preenchimento sequencial, caixas, sumário com continuação, numeração, linha da MP, contagens, ?c= do QR) e `teste_diario_seguranca` (legenda e capa lidas do PDF pelo Ghostscript, carimbos em todas as páginas, assinaturas sem alteração, ?c=).
+- **Entrega em `Docs/avaliacao-diario/`:**
+  - PDF anterior da Edição nº 1 (cópia de produção, só leitura) e imagens dele;
+  - Edição nº 1 TESTE gerada de novo (com o ato real) e assinada, com imagens das 2 páginas;
+  - edição de teste com 12 atos fictícios dos dois Poderes (9 páginas: capa, sumário (continuação) e 7 de miolo), assinada pelos dois cadernos e pela final, com imagens de todas as páginas;
+  - `validacao-e-texto.json`: comparação do texto e validação pyHanko das 5 assinaturas.
+  - Tudo gerado no ambiente de teste, com a cadeia de certificados de TESTE.
+- **Não implantado:** aguarda aprovação. A imagem precisa ser reconstruída (pyphen) antes de subir.
+- Testes: as 34 suítes passaram contra o código (inclui a nova `teste_diario_capa`). **Não implantado:** aguarda aprovação do usuário (e snapshot).

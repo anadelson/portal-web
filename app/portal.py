@@ -277,7 +277,8 @@ def diario_pdf(request: Request, eid: int):
     return FileResponse(e['pdf_arquivo'], media_type='application/pdf', filename=f"diario-oficial-{e['numero']}{e['letra']}{'-TESTE' if e['modo_teste'] else ''}.pdf")
 
 @r.get('/diario/verificar')
-def diario_verificar(request: Request, codigo: str = ''):
+def diario_verificar(request: Request, codigo: str = '', c: str = ''):
+    codigo = codigo or c  # QR Code da capa: /diario/verificar?c=CÓDIGO (já mostra o resultado)
     from . import assinatura as A
     ctx = ctx_orgao(request); precisa(ctx, 'diario')
     e = db.um(ctx['orgao']['banco'], "SELECT * FROM diario_edicoes WHERE codigo=%s AND situacao IN ('publicada','invalidada') AND (NOT modo_teste OR %s)", (codigo.strip().upper()[:20], diario_teste(ctx['orgao']['banco']))) if codigo else None
