@@ -2396,3 +2396,7 @@ Bug relatado pelo usuário em Identidade → Fundo do rodapé: a caixa "Imagem d
   - "Reabrir" → **Desfazer o fechamento (voltar a incluir atos)**.
   - O quadro "Edição em andamento" mostra os **4 passos** (Criar a edição · Fechar e gerar o PDF · Assinar · Publicar) com o passo atual destacado (`aria-current="step"`). As mensagens dizem o passo e o próximo, e a de publicação em teste diz se a edição aparece no portal com a legenda. Capturas dos 4 passos em `Docs/avaliacao-caixas-selecao/diario-passos/`.
 - Testes: as 33 suítes passaram contra o código (o `teste_diario_orgaos` confere a regra nova do componente). **Não implantado:** aguarda aprovação do usuário (e snapshot).
+- **Implantado na gestão em 16/11/2026, 10h45 (Brasília)**, fora da janela do Diário, com aprovação do usuário ("Aprovo, existe snapshot"):
+  - mescla `3ef50c0`; backup ok (plataforma, bd_pm_bora, bd_cm_bora) às 10h33; versão `caixas-selecao (3ef50c0)`; nenhuma edição do Diário estava em andamento;
+  - as 33 suítes passaram contra a imagem nova; sem migração nova;
+  - conferido: portais, /diario e login 200; admin.css v=22 com o componente de caixas, os passos do Diário e a presença; admin.js com a prévia local; app e worker de pé, sem erros nos logs.
