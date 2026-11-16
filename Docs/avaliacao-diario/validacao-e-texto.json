@@ -1,0 +1,70 @@
+{
+ "texto_anterior_igual_ao_novo": true,
+ "texto_novo_igual_ao_cadastro": true,
+ "anterior": "LUIZ CARLOS RODRIGUES, Prefeito Municipal de Borá, Estado de São Paulo, no uso de suas atribuições legais, RESOLVE: Art. 1º. Ficam nomeadas as Sras. Deyse Aparecida de Almeida Trevisan e Francielli Garcia Menezes, como Presidente e Vice-Presidente respectivamente do Conselho Municipal de Acompanhamento e Controle Social do Fundo de Manutenção e Desenvolvimento da Educação Básica e de Valorização dos Profissionais da Educação-Conselho do FUNDEB, instituído pela Lei nº 800 de 17/03/2021, por força de eleição entre seus pares em assembleia realizada em 11/11/2026. Art. 2º. Esta Portaria entra em vigor na data de sua publicação. Publique-se e Cumpra-se. Borá, 13 de novembro de 2026. LUIZ CARLOS RODRIGUES PREFEITO MUNICIPAL Registrada nesta Secretaria em livro próprio, na data supra e publicada por edital afixado em lugar público de costume. EDNA MARIA PAVANELI",
+ "novo": "LUIZ CARLOS RODRIGUES, Prefeito Municipal de Borá, Estado de São Paulo, no uso de suas atribui- ções legais, RESOLVE: Art. 1º. Ficam nomeadas as Sras. Deyse Aparecida de Almeida Trevisan e Francielli Garcia Menezes, como Presidente e Vice-Presidente respectivamente do Conselho Municipal de Acompanhamento e Controle Social do Fundo de Manutenção e Desenvolvimento da Educação Básica e de Valorização dos Profissio- nais da Educação-Conselho do FUNDEB, instituído pela Lei nº 800 de 17/03/2021, por força de eleição en- tre seus pares em assembleia realizada em 11/11/2026. Art. 2º. Esta Portaria entra em vigor na data de sua pu- blicação. Publique-se e Cumpra-se. Borá, 13 de novembro de 2026. LUIZ CARLOS RODRIGUES PREFEITO MUNICIPAL Registrada nesta Secretaria em livro próprio, na data supra e publicada por edital afixado em lugar público de costume. EDNA MARIA PAVANELI",
+ "diario-2026-11-16-1-TESTE-assinado.pdf": [
+  {
+   "campo": "Assinatura_executivo_49cdb3",
+   "signatario": "Prefeito(a) - TESTE",
+   "integra": true,
+   "valida": true,
+   "confiavel": true,
+   "carimbo": "2026-11-16T14:00:06.372817+00:00",
+   "carimbo_valido": true,
+   "data_assinante": "2026-11-16T11:00:06-03:00",
+   "modificacao": "FORM_FILLING",
+   "docmdp_ok": true
+  },
+  {
+   "campo": "Assinatura_final_cd1340",
+   "signatario": "Responsavel pelo Diario - TESTE",
+   "integra": true,
+   "valida": true,
+   "confiavel": true,
+   "carimbo": "2026-11-16T14:00:06.767164+00:00",
+   "carimbo_valido": true,
+   "data_assinante": "2026-11-16T11:00:06-03:00",
+   "modificacao": "LTA_UPDATES",
+   "docmdp_ok": true
+  }
+ ],
+ "diario-2026-11-17-2-TESTE-assinado.pdf": [
+  {
+   "campo": "Assinatura_executivo_42b130",
+   "signatario": "Prefeito(a) - TESTE",
+   "integra": true,
+   "valida": true,
+   "confiavel": true,
+   "carimbo": "2026-11-16T14:00:12.390232+00:00",
+   "carimbo_valido": true,
+   "data_assinante": "2026-11-16T11:00:11-03:00",
+   "modificacao": "FORM_FILLING",
+   "docmdp_ok": true
+  },
+  {
+   "campo": "Assinatura_legislativo_3e3506",
+   "signatario": "Presidente da Camara - TESTE",
+   "integra": true,
+   "valida": true,
+   "confiavel": true,
+   "carimbo": "2026-11-16T14:00:14.246173+00:00",
+   "carimbo_valido": true,
+   "data_assinante": "2026-11-16T11:00:13-03:00",
+   "modificacao": "FORM_FILLING",
+   "docmdp_ok": true
+  },
+  {
+   "campo": "Assinatura_final_249cf6",
+   "signatario": "Responsavel pelo Diario - TESTE",
+   "integra": true,
+   "valida": true,
+   "confiavel": true,
+   "carimbo": "2026-11-16T14:00:14.714115+00:00",
+   "carimbo_valido": true,
+   "data_assinante": "2026-11-16T11:00:14-03:00",
+   "modificacao": "LTA_UPDATES",
+   "docmdp_ok": true
+  }
+ ]
+}
