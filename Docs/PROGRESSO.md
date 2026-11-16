@@ -2440,3 +2440,8 @@ Pedido: `Docs/PEDIDO-DIARIO-CAPA.md`. O protótipo citado estava em `Docs/diario
   - As edições já publicadas ficam como estão. O novo layout vale para as próximas edições que forem fechadas.
 - **Falta (usuário):** validar a regra das quebras (`Docs/avaliacao-diario/regra-quebras-de-linha.md`) e conferir o tipo do ato "Lei 419/2026" (o texto é de Portaria).
 - **Falta:** o nó do prefbora recebe esta versão pelo pacote novo do console e o instalador (etapas 8 e 9: `s`).
+- **Edição nº 1 de TESTE refeita em produção (16/11/2026, 12h30)**, a pedido do usuário ("altere inclusive na já publicada, é versão teste, não tem validade"; comando aprovado):
+  - script `deploy/refazer_edicao_teste.py` (só modo teste; recusa edição oficial). Simulado antes em produção sem gravar e testado de ponta a ponta no ambiente de teste;
+  - mantidos número, data, código `9FD6-BC8A-AEDC`, ato e situação; PDF anterior guardado como `diario-2026-11-16-1-TESTE.anterior.pdf`; registrado na auditoria;
+  - PDF novo (capa, 2 colunas, linha da MP, carimbos) assinado de novo com os certificados de teste. As 2 assinaturas estão íntegras, válidas e confiáveis, com carimbo do tempo;
+  - conferido: /diario/1.pdf entrega o PDF novo (sha256 79c0212b…, igual ao gravado); /diario/verificar?c=9FD6-BC8A-AEDC mostra as assinaturas válidas (cadeia de TESTE) e a legenda. Imagens em `Docs/avaliacao-diario/producao-edicao-1-pagina-*.png`.
