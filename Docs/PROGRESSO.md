@@ -2433,3 +2433,10 @@ Pedido: `Docs/PEDIDO-DIARIO-CAPA.md`. O protótipo citado estava em `Docs/diario
   - Tudo gerado no ambiente de teste, com a cadeia de certificados de TESTE.
 - **Não implantado:** aguarda aprovação. A imagem precisa ser reconstruída (pyphen) antes de subir.
 - Testes: as 34 suítes passaram contra o código (inclui a nova `teste_diario_capa`). **Não implantado:** aguarda aprovação do usuário (e snapshot).
+- **Implantado na gestão em 16/11/2026, 12h01 (Brasília)**, fora da janela do Diário, com aprovação do usuário ("Aprovo, existe snapshot"):
+  - mescla `1784f83f`; backup ok (plataforma, bd_pm_bora, bd_cm_bora) às 11h49; versão `diario-capa (1784f83f)`; imagem reconstruída com o pyphen; nenhuma edição do Diário em andamento;
+  - as 34 suítes passaram contra a imagem nova; sem migração nova;
+  - conferido: portais, /diario e login 200; `/diario/verificar?c=` mostra o resultado da Edição nº 1; pyphen 0.17.0 e Public Sans carregados no app; app e worker de pé, sem erros nos logs.
+  - As edições já publicadas ficam como estão. O novo layout vale para as próximas edições que forem fechadas.
+- **Falta (usuário):** validar a regra das quebras (`Docs/avaliacao-diario/regra-quebras-de-linha.md`) e conferir o tipo do ato "Lei 419/2026" (o texto é de Portaria).
+- **Falta:** o nó do prefbora recebe esta versão pelo pacote novo do console e o instalador (etapas 8 e 9: `s`).
