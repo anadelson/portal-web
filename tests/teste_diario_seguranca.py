@@ -128,12 +128,20 @@ LEG = 'Edição teste — não homologada — sem validade'
 r = ok(pm.get('/diario'), txt=LEG, nome='teste no portal com a legenda')
 if f'nº {e["numero"]}' not in r.text or r.text.count(LEG) < 2: falha('lista: edição de teste sem a legenda na linha')
 if LEG not in pm.get('/').text: falha('página inicial: edição de teste sem a legenda')
-from pyhanko.pdf_utils.reader import PdfFileReader
-with open(e['pdf_arquivo'], 'rb') as fh:
-    rd = PdfFileReader(fh, strict=False); pg = rd.root['/Pages']['/Kids'][0].get_object()
-    cont = pg['/Contents']; cont = [c.get_object() for c in cont] if isinstance(cont, list) or hasattr(cont, '__iter__') and not hasattr(cont, 'data') else [cont.get_object()]
-    txt = b''.join(c.data for c in cont).decode('latin-1')
-if txt.count('HOMOLOGADA') < 2 or txt.count('SEM VALIDADE') < 2: falha('PDF de teste sem a legenda na capa e na marca d\'água')
+# legenda na capa (tarja + marca d'água) e em todas as páginas (marca d'água) — texto extraído pelo Ghostscript, como no teste dos órgãos
+import subprocess as _sp
+def _txt(arq, p=None):
+    pg = ['-dFirstPage=%d' % p, '-dLastPage=%d' % p] if p else []
+    return _sp.run(['gs', '-q', '-dNOPAUSE', '-dBATCH', '-sDEVICE=txtwrite', *pg, '-sOutputFile=-', arq], capture_output=True, text=True).stdout
+_n_pag = len(__import__('pyhanko.pdf_utils.reader', fromlist=['x']).PdfFileReader(open(e['pdf_arquivo'], 'rb')).root['/Pages']['/Kids'])
+if _txt(e['pdf_arquivo'], 1).count(LEG.upper()) < 2 or _txt(e['pdf_arquivo']).count(LEG.upper()) < _n_pag + 1: falha("PDF de teste sem a legenda na capa e na marca d'água de cada página")
+# 16/11/2026: capa nova, rodapé da MP e carimbos laterais (um por assinatura, em todas as páginas)
+_t = ' '.join(_txt(e['pdf_arquivo']).split())
+for _x in ('DIÁRIO OFICIAL', 'NESTA EDIÇÃO', 'Autenticidade', 'conforme a MP nº 2.200-2/2001, que institui a ICP-Brasil', 'Edição de teste: sem assinatura com validade jurídica'):
+    if _x not in _t: falha(f'capa/rodapé sem "{_x}"')
+# carimbo lateral: assinaturas feitas no servidor (Executivo e final). A do Legislativo veio por token A3: o próprio programa do signatário assina, sem o carimbo do sistema
+if _t.count('ASSINADO DIGITALMENTE') != _n_pag * 2: falha(f'carimbo lateral: {_t.count("ASSINADO DIGITALMENTE")} para {_n_pag} páginas e 2 assinaturas no servidor')
+if not all(x.get('modificacao') in ('NONE', 'FORM_FILLING', 'LTA_UPDATES') and x.get('docmdp_ok') is not False for x in sigs): falha(f'carimbos alteraram as assinaturas: {[(x["campo"], x.get("modificacao")) for x in sigs]}')
 r = post(pm, '/admin/diario/config', {'acao': 'teste_publico'}, de='/admin/diario/config')
 if 'não aparecem mais' not in msg(r): falha(f'desligar edições de teste no portal: {msg(r)}')
 ok(pm.get('/diario'), txt='Nenhuma edição oficial publicada', nome='opção desligada: teste fora do portal')
@@ -143,6 +151,7 @@ r = post(pm, '/admin/diario/config', {'acao': 'teste_publico', 'mostrar_teste': 
 if 'aparecem no portal com a legenda' not in msg(r): falha(f'religar edições de teste: {msg(r)}')
 if not db.um(PM, "SELECT count(*) n FROM auditoria WHERE acao LIKE 'Diário: edições de teste no portal%%'")['n'] >= 2: falha('auditoria da opção')
 r = ok(pm.get(f"/diario/verificar?codigo={e['codigo']}"), txt=LEG, nome='verificação')
+ok(pm.get(f"/diario/verificar?c={e['codigo']}"), txt=e['codigo'], nome='verificação pelo QR Code da capa (?c=)')
 for t_ in ('Responsavel pelo Diario - TESTE', 'Prefeito(a) - TESTE', 'validar.iti.gov.br', e['sha256'], 'Íntegra e válida', 'PDF/A-2b'):
     if t_ not in r.text: falha(f'verificação sem "{t_}"')
 # ---------- extra, retificação ----------
