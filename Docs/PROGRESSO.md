@@ -2322,4 +2322,10 @@ Pedido do usuário: parametrizar a aprovação. Conforme a política, o conteúd
 - **Ficam com regras próprias (aparecem na tela, sem mudar):** Diário Oficial, Carta de Serviços, exceção do período eleitoral (Procuradoria) e moderação das manifestações do cidadão. As travas do período eleitoral valem nos dois modos.
 - Comunicados ganharam as situações "Em aprovação" e "Devolvido". Migração `035_orgao_aprovacao.sql` (só colunas e situações novas; nada é apagado). admin.css v=20. Teste novo `teste_aprovacao` (pessoas e conteúdos fictícios).
 - Testes: as 32 suítes passaram contra o código (a `teste_aprovacao` também com data simulada). Captura da tela nova no ambiente de teste em 1366 e 390 px, sem desalinhamento nem rolagem lateral.
-- **Falta:** implantar na gestão (com aprovação e snapshot) e depois no nó do prefbora.
+- **Implantado na gestão em 15/11/2026, 21h20 (Brasília)**, fora da janela do Diário, com aprovação do usuário ("Aprovo, existe snapshot"):
+  - mescla `e29d6f9`; backup ok (plataforma, bd_pm_bora, bd_cm_bora) às 21h18; versão `politica-aprovacao (e29d6f9)`;
+  - as 32 suítes passaram contra a imagem nova;
+  - `provision atualizar` aplicou a `035_orgao_aprovacao` na Prefeitura e na Câmara; sem fontes nem blocos novos;
+  - conferido: portais, login, /comunicados e /fotos 200; /admin/aprovacao pede login (303); admin.css v=20; colunas `aguarda_aprovacao` (5 por banco) e situações novas dos comunicados criadas; app e worker de pé, sem erros nos logs.
+- A política começa igual ao comportamento anterior; o administrador muda em Administração → Aprovação para publicar.
+- **Falta:** o nó do prefbora recebe esta versão pelo pacote novo do console e o instalador (etapas 8 e 9: `s`).
