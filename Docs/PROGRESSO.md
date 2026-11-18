@@ -2605,3 +2605,47 @@ Pedido: o e-mail institucional e o nome "DTIC Borá" não devem aparecer. Escolh
   | main | bb92378 | 84d43f1 |
 
   As tags mantêm os nomes; para achar uma versão, use a tag.
+
+## 18/11/2026 — Mais de um nó na mesma VPS e mudança de órgão entre nós (branches instancias-no e mover-orgao)
+Pedido do usuário: separar Prefeitura e Câmara, que hoje estão no mesmo nó (72.60.250.36), para demonstrar que cada sistema é autônomo. "Faça as 2 etapas."
+
+**Etapa 1 — instâncias** (um segundo nó na mesma VPS, totalmente separado):
+- A instância sai do nome da pasta: `/opt/portal_web` é a de sempre (nada muda nela); `/opt/portal_web-<nome>` é uma instância.
+- Cada instância tem os seus:
+  - containers, banco e volumes (projeto Docker próprio);
+  - apelido do app na rede do proxy (`portal-web-app-<nome>`);
+  - trecho do nginx (`portal-comum-<nome>.inc`) e arquivo de rotas (`portal-orgaos-<nome>.conf`/`.yml`); no Traefik, nomes com o prefixo `portal-orgaos-<nome>-`;
+  - ativador (`portal-ativador-<nome>`, com estado próprio);
+  - backup (`/etc/cron.d/portal-backup-<nome>`, 20 minutos depois do outro, com o volume de arquivos da própria instância).
+- Instalador:
+  - reconhece a instância e usa o nginx da outra instância como nginx existente;
+  - busca só o pacote da instância (`segredos-no@<nome>…`);
+  - recusa pacote de outra instância.
+- Console: o nó ganhou o campo **instância** (migração 038); a tela "Instalação do nó" mostra os comandos com a pasta e os arquivos da instância; o pacote leva a instância.
+- Sem instância, tudo fica como antes (a gestão inclusive): conferido pelo `docker compose config`, que continua dando o apelido `portal-web-app`.
+
+**Etapa 2 — mover órgão entre nós** (`deploy/no/mover_orgao.sh` + `app/mover_orgao.py`):
+- `exportar SLUG`, no nó de origem:
+  - recusa se o domínio ainda estiver publicado;
+  - gera `/root/mover-SLUG-….tgz` (permissão 600) com o banco do órgão, a contagem de cada tabela, a pasta de arquivos, as linhas do banco local do órgão e o manifesto com SHA-256.
+- `importar ARQ`, no nó de destino:
+  - recusa arquivo adulterado e banco ou pasta que já existam;
+  - restaura e **confere tabela por tabela**; se não bater, desfaz;
+  - copia os arquivos com o dono do app e importa as linhas do banco local.
+- `limpar ARQ`, na origem: recusa enquanto o órgão ainda é do nó; pede a confirmação digitada; guarda cópia do banco em `backups/removido-…`; apaga só esse órgão.
+- **Inventário assinado:** a gestão entrega ao nó, junto com as licenças, a lista assinada dos órgãos dele, e o nó apaga do cache a licença de quem saiu.
+  - Antes, o nó antigo continuaria servindo o órgão até a licença vencer.
+  - Inventário de outro nó, antigo (mais de 15 minutos) ou adulterado não apaga nada; nó antigo ignora o campo.
+- Console:
+  - mudar a hospedagem com o domínio publicado é recusado ("tire do ar antes");
+  - a tela do órgão mostra o roteiro de mudança.
+- Roteiro passo a passo para a VPS: `Docs/ROTEIRO-SEPARAR-CAMARA.md`.
+
+**Testes:**
+- `teste_instalador_no.sh`: segunda instância ao lado da primeira; nada do primeiro nó é alterado; pacote de outra instância é recusado.
+- `teste_ativador.sh`: rotas e trecho próprios; recusa de domínio publicado pelo outro nó.
+- `teste_ativacao.py`: nomes e apelido por instância.
+- `teste_instalacao.py`: campo instância, comandos e pacote.
+- `teste_licenca.py`: inventário (esquece / não esquece) e recusa da hospedagem com domínio no ar.
+- Novo `teste_mover_orgao.sh`: ensaio real com **dois PostgreSQL** (um por nó). Cobre exportar, recusas, importar com contagens iguais, arquivos e banco local só da Câmara, esquecer pelo inventário, limpar com cópia e Prefeitura intacta.
+- Testes: as 36 suítes passaram contra o código (inclui o ensaio novo `teste_mover_orgao`). **Não implantado:** aguarda aprovação do usuário (e snapshot). Implantação na gestão: migração 038 (coluna nova), imagem reconstruída; o branch `mover-orgao` já contém `instancias-no` e a trava do instalador.

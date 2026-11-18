@@ -13,7 +13,9 @@ for b in $BANCOS; do
   docker compose exec -T db pg_dump -U "$PG_USER" -Fc "$b" > "$DEST/$b-$DATA.dump"
   echo "$(date -Is) ok $b"
 done
-tar -czf "$DEST/dados-$DATA.tgz" -C /var/lib/docker/volumes/portal_web_dados _data
+# volume de arquivos do projeto docker compose desta pasta (portal_web_dados; numa instância, ex.: portal_web-camara_dados)
+PROJETO=$(basename "$PWD" | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9_-')
+tar -czf "$DEST/dados-$DATA.tgz" -C "/var/lib/docker/volumes/${PROJETO}_dados" _data
 # .env (inclui CHAVE_CREDENCIAIS: sem ela as credenciais cifradas no banco não podem ser lidas). Só root lê (600).
 install -m 600 .env "$DEST/env-$DATA"
 find "$DEST" -name 'env-*' -mtime +14 -delete

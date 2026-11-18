@@ -137,5 +137,21 @@ pedido 25 desativar orgao.exemplo.com; rodar_t
 checa '[ "$(sit 25)" = desativado ] && ! grep -q "orgao.exemplo.com" "$T/dyn/portal-orgaos.yml"' 'traefik: retirada do ar'
 saida=$(rodar_t --teste teste-traefik.exemplo.com); checa 'echo "$saida" | grep -q "publicar no Traefik" && ! grep -q teste-traefik "$T/dyn/portal-orgaos.yml"' "traefik: modo de teste publica e retira ($saida)"
 
+# 12. instância (segundo nó na mesma VPS, 18/11/2026): arquivo de rotas, trecho do nginx e estado próprios; o do primeiro nó fica intacto
+pedido 60 ativar primeiro.exemplo.com; rodar   # o primeiro nó publica um domínio (nginx)
+checa '[ "$(sit 60)" = no_ar ] && grep -q "server_name primeiro.exemplo.com;" "$T/conf.d/portal-orgaos.conf"' 'primeiro nó: domínio publicado antes da instância'
+cp "$T/conf.d/portal-orgaos.conf" "$T/primeiro.conf"; mkdir -p "$T/fila-cm"; : > "$T/chamadas"
+echo "61 ativar camara.exemplo.com pendente" > "$T/fila-cm/61.ped"
+INSTANCIA=camara TENTATIVAS=5 ESPERA=0 PROJ="$RAIZ" CONF_DIR="$T/conf.d" CERTS_DIR="$T/certs" LOG="$T/ativador-cm.log" DOCKER="$T/bin/docker" CURL="$T/bin/curl" \
+  APP_CMD="$T/bin/app" FILA="$T/fila-cm" ESTADO="$T/estado-cm" bash "$RAIZ/deploy/ativador.sh"
+checa '[ "$(cut -d" " -f4 < "$T/fila-cm/61.ped")" = no_ar ] && grep -q "server_name camara.exemplo.com;" "$T/conf.d/portal-orgaos-camara.conf"' 'instância: rotas em portal-orgaos-camara.conf'
+checa 'grep -q "portal-web-app-camara:8000" "$T/conf.d/portal-comum-camara.inc" && cmp -s "$RAIZ/deploy/nginx/portal-comum.inc" "$T/conf.d/portal-comum.inc"' 'instância: trecho próprio apontando para o app da instância; o do primeiro nó igual'
+checa 'cmp -s "$T/primeiro.conf" "$T/conf.d/portal-orgaos.conf" && ! grep -q camara "$T/conf.d/portal-orgaos.conf"' 'instância: rotas do primeiro nó intactas'
+echo "62 ativar primeiro.exemplo.com pendente" > "$T/fila-cm/62.ped"
+INSTANCIA=camara TENTATIVAS=5 ESPERA=0 PROJ="$RAIZ" CONF_DIR="$T/conf.d" CERTS_DIR="$T/certs" LOG="$T/ativador-cm.log" DOCKER="$T/bin/docker" CURL="$T/bin/curl" \
+  APP_CMD="$T/bin/app" FILA="$T/fila-cm" ESTADO="$T/estado-cm" bash "$RAIZ/deploy/ativador.sh"
+checa '[ "$(cut -d" " -f4 < "$T/fila-cm/62.ped")" = erro ] && ! grep -q primeiro.exemplo.com "$T/conf.d/portal-orgaos-camara.conf" && grep -q "server_name primeiro.exemplo.com;" "$T/conf.d/portal-orgaos.conf"' 'instância: domínio já publicado pelo outro nó é recusado (sem duplicar)'
+saida=$(INSTANCIA='Camara!' PROJ="$RAIZ" CONF_DIR="$T/conf.d" ESTADO="$T/estado-x" LOG="$T/x.log" bash "$RAIZ/deploy/ativador.sh" 2>&1); checa '[ $? != 0 ] && echo "$saida" | grep -q "INSTANCIA inválida"' 'instância inválida: o ativador recusa'
+
 if [ "$ERROS" -gt 0 ]; then echo "ERROS: $ERROS"; exit 1; fi
 echo 'ativador (simulado): tudo ok'

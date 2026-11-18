@@ -136,6 +136,24 @@ velho = L.assinar(dict(L.documento(PM), serial=1))
 L.guardar([velho], pub)
 checa(db.um(db.PLATAFORMA, 'SELECT serial FROM licencas_cache WHERE orgao_id=%s', (PM['id'],))['serial'] > 1, 'licença mais antiga não substitui a mais nova')
 checa(L.puxar() and 'gestão' not in L.puxar(), 'puxar sem erro')
+# órgão que muda de nó (18/11/2026): o inventário ASSINADO da gestão faz o nó esquecer a licença; inventário de outro nó, antigo ou adulterado não apaga nada
+from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+os.environ['NO_NOME'] = n['nome']
+db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=NULL WHERE id=%s', (PM['id'],))
+r = L.puxar(); L._memo.clear(); web.limpar_cache()
+checa('1 órgão(s) que saíram deste nó' in r and not db.um(db.PLATAFORMA, 'SELECT 1 x FROM licencas_cache WHERE orgao_id=%s', (PM['id'],))
+      and web.orgao_por_dominio('pmbora.localhost') is None, f'órgão que saiu do nó: licença esquecida e portal não é mais servido ({r})')
+db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=%s WHERE id=%s', (n['id'], PM['id'])); L.puxar(); L._memo.clear(); web.limpar_cache()
+checa(web.orgao_por_dominio('pmbora.localhost') is not None, 'órgão de volta ao nó: servido de novo')
+agora = _dt.now(_tz.utc)
+inv = lambda **k: L.assinar(dict({'tipo': 'inventario', 'no': n['nome'], 'orgaos': [], 'emitido_em': agora.isoformat()}, **k))
+checa(L.esquecer(inv(no='outro-no.exemplo.test'), pub) == 0, 'inventário de outro nó: não apaga')
+checa(L.esquecer(inv(emitido_em=(agora - _td(hours=1)).isoformat()), pub) == 0, 'inventário antigo (reenviado): não apaga')
+adult = inv(); adult['doc']['orgaos'] = []; adult['doc']['no'] = n['nome'] + 'x'
+checa(L.esquecer(adult, pub) == 0 and L.esquecer(None, pub) == 0 and L.esquecer({'doc': {}, 'sig': 'x'}, pub) == 0, 'inventário adulterado ou ausente: não apaga')
+checa(L.guardar([inv()], pub) == (0, 1), 'inventário não vale como licença')
+checa(db.um(db.PLATAFORMA, 'SELECT 1 x FROM licencas_cache WHERE orgao_id=%s', (PM['id'],)), 'depois das recusas, a licença continua no nó')
+del os.environ['NO_NOME']
 config.NO_TOKEN = ''
 checa('faltam' in L.puxar(), 'nó sem token: mensagem explica o que falta')
 
@@ -146,6 +164,12 @@ checa(rg.status_code == 200 and rp.status_code == 404, f'gestão sozinha: consol
 config.PAPEL = 'tudo'; web.limpar_cache(); L._memo.clear()
 db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=NULL WHERE id=%s', (PM['id'],))
 checa(pt.get('/').status_code == 200 and web.modulos_do_orgao(PM) == antigo(PM), 'de volta ao papel "tudo": igual a antes')
+# mudar de nó com o domínio publicado: recusado (o nó antigo e o novo disputariam o domínio)
+db.exe(db.PLATAFORMA, 'UPDATE orgaos SET vhost_ativo=TRUE WHERE id=%s', (PM['id'],))
+r = con.post(f"/orgao/{PM['id']}/hospedagem", data={'csrf': tok(con, f"/orgao/{PM['id']}"), 'no_id': str(n['id']), 'confirmo': '1'}, follow_redirects=True)
+checa('Tire o domínio do ar antes' in r.text and db.um(db.PLATAFORMA, 'SELECT no_id FROM orgaos WHERE id=%s', (PM['id'],))['no_id'] is None, 'domínio publicado: mudança de hospedagem recusada')
+checa('mover_orgao.sh exportar pm-bora' in con.get(f"/orgao/{PM['id']}").text, 'roteiro de mudança de nó na tela do órgão')
+db.exe(db.PLATAFORMA, 'UPDATE orgaos SET vhost_ativo=FALSE WHERE id=%s', (PM['id'],))
 
 if erros:
     print('ERROS:', len(erros)); [print(e) for e in erros]; sys.exit(1)

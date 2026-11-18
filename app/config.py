@@ -26,6 +26,11 @@ GESTAO_URL = env('GESTAO_URL')                      # ex.: https://gestao.conect
 NO_TOKEN = env('NO_TOKEN')                          # segredo do nó (só no papel "no"); nunca vai para tela ou log
 LICENCA_CHAVE_PUBLICA = env('LICENCA_CHAVE_PUBLICA')  # chave pública da gestão (base64), conferida em cada licença no papel "no"
 LICENCA_VALIDADE_DIAS = int(env('LICENCA_VALIDADE_DIAS', '15') or 15)  # sem contato com a gestão por mais que isso: carência
+# Mais de um nó na mesma VPS (18/11/2026): cada nó é uma "instância" com pasta, containers, banco, apelido na rede do proxy,
+# arquivo de rotas e ativador próprios. Instância vazia = a instalação de sempre (/opt/portal_web, apelido portal-web-app).
+INSTANCIA = env('INSTANCIA') if __import__('re').fullmatch(r'[a-z0-9]{1,20}', env('INSTANCIA')) else ''
+SUFIXO = f'-{INSTANCIA}' if INSTANCIA else ''      # "-camara": vai em portal-web-app-camara, portal-orgaos-camara.conf, portal-comum-camara.inc
+APP_ALIAS = f'portal-web-app{SUFIXO}'              # nome do app na rede do proxy (nginx/Traefik chegam ao app por ele)
 
 def hoje() -> date:
     """Data de referência. DATA_SIMULADA (AAAA-MM-DD ou AAAA-MM-DDTHH:MM) permite testar período eleitoral, Diário etc."""

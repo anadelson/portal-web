@@ -19,7 +19,8 @@ import json, re, socket, sys
 from . import config, db
 
 DOMINIO = re.compile(r'^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$')
-INC = '/etc/nginx/conf.d/portal-comum.inc'
+INC = f'/etc/nginx/conf.d/portal-comum{config.SUFIXO}.inc'   # um por instância: aponta para o app da instância (config.APP_ALIAS)
+PREFIXO = f'portal-orgaos{config.SUFIXO}'                      # nomes das rotas/middlewares/serviço no Traefik, sem colidir entre instâncias
 
 def vps_ip():
     """IP público da VPS: VPS_IP no .env ou o IP para onde aponta o domínio do console."""
@@ -138,22 +139,22 @@ def rotas_traefik(incluir=None, teste=None, excluir=None, entrada_http='web', en
     for d in dominios(incluir, teste, excluir):
         if not DOMINIO.match(d):
             raise ValueError(f'domínio inválido: {d!r}')
-        nome = 'portal-orgaos-' + d.replace('.', '-')
+        nome = f'{PREFIXO}-' + d.replace('.', '-')
         regra = f'Host(`{d}`)'
-        routers[nome + '-http'] = {'rule': regra, 'entryPoints': [entrada_http], 'middlewares': ['portal-orgaos-https'],
-                                   'service': 'portal-orgaos-app'}
-        routers[nome] = {'rule': regra, 'entryPoints': [entrada_https], 'service': 'portal-orgaos-app', 'tls': {'certResolver': resolvedor},
-                         'middlewares': ['portal-orgaos-cabecalhos', 'portal-orgaos-limite', 'portal-orgaos-gzip']}
+        routers[nome + '-http'] = {'rule': regra, 'entryPoints': [entrada_http], 'middlewares': [f'{PREFIXO}-https'],
+                                   'service': f'{PREFIXO}-app'}
+        routers[nome] = {'rule': regra, 'entryPoints': [entrada_https], 'service': f'{PREFIXO}-app', 'tls': {'certResolver': resolvedor},
+                         'middlewares': [f'{PREFIXO}-cabecalhos', f'{PREFIXO}-limite', f'{PREFIXO}-gzip']}
     conf = {'http': {
         'routers': routers,
         'middlewares': {
-            'portal-orgaos-https': {'redirectScheme': {'scheme': 'https', 'permanent': True}},
-            'portal-orgaos-cabecalhos': {'headers': {'contentTypeNosniff': True, 'referrerPolicy': 'strict-origin-when-cross-origin',
+            f'{PREFIXO}-https': {'redirectScheme': {'scheme': 'https', 'permanent': True}},
+            f'{PREFIXO}-cabecalhos': {'headers': {'contentTypeNosniff': True, 'referrerPolicy': 'strict-origin-when-cross-origin',
                                                      'stsSeconds': 31536000}},
-            'portal-orgaos-limite': {'buffering': {'maxRequestBodyBytes': 25 * 1024 * 1024}},
-            'portal-orgaos-gzip': {'compress': {}},
+            f'{PREFIXO}-limite': {'buffering': {'maxRequestBodyBytes': 25 * 1024 * 1024}},
+            f'{PREFIXO}-gzip': {'compress': {}},
         },
-        'services': {'portal-orgaos-app': {'loadBalancer': {'passHostHeader': True, 'servers': [{'url': 'http://portal-web-app:8000'}]}}},
+        'services': {f'{PREFIXO}-app': {'loadBalancer': {'passHostHeader': True, 'servers': [{'url': f'http://{config.APP_ALIAS}:8000'}]}}},
     }}
     cab = ('# GERADO pelo ativador dos Portais (/opt/portal_web/deploy/ativador.sh) a partir do banco. NÃO EDITE À MÃO.\n'
            '# Rotas do Traefik para os órgãos publicados pelo console (formato JSON, que o Traefik lê como YAML).\n')

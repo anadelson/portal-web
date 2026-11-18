@@ -75,7 +75,8 @@ def pacote_segredos(no, token=None):
     from . import licenca
     env = _env_origem()
     imp, pub = licenca.garantir_chaves()
-    env.update({'GESTAO_URL': f'https://{config.DOMINIO_GESTAO}', 'NO_NOME': no['nome'], 'LICENCA_CHAVE_PUBLICA': pub})
+    env.update({'GESTAO_URL': f'https://{config.DOMINIO_GESTAO}', 'NO_NOME': no['nome'], 'LICENCA_CHAVE_PUBLICA': pub,
+                'INSTANCIA': no.get('instancia') or ''})  # o instalador confere se roda na pasta da instância certa
     if token:
         env['NO_TOKEN'] = token
     linhas = ''.join(f'{k}={v}\n' for k, v in env.items()).encode()

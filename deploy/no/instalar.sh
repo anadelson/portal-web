@@ -31,6 +31,12 @@ set -euo pipefail
 umask 077                                    # arquivos criados aqui nascem legíveis só pelo root
 
 PROJ=$(cd "$(dirname "$0")/../.." && pwd)    # pasta do código (normalmente /opt/portal_web)
+# Instância (mais de um nó na mesma VPS, 18/11/2026): sai do nome da pasta. /opt/portal_web = a de sempre;
+# /opt/portal_web-camara = instância "camara", com containers, banco, apelido no proxy, rotas, ativador e backup próprios.
+PASTA_BASE=$(basename "$PROJ"); INST=""
+if [[ "$PASTA_BASE" =~ ^portal_web-([a-z0-9]{1,20})$ ]]; then INST=${BASH_REMATCH[1]}
+elif [ "$PASTA_BASE" != portal_web ]; then echo "A pasta do código deve ser /opt/portal_web ou /opt/portal_web-<instância> (letras minúsculas e números)."; exit 1; fi
+SUF=${INST:+-$INST}; APP_ALIAS=portal-web-app$SUF; ATIV=portal-ativador$SUF
 LOG="$PROJ/logs/instalar-no.log"
 mkdir -p "$PROJ/logs"
 VERIFICAR=0; [ "${1:-}" = "--verificar" ] && VERIFICAR=1
@@ -204,11 +210,14 @@ PY
   return 0
 }
 
+# trecho comum dos vhosts (portal-comum[-INST].inc) apontando para o app desta instância
+instalar_inc() { sed "s/portal-web-app:8000/$APP_ALIAS:8000/" "$PROJ/deploy/nginx/portal-comum.inc" > "$1/portal-comum$SUF.inc" && chmod 644 "$1/portal-comum$SUF.inc"; }
+
 # ---------------------------------------------------------------------------------------------------------------------
 #  Começo
 # ---------------------------------------------------------------------------------------------------------------------
 [ "$(id -u)" = 0 ] || { echo "Rode como root (sudo bash deploy/no/instalar.sh)."; exit 1; }
-[ -f "$PROJ/docker-compose.yml" ] && [ -f "$PROJ/app/main.py" ] || { echo "Rode de dentro do código do portal (/opt/portal_web)."; exit 1; }
+[ -f "$PROJ/docker-compose.yml" ] && [ -f "$PROJ/app/main.py" ] || { echo "Rode de dentro do código do portal (/opt/portal_web ou /opt/portal_web-<instância>)."; exit 1; }
 echo "Instalador do nó de portais — $(date '+%d/%m/%Y %H:%M')"
 echo "Registro detalhado (sem segredos): $LOG   ·   para acompanhar em outro terminal: tail -f $LOG"
 
@@ -227,7 +236,8 @@ for p in 80 443; do
 done
 # VPS compartilhada = 80/443 já usadas por outro sistema (não pelo nginx próprio do nó), ou instalação anterior assim
 COMPARTILHADA=0
-if (porta_ocupada 80 || porta_ocupada 443) && ! docker ps --format '{{.Names}}' 2>/dev/null | grep -qx portal-nginx; then COMPARTILHADA=1; fi
+if (porta_ocupada 80 || porta_ocupada 443) && { [ -n "$INST" ] || ! docker ps --format '{{.Names}}' 2>/dev/null | grep -qx portal-nginx; }; then COMPARTILHADA=1; fi
+[ -n "$INST" ] && c_ok "instância \"$INST\" (pasta $PROJ): containers, banco e rotas separados do outro nó desta VPS"
 case "$(env_val PROXY_MODO)" in existente|traefik) COMPARTILHADA=1 ;; esac
 if [ "$COMPARTILHADA" = 1 ]; then
   c_av "VPS COMPARTILHADA: outros sistemas já usam as portas 80/443. Para não derrubar nada do que já está no ar,"
@@ -253,11 +263,11 @@ if [ "$VERIFICAR" = 1 ]; then               # modo --verificar: mostra a situaç
   if [ -f "$PROJ/.env" ] && command -v docker >/dev/null; then
     (cd "$PROJ" && docker compose ps --format '  {{.Service}}: {{.Status}}' 2>/dev/null) || true
     if [ "$(env_val PROXY_MODO)" = traefik ]; then
-      echo "  proxy: Traefik $(env_val TRAEFIK_C) · rotas em: $(env_val CONF_DIR)/portal-orgaos.yml · rede: $(env_val REDE_PROXY) · resolvedor: $(env_val TRAEFIK_RESOLVEDOR)"
+      echo "  proxy: Traefik $(env_val TRAEFIK_C) · rotas em: $(env_val CONF_DIR)/portal-orgaos$SUF.yml · rede: $(env_val REDE_PROXY) · resolvedor: $(env_val TRAEFIK_RESOLVEDOR)"
     else
       echo "  proxy: nginx $(env_val NGINX_C) · conf.d: $(env_val CONF_DIR) · certificados: $(env_val PROXY_CERTS_DIR)$(env_val CERTS_DIR) · rede: $(env_val REDE_PROXY)"
     fi
-    systemctl is-active --quiet portal-ativador.timer && c_ok "ativador ligado" || c_av "ativador desligado"
+    systemctl is-active --quiet "$ATIV.timer" && c_ok "ativador ligado" || c_av "ativador desligado"
     (cd "$PROJ" && docker compose exec -T app python -m app.licenca puxar 2>/dev/null | sed 's/^/  licenças: /') || c_av "app fora do ar"
   fi
   exit 0
@@ -344,7 +354,8 @@ etapa 5 "Segredos (iguais aos da VPS da gestão)"
 echo "  As chaves abaixo PRECISAM ser as mesmas da gestão, senão o 2FA dos administradores, o login por CPF,"
 echo "  as credenciais das fontes e os códigos do Diário param de funcionar."
 ORIGEM=""
-ACHADO=$(ls -1t /root/segredos-no*.enc /root/segredos-no-*.tar.gz 2>/dev/null | head -1 || true)
+if [ -n "$INST" ]; then ACHADO=$(ls -1t "/root/segredos-no@$INST.tar.gz.enc" 2>/dev/null | head -1 || true)   # pacote da instância
+else ACHADO=$(ls -1t /root/segredos-no*.enc /root/segredos-no-*.tar.gz 2>/dev/null | grep -v '@' | head -1 || true); fi  # "@" = pacote de outra instância
 # Pacote NOVO (mais recente que o .env.origem já importado) = reinstalação com dados novos do console (token, nome do nó):
 # usa o pacote. Antes (até 18/11/2026) o .env.origem antigo tinha prioridade e o pacote novo era ignorado.
 USAR_PACOTE_NOVO=""
@@ -389,6 +400,11 @@ for k in SECRET_KEY TOTP_CHAVE CPF_HMAC_CHAVE CHAVE_CREDENCIAIS; do   # confere 
   grep -qE "^$k=.+" "$ORIGEM" && c_ok "$k presente" || c_av "$k ausente (sem ela: $( [ $k = SECRET_KEY ] && echo 'NÃO prossiga' || echo 'a função correspondente fica desligada'))"
 done
 grep -qE "^SECRET_KEY=.+" "$ORIGEM" || para "SECRET_KEY é obrigatória (a mesma da gestão)"
+# o pacote é do nó desta instância? (o console grava a instância do nó no pacote)
+P_INST=$(grep -E "^INSTANCIA=" "$ORIGEM" 2>/dev/null | tail -1 | cut -d= -f2- || true)
+if grep -qE "^INSTANCIA=" "$ORIGEM" 2>/dev/null && [ "$P_INST" != "$INST" ]; then
+  para "este pacote é do nó da instância \"${P_INST:-padrão}\" (pasta /opt/portal_web${P_INST:+-$P_INST}), não desta pasta ($PROJ)"
+fi
 
 # =====================================================================================================================
 #  6. Dados do nó. Se o pacote veio do console, endereço da gestão, nome, token e chave pública já vêm preenchidos
@@ -456,7 +472,7 @@ if [ "$MODO" = proprio ]; then
   CONF_DIR="$PROJ/deploy/no/proxy/conf.d"; CERTS_DIR=/var/lib/docker/volumes/portal-proxy_certs/_data
   mkdir -p "$CONF_DIR"
   install -m 644 "$PROJ/deploy/no/proxy/00-acme.conf" "$CONF_DIR/00-acme.conf"          # responde o desafio do Let's Encrypt
-  install -m 644 "$PROJ/deploy/nginx/portal-comum.inc" "$CONF_DIR/portal-comum.inc"      # trecho comum dos vhosts dos órgãos
+  instalar_inc "$CONF_DIR"      # trecho comum dos vhosts dos órgãos
   chmod 755 "$CONF_DIR"
   if confirma "Subir o nginx e o certbot próprios do nó (portas 80 e 443)?"; then
     rodar "Baixando e subindo nginx e certbot" bash -c "cd '$PROJ/deploy/no/proxy' && docker compose up -d" || para "nginx/certbot não subiram (veja $LOG)"
@@ -491,9 +507,9 @@ elif [ "$MODO" = traefik ]; then
     para "a rede $REDE é overlay e não aceita containers de fora do Swarm (attachable=false)"
   fi
   [ "${D_WATCH:-}" = false ] && c_av "o Traefik está com watch: false — ele só lê rotas novas quando reinicia; ligue watch: true no provedor file"
-  [ -e "$CONF_DIR/portal-orgaos.yml" ] && c_ok "portal-orgaos.yml já existe (instalação anterior): o ativador continua cuidando dele"
+  [ -e "$CONF_DIR/portal-orgaos$SUF.yml" ] && c_ok "portal-orgaos$SUF.yml já existe (instalação anterior): o ativador continua cuidando dele"
   NGINX_C=""; CERTBOT_C=""; CERTS_DIR=""
-  c_ok "o portal vai usar o Traefik $TRAEFIK_C (rotas em $CONF_DIR/portal-orgaos.yml, criado só quando um domínio for publicado)"
+  c_ok "o portal vai usar o Traefik $TRAEFIK_C (rotas em $CONF_DIR/portal-orgaos$SUF.yml, criado só quando um domínio for publicado)"
 else
   # Valores já gravados numa instalação anterior têm prioridade; o que faltar vem da descoberta.
   NGINX_C=$(env_val NGINX_C); CERTBOT_C=$(env_val CERTBOT_C); CONF_DIR=$(env_val CONF_DIR); CERTS_DIR=$(env_val PROXY_CERTS_DIR); CERTS_DIR=${CERTS_DIR:-$(env_val CERTS_DIR)}; REDE=$(env_val REDE_PROXY)  # CERTS_DIR: nome antigo
@@ -517,8 +533,8 @@ else
   docker inspect "$CERTBOT_C" >/dev/null 2>&1 || para "container $CERTBOT_C não existe"
   [ -d "$CONF_DIR" ] && [ -d "$CERTS_DIR" ] || para "pasta conf.d ou de certificados não existe"
   docker network inspect "$REDE" >/dev/null 2>&1 || para "rede $REDE não existe"
-  install -m 644 "$PROJ/deploy/nginx/portal-comum.inc" "$CONF_DIR/portal-comum.inc"
-  c_ok "trecho comum dos portais copiado para $CONF_DIR"
+  instalar_inc "$CONF_DIR"
+  c_ok "trecho comum dos portais copiado para $CONF_DIR (portal-comum$SUF.inc → $APP_ALIAS)"
   # O certbot grava o desafio em /var/www/certbot; o nginx precisa ler a MESMA pasta.
   W_CB=$(montagem "$CERTBOT_C" /var/www/certbot)
   if [ -n "$W_CB" ] && [ "$W_CB" = "$(montagem "$NGINX_C" /var/www/certbot)" ]; then
@@ -534,9 +550,9 @@ fi
 # =====================================================================================================================
 PGP=$(env_val PG_PASSWORD); [ -n "$PGP" ] && [ "$(env_val PAPEL)" = no ] || PGP=$(openssl rand -hex 24)
 NOVO=$(mktemp)
-grep -vE '^(PAPEL|NO_BANCO|GESTAO_URL|NO_TOKEN|NO_NOME|LICENCA_CHAVE_PUBLICA|LICENCA_VALIDADE_DIAS|VPS_IP|PG_PASSWORD|PG_HOST|COMPOSE_FILE|REDE_PROXY|PROXY_MODO|NGINX_C|CERTBOT_C|CONF_DIR|CERTS_DIR|PROXY_CERTS_DIR|TRAEFIK_C|TRAEFIK_ENTRADA_HTTP|TRAEFIK_ENTRADA_HTTPS|TRAEFIK_RESOLVEDOR|DOMINIO_PM|DOMINIO_CM|SENHA_INICIAL_ADMIN|SENHA_INICIAL_GESTOR)=' "$ORIGEM" > "$NOVO" || true
+grep -vE '^(PAPEL|INSTANCIA|APP_ALIAS|NO_BANCO|GESTAO_URL|NO_TOKEN|NO_NOME|LICENCA_CHAVE_PUBLICA|LICENCA_VALIDADE_DIAS|VPS_IP|PG_PASSWORD|PG_HOST|COMPOSE_FILE|REDE_PROXY|PROXY_MODO|NGINX_C|CERTBOT_C|CONF_DIR|CERTS_DIR|PROXY_CERTS_DIR|TRAEFIK_C|TRAEFIK_ENTRADA_HTTP|TRAEFIK_ENTRADA_HTTPS|TRAEFIK_RESOLVEDOR|DOMINIO_PM|DOMINIO_CM|SENHA_INICIAL_ADMIN|SENHA_INICIAL_GESTOR)=' "$ORIGEM" > "$NOVO" || true
 { echo; echo "# ---- nó de portais (gerado por deploy/no/instalar.sh em $(date -Is)) ----"
-  echo "PAPEL=no"; echo "GESTAO_URL=$GESTAO_URL"; echo "NO_NOME=$NO_NOME"; echo "NO_TOKEN=$NO_TOKEN"; echo "LICENCA_CHAVE_PUBLICA=$PUB"
+  echo "PAPEL=no"; echo "INSTANCIA=$INST"; echo "APP_ALIAS=$APP_ALIAS"; echo "GESTAO_URL=$GESTAO_URL"; echo "NO_NOME=$NO_NOME"; echo "NO_TOKEN=$NO_TOKEN"; echo "LICENCA_CHAVE_PUBLICA=$PUB"
   echo "LICENCA_VALIDADE_DIAS=$VALID"; echo "VPS_IP=$VPS_IP"; echo "PG_PASSWORD=$PGP"; echo "PG_HOST=db"
   echo "COMPOSE_FILE=docker-compose.yml:deploy/no/docker-compose.no.yml"; echo "REDE_PROXY=$REDE"; echo "PROXY_MODO=$MODO"
   echo "NGINX_C=$NGINX_C"; echo "CERTBOT_C=$CERTBOT_C"; echo "CONF_DIR=$CONF_DIR"; echo "PROXY_CERTS_DIR=$CERTS_DIR"  # não "CERTS_DIR": o app lê o .env e esse nome era o dos certificados do INEP
@@ -570,17 +586,21 @@ else para "o nó precisa do portal no ar"; fi
 # =====================================================================================================================
 etapa 9 "Ativador de domínios e backup diário"
 if confirma "Instalar o ativador (a cada minuto) e o backup diário (02h00, guarda 14 dias)?"; then
-  install -m 644 "$PROJ/deploy/systemd/portal-ativador.service" "$PROJ/deploy/systemd/portal-ativador.timer" /etc/systemd/system/
-  mkdir -p /etc/systemd/system/portal-ativador.service.d
-  { printf '[Service]\nEnvironment=PROJ=%s\nEnvironment=CONF_DIR=%s\nEnvironment=CERTS_DIR=%s\nEnvironment=NGINX_C=%s\nEnvironment=CERTBOT_C=%s\nEnvironment=PROXY_MODO=%s\n' \
-      "$PROJ" "$CONF_DIR" "$CERTS_DIR" "$NGINX_C" "$CERTBOT_C" "$MODO"
+  for u in service timer; do   # unidades da instância: portal-ativador[-INST].service/.timer, apontando para o ativador desta pasta
+    sed -e "s#/opt/portal_web/deploy/ativador.sh#$PROJ/deploy/ativador.sh#" -e "s#Ativador dos Portais#Ativador dos Portais${INST:+ (instância $INST)}#;s#o ativador dos Portais#o ativador dos Portais${INST:+ (instância $INST)}#" \
+        -e "s#^Unit=.*#Unit=$ATIV.service#" "$PROJ/deploy/systemd/portal-ativador.$u" > "/etc/systemd/system/$ATIV.$u"; chmod 644 "/etc/systemd/system/$ATIV.$u"
+  done
+  mkdir -p "/etc/systemd/system/$ATIV.service.d"
+  { printf '[Service]\nEnvironment=PROJ=%s\nEnvironment=CONF_DIR=%s\nEnvironment=CERTS_DIR=%s\nEnvironment=NGINX_C=%s\nEnvironment=CERTBOT_C=%s\nEnvironment=PROXY_MODO=%s\nEnvironment=INSTANCIA=%s\n' \
+      "$PROJ" "$CONF_DIR" "$CERTS_DIR" "$NGINX_C" "$CERTBOT_C" "$MODO" "$INST"
     [ "$MODO" = traefik ] && printf 'Environment=TRAEFIK_ENTRADA_HTTP=%s\nEnvironment=TRAEFIK_ENTRADA_HTTPS=%s\nEnvironment=TRAEFIK_RESOLVEDOR=%s\n' "$T_HTTP" "$T_HTTPS" "$T_RESOLV"
-  } > /etc/systemd/system/portal-ativador.service.d/no.conf
-  chmod 644 /etc/systemd/system/portal-ativador.service.d/no.conf
-  systemctl daemon-reload && systemctl enable --now portal-ativador.timer >> "$LOG" 2>&1 && c_ok "ativador ligado"
+  } > "/etc/systemd/system/$ATIV.service.d/no.conf"
+  chmod 644 "/etc/systemd/system/$ATIV.service.d/no.conf"
+  systemctl daemon-reload && systemctl enable --now "$ATIV.timer" >> "$LOG" 2>&1 && c_ok "ativador ligado ($ATIV)"
   # 02h00 de Brasília: se o servidor estiver em UTC (comum em VPS compartilhada, cujo fuso não mudamos), 05h00 UTC
   HORA=2; case "$(timedatectl show -p Timezone --value 2>/dev/null)" in UTC|Etc/UTC|Etc/UCT|UCT|Universal|Zulu) HORA=5 ;; esac
-  echo "0 $HORA * * * root $PROJ/deploy/backup.sh >> $PROJ/backups/backup.log 2>&1" > /etc/cron.d/portal-backup; chmod 644 /etc/cron.d/portal-backup
+  [ -n "$INST" ] && MIN=20 || MIN=0   # instância: 20 min depois, para os backups não rodarem juntos
+  echo "$MIN $HORA * * * root $PROJ/deploy/backup.sh >> $PROJ/backups/backup.log 2>&1" > "/etc/cron.d/portal-backup$SUF"; chmod 644 "/etc/cron.d/portal-backup$SUF"
   mkdir -p "$PROJ/backups"; c_ok "backup diário agendado às 02h00 de Brasília (copie $PROJ/backups para fora da VPS — combine o destino)"
 else c_av "etapa pulada: sem ativador, nenhum domínio é publicado"; fi
 

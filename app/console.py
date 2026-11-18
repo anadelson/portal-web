@@ -403,8 +403,11 @@ async def nos_post(request: Request):
             return ir('/nos', 'Nome do nó: letras minúsculas, números, ponto e hífen (ex.: no1.conectatech.tech).', request)
         if db.um(db.PLATAFORMA, 'SELECT 1 FROM nos WHERE nome=%s', (nome,)):
             return ir('/nos', 'Já existe um nó com este nome.', request)
-        token = licenca.criar_no(nome)
-        log(g, f'Nó {nome} criado (token mostrado uma vez)')
+        inst = (f.get('instancia') or '').strip().lower()
+        if inst and not re.fullmatch(r'[a-z0-9]{1,20}', inst):
+            return ir('/nos', 'Instância: só letras minúsculas e números, até 20 (ex.: camara). Deixe vazio para a pasta de sempre.', request)
+        token = licenca.criar_no(nome, inst)
+        log(g, f'Nó {nome} criado' + (f' (instância {inst}: /opt/portal_web-{inst})' if inst else '') + ' (token mostrado uma vez)')
         n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE nome=%s', (nome,))
     elif acao == 'token':
         n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (int(f.get('id') or 0),))
@@ -569,6 +572,10 @@ async def orgao_hospedagem(request: Request, oid: int):
         raise HTTPException(400)
     if f.get('confirmo') != '1':
         return ir(f'/orgao/{oid}#hospedagem', 'Marque a confirmação para mudar a hospedagem.', request)
+    if novo != o.get('no_id') and o.get('vhost_ativo'):
+        # mover com o domínio no ar deixaria o nó antigo e o novo disputando o mesmo domínio (18/11/2026)
+        return ir(f'/orgao/{oid}#hospedagem', 'Tire o domínio do ar antes de mudar a hospedagem (Publicação → Tirar do ar). Depois de mover os dados '
+                  '(deploy/no/mover_orgao.sh), mude a hospedagem e publique de novo: o nó novo emite o certificado.', request)
     db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=%s WHERE id=%s', (novo, oid))
     limpar_cache()
     msg = f"Hospedagem: {'nó ' + n['nome'] if n else 'esta VPS'}. As licenças passam a ser entregues a quem hospeda o órgão."
