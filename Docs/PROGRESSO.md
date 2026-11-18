@@ -2521,3 +2521,16 @@ Relato do usuário: "o script quando gerado está perdendo as informações do n
   - `teste_instalador_no.sh`: reinstalação com pacote novo com token (usa o token e o nome novos), pacote novo sem token (nome novo, token mantido) e pacote novo recusado (mantém o importado). Rodado também contra o instalador antigo: 5 falhas, exatamente o defeito relatado;
   - `teste_instalacao.py`: pacote sem token novo leva nome, gestão e chave pública, e não leva token.
 - Testes: as 35 suítes passaram contra o código. **Não implantado:** aguarda aprovação do usuário (e snapshot). Sem migração; a imagem da gestão precisa ser reconstruída (o pacote de código do nó sai da imagem).
+- **Implantado na gestão em 18/11/2026, 15h04 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot" e "suba a atualização"):
+  - mescla `24877e8`; backup ok (plataforma, bd_pm_bora, bd_cm_bora) às 14h47; versão `instalador-dados-no (24877e8)`; sem migração;
+  - as 34 suítes do app passaram contra a imagem nova. O teste do instalador falhou na primeira rodada; motivo no item abaixo;
+  - conferido: a imagem no ar tem o instalador corrigido; gestão 303, portais 200; app e worker de pé, sem erros nos logs.
+- **Ocorrência durante a implantação:** os comandos de instalação do nó foram rodados **nesta VPS da gestão**, não na do nó.
+  - O que aconteceu:
+    - entre 14h20 e 14h51 o pacote de código e o de segredos foram baixados para /root;
+    - o código foi extraído por cima de /opt/portal_web e voltou 3 arquivos para a versão anterior à correção. A imagem já tinha sido gerada antes, às 14h47, com a correção;
+    - o instalador rodou 4 vezes e parou na etapa 6 (nome do nó inválido, token curto, interrompido).
+  - O que não aconteceu: ele **não** gravou o .env (o da gestão continua o de 07/11), pulou atualização, Docker e firewall, e não mexeu no nginx nem nos containers.
+  - O que ficou: criou `.env.origem` (cópia das chaves da gestão, permissão 600, fora do git) e copiou a pasta segredos/ do pacote, que tem o mesmo conteúdo da gestão.
+  - Os 3 arquivos foram restaurados do commit (iguais aos da imagem) e o teste do instalador passou.
+  - Ficaram nesta VPS, para apagar com aprovação: `/root/portal-codigo.tar.gz`, `/root/segredos-no.tar.gz.enc` e `/opt/portal_web/.env.origem`.
