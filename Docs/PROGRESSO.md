@@ -2494,3 +2494,18 @@ Pedido do usuário: "implemente a etapa 6 para ambos os portais/painéis". Antes
   - quantidades e classes da matriz, pesos, rateio e regra da disponibilidade, índice e níveis;
   - telas dos dois órgãos, medições, marcação (link obrigatório, item que não se aplica, critério automático, 30 dias, apagar), CSV, perfis e separação entre os bancos.
 - Testes: as 35 suítes passaram contra o código (inclui a nova `teste_pntp`, conferida também com a data real). **Não implantado:** aguarda aprovação do usuário (e snapshot). A implantação tem a migração 037 (tabela nova, sem alterar as existentes) e não precisa reconstruir dependências.
+- **Implantado na gestão em 18/11/2026, 13h19 (Brasília)**, fora da janela do Diário, com aprovação do usuário ("Aprovo, há snapshot"):
+  - mescla `b1afcf8`; backup ok (plataforma, bd_pm_bora, bd_cm_bora) às 13h03; versão `pntp-matriz (b1afcf8)`;
+  - as 35 suítes passaram contra a imagem nova; migração 037 aplicada nos dois bancos (tabela `pntp_marcacoes`, vazia);
+  - conferido: portais 200 (~0,05 s; a primeira resposta logo após subir levou 3,9 s); `/admin/pntp` sem login redireciona para o login; app e worker de pé, sem erros nos logs.
+- **Situação real logo após a implantação** (sem nenhuma marcação; critério sem marcação conta zero):
+
+  | | Índice estimado | Nível | Essenciais atendidos | Medidos pelo portal | Aguardando marcação |
+  |---|---|---|---|---|---|
+  | Prefeitura | 24,5% | Inicial | 2 de 12 | 34 | 62 |
+  | Câmara | 21,8% | Inicial | 2 de 7 | 44 | 39 |
+
+  - Essenciais pendentes, Prefeitura: 3.1, 3.2, 4.1, 4.2, 4.3, 11.5, 11.6, 11.8, 11.9, 11.10.
+  - Essenciais pendentes, Câmara: 3.1, 4.1, 4.2, 4.3, 11.5.
+- **Falta (usuário/órgãos):** o controle interno marcar os critérios de marcação (com o link da evidência).
+- **Falta (nó do prefbora):** receber esta versão pelo pacote novo do console e o instalador.
