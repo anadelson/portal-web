@@ -233,8 +233,20 @@ if [ "$COMPARTILHADA" = 1 ]; then
   c_av "VPS COMPARTILHADA: outros sistemas já usam as portas 80/443. Para não derrubar nada do que já está no ar,"
   echo "    as etapas 2 (atualizações) e 4 (firewall) vêm desligadas por padrão — Enter pula."
 fi
-if [ -f "$PROJ/.env" ]; then
-  [ "$(env_val PAPEL)" = "no" ] && c_ok ".env do nó já existe (as respostas anteriores viram padrão)" || c_av ".env existe, mas não é de nó (PAPEL=$(env_val PAPEL))"
+# Trava (18/11/2026): este instalador é SÓ para a VPS de um nó. Rodado na VPS da gestão (portal em papel "tudo"), ele trocava
+# o .env da gestão pelo de um nó (outra senha do banco, sem os domínios) e derrubava gestão e portais. Agora para antes de mexer.
+APP_ENV=$(docker inspect portal_web-app-1 --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null || true)   # vazio = não há container do portal
+PAPEL_APP=$(printf '%s\n' "$APP_ENV" | grep -E '^PAPEL=' | cut -d= -f2- || true); [ -n "$APP_ENV" ] && [ -z "$PAPEL_APP" ] && PAPEL_APP=tudo   # sem PAPEL = "tudo" (padrão)
+if [ -f "$PROJ/.env" ] && [ "$(env_val PAPEL)" != "no" ]; then
+  c_er "esta VPS já roda a GESTÃO/portais (o .env daqui não é de nó: PAPEL=$(env_val PAPEL))"
+  echo "  Este instalador é só para a VPS do nó. Rode os comandos na VPS do nó, não nesta."
+  echo "  Nada foi alterado."; exit 1
+elif [ ! -f "$PROJ/.env" ] && [ -n "$PAPEL_APP" ] && [ "$PAPEL_APP" != "no" ]; then
+  c_er "esta VPS já tem o portal rodando como GESTÃO (container portal_web-app-1, PAPEL=$PAPEL_APP)"
+  echo "  Este instalador é só para a VPS do nó. Rode os comandos na VPS do nó, não nesta."
+  echo "  Nada foi alterado."; exit 1
+elif [ -f "$PROJ/.env" ]; then
+  c_ok ".env do nó já existe (as respostas anteriores viram padrão)"
 fi
 if [ "$VERIFICAR" = 1 ]; then               # modo --verificar: mostra a situação e sai sem mexer em nada
   etapa V "Situação do nó"

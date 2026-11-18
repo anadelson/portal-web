@@ -5,7 +5,7 @@
 <p>Gerados em {{ res.criado_em|br }} por {{ res.criado_por }}. Os links valem <strong>uma vez só</strong>, até {{ res.expira_em|br }}. Esta tela pode ser aberta de novo enquanto eles valerem (Nós e licenças → Preparar instalação).</p>
 <dl class="dados-senha">{% for tipo, rot in (('codigo', 'Pacote de código'), ('segredos', 'Pacote de segredos')) %}{% set x = res[tipo] %}{% if x %}<dt>{{ rot }}</dt><dd>{% if x.baixado_em %}<span class="chip ok">baixado</span> em {{ x.baixado_em|br }}{% if x.baixado_ip %} (IP {{ x.baixado_ip }}){% endif %}{% else %}<span class="chip azul">aguardando download</span>{% endif %}</dd>{% endif %}{% endfor %}</dl>
 <form class="inline" method="post" action="/nos/{{ n.id }}/instalar/cancelar"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn perigo">Cancelar estes links</button></form></section>
-<section class="cx" aria-labelledby="h-cmd"><h2 id="h-cmd">Na VPS nova, como root</h2>
+<section class="cx" aria-labelledby="h-cmd"><h2 id="h-cmd">Na VPS do nó, como root</h2><p class="msg" role="note"><strong>Rode estes comandos na VPS do nó {{ n.nome }}{% if n.ultimo_ip %} (último IP visto: {{ n.ultimo_ip }}){% endif %}, nunca na VPS da gestão.</strong> Se forem rodados na gestão, o instalador para sem mexer em nada.</p>
 <p>1. Baixar os pacotes direto da gestão:</p>
 {% set cods = [] %}{% for tipo, arq in (('codigo', '/root/portal-codigo.tar.gz'), ('segredos', '/root/segredos-no.tar.gz.enc')) %}{% if res[tipo] and res[tipo].link %}{% set _ = cods.append('curl -fsS -o ' ~ arq ~ ' "' ~ res[tipo].link ~ '"') %}{% endif %}{% endfor %}
 {% if cods %}<pre class="trecho">{{ cods|join('\n') }}</pre>{% endif %}

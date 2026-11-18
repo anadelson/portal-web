@@ -33,6 +33,7 @@ if [ -f /tmp/traefik ]; then  # VPS com Dokploy: Traefik nas portas 80/443, rede
   esac
 fi
 case "$*" in
+  *Config.Env*) [ -f /tmp/gestao ] && printf 'PG_USER=portal\nPG_HOST=db\n'; exit 0 ;;   # container do portal na VPS da gestão (simulado; sem PAPEL = "tudo", como na gestão real)
   --version) echo "Docker version 27.0.0, build x" ;;
   "compose version"*) echo "2.29.0" ;;
   *"app.licenca puxar"*) echo "0 licença(s) aceitas" ;;
@@ -54,6 +55,18 @@ echo certificado-ficticio > "$T/segredos/a1/certificado.p12"
 tar -czf /root/segredos-no-teste.tar.gz -C "$T" .
 TOKEN=tokenFicticioDoNo-0123456789abcdefghijklmnop
 PUB=$(python3 -c "import base64; print(base64.b64encode(bytes(range(32))).decode())")
+
+# ---------- trava (18/11/2026): na VPS da GESTÃO o instalador para sem mexer em nada ----------
+printf 'PAPEL=tudo\nPG_PASSWORD=senha-da-gestao-ZZZZ\nDOMINIO_PM=pm.exemplo.test\n' > "$P/.env"; chmod 600 "$P/.env"; H0=$(sha256sum "$P/.env"); : > /tmp/chamadas
+SAIDA=$(printf 's\ns\n\n\nno1.exemplo.test\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "esta VPS já roda a GESTÃO" && [ "$(sha256sum $P/.env)" = "$H0" ] && [ ! -f $P/.env.origem ]' "gestão (.env com PAPEL=tudo): para sem alterar o .env (rc=$RC)"
+checa '! grep -qE "compose (up|build)|apt-get|ufw --force" /tmp/chamadas && ! ls $P/.env.anterior-* >/dev/null 2>&1' 'gestão: nenhuma mudança (sem build, subida, atualização ou firewall)'
+printf 'PAPEL=\n' > "$P/.env"; SAIDA=$(printf 's\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "esta VPS já roda a GESTÃO"' 'gestão (PAPEL vazio): para'
+rm -f "$P/.env"; touch /tmp/gestao
+SAIDA=$(printf 's\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "portal rodando como GESTÃO" && [ ! -f $P/.env ]' "gestão sem .env mas com o container do portal em papel tudo: para (rc=$RC)"
+rm -f /tmp/gestao "$P/logs/instalar-no.log"; : > /tmp/chamadas
 
 # ---------- 1ª instalação: portas livres, nginx próprio ----------
 # respostas: atualizar(s) · firewall(s) · pacote(enter=padrão) · gestão(enter) · nome · token · chave pública · IP(enter) · validade(enter) · nginx(s) · portal(s) · ativador(s)

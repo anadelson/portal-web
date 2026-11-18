@@ -2557,3 +2557,51 @@ Relato do usuário: "o script quando gerado está perdendo as informações do n
   - travar o instalador para recusar rodar numa VPS que já é a gestão;
   - apagar `.env.no-gravado-por-engano-20261118` depois de conferido;
   - o nó de teste "asfhaskjhfkas" (criado às 13h18) segue no console.
+
+## 18/11/2026 — Pendências da queda saneadas e trava no instalador do nó (branch instalador-trava-gestao)
+Pedido do usuário: "sim, coloque e sane as duas pendências excluindo-os".
+- Apagado `.env.no-gravado-por-engano-20261118` (o `.env` de nó gravado por engano na gestão).
+- Excluído do console o nó de teste "asfhaskjhfkas" (criado às 13h18, nunca fez contato, sem órgãos), junto com 1 ordem de credencial pendente e 2 links de instalação vencidos. Registrado no log do console.
+- **Trava no `deploy/no/instalar.sh`** (etapa 1, antes de qualquer mudança): se a VPS já roda a gestão, o instalador para e avisa "Rode os comandos na VPS do nó, não nesta". Nada é alterado.
+  - Considera gestão quando o `.env` existe e não é de nó (PAPEL vazio ou diferente de "no").
+  - Ou, sem `.env`, quando o container `portal_web-app-1` roda em outro papel. Sem PAPEL vale "tudo", como na gestão real.
+- Tela "Instalação do nó" no console: aviso "Rode estes comandos na VPS do nó (último IP visto), nunca na VPS da gestão".
+- Testes:
+  - `teste_instalador_no.sh`: gestão com PAPEL=tudo, com PAPEL vazio e só com o container. Nos três casos o instalador para sem alterar o `.env` e sem build, subida, atualização ou firewall;
+  - `teste_instalacao.py`: aviso na tela.
+- Testes: as 35 suítes passaram contra o código. **Não implantado:** aguarda aprovação do usuário (e snapshot). Sem migração; a imagem da gestão precisa ser reconstruída (o instalador do nó sai da imagem).
+
+## 18/11/2026 — Código no GitHub (pedido do usuário: "suba a versão pro GitHub")
+- O projeto ainda não estava no GitHub: não havia remoto, e a conta não tinha repositório dele.
+- Antes de enviar, conferi:
+  - `.env`, backups, dumps, diagnósticos e pastas de segredos estão fora do git;
+  - o `.env.example` só tem valores de exemplo;
+  - o `.pem` versionado é o certificado público da AC da RNP;
+  - sem tokens, chaves privadas nem CPFs reais (o dos testes é fictício).
+- Criado o repositório **privado** https://github.com/anadelson/portal-web.
+  - Enviados o `main` (igual ao que está implantado, com os registros) e as 56 tags das implantações.
+  - Branch padrão: `main`. O `origin` está configurado neste checkout.
+- Ficou só local: o branch `instalador-trava-gestao` (trava do instalador, ainda não implantada), além dos branches antigos de fases já mescladas.
+
+## 18/11/2026 — Autor dos commits trocado em todo o histórico (pedido do usuário)
+Pedido: o e-mail institucional e o nome "DTIC Borá" não devem aparecer. Escolha do usuário: histórico todo, com o e-mail `anadelson.bora@gmail.com`; nome `anadelson`, o login do GitHub.
+- Backup completo antes: `backups/portal_web-git-antes-autor-20261118.git` (espelho, fora do git).
+- Reescritos autor e committer de todos os commits, em todos os branches e nas 56 tags (`git filter-branch`, só os dados de autoria).
+  - Conferido: o conteúdo de cada commit, branch e tag é idêntico ao backup, e as relações entre branches e tags não mudaram.
+  - O arquivo do usuário `Docs/referencia/prototipos/Main.dc.html` (alteração não versionada) foi guardado e devolvido intacto.
+- Enviado ao GitHub com força (`main` e tags). Os 281 commits do `main` no GitHub mostram só `anadelson.bora@gmail.com`.
+- Próximos commits neste checkout: `user.name=anadelson`, `user.email=anadelson.bora@gmail.com` (config local do repositório).
+- **Os códigos (hashes) dos commits mudaram.** Os citados acima neste arquivo e nas versões em produção são os antigos. Correspondência das implantações:
+
+  | Tag | Antes | Agora |
+  |---|---|---|
+  | rodape-mascote | ee263a4 | a304ecc |
+  | diario-teste-publico | e2d4e41 | 1a9cdb9 |
+  | caixas-selecao | 3ef50c0 | c735db2 |
+  | diario-capa | 1784f83f | 3b2b467 |
+  | diario-pdf-cache | 6bd3ec0 | 7f48860 |
+  | pntp-matriz | b1afcf8 | 125f9f2 |
+  | instalador-dados-no (em produção) | 24877e8 | 0e8bd9e |
+  | main | bb92378 | 84d43f1 |
+
+  As tags mantêm os nomes; para achar uma versão, use a tag.
