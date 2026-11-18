@@ -572,6 +572,10 @@ async def orgao_hospedagem(request: Request, oid: int):
         raise HTTPException(400)
     if f.get('confirmo') != '1':
         return ir(f'/orgao/{oid}#hospedagem', 'Marque a confirmação para mudar a hospedagem.', request)
+    if novo != o.get('no_id') and o.get('vhost_ativo'):
+        # mover com o domínio no ar deixaria o nó antigo e o novo disputando o mesmo domínio (18/11/2026)
+        return ir(f'/orgao/{oid}#hospedagem', 'Tire o domínio do ar antes de mudar a hospedagem (Publicação → Tirar do ar). Depois de mover os dados '
+                  '(deploy/no/mover_orgao.sh), mude a hospedagem e publique de novo: o nó novo emite o certificado.', request)
     db.exe(db.PLATAFORMA, 'UPDATE orgaos SET no_id=%s WHERE id=%s', (novo, oid))
     limpar_cache()
     msg = f"Hospedagem: {'nó ' + n['nome'] if n else 'esta VPS'}. As licenças passam a ser entregues a quem hospeda o órgão."

@@ -132,11 +132,15 @@ def no_do_token(token):
 def entregar(no, ip='', versao=''):
     """Resposta da API da gestão para um nó: as licenças (recém-assinadas) dos órgãos hospedados nele."""
     db.exe(db.PLATAFORMA, 'UPDATE nos SET ultimo_contato=now(), ultimo_ip=%s, versao=%s WHERE id=%s', (ip[:60], versao[:40], no['id']))
-    out = []
+    out, ids = [], []
     for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE no_id=%s ORDER BY id', (no['id'],)):
-        out.append(emitir(o))
+        out.append(emitir(o)); ids.append(o['id'])
         db.exe(db.PLATAFORMA, 'UPDATE licencas_emitidas SET entregue_em=now() WHERE orgao_id=%s', (o['id'],))
-    return {'chave': chave_publica(), 'impressao': impressao(chave_publica()), 'licencas': out, 'gerado_em': datetime.now(timezone.utc).isoformat()}
+    agora = datetime.now(timezone.utc)
+    # inventário ASSINADO (18/11/2026): a lista completa dos órgãos do nó. Com ele o nó esquece o órgão que mudou de nó
+    # (sem isso, a licença antiga ficava no cache e o nó antigo seguia servindo o portal até ela vencer). Nó antigo ignora.
+    inv = assinar({'tipo': 'inventario', 'no': no['nome'], 'orgaos': ids, 'emitido_em': agora.isoformat()})
+    return {'chave': chave_publica(), 'impressao': impressao(chave_publica()), 'licencas': out, 'inventario': inv, 'gerado_em': agora.isoformat()}
 
 # ---------- lado do nó ----------
 def guardar(pacotes, publica):
@@ -180,7 +184,27 @@ def puxar():
         return 'faltam GESTAO_URL, NO_TOKEN ou LICENCA_CHAVE_PUBLICA no .env do nó'
     d = buscar_na_gestao()
     ok, ruim = guardar(d.get('licencas', []), config.LICENCA_CHAVE_PUBLICA)
-    return f'{ok} licença(s) aceitas' + (f', {ruim} RECUSADA(S) (assinatura não confere)' if ruim else '')
+    saiu = esquecer(d.get('inventario'), config.LICENCA_CHAVE_PUBLICA)
+    return (f'{ok} licença(s) aceitas' + (f', {ruim} RECUSADA(S) (assinatura não confere)' if ruim else '')
+            + (f'; {saiu} órgão(s) que saíram deste nó (licença removida)' if saiu else ''))
+
+def esquecer(inventario, publica, agora=None):
+    """(nó) Remove do cache as licenças dos órgãos que não estão mais no inventário assinado da gestão. Só vale inventário
+    com assinatura conferida, deste nó (NO_NOME) e recente (até 15 minutos): resposta antiga ou de outro nó não apaga nada."""
+    d = verificar(inventario, publica) if inventario else None
+    if not d or d.get('tipo') != 'inventario' or d.get('no') != config.env('NO_NOME') or not isinstance(d.get('orgaos'), list):
+        return 0
+    try:
+        idade = ((agora or _agora()) - datetime.fromisoformat(d['emitido_em'])).total_seconds()
+    except (KeyError, ValueError, TypeError):
+        return 0
+    if not -300 <= idade <= 900:
+        return 0
+    fora = db.todos(db.LOCAL, 'SELECT orgao_id FROM licencas_cache WHERE NOT (orgao_id = ANY(%s))', ([int(x) for x in d['orgaos']],))
+    for r in fora:
+        db.exe(db.LOCAL, 'DELETE FROM licencas_cache WHERE orgao_id=%s', (r['orgao_id'],))
+        _memo.pop(r['orgao_id'], None)
+    return len(fora)
 
 # ---------- uso pelo portal, painel e worker ----------
 def _agora():
