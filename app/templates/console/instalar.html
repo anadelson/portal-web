@@ -14,7 +14,7 @@
 <pre class="trecho">mkdir -p /opt &amp;&amp; tar -xzf /root/portal-codigo.tar.gz -C /opt &amp;&amp; cd /opt/portal_web &amp;&amp; bash deploy/no/instalar.sh</pre>
 <p>3. No fim, apague o pacote de segredos:</p>
 <pre class="trecho">rm /root/segredos-no.tar.gz.enc</pre>
-{% if res.token_novo %}<p class="legal">O pacote leva um token novo do nó, o endereço da gestão e a chave pública: o instalador não pede esses dados.</p>{% endif %}
+<p class="legal">O pacote leva o nome do nó ({{ n.nome }}), o endereço da gestão e a chave pública{% if res.token_novo %} e um token novo do nó: o instalador não pede esses dados{% else %}. Sem token novo, o instalador mantém o token que já está gravado no nó (ou pede, numa VPS nova){% endif %}. Se o nó já foi instalado antes, o instalador usa este pacote por ser mais novo que o importado da outra vez.</p>
 {% if cods %}<p class="legal">Se preferir, baixe no navegador: {% if res.codigo.link %}<a href="{{ res.codigo.link }}" rel="noreferrer">pacote de código</a>{% endif %}{% if res.codigo.link and res.segredos.link %} · {% endif %}{% if res.segredos.link %}<a href="{{ res.segredos.link }}" rel="noreferrer">pacote de segredos</a>{% endif %} (cada link funciona uma vez).</p>{% endif %}
 <p class="legal">A senha do pacote não fica guardada: se ela se perdeu, gere de novo.</p></section>
 {% else %}
@@ -23,7 +23,7 @@
 {% if res %}<details class="cx"><summary><strong>Gerar novos pacotes</strong> (cancela os links acima)</summary>{% endif %}
 <section class="cx" aria-labelledby="h-pac"><h2 id="h-pac">Pacotes</h2>
 <dl class="dados-senha"><dt>Código</dt><dd>versão em produção nesta VPS: <code>{{ versao }}</code>{% if not codigo_ok %} <span class="chip erro">indisponível: gere a imagem de novo</span>{% endif %} — sem nenhum segredo</dd>
-<dt>Segredos</dt><dd>as chaves que precisam ser iguais nas duas VPS (sessão, 2FA, CPF, credenciais), a pasta de certificados (Diário) e, se marcado, um token novo do nó com o endereço da gestão e a chave pública — <strong>cifrado com a senha do pacote</strong></dd></dl></section>
+<dt>Segredos</dt><dd>as chaves que precisam ser iguais nas duas VPS (sessão, 2FA, CPF, credenciais), a pasta de certificados (Diário), o nome do nó, o endereço da gestão, a chave pública e, se marcado, um token novo do nó — <strong>cifrado com a senha do pacote</strong></dd></dl></section>
 <section class="cx form-tela" aria-labelledby="h-ger"><h2 id="h-ger">Gerar</h2>
 <form class="campos" method="post" action="/nos/{{ n.id }}/instalar" autocomplete="off"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
 <div class="grade2"><label>Senha do pacote (12+ caracteres; o instalador vai pedir)<input type="password" name="senha_pacote" required minlength="12" autocomplete="new-password"></label>

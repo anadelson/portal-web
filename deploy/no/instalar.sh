@@ -332,10 +332,17 @@ etapa 5 "Segredos (iguais aos da VPS da gestão)"
 echo "  As chaves abaixo PRECISAM ser as mesmas da gestão, senão o 2FA dos administradores, o login por CPF,"
 echo "  as credenciais das fontes e os códigos do Diário param de funcionar."
 ORIGEM=""
-if [ -f "$PROJ/.env.origem" ]; then
+ACHADO=$(ls -1t /root/segredos-no*.enc /root/segredos-no-*.tar.gz 2>/dev/null | head -1 || true)
+# Pacote NOVO (mais recente que o .env.origem já importado) = reinstalação com dados novos do console (token, nome do nó):
+# usa o pacote. Antes (até 18/11/2026) o .env.origem antigo tinha prioridade e o pacote novo era ignorado.
+USAR_PACOTE_NOVO=""
+if [ -f "$PROJ/.env.origem" ] && [ -n "$ACHADO" ] && [ "$ACHADO" -nt "$PROJ/.env.origem" ]; then
+  c_av "há um pacote de segredos mais novo que o já importado: $ACHADO"
+  confirma_s "Usar o pacote novo (traz o token e o nome do nó gerados agora no console)?" && USAR_PACOTE_NOVO=1
+fi
+if [ -f "$PROJ/.env.origem" ] && [ -z "$USAR_PACOTE_NOVO" ]; then
   c_ok "segredos da gestão já importados antes (.env.origem)"; ORIGEM="$PROJ/.env.origem"
 else
-  ACHADO=$(ls -1t /root/segredos-no*.enc /root/segredos-no-*.tar.gz 2>/dev/null | head -1 || true)
   [ -n "$ACHADO" ] && c_ok "pacote de segredos encontrado: $ACHADO (Enter para usar)"
   ARQ=$(pergunta "Caminho do pacote de segredos — vazio para digitar as chaves" "$ACHADO")
   if [ -n "$ARQ" ]; then
@@ -352,6 +359,7 @@ else
       tar -xzf "$ARQ" -C "$T" || para "pacote de segredos ilegível"
     fi
     [ -f "$T/env-origem" ] || para "pacote sem env-origem (gere de novo no console)"
+    [ -f "$PROJ/.env.origem" ] && cp -p "$PROJ/.env.origem" "$PROJ/.env.origem.anterior-$(date +%Y%m%d%H%M%S)"
     install -m 600 "$T/env-origem" "$PROJ/.env.origem"; ORIGEM="$PROJ/.env.origem"
     if [ -d "$T/segredos" ]; then                # certificado do Diário e afins
       mkdir -p "$PROJ/segredos"; cp -a "$T/segredos/." "$PROJ/segredos/"; chmod -R go-rwx "$PROJ/segredos"

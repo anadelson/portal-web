@@ -3,8 +3,8 @@
   Pacote de CÓDIGO   a própria versão em produção (o que está na imagem: app/, deploy/, Dockerfile, docker-compose.yml,
                      requirements.txt), com o instalador deploy/no/instalar.sh. Não leva nenhum segredo.
   Pacote de SEGREDOS as chaves que precisam ser IGUAIS no nó (SECRET_KEY, TOTP_CHAVE, CPF_HMAC_CHAVE, CHAVE_CREDENCIAIS…),
-                     a pasta segredos/ (certificado do Diário) e, se pedido, um TOKEN NOVO do nó com o endereço da gestão
-                     e a chave pública — o instalador já sai preenchido. Vai CIFRADO (AES-256, PBKDF2 600 mil iterações,
+                     a pasta segredos/ (certificado do Diário), o nome do nó, o endereço da gestão, a chave pública e,
+                     se pedido, um TOKEN NOVO do nó — o instalador já sai preenchido. Vai CIFRADO (AES-256, PBKDF2 600 mil iterações,
                      formato do `openssl enc`) com uma senha de pacote escolhida na hora e que NÃO é guardada.
 
 Para gerar o de segredos o gestor confirma a própria senha e o código do 2FA. Cada pacote sai por um link de USO ÚNICO
@@ -68,12 +68,16 @@ def _env_origem():
     return {k: os.environ[k] for k in sorted(nomes - FORA) if os.environ.get(k)}
 
 def pacote_segredos(no, token=None):
-    """tar.gz em memória: env-origem (+ dados do nó se houver token) e segredos/."""
+    """tar.gz em memória: env-origem e segredos/. O env-origem SEMPRE leva os dados do nó que não são segredo (endereço da
+    gestão, nome do nó e chave pública da licença), para o instalador sair preenchido mesmo sem token novo; o token do nó
+    só vai quando um token novo é gerado (o atual não fica guardado na gestão, só o hash). Corrigido em 18/11/2026: antes,
+    sem token novo, o pacote saía sem o nome do nó e o instalador perdia esse dado."""
+    from . import licenca
     env = _env_origem()
+    imp, pub = licenca.garantir_chaves()
+    env.update({'GESTAO_URL': f'https://{config.DOMINIO_GESTAO}', 'NO_NOME': no['nome'], 'LICENCA_CHAVE_PUBLICA': pub})
     if token:
-        from . import licenca
-        imp, pub = licenca.garantir_chaves()
-        env.update({'GESTAO_URL': f'https://{config.DOMINIO_GESTAO}', 'NO_NOME': no['nome'], 'NO_TOKEN': token, 'LICENCA_CHAVE_PUBLICA': pub})
+        env['NO_TOKEN'] = token
     linhas = ''.join(f'{k}={v}\n' for k, v in env.items()).encode()
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode='w:gz') as t:

@@ -125,6 +125,34 @@ checa 'echo "$SAIDA" | grep -q "token do nó veio no pacote" && grep -qxF "NO_TO
 checa '[ -f $P/segredos/a1/certificado.p12 ] && grep -qxF "SECRET_KEY=segredo-teste-AAAA" $E' 'segredos do pacote cifrado importados'
 checa '! echo "$SAIDA" | grep -qF "senha-do-pacote-teste" && ! grep -qF "senha-do-pacote-teste" $P/logs/instalar-no.log && ! echo "$SAIDA" | grep -qF "$TOKEN"' 'senha do pacote e token fora da tela e do log'
 rm -rf "$T2" /root/segredos-no.tar.gz.enc
+
+# ---------- reinstalação com pacote NOVO do console (correção de 18/11/2026) ----------
+# Antes, com o .env.origem da instalação anterior, o instalador ignorava o pacote novo e perdia o token e o nome novos.
+pacote_novo() {  # $1 = nome do nó, $2 = token (vazio = pacote sem token novo); arquivo com data no futuro = mais novo que o já importado
+  local T3; T3=$(mktemp -d); mkdir -p "$T3/segredos/a1"; echo certificado-ficticio > "$T3/segredos/a1/certificado.p12"
+  { printf 'SECRET_KEY=segredo-teste-AAAA\nTOTP_CHAVE=totp-teste-BBBB\nCPF_HMAC_CHAVE=hmac-teste-CCCC\nCHAVE_CREDENCIAIS=cred-teste-DDDD\nPG_USER=portal\nDOMINIO_GESTAO=gestao.exemplo.test\n'
+    printf 'GESTAO_URL=https://gestao.exemplo.test\nNO_NOME=%s\nLICENCA_CHAVE_PUBLICA=%s\n' "$1" "$PUB"; [ -n "$2" ] && printf 'NO_TOKEN=%s\n' "$2"; } > "$T3/env-origem"
+  tar -czf "$T3/p.tgz" -C "$T3" env-origem segredos
+  SP='senha-do-pacote-teste-123' openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -md sha256 -salt -in "$T3/p.tgz" -out /root/segredos-no.tar.gz.enc -pass env:SP
+  touch -d "@$(( $(date +%s) + ${3:-60} ))" /root/segredos-no.tar.gz.enc; rm -rf "$T3"
+}
+TOKEN2=tokenNovoDoConsole-ZYXWVUTSRQPONMLKJIHGFEDCBA9876
+pacote_novo no5.exemplo.test "$TOKEN2"
+# respostas: atualizar(n) · usar o pacote novo?(Enter=S) · caminho(Enter) · senha · gestão · nome · [token vem do pacote] · chave · IP · validade · nginx(s) · portal(s) · ativador(s)
+SAIDA=$(printf 'n\n\n\nsenha-do-pacote-teste-123\n\n\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "pacote de segredos mais novo que o já importado"' "reinstalação: oferece o pacote novo (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
+checa 'grep -qxF "NO_TOKEN=$TOKEN2" $E && grep -qxF "NO_NOME=no5.exemplo.test" $E && [ "$(grep -c "^NO_TOKEN=" $E)" = 1 ]' 'reinstalação: token e nome do pacote novo no .env (não os antigos)'
+checa 'ls $P/.env.origem.anterior-* >/dev/null 2>&1' 'reinstalação: .env.origem anterior guardado'
+# pacote novo SEM token novo: o nome vem do pacote e o token gravado no nó é mantido
+pacote_novo no6.exemplo.test "" 120
+# respostas: atualizar(n) · usar o pacote novo?(Enter) · caminho(Enter) · senha · gestão · nome · trocar o token?(Enter=não) · chave · IP · validade · nginx(s) · portal(s) · ativador(s)
+SAIDA=$(printf 'n\n\n\nsenha-do-pacote-teste-123\n\n\n\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ] && grep -qxF "NO_NOME=no6.exemplo.test" $E && grep -qxF "NO_TOKEN=$TOKEN2" $E' "pacote sem token novo: nome do pacote e token mantido (rc=$RC)"
+# recusar o pacote novo: segue com o já importado
+pacote_novo no7.exemplo.test "" 180
+SAIDA=$(printf 'n\nn\n\n\n\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "segredos da gestão já importados" && grep -qxF "NO_NOME=no6.exemplo.test" $E' "pacote novo recusado: mantém o importado (rc=$RC)"
+rm -f /root/segredos-no.tar.gz.enc
 # as recusas abaixo testam o token digitado: tira do pacote importado o que veio do console
 grep -vE '^(NO_TOKEN|NO_NOME|GESTAO_URL|LICENCA_CHAVE_PUBLICA)=' "$P/.env.origem" > /tmp/origem && install -m 600 /tmp/origem "$P/.env.origem"
 
