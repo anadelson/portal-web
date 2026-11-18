@@ -2570,3 +2570,15 @@ Pedido do usuário: "sim, coloque e sane as duas pendências excluindo-os".
   - `teste_instalador_no.sh`: gestão com PAPEL=tudo, com PAPEL vazio e só com o container. Nos três casos o instalador para sem alterar o `.env` e sem build, subida, atualização ou firewall;
   - `teste_instalacao.py`: aviso na tela.
 - Testes: as 35 suítes passaram contra o código. **Não implantado:** aguarda aprovação do usuário (e snapshot). Sem migração; a imagem da gestão precisa ser reconstruída (o instalador do nó sai da imagem).
+
+## 18/11/2026 — Código no GitHub (pedido do usuário: "suba a versão pro GitHub")
+- O projeto ainda não estava no GitHub: não havia remoto, e a conta não tinha repositório dele.
+- Antes de enviar, conferi:
+  - `.env`, backups, dumps, diagnósticos e pastas de segredos estão fora do git;
+  - o `.env.example` só tem valores de exemplo;
+  - o `.pem` versionado é o certificado público da AC da RNP;
+  - sem tokens, chaves privadas nem CPFs reais (o dos testes é fictício).
+- Criado o repositório **privado** https://github.com/anadelson/portal-web.
+  - Enviados o `main` (igual ao que está implantado, com os registros) e as 56 tags das implantações.
+  - Branch padrão: `main`. O `origin` está configurado neste checkout.
+- Ficou só local: o branch `instalador-trava-gestao` (trava do instalador, ainda não implantada), além dos branches antigos de fases já mescladas.
