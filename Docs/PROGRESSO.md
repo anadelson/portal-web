@@ -2557,3 +2557,16 @@ Relato do usuário: "o script quando gerado está perdendo as informações do n
   - travar o instalador para recusar rodar numa VPS que já é a gestão;
   - apagar `.env.no-gravado-por-engano-20261118` depois de conferido;
   - o nó de teste "asfhaskjhfkas" (criado às 13h18) segue no console.
+
+## 18/11/2026 — Pendências da queda saneadas e trava no instalador do nó (branch instalador-trava-gestao)
+Pedido do usuário: "sim, coloque e sane as duas pendências excluindo-os".
+- Apagado `.env.no-gravado-por-engano-20261118` (o `.env` de nó gravado por engano na gestão).
+- Excluído do console o nó de teste "asfhaskjhfkas" (criado às 13h18, nunca fez contato, sem órgãos), junto com 1 ordem de credencial pendente e 2 links de instalação vencidos. Registrado no log do console.
+- **Trava no `deploy/no/instalar.sh`** (etapa 1, antes de qualquer mudança): se a VPS já roda a gestão, o instalador para e avisa "Rode os comandos na VPS do nó, não nesta". Nada é alterado.
+  - Considera gestão quando o `.env` existe e não é de nó (PAPEL vazio ou diferente de "no").
+  - Ou, sem `.env`, quando o container `portal_web-app-1` roda em outro papel. Sem PAPEL vale "tudo", como na gestão real.
+- Tela "Instalação do nó" no console: aviso "Rode estes comandos na VPS do nó (último IP visto), nunca na VPS da gestão".
+- Testes:
+  - `teste_instalador_no.sh`: gestão com PAPEL=tudo, com PAPEL vazio e só com o container. Nos três casos o instalador para sem alterar o `.env` e sem build, subida, atualização ou firewall;
+  - `teste_instalacao.py`: aviso na tela.
+- Testes: as 35 suítes passaram contra o código. **Não implantado:** aguarda aprovação do usuário (e snapshot). Sem migração; a imagem da gestão precisa ser reconstruída (o instalador do nó sai da imagem).

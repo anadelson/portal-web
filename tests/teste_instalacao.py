@@ -104,6 +104,7 @@ checa(env.get('NO_NOME') == 'no-inst.exemplo.test' and env.get('GESTAO_URL') == 
       'pacote sem token novo: leva o nome do nó, a gestão e a chave pública')
 checa('NO_TOKEN' not in env, 'pacote sem token novo: não leva token')
 checa('O pacote leva o nome do nó (no-inst.exemplo.test)' in con.get(U).text, 'tela explica o que o pacote leva')
+checa('nunca na VPS da gestão' in con.get(U).text, 'tela avisa para rodar na VPS do nó, não na gestão')
 shutil.rmtree(d)
 # vencido
 r = gerar(novo_token=None)
