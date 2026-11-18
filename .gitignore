@@ -12,6 +12,7 @@ logs/
 # nó de portais (deploy/no): pacotes gerados, segredos importados e configuração local do nginx do nó
 /pacotes/
 .env.origem
+.env.origem.anterior-*
 .env.anterior-*
 deploy/no/proxy/conf.d/
 app/VERSAO

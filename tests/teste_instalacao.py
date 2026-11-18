@@ -92,6 +92,19 @@ checa(L.no_do_token(env.get('NO_TOKEN', '')) and L.no_do_token(env['NO_TOKEN'])[
 checa(env.get('LICENCA_CHAVE_PUBLICA') == L.garantir_chaves()[1], 'chave pública da licença no pacote')
 checa(not ({'PG_PASSWORD', 'SENHA_INICIAL_ADMIN', 'SENHA_INICIAL_GESTOR', 'TESTE', 'PG_HOST'} & set(env)), 'segredos sem a senha do banco da gestão nem senhas iniciais')
 shutil.rmtree(d)
+# sem token novo (correção de 18/11/2026): o pacote leva mesmo assim o nome do nó, a gestão e a chave pública; o token, não
+r = gerar(novo_token=None)
+lk = re.findall(r'https://gestao\.localhost/instalar/([A-Za-z0-9_\-]+)', r.text)
+d = tempfile.mkdtemp(); (Path(d) / 'p.enc').write_bytes(anon.get(f'/instalar/{lk[1]}').content)
+subprocess.run(['openssl', 'enc', '-d', '-aes-256-cbc', '-pbkdf2', '-iter', '600000', '-md', 'sha256', '-in', f'{d}/p.enc', '-out', f'{d}/p.tgz', '-pass', 'env:SP'],
+               env=dict(os.environ, SP='senha-do-pacote-123'), capture_output=True)
+with tarfile.open(f'{d}/p.tgz') as tf:
+    env = dict(l.split('=', 1) for l in tf.extractfile('env-origem').read().decode().splitlines() if '=' in l)
+checa(env.get('NO_NOME') == 'no-inst.exemplo.test' and env.get('GESTAO_URL') == 'https://gestao.localhost' and env.get('LICENCA_CHAVE_PUBLICA') == L.garantir_chaves()[1],
+      'pacote sem token novo: leva o nome do nó, a gestão e a chave pública')
+checa('NO_TOKEN' not in env, 'pacote sem token novo: não leva token')
+checa('O pacote leva o nome do nó (no-inst.exemplo.test)' in con.get(U).text, 'tela explica o que o pacote leva')
+shutil.rmtree(d)
 # vencido
 r = gerar(novo_token=None)
 lk = re.findall(r'https://gestao\.localhost/instalar/([A-Za-z0-9_\-]+)', r.text)

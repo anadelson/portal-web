@@ -2509,3 +2509,15 @@ Pedido do usuário: "implemente a etapa 6 para ambos os portais/painéis". Antes
   - Essenciais pendentes, Câmara: 3.1, 4.1, 4.2, 4.3, 11.5.
 - **Falta (usuário/órgãos):** o controle interno marcar os critérios de marcação (com o link da evidência).
 - **Falta (nó do prefbora):** receber esta versão pelo pacote novo do console e o instalador.
+
+## 18/11/2026 — Instalador do nó perdia o token e o nome do nó (correção; branch instalador-dados-no)
+Relato do usuário: "o script quando gerado está perdendo as informações do nó, token e o nome do nó". Duas causas, que se somavam:
+1. **Instalador** (`deploy/no/instalar.sh`, etapa 5): se a VPS já tinha um `.env.origem` de uma instalação anterior (caso do prefbora), o instalador usava esse arquivo e **não abria o pacote novo**. O token e o nome gerados agora no console eram ignorados. Correção:
+   - quando há em /root um pacote **mais novo** que o `.env.origem`, o instalador avisa e pergunta "Usar o pacote novo?" (Enter = sim);
+   - o `.env.origem` anterior é guardado com data (`.env.origem.anterior-*`, fora do git).
+2. **Pacote de segredos** (`app/instalacao.py`): sem a caixa "token novo" marcada (vem desmarcada para nó que já fez contato), o pacote saía **sem o nome do nó, o endereço da gestão e a chave pública**. Correção: esses três dados, que não são segredo, vão sempre. O token do nó continua indo só quando um token novo é gerado (a gestão guarda só o hash do atual). Sem token novo, o instalador mantém o token já gravado no nó.
+- A tela "Instalação do nó" no console explica o que o pacote leva.
+- Testes:
+  - `teste_instalador_no.sh`: reinstalação com pacote novo com token (usa o token e o nome novos), pacote novo sem token (nome novo, token mantido) e pacote novo recusado (mantém o importado). Rodado também contra o instalador antigo: 5 falhas, exatamente o defeito relatado;
+  - `teste_instalacao.py`: pacote sem token novo leva nome, gestão e chave pública, e não leva token.
+- Testes: as 35 suítes passaram contra o código. **Não implantado:** aguarda aprovação do usuário (e snapshot). Sem migração; a imagem da gestão precisa ser reconstruída (o pacote de código do nó sai da imagem).
