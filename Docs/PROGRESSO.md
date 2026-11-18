@@ -2649,3 +2649,13 @@ Pedido do usuário: separar Prefeitura e Câmara, que hoje estão no mesmo nó (
 - `teste_licenca.py`: inventário (esquece / não esquece) e recusa da hospedagem com domínio no ar.
 - Novo `teste_mover_orgao.sh`: ensaio real com **dois PostgreSQL** (um por nó). Cobre exportar, recusas, importar com contagens iguais, arquivos e banco local só da Câmara, esquecer pelo inventário, limpar com cópia e Prefeitura intacta.
 - Testes: as 36 suítes passaram contra o código (inclui o ensaio novo `teste_mover_orgao`). **Não implantado:** aguarda aprovação do usuário (e snapshot). Implantação na gestão: migração 038 (coluna nova), imagem reconstruída; o branch `mover-orgao` já contém `instancias-no` e a trava do instalador.
+- **Implantado na gestão em 18/11/2026, 18h56 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"):
+  - mescla `dbc1b78` (instâncias de nó, mover órgão entre nós e a trava do instalador); backup ok às 18h43; versão `instancias-mover-orgao (dbc1b78)`;
+  - as 36 suítes passaram contra a imagem nova; migração 038 aplicada (coluna `instancia` nos nós; o nó atual ficou na instância padrão);
+  - conferido:
+    - gestão 303, portais 200, logins da gestão e dos dois painéis 200;
+    - a imagem leva o `mover_orgao.sh`, o instalador com a correção do pacote novo e a trava da gestão;
+    - o inventário é assinado e conferido com a chave da gestão;
+    - o nó `726025036` buscou as licenças às 18h57, depois da implantação, sem problema (a versão atual dele ignora o inventário);
+    - casemaster 200; sem erros nos logs.
+- **Próximo (usuário, na VPS do nó):** seguir `Docs/ROTEIRO-SEPARAR-CAMARA.md`, a partir do passo 0 (memória) e do passo 1 (atualizar o nó atual).
