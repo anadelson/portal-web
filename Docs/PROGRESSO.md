@@ -2582,3 +2582,26 @@ Pedido do usuário: "sim, coloque e sane as duas pendências excluindo-os".
   - Enviados o `main` (igual ao que está implantado, com os registros) e as 56 tags das implantações.
   - Branch padrão: `main`. O `origin` está configurado neste checkout.
 - Ficou só local: o branch `instalador-trava-gestao` (trava do instalador, ainda não implantada), além dos branches antigos de fases já mescladas.
+
+## 18/11/2026 — Autor dos commits trocado em todo o histórico (pedido do usuário)
+Pedido: o e-mail institucional e o nome "DTIC Borá" não devem aparecer. Escolha do usuário: histórico todo, com o e-mail `anadelson.bora@gmail.com`; nome `anadelson`, o login do GitHub.
+- Backup completo antes: `backups/portal_web-git-antes-autor-20261118.git` (espelho, fora do git).
+- Reescritos autor e committer de todos os commits, em todos os branches e nas 56 tags (`git filter-branch`, só os dados de autoria).
+  - Conferido: o conteúdo de cada commit, branch e tag é idêntico ao backup, e as relações entre branches e tags não mudaram.
+  - O arquivo do usuário `Docs/referencia/prototipos/Main.dc.html` (alteração não versionada) foi guardado e devolvido intacto.
+- Enviado ao GitHub com força (`main` e tags). Os 281 commits do `main` no GitHub mostram só `anadelson.bora@gmail.com`.
+- Próximos commits neste checkout: `user.name=anadelson`, `user.email=anadelson.bora@gmail.com` (config local do repositório).
+- **Os códigos (hashes) dos commits mudaram.** Os citados acima neste arquivo e nas versões em produção são os antigos. Correspondência das implantações:
+
+  | Tag | Antes | Agora |
+  |---|---|---|
+  | rodape-mascote | ee263a4 | a304ecc |
+  | diario-teste-publico | e2d4e41 | 1a9cdb9 |
+  | caixas-selecao | 3ef50c0 | c735db2 |
+  | diario-capa | 1784f83f | 3b2b467 |
+  | diario-pdf-cache | 6bd3ec0 | 7f48860 |
+  | pntp-matriz | b1afcf8 | 125f9f2 |
+  | instalador-dados-no (em produção) | 24877e8 | 0e8bd9e |
+  | main | bb92378 | 84d43f1 |
+
+  As tags mantêm os nomes; para achar uma versão, use a tag.
