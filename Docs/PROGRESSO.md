@@ -2534,3 +2534,4 @@ Relato do usuário: "o script quando gerado está perdendo as informações do n
   - O que ficou: criou `.env.origem` (cópia das chaves da gestão, permissão 600, fora do git) e copiou a pasta segredos/ do pacote, que tem o mesmo conteúdo da gestão.
   - Os 3 arquivos foram restaurados do commit (iguais aos da imagem) e o teste do instalador passou.
   - Ficaram nesta VPS, para apagar com aprovação: `/root/portal-codigo.tar.gz`, `/root/segredos-no.tar.gz.enc` e `/opt/portal_web/.env.origem`.
+- Apagados com aprovação do usuário ("Pode apagar"), às 15h31: `/root/portal-codigo.tar.gz`, `/root/segredos-no.tar.gz.enc` e `/opt/portal_web/.env.origem` (nenhum era usado pela gestão). Gestão e portais seguem no ar.
