@@ -108,10 +108,11 @@ def emitir(o):
 def _hash_token(t):
     return hashlib.sha256(('no|' + t).encode()).hexdigest()
 
-def criar_no(nome):
-    """Cria o nó e devolve o token EM CLARO (mostrado uma vez só; a gestão guarda o hash)."""
+def criar_no(nome, instancia=''):
+    """Cria o nó e devolve o token EM CLARO (mostrado uma vez só; a gestão guarda o hash).
+    instancia: pasta /opt/portal_web-<instancia> na VPS (mais de um nó na mesma VPS); vazio = /opt/portal_web."""
     token = secrets.token_urlsafe(32)
-    db.exe(db.PLATAFORMA, 'INSERT INTO nos (nome, token_hash) VALUES (%s,%s)', (nome, _hash_token(token)))
+    db.exe(db.PLATAFORMA, 'INSERT INTO nos (nome, token_hash, instancia) VALUES (%s,%s,%s)', (nome, _hash_token(token), instancia or ''))
     return token
 
 def novo_token(no_id):

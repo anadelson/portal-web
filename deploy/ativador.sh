@@ -18,9 +18,15 @@
 set -uo pipefail
 
 PROJ=${PROJ:-/opt/portal_web}
+# Instância (mais de um nó na mesma VPS, 18/11/2026): vazio = a de sempre. Com instância "camara": arquivo de rotas
+# portal-orgaos-camara.conf/.yml, trecho portal-comum-camara.inc (aponta para portal-web-app-camara) e estado próprio.
+INSTANCIA=${INSTANCIA:-}
+[[ -z "$INSTANCIA" || "$INSTANCIA" =~ ^[a-z0-9]{1,20}$ ]] || { echo "INSTANCIA inválida: $INSTANCIA"; exit 1; }
+SUF=${INSTANCIA:+-$INSTANCIA}
+APP_ALIAS=portal-web-app$SUF
 CONF_DIR=${CONF_DIR:-/opt/hotspot/nginx/conf.d}
 CERTS_DIR=${CERTS_DIR:-/var/lib/docker/volumes/hotspot_nginx-certs/_data}
-ESTADO=${ESTADO:-/var/lib/portal-ativador}
+ESTADO=${ESTADO:-/var/lib/portal-ativador$SUF}
 LOG=${LOG:-$PROJ/logs/ativador.log}
 NGINX_C=${NGINX_C:-nginx}
 CERTBOT_C=${CERTBOT_C:-certbot}
@@ -32,13 +38,13 @@ TRAEFIK_ENTRADA_HTTP=${TRAEFIK_ENTRADA_HTTP:-web}
 TRAEFIK_ENTRADA_HTTPS=${TRAEFIK_ENTRADA_HTTPS:-websecure}
 TRAEFIK_RESOLVEDOR=${TRAEFIK_RESOLVEDOR:-letsencrypt}
 if [ "$TRAEFIK" = 1 ]; then
-  GERADO="$CONF_DIR/portal-orgaos.yml"; PROXY_NOME=Traefik
+  GERADO="$CONF_DIR/portal-orgaos$SUF.yml"; PROXY_NOME=Traefik
   # o Traefik só tira o certificado no primeiro acesso: espera até ~2 min antes de dar o HTTPS como falho
   TENTATIVAS=${TENTATIVAS:-24}; ESPERA=${ESPERA:-5}
 else
-  GERADO="$CONF_DIR/portal-orgaos.conf"; PROXY_NOME=nginx
+  GERADO="$CONF_DIR/portal-orgaos$SUF.conf"; PROXY_NOME=nginx
 fi
-INC_DESTINO="$CONF_DIR/portal-comum.inc"
+INC_DESTINO="$CONF_DIR/portal-comum$SUF.inc"
 INC_ORIGEM="$PROJ/deploy/nginx/portal-comum.inc"
 
 mkdir -p "$ESTADO" "$(dirname "$LOG")"
@@ -88,11 +94,11 @@ gerar() {  # conteúdo novo do arquivo do proxy (saída do app)
 publicar() {
   local tmp="$ESTADO/portal-orgaos.novo" bak="$ESTADO/portal-orgaos.anterior"
   # (o temporário fica fora da pasta do proxy: o Traefik leria qualquer arquivo novo que aparecesse lá)
-  [ "$TRAEFIK" = 1 ] || [ -f "$INC_DESTINO" ] || install -m 0644 "$INC_ORIGEM" "$INC_DESTINO" || return 1
+  [ "$TRAEFIK" = 1 ] || [ -f "$INC_DESTINO" ] || { sed "s/portal-web-app:8000/$APP_ALIAS:8000/" "$INC_ORIGEM" > "$INC_DESTINO" && chmod 0644 "$INC_DESTINO"; } || return 1
   gerar "$@" > "$tmp" || { rm -f "$tmp"; return 1; }
   grep -q '^# GERADO pelo ativador' "$tmp" || { rm -f "$tmp"; log "vhost gerado sem cabeçalho: recusado"; return 1; }
   if [ -f "$GERADO" ]; then cp -p "$GERADO" "$bak"; else rm -f "$bak"; fi
-  chmod 0644 "$tmp" && cp -f "$tmp" "$CONF_DIR/.portal-orgaos.tmp" && mv -f "$CONF_DIR/.portal-orgaos.tmp" "$GERADO" && rm -f "$tmp"
+  chmod 0644 "$tmp" && cp -f "$tmp" "$CONF_DIR/.portal-orgaos$SUF.tmp" && mv -f "$CONF_DIR/.portal-orgaos$SUF.tmp" "$GERADO" && rm -f "$tmp"
   if ! nginx_testa_e_recarrega; then
     if [ -f "$bak" ]; then mv -f "$bak" "$GERADO"; else rm -f "$GERADO"; fi
     nginx_testa_e_recarrega || log "ATENÇÃO: nginx -t falhou também com a configuração anterior"

@@ -38,7 +38,11 @@ case "$*" in
   "compose version"*) echo "2.29.0" ;;
   *"app.licenca puxar"*) echo "0 licença(s) aceitas" ;;
   *"app.relatorio enviar"*) echo "relatório entregue (0 ativação(ões) atualizada(s) na gestão)" ;;
-  "ps --filter"*) [ -f /tmp/portas-ocupadas ] && [ ! -f /tmp/sem-descoberta ] && echo outro-nginx ;;
+  "ps --filter"*) if [ -f /tmp/no-proprio ]; then echo portal-nginx; else [ -f /tmp/portas-ocupadas ] && [ ! -f /tmp/sem-descoberta ] && echo outro-nginx; fi ;;
+  "ps"*) if [ -f /tmp/no-proprio ]; then printf 'portal-nginx\nportal-certbot\nportal_web-app-1\n'; exit 0; fi; [ -f /tmp/portas-ocupadas ] && printf 'outro-nginx\noutro-certbot\n' ;;
+  *Mounts*portal-nginx) printf '/etc/nginx/conf.d|/opt/portal_web/deploy/no/proxy/conf.d\n/etc/letsencrypt|/tmp/pc/certs\n/var/www/certbot|/tmp/pc/www\n' ;;
+  *Mounts*portal-certbot) printf '/etc/letsencrypt|/tmp/pc/certs\n/var/www/certbot|/tmp/pc/www\n' ;;
+  *Networks*portal-nginx) printf 'portal-proxy\n' ;;
   "ps"*) [ -f /tmp/portas-ocupadas ] && printf 'outro-nginx\noutro-certbot\n' ;;
   *Mounts*outro-nginx) printf '/etc/nginx/conf.d|/tmp/outro/conf.d\n/etc/letsencrypt|/tmp/outro/certs\n/var/www/certbot|/tmp/outro/www\n' ;;
   *Mounts*outro-certbot) printf '/etc/letsencrypt|/tmp/outro/certs\n/var/www/certbot|/tmp/outro/www\n' ;;
@@ -227,6 +231,46 @@ SAIDA=$(printf 's\n\n\n\nn\n\n\n\n\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>
 checa '[ $RC = 0 ] && grep -q "apt-mark hold  *docker-ce containerd.io" /tmp/chamadas && grep -q "apt-mark unhold  *docker-ce containerd.io" /tmp/chamadas' "Dokploy: atualização pedida segura e solta o Docker (rc=$RC)"
 checa 'grep -q "apt-get upgrade" /tmp/chamadas && ! grep -q "set-timezone" /tmp/chamadas && echo "$SAIDA" | grep -q "fuso do servidor mantido"' 'Dokploy: atualização sem trocar o fuso do servidor'
 rm -f /tmp/traefik /tmp/portas-ocupadas
+
+# ---------- segundo nó na MESMA VPS: instância "camara" em /opt/portal_web-camara (18/11/2026) ----------
+# O primeiro nó (/opt/portal_web) tem nginx próprio (portal-nginx); a instância usa esse nginx e não mexe em nada do primeiro.
+PC=/opt/portal_web-camara; mkdir -p "$PC"
+tar -C /codigo --exclude=./.env --exclude='./.env.*' --exclude=./segredos --exclude=./backups --exclude=./dados --exclude=./logs --exclude=./pacotes \
+    --exclude=./deploy/no/proxy/conf.d --exclude='*/__pycache__' -cf - . | tar -C "$PC" -xf -
+printf 'PAPEL=no\nPROXY_MODO=proprio\nNGINX_C=portal-nginx\nCONF_DIR=%s/deploy/no/proxy/conf.d\nAPP_ALIAS=portal-web-app\n' "$P" > "$E"; chmod 600 "$E"
+mkdir -p "$P/deploy/no/proxy/conf.d" /tmp/pc/certs /tmp/pc/www /etc/systemd/system/portal-ativador.service.d
+echo '# do primeiro nó' > "$P/deploy/no/proxy/conf.d/portal-comum.inc"; echo '# primeiro nó' > /etc/systemd/system/portal-ativador.service.d/no.conf
+echo '0 2 * * * root /opt/portal_web/deploy/backup.sh' > /etc/cron.d/portal-backup
+H1=$(cat "$E" "$P/deploy/no/proxy/conf.d/portal-comum.inc" /etc/systemd/system/portal-ativador.service.d/no.conf /etc/cron.d/portal-backup | sha256sum)
+touch /tmp/portas-ocupadas /tmp/no-proprio; rm -f /tmp/ufw-ativo; : > /tmp/chamadas
+TOKEN3=tokenDoNoDaCamara-abcdefghijklmnopqrstuvwxyz0123
+pac_inst() {  # $1 = INSTANCIA gravada no pacote
+  local T4; T4=$(mktemp -d); mkdir -p "$T4/segredos"
+  printf 'SECRET_KEY=segredo-teste-AAAA\nTOTP_CHAVE=totp-teste-BBBB\nCPF_HMAC_CHAVE=hmac-teste-CCCC\nCHAVE_CREDENCIAIS=cred-teste-DDDD\nPG_USER=portal\nDOMINIO_GESTAO=gestao.exemplo.test\nGESTAO_URL=https://gestao.exemplo.test\nNO_NOME=no-cm.exemplo.test\nNO_TOKEN=%s\nLICENCA_CHAVE_PUBLICA=%s\nINSTANCIA=%s\n' "$TOKEN3" "$PUB" "$1" > "$T4/env-origem"
+  tar -czf "$T4/p.tgz" -C "$T4" env-origem segredos
+  SP='senha-do-pacote-teste-123' openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -md sha256 -salt -in "$T4/p.tgz" -out /root/segredos-no@camara.tar.gz.enc -pass env:SP; rm -rf "$T4"
+}
+# pacote de OUTRA instância na pasta da camara: para sem gravar
+pac_inst outra
+SAIDA=$(printf '\n\n\nsenha-do-pacote-teste-123\n' | bash "$PC/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "este pacote é do nó da instância" && [ ! -f $PC/.env ]' "instância: pacote de outra instância recusado (rc=$RC)"
+rm -f "$PC/.env.origem"; rm -rf "$PC/segredos"
+pac_inst camara
+# respostas: atualizar(Enter=pula) · firewall(Enter=pula) · pacote(Enter) · senha · gestão · nome · [token do pacote] · chave · IP · validade · nginx existente(1) · usar estes dados?(Enter) · portal(s) · ativador(s)
+SAIDA=$(printf '\n\n\nsenha-do-pacote-teste-123\n\n\n\n\n\n1\n\ns\ns\n' | bash "$PC/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC = 0 ]' "instância: instalação sem erro (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
+EC="$PC/.env"
+for l in PAPEL=no INSTANCIA=camara APP_ALIAS=portal-web-app-camara NO_NOME=no-cm.exemplo.test "NO_TOKEN=$TOKEN3" PROXY_MODO=existente NGINX_C=portal-nginx CERTBOT_C=portal-certbot \
+         "CONF_DIR=$P/deploy/no/proxy/conf.d" REDE_PROXY=portal-proxy; do
+  checa "grep -qxF '$l' $EC" "instância: .env tem $l"
+done
+checa 'grep -q "portal-web-app-camara:8000" $P/deploy/no/proxy/conf.d/portal-comum-camara.inc && ! grep -q "portal-web-app:8000" $P/deploy/no/proxy/conf.d/portal-comum-camara.inc' 'instância: trecho do nginx aponta para o app da instância'
+checa 'grep -q "ExecStart=/opt/portal_web-camara/deploy/ativador.sh" /etc/systemd/system/portal-ativador-camara.service && [ -f /etc/systemd/system/portal-ativador-camara.timer ] && grep -q "Environment=INSTANCIA=camara" /etc/systemd/system/portal-ativador-camara.service.d/no.conf && grep -q "Environment=PROJ=/opt/portal_web-camara" /etc/systemd/system/portal-ativador-camara.service.d/no.conf' 'instância: ativador próprio (portal-ativador-camara)'
+checa 'grep -q "systemctl enable --now portal-ativador-camara.timer" /tmp/chamadas' 'instância: liga o ativador da instância'
+checa 'grep -q "/opt/portal_web-camara/deploy/backup.sh" /etc/cron.d/portal-backup-camara && grep -q "^20 " /etc/cron.d/portal-backup-camara' 'instância: backup próprio, 20 min depois do primeiro'
+checa '[ "$(cat $E $P/deploy/no/proxy/conf.d/portal-comum.inc /etc/systemd/system/portal-ativador.service.d/no.conf /etc/cron.d/portal-backup | sha256sum)" = "$H1" ]' 'instância: nada do primeiro nó foi alterado (.env, trecho do nginx, ativador, backup)'
+checa '! grep -qE "deploy/no/proxy.*up -d|compose -f .*proxy" /tmp/chamadas && echo "$SAIDA" | grep -q "instância \"camara\""' 'instância: não sobe outro nginx e avisa a instância'
+rm -rf "$PC" /root/segredos-no@camara.tar.gz.enc /tmp/no-proprio /tmp/portas-ocupadas /tmp/pc
 
 if [ "$ERROS" -gt 0 ]; then echo "ERROS: $ERROS"; exit 1; fi
 echo 'instalador do nó (simulado): tudo ok'

@@ -403,8 +403,11 @@ async def nos_post(request: Request):
             return ir('/nos', 'Nome do nó: letras minúsculas, números, ponto e hífen (ex.: no1.conectatech.tech).', request)
         if db.um(db.PLATAFORMA, 'SELECT 1 FROM nos WHERE nome=%s', (nome,)):
             return ir('/nos', 'Já existe um nó com este nome.', request)
-        token = licenca.criar_no(nome)
-        log(g, f'Nó {nome} criado (token mostrado uma vez)')
+        inst = (f.get('instancia') or '').strip().lower()
+        if inst and not re.fullmatch(r'[a-z0-9]{1,20}', inst):
+            return ir('/nos', 'Instância: só letras minúsculas e números, até 20 (ex.: camara). Deixe vazio para a pasta de sempre.', request)
+        token = licenca.criar_no(nome, inst)
+        log(g, f'Nó {nome} criado' + (f' (instância {inst}: /opt/portal_web-{inst})' if inst else '') + ' (token mostrado uma vez)')
         n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE nome=%s', (nome,))
     elif acao == 'token':
         n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (int(f.get('id') or 0),))

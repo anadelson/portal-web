@@ -12,7 +12,7 @@ services:
       db: { condition: service_healthy }
     networks:
       default: {}
-      proxy: { aliases: [portal-web-app] }
+      proxy: { aliases: ["${APP_ALIAS:-portal-web-app}"] }   # APP_ALIAS: nó em instância (ex.: portal-web-app-camara); vazio = de sempre
     mem_limit: 384m
     memswap_limit: 384m
     cpus: 0.5

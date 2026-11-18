@@ -125,6 +125,28 @@ checa('Pacotes preparados' not in r.text, 'cancelar: a tela volta ao formulário
 checa(anon.get(f'/instalar/{l2[1]}').status_code == 404, 'cancelar: links não baixam')
 checa(not any(IN.pasta().iterdir()) and all(not x['token_cifrado'] for x in db.todos(db.PLATAFORMA, 'SELECT token_cifrado FROM instalacao_links')), 'cancelar apaga o pacote e o link guardado')
 checa(anon.post(U + '/cancelar', data={}, follow_redirects=False).status_code in (302, 303, 307, 400, 401, 403) and 'cancelado(s)' in ' '.join(x['acao'] for x in db.todos(db.PLATAFORMA, 'SELECT acao FROM log_console')), 'cancelar exige login e fica no registro')
+# ---------- instância: segundo nó na mesma VPS (18/11/2026) ----------
+r = con.post('/nos', data={'csrf': tok(con, '/nos'), 'acao': 'criar', 'nome': 'no-cm.exemplo.test', 'instancia': 'Câmara!'}, follow_redirects=True)
+checa('Instância: só letras' in r.text and not db.um(db.PLATAFORMA, "SELECT 1 x FROM nos WHERE nome='no-cm.exemplo.test'"), 'instância inválida: recusada')
+r = con.post('/nos', data={'csrf': tok(con, '/nos'), 'acao': 'criar', 'nome': 'no-cm.exemplo.test', 'instancia': 'camara'}, follow_redirects=True)
+nc = db.um(db.PLATAFORMA, "SELECT * FROM nos WHERE nome='no-cm.exemplo.test'")
+checa(nc and nc['instancia'] == 'camara' and 'instância camara' in con.get('/nos').text, 'nó com instância cadastrado e mostrado')
+UC = f"/nos/{nc['id']}/instalar"
+d0 = {'csrf': tok(con, UC), 'senha_pacote': 'senha-do-pacote-123', 'senha_pacote2': 'senha-do-pacote-123', 'novo_token': '1',
+      'minha_senha': 'gestorforte1234', 'codigo': totp(apoio.SEGREDOS['gestor@gestao.localhost'])}
+import time as _t; _t.sleep(31)  # outro código do autenticador (o mesmo não vale duas vezes)
+d0['codigo'] = totp(apoio.SEGREDOS['gestor@gestao.localhost'])
+r = con.post(UC, data=d0, follow_redirects=True)
+checa('mkdir -p /opt/portal_web-camara' in r.text and '--strip-components=1' in r.text and '/root/segredos-no@camara.tar.gz.enc' in r.text
+      and '/root/portal-codigo@camara.tar.gz' in r.text, 'instância: comandos com a pasta e os arquivos da instância')
+lk = re.findall(r'https://gestao\.localhost/instalar/([A-Za-z0-9_\-]+)', r.text)
+d = tempfile.mkdtemp(); (Path(d) / 'p.enc').write_bytes(anon.get(f'/instalar/{lk[1]}').content)
+subprocess.run(['openssl', 'enc', '-d', '-aes-256-cbc', '-pbkdf2', '-iter', '600000', '-md', 'sha256', '-in', f'{d}/p.enc', '-out', f'{d}/p.tgz', '-pass', 'env:SP'],
+               env=dict(os.environ, SP='senha-do-pacote-123'), capture_output=True)
+with tarfile.open(f'{d}/p.tgz') as tf:
+    env = dict(l.split('=', 1) for l in tf.extractfile('env-origem').read().decode().splitlines() if '=' in l)
+checa(env.get('INSTANCIA') == 'camara' and env.get('NO_NOME') == 'no-cm.exemplo.test', 'instância: o pacote leva a instância do nó')
+shutil.rmtree(d)
 IN.FONTE = Path('/nao/existe')
 checa('gere a imagem de novo' in con.get(U).text, 'sem as fontes na imagem: avisa e não gera')
 shutil.rmtree(F)

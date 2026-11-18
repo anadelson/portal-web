@@ -108,6 +108,20 @@ checa(all(k.startswith('portal-orgaos-') for sec in corpo.get('http', {}).values
 checa(corpo.get('http', {}).get('services', {}).get('portal-orgaos-app', {}).get('loadBalancer', {}).get('servers') == [{'url': 'http://portal-web-app:8000'}]
       and corpo['http']['middlewares']['portal-orgaos-limite']['buffering']['maxRequestBodyBytes'] == 25 * 1024 * 1024, 'traefik: aponta para o app e limita envios a 25 MB')
 checa(roda('vhost', '--formato', 'traefik', '--resolvedor', 'x`y')[0] == 2, 'traefik: nome de resolvedor inválido recusado')
+# instância (segundo nó na mesma VPS, 18/11/2026): nomes, apelido do app e trecho do nginx próprios; sem instância, como sempre
+import subprocess as _sp
+def roda_inst(inst, *a):
+    p = _sp.run([sys.executable, '-m', 'app.ativacao', *a], env=dict(os.environ, INSTANCIA=inst), capture_output=True, text=True)
+    return p.returncode, p.stdout
+rc, y = roda_inst('camara', 'vhost', '--formato', 'traefik', '--teste', 'cm.exemplo.com')
+ci = json.loads(''.join(l for l in y.splitlines(True) if not l.startswith('#'))) if rc == 0 else {}
+checa(rc == 0 and all(k.startswith('portal-orgaos-camara-') for sec in ci.get('http', {}).values() for k in sec)
+      and ci['http']['services']['portal-orgaos-camara-app']['loadBalancer']['servers'] == [{'url': 'http://portal-web-app-camara:8000'}],
+      'instância: rotas do Traefik com prefixo e app da instância (não colidem com o outro nó)')
+rc, v = roda_inst('camara', 'vhost', '--teste', 'cm.exemplo.com')
+checa(rc == 0 and 'include /etc/nginx/conf.d/portal-comum-camara.inc;' in v, 'instância: vhost do nginx inclui o trecho da instância')
+checa('include /etc/nginx/conf.d/portal-comum.inc;' in roda('vhost', '--teste', 'teste-ativacao.exemplo.com')[1], 'sem instância: trecho de sempre')
+checa(roda_inst('Camara!', 'vhost', '--teste', 'cm.exemplo.com')[1].count('portal-comum.inc') == 1, 'instância inválida: ignorada (trecho de sempre)')
 # IP do visitante: X-Real-IP do proxy vence; sem ele, o último do X-Forwarded-For (o primeiro pode ser inventado)
 from types import SimpleNamespace as NS
 from app import config as CFG
