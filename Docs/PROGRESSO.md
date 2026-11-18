@@ -2535,3 +2535,25 @@ Relato do usuário: "o script quando gerado está perdendo as informações do n
   - Os 3 arquivos foram restaurados do commit (iguais aos da imagem) e o teste do instalador passou.
   - Ficaram nesta VPS, para apagar com aprovação: `/root/portal-codigo.tar.gz`, `/root/segredos-no.tar.gz.enc` e `/opt/portal_web/.env.origem`.
 - Apagados com aprovação do usuário ("Pode apagar"), às 15h31: `/root/portal-codigo.tar.gz`, `/root/segredos-no.tar.gz.enc` e `/opt/portal_web/.env.origem` (nenhum era usado pela gestão). Gestão e portais seguem no ar.
+
+## 18/11/2026 — Queda da gestão e dos portais (15h38–15h56): instalador do nó rodado na VPS da gestão
+- **O que aconteceu:** o pacote do nó (`726025036.conectatech.tech`, gerado às 15h33) foi baixado e o `deploy/no/instalar.sh` rodou **nesta VPS da gestão**, não na do nó. O instalador avisou ".env existe, mas não é de nó" e seguiu:
+  - **etapa 7:** gravou um `.env` de nó por cima do da gestão: `PAPEL=no`, senha do banco nova, sem `DOMINIO_PM`/`DOMINIO_CM`, `COMPOSE_FILE` do nó. O original foi guardado como `.env.anterior-20261118183725`;
+  - **etapa 8:** recriou db e app com esse `.env`. O banco subiu com a senha nova sobre o volume que usa a antiga, e o provision falhou com `password authentication failed`. O app em modo nó e sem os domínios deixou a gestão em 404 e os portais sem resposta.
+- **O que não foi afetado:**
+  - volume do banco (`portal_web_pg`, o mesmo) e dados;
+  - nginx compartilhado: só o `portal-comum.inc` foi regravado, com conteúdo igual; `nginx -t` ok;
+  - ativador, cron, código e os demais sistemas da VPS (casemaster 200, PCA no ar);
+  - o pacote não trazia token novo, então o token do nó continua válido.
+- **Recuperação (aprovada pelo usuário: "Aprovo, recupere"), 15h56:**
+  - `.env` original restaurado (sha256 igual ao backup das 14h47); o gravado por engano foi guardado como `.env.no-gravado-por-engano-20261118`;
+  - `.env.origem` apagado; `docker compose up -d db app worker`;
+  - pacotes apagados de /root.
+- **Conferido:**
+  - gestão 303, portais 200, logins da gestão e dos painéis 200, `/transparencia` 200;
+  - app em papel "tudo", banco de controle e bancos dos órgãos acessíveis;
+  - sem erros nos logs.
+- **Falta:**
+  - travar o instalador para recusar rodar numa VPS que já é a gestão;
+  - apagar `.env.no-gravado-por-engano-20261118` depois de conferido;
+  - o nó de teste "asfhaskjhfkas" (criado às 13h18) segue no console.
