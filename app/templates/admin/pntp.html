@@ -1,5 +1,42 @@
-{% extends 'admin/base.html' %}{% block h1 %}Autoavaliação PNTP — dimensão 20 (Legislativo){% endblock %}
-{% block conteudo %}<p>Situação calculada agora a partir dos dados publicados no portal. “Parcial” e “pendente” mostram o que falta.</p>
-<div class="tabela"><table><caption class="sr">Critérios 20.1 a 20.11</caption><thead><tr><th scope="col">Critério</th><th scope="col">Descrição</th><th scope="col">Situação</th><th scope="col">Detalhe</th><th scope="col">No portal</th></tr></thead><tbody>
-{% for c, d, s, det, link in itens %}<tr><td><strong>{{ c }}</strong></td><td>{{ d }}</td><td><span class="chip {{ 'ok' if s == 'atendido' else 'alerta' if s == 'parcial' else 'erro' }}">{{ {'atendido':'Atendido','parcial':'Parcial','pendente':'Pendente'}[s] }}</span></td><td>{{ det }}</td><td><a href="{{ link }}">{{ link }} ↗</a></td></tr>{% endfor %}
-</tbody></table></div><p class="legal">Matriz PNTP 2026 (Atricon), dimensão 20 — Poder Legislativo. A avaliação oficial é feita pelo Tribunal de Contas; esta tela é um apoio interno.</p>{% endblock %}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab with context %}{% block h1 %}Autoavaliação PNTP {{ P.CICLO }}{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}{% macro pct(v) %}{{ ('%.1f' % v)|replace('.', ',') }}{% endmacro %}
+{{ cab('Matriz oficial do Programa Nacional de Transparência Pública (Atricon), com os ' ~ av.total ~ ' critérios que valem para ' ~ ('a Câmara' if legis else 'a Prefeitura') ~ '. O portal mede sozinho o que consegue comprovar com os dados publicados; o restante é marcado pelo controle interno, com o link da evidência.',
+       extra=[('/admin/pntp.csv', 'Baixar planilha (CSV)'), (P.AVALIA, 'Abrir o Avalia ↗')]) }}
+<section class="cx" role="note"><p><strong>Estimativa interna.</strong> A nota oficial é a do sistema <a href="{{ P.AVALIA }}">Avalia</a>, preenchido pelo controle interno e validado pelo Tribunal de Contas; o resultado sai no <a href="{{ P.RADAR }}">Radar da Transparência</a>. Critério sem marcação conta zero: nada é dado como atendido sem evidência.</p></section>
+
+<div class="kpis">
+<div class="kpi">Índice estimado<b>{{ pct(av.indice) }}%</b><progress max="100" value="{{ av.indice|round(1) }}" aria-label="Índice estimado">{{ pct(av.indice) }}%</progress></div>
+<div class="kpi">Nível<b>{{ av.nivel }}</b>{% if av.nivel in ('Diamante', 'Ouro', 'Prata') %}<span class="chip ok">com selo</span>{% else %}<span class="chip alerta">sem selo</span>{% endif %}</div>
+<a class="kpi" href="/admin/pntp?sit=essenciais">Essenciais atendidos<b>{{ av.essenciais_ok }} de {{ av.essenciais }}</b></a>
+<div class="kpi">Medidos pelo portal<b>{{ av.auto }}</b></div>
+<a class="kpi" href="/admin/pntp?sit=marcar">Marcados pelo controle interno<b>{{ av.marcados }} de {{ av.marcados + av.sem }}</b>{% if av.vencidas %}<span class="chip alerta">{{ av.vencidas }} com mais de 30 dias</span>{% endif %}</a>
+</div>
+
+{% if av.ess_falta %}<section class="cx"><h2>Essenciais que impedem o selo</h2><p>Diamante, Ouro e Prata exigem 100% dos critérios essenciais (Cartilha PNTP {{ P.CICLO }}, Tabela 3). Faltam:</p><ul>
+{% for l in av.ess_falta %}<li><a href="/admin/pntp?dim={{ l.c.dimensao|urlencode }}#c-{{ l.c.id|replace('.', '-') }}"><strong>{{ l.c.id }}</strong></a> {{ l.c.texto }} <small>({{ (l.nota * 100)|round|int }}%)</small></li>{% endfor %}</ul></section>{% endif %}
+
+<section class="cx"><h2>Por dimensão</h2><div class="tabela"><table><caption class="sr">Percentual de cada dimensão e seu peso no índice</caption><thead><tr><th scope="col">Dimensão</th><th scope="col">Peso</th><th scope="col">Atendido</th></tr></thead><tbody>
+{% for d, v in av.por_dim.items() %}<tr><td><a href="/admin/pntp?dim={{ d|urlencode }}">{{ d }}</a></td><td>{{ P.PESO_DIM[d] }}</td><td><progress max="100" value="{{ v|round(1) }}" aria-hidden="true"></progress> {{ pct(v) }}%</td></tr>{% endfor %}
+</tbody></table></div></section>
+
+<form class="campos-m inline" method="get" action="/admin/pntp" aria-label="Filtrar critérios"><label for="f-dim">Dimensão</label><select id="f-dim" name="dim"><option value="">Todas</option>{% for d in dims %}<option {{ 'selected' if d == dim }}>{{ d }}</option>{% endfor %}</select>
+<label for="f-sit">Mostrar</label><select id="f-sit" name="sit"><option value="">Todos os critérios</option><option value="falta" {{ 'selected' if sit == 'falta' }}>Só o que falta</option><option value="marcar" {{ 'selected' if sit == 'marcar' }}>Só os de marcação</option><option value="essenciais" {{ 'selected' if sit == 'essenciais' }}>Só os essenciais</option></select>
+<button class="btn sec">Filtrar</button>{% if dim or sit %} <a href="/admin/pntp">Limpar</a>{% endif %}</form>
+
+{% for d, ls in grupos.items() %}<section class="cx"><h2>{{ d }} <small>· peso {{ P.PESO_DIM[d] }} · {{ pct(av.por_dim[d]) }}%</small></h2><div class="tabela"><table><caption class="sr">Critérios da dimensão {{ d }}</caption>
+<thead><tr><th scope="col">Critério</th><th scope="col">Classificação</th><th scope="col">Itens <small>(D A S G F)</small></th><th scope="col">Nota</th><th scope="col">Como foi avaliado</th></tr></thead><tbody>
+{% for l in ls %}{% set c = l.c %}<tr id="c-{{ c.id|replace('.', '-') }}"><td><strong>{{ c.id }}</strong> {{ c.texto }}</td>
+<td><span class="chip {{ 'erro' if c.classe == 'essencial' else '' }}">{{ P.NOME_CLASSE[c.classe] }}</span></td>
+<td>{% for i in P.ITENS %}{% if not c.itens[i] %}<span class="chip" title="{{ P.NOME_ITEM[i] }}: não se aplica">—<span class="sr"> {{ P.NOME_ITEM[i] }}: não se aplica</span></span>{% elif l.itens and l.itens[i] %}<span class="chip ok" title="{{ P.NOME_ITEM[i] }}: atende">{{ P.SIGLA_ITEM[i] }}<span class="sr"> {{ P.NOME_ITEM[i] }}: atende</span></span>{% else %}<span class="chip alerta" title="{{ P.NOME_ITEM[i] }}: não atende">{{ P.SIGLA_ITEM[i] }}<span class="sr"> {{ P.NOME_ITEM[i] }}: não atende</span></span>{% endif %} {% endfor %}</td>
+<td>{{ (l.nota * 100)|round|int }}%</td>
+<td>{% if l.origem == 'auto' %}<span class="chip">Medido pelo portal</span> {{ l.det }}{% if l.link %} <a href="{{ l.link }}">ver ↗</a>{% endif %}
+{% else %}{% if l.origem == 'marcacao' %}<span class="chip ok">Marcado</span> por {{ l.marcacao.por }} em {{ l.marcacao.em|br }}{% if l.vencida %} <span class="chip alerta">mais de 30 dias: confirme a atualidade</span>{% endif %}{% if l.marcacao.link %} · <a href="{{ l.marcacao.link }}">evidência ↗</a>{% endif %}{% if l.marcacao.obs %}<br><small>{{ l.marcacao.obs }}</small>{% endif %}{% else %}<span class="chip alerta">Sem marcação</span>{% endif %}
+{% if l.dica %}<br><small>O portal sabe: {{ l.dica }}</small>{% endif %}
+{% if pode('pntp_marcar') %}<details><summary>{{ 'Alterar marcação' if l.marcacao else 'Marcar' }}</summary><form class="campos-m" method="post" action="/admin/pntp"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="criterio" value="{{ c.id }}">
+<fieldset><legend>O que atende hoje</legend>{% for i in P.ITENS if c.itens[i] %}<label for="m-{{ c.id|replace('.', '-') }}-{{ i }}"><input type="checkbox" id="m-{{ c.id|replace('.', '-') }}-{{ i }}" name="item_{{ i }}" value="1" {{ 'checked' if l.marcacao and l.marcacao.itens.get(i) }}> {{ P.NOME_ITEM[i] }}</label>{% endfor %}</fieldset>
+<label for="m-{{ c.id|replace('.', '-') }}-link">Link da evidência (obrigatório quando atende)</label><input id="m-{{ c.id|replace('.', '-') }}-link" name="link" value="{{ l.marcacao.link if l.marcacao else '' }}" placeholder="/governo ou https://…">
+<label for="m-{{ c.id|replace('.', '-') }}-obs">Observação (opcional)</label><textarea id="m-{{ c.id|replace('.', '-') }}-obs" name="obs" rows="2">{{ l.marcacao.obs if l.marcacao else '' }}</textarea>
+<div class="acoes-form"><button class="btn" name="acao" value="marcar">Salvar marcação</button>{% if l.marcacao %}<button class="btn sec" name="acao" value="apagar">Apagar marcação</button>{% endif %}</div></form></details>{% endif %}{% endif %}</td></tr>{% endfor %}
+</tbody></table></div></section>{% else %}<p>Nenhum critério com esse filtro.</p>{% endfor %}
+<p class="legal"><strong>Base legal:</strong> LAI (Lei 12.527/2011), art. 8º; LRF (LC 101/2000), arts. 48 e 48-A; {{ P.MATRIZ.fonte }} D = disponibilidade (30%), A = atualidade (30%), S = série histórica (20%), G = gravação de relatórios (10%), F = filtro de pesquisa (10%); o item que não se aplica tem o peso rateado entre os demais, e sem disponibilidade o critério vale zero.</p>
+{% endblock %}
