@@ -116,6 +116,9 @@ PODE = {
     'carta_redigir': {'admin', 'publicador', 'editor', 'redator', 'validador'},
     'carta_validar': {'validador', 'admin'},
     'carta_publicar': {'publicador', 'admin'},
+    # Autoavaliação PNTP (18/11/2026): o controle interno (perfil Procuradoria / Controle) marca; DTIC e administrador consultam
+    'pntp_ver': {'admin', 'publicador', 'procuradoria'},
+    'pntp_marcar': {'admin', 'procuradoria'},
 }
 
 BASE_LEGAL = {

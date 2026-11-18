@@ -582,8 +582,4 @@ async def importar_post(request: Request):
     auditar(request, f"Importação {f['modelo']}: {rel['gravadas']} de {rel['linhas']} ({'simulação' if rel['simulacao'] else 'gravado'})")
     return T('importar', request, u, modelos=modelos, hist=db.todos(b, 'SELECT * FROM importacoes ORDER BY id DESC LIMIT 30'), rel=rel)
 
-# ---------- autoavaliação PNTP ----------
-@r.get('/pntp')
-def pntp(request: Request):
-    u = exige(request); b = leg_only(request)
-    return T('pntp', request, u, itens=L.pntp(b))
+# A autoavaliação PNTP (matriz inteira, Prefeitura e Câmara) fica em admin_pntp.py; a dimensão 20 continua calculada em legislativo.pntp.

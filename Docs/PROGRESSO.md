@@ -2466,3 +2466,31 @@ O usuário não via a Edição nº 1 refeita, embora o servidor já entregasse o
 - Depois: disco 32 GB (67%), **16 GB livres**. Memória disponível 1,9 GB. Portais 200; app, worker e banco de pé.
 - Não mexi em imagens nem em volumes de outros sistemas da VPS (pmuinix, wg-config etc.), mesmo os que aparecem como "não usados".
 - Ainda pendente: backup fora da VPS (os backups do portal ficam só no disco dela).
+
+## 18/11/2026 — Autoavaliação PNTP da matriz inteira, Prefeitura e Câmara (código; branch pntp-matriz)
+Pedido do usuário: "implemente a etapa 6 para ambos os portais/painéis". Antes, a autoavaliação só existia na Câmara, cobria só a dimensão 20 e não tinha percentual.
+- Matriz oficial do ciclo 2026, baixada da Atricon com permissão do usuário (`criterios_pntp_2026.zip` e Cartilha PNTP 2026): `app/pntp_matriz_2026.json`.
+  - 96 critérios da Prefeitura (12 essenciais, 65 obrigatórios, 19 recomendados) e 83 da Câmara (7, 60, 16). Os totais conferem com a Tabela 1 da cartilha.
+  - Para cada critério: classificação e itens de verificação que se aplicam.
+- Cálculo (`app/pntp.py`), conforme a Cartilha PNTP 2026, seção III:
+  - peso da dimensão (Tabela 2) e peso da classificação (2 / 1,5 / 1);
+  - itens 30/30/20/10/10, com rateio quando algum não se aplica; sem disponibilidade, o critério vale zero;
+  - níveis da Tabela 3: Diamante, Ouro e Prata exigem 100% dos essenciais; sem eles, "Elevado".
+- Medições automáticas (`app/pntp_auto.py`): só o que o portal comprova inteiro, a partir dos dados publicados.
+  - Exemplos: acessibilidade, e-SIC, Ouvidoria, Radar, contatos e horário; bases da transparência com atualidade de 30 dias, série dos 3 anos anteriores, exportação e filtros.
+  - Na Câmara, a dimensão 20 reaproveita a autoavaliação legislativa que já existia.
+  - O resto é marcado pelo controle interno (perfil "Procuradoria / Controle" ou administrador), item a item, com o link da evidência (obrigatório quando atende, como no Avalia). Tabela `pntp_marcacoes`, migração 037.
+  - Marcação com mais de 30 dias não conta a atualidade. Critério sem marcação conta zero: nada é dado como atendido sem evidência.
+- Painel › Transparência › **Autoavaliação PNTP**, agora nos dois órgãos (`/admin/pntp`):
+  - índice estimado e nível;
+  - lista dos essenciais que impedem o selo;
+  - percentual por dimensão;
+  - filtros e a tabela de critérios (itens D/A/S/G/F, nota, como foi avaliado, o que o portal já sabe);
+  - formulário de marcação e planilha CSV para apoiar o preenchimento no Avalia.
+  - A tela avisa que é estimativa interna e que a nota oficial é a do Avalia, validada pelo Tribunal de Contas.
+- Permissões: ver = administrador, publicador (DTIC) e Procuradoria/Controle; marcar = administrador e Procuradoria/Controle. As marcações vão para a auditoria.
+- A rota antiga da Câmara (só dimensão 20) foi substituída por esta.
+- Teste novo `tests/teste_pntp.py`:
+  - quantidades e classes da matriz, pesos, rateio e regra da disponibilidade, índice e níveis;
+  - telas dos dois órgãos, medições, marcação (link obrigatório, item que não se aplica, critério automático, 30 dias, apagar), CSV, perfis e separação entre os bancos.
+- Testes: as 35 suítes passaram contra o código (inclui a nova `teste_pntp`, conferida também com a data real). **Não implantado:** aguarda aprovação do usuário (e snapshot). A implantação tem a migração 037 (tabela nova, sem alterar as existentes) e não precisa reconstruir dependências.
