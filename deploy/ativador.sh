@@ -188,3 +188,34 @@ app pendentes | while IFS=$'\t' read -r id acao dom; do
   log "pedido $id: $acao $dom"
   case "$acao" in ativar) ativar "$id" "$dom" ;; desativar) desativar "$id" "$dom" ;; esac
 done
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Tarefas pedidas pela GESTÃO (19/11/2026): mover órgão entre nós desta VPS e criar uma instância nova. Os passos e o
+# resultado voltam à gestão pelo relatório do nó (enviado logo depois). Parâmetros conferidos de novo aqui.
+# ---------------------------------------------------------------------------------------------------------------------
+tarefa_app() { if [ -n "${TAREFAS_CMD:-}" ]; then $TAREFAS_CMD "$@"; else (cd "$PROJ" && $DOCKER compose exec -T app python -m app.tarefas "$@"); fi; }
+campo() { python3 -c "import json,sys; print(json.loads(sys.argv[1]).get(sys.argv[2],''))" "$1" "$2" 2>/dev/null; }
+PEND=$(tarefa_app pendentes 2>/dev/null || true)
+while IFS=$'\t' read -r tid tipo params; do
+  [[ "$tid" =~ ^[0-9]+$ ]] || continue
+  log "tarefa $tid: $tipo"
+  slug=$(campo "$params" slug); arq=$(campo "$params" arquivo)
+  if [[ "$tipo" =~ ^(exportar|importar|limpar)$ ]] && ! { [[ "$slug" =~ ^[a-z0-9-]{2,40}$ ]] && [[ "$arq" =~ ^/var/lib/portal-transferencias/[a-z0-9-]{1,80}\.tgz$ ]]; }; then
+    tarefa_app concluir "$tid" erro "parâmetros inválidos"; continue
+  fi
+  case "$tipo" in
+    exportar) cmd=(bash "$PROJ/deploy/no/mover_orgao.sh" exportar "$slug" --saida "$arq") ;;
+    importar) cmd=(bash "$PROJ/deploy/no/mover_orgao.sh" importar "$arq") ;;
+    limpar) cmd=(bash "$PROJ/deploy/no/mover_orgao.sh" limpar "$arq" --auto) ;;
+    instalar_instancia) cmd=(bash "$PROJ/deploy/no/criar_instancia.sh" "$tid") ;;
+    *) tarefa_app concluir "$tid" erro "tipo de tarefa desconhecido"; continue ;;
+  esac
+  tarefa_app passo "$tid" "Começando no nó: $tipo"
+  saida=$("${cmd[@]}" < /dev/null 2>&1); rc=$?
+  limpa=$(printf '%s\n' "$saida" | sed 's/\x1b\[[0-9;]*m//g')
+  while IFS= read -r l; do [ -n "$l" ] && tarefa_app passo "$tid" "$l"; done < <(printf '%s\n' "$limpa" | grep -E '✔|!' | sed -E 's/^ *(✔|!) *//')
+  if [ "$rc" = 0 ]; then tarefa_app concluir "$tid" ok "$(printf '%s\n' "$limpa" | grep '✔' | tail -1 | sed -E 's/^ *✔ *//')"
+  else tarefa_app concluir "$tid" erro "$(printf '%s\n' "$limpa" | grep '✘' | tail -1 | sed -E 's/^ *✘ *//')"; fi
+  log "tarefa $tid: $tipo → código $rc"
+done <<< "$PEND"
+if [ -n "$PEND" ] && [ -z "${TAREFAS_CMD:-}" ]; then (cd "$PROJ" && $DOCKER compose exec -T app python -m app.relatorio enviar) >> "$LOG" 2>&1 || true; fi

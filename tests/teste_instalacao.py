@@ -147,6 +147,22 @@ with tarfile.open(f'{d}/p.tgz') as tf:
     env = dict(l.split('=', 1) for l in tf.extractfile('env-origem').read().decode().splitlines() if '=' in l)
 checa(env.get('INSTANCIA') == 'camara' and env.get('NO_NOME') == 'no-cm.exemplo.test', 'instância: o pacote leva a instância do nó')
 shutil.rmtree(d)
+# ---------- pasta do nó (19/11/2026): aviso de pasta em uso, editar a instância e pasta vinda do relatório ----------
+L.criar_no('no-outro.exemplo.test')   # outro nó na pasta padrão, como o no-inst
+t = con.get(U).text
+checa('Onde este nó fica' in t and 'na pasta <code>/opt/portal_web</code>' in t and 'no-outro.exemplo.test' in t and 'preencha antes uma instância diferente' in t,
+      'instalação: avisa que outro nó usa a mesma pasta')
+checa('preencha antes uma instância diferente' not in con.get(UC).text, 'nó com instância própria: sem aviso')
+r = con.post('/nos', data={'csrf': tok(con, '/nos'), 'acao': 'instancia', 'id': str(nc['id']), 'instancia': 'X y'}, follow_redirects=True)
+checa('Instância: só letras' in r.text and db.um(db.PLATAFORMA, 'SELECT instancia FROM nos WHERE id=%s', (nc['id'],))['instancia'] == 'camara', 'mudar instância inválida: recusada')
+r = con.post('/nos', data={'csrf': tok(con, '/nos'), 'acao': 'instancia', 'id': str(nc['id']), 'instancia': 'cmx'}, follow_redirects=True)
+checa('pasta na VPS agora é /opt/portal_web-cmx' in r.text and db.um(db.PLATAFORMA, 'SELECT instancia FROM nos WHERE id=%s', (nc['id'],))['instancia'] == 'cmx'
+      and 'instância “cmx”' in ' '.join(x['acao'] for x in db.todos(db.PLATAFORMA, 'SELECT acao FROM log_console')), 'mudar instância: gravada e registrada')
+db.exe(db.PLATAFORMA, """UPDATE nos SET relatorio='{"pasta": "/opt/portal_web", "ip": "192.0.2.10"}', relatorio_em=now() WHERE id=%s""", (nc['id'],))
+t = con.get('/nos').text
+checa('pasta na VPS: <code>/opt/portal_web</code>' in t and 'o cadastro indica /opt/portal_web-cmx' in t, 'Nós e licenças: pasta do relatório e alerta quando difere do cadastro')
+from app import relatorio as RL
+checa('pasta' in RL.montar() and 'instancia' in RL.montar(), 'relatório do nó leva a pasta e a instância')
 IN.FONTE = Path('/nao/existe')
 checa('gere a imagem de novo' in con.get(U).text, 'sem as fontes na imagem: avisa e não gera')
 shutil.rmtree(F)

@@ -33,6 +33,7 @@ if [ -f /tmp/traefik ]; then  # VPS com Dokploy: Traefik nas portas 80/443, rede
   esac
 fi
 case "$*" in
+  *"app.tarefas env-instancia"*) cat /tmp/env-instancia; exit 0 ;;   # o app do nó entrega a configuração do nó novo (simulado)
   *Config.Env*) [ -f /tmp/gestao ] && printf 'PG_USER=portal\nPG_HOST=db\n'; exit 0 ;;   # container do portal na VPS da gestão (simulado; sem PAPEL = "tudo", como na gestão real)
   --version) echo "Docker version 27.0.0, build x" ;;
   "compose version"*) echo "2.29.0" ;;
@@ -154,21 +155,29 @@ pacote_novo() {  # $1 = nome do nó, $2 = token (vazio = pacote sem token novo);
   touch -d "@$(( $(date +%s) + ${3:-60} ))" /root/segredos-no.tar.gz.enc; rm -rf "$T3"
 }
 TOKEN2=tokenNovoDoConsole-ZYXWVUTSRQPONMLKJIHGFEDCBA9876
-pacote_novo no5.exemplo.test "$TOKEN2"
+pacote_novo no3.exemplo.test "$TOKEN2"
 # respostas: atualizar(n) · usar o pacote novo?(Enter=S) · caminho(Enter) · senha · gestão · nome · [token vem do pacote] · chave · IP · validade · nginx(s) · portal(s) · ativador(s)
 SAIDA=$(printf 'n\n\n\nsenha-do-pacote-teste-123\n\n\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
 checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "pacote de segredos mais novo que o já importado"' "reinstalação: oferece o pacote novo (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
-checa 'grep -qxF "NO_TOKEN=$TOKEN2" $E && grep -qxF "NO_NOME=no5.exemplo.test" $E && [ "$(grep -c "^NO_TOKEN=" $E)" = 1 ]' 'reinstalação: token e nome do pacote novo no .env (não os antigos)'
+checa 'grep -qxF "NO_TOKEN=$TOKEN2" $E && grep -qxF "NO_NOME=no3.exemplo.test" $E && [ "$(grep -c "^NO_TOKEN=" $E)" = 1 ]' 'reinstalação: token novo do pacote no .env (não o antigo)'
 checa 'ls $P/.env.origem.anterior-* >/dev/null 2>&1' 'reinstalação: .env.origem anterior guardado'
 # pacote novo SEM token novo: o nome vem do pacote e o token gravado no nó é mantido
-pacote_novo no6.exemplo.test "" 120
+pacote_novo no3.exemplo.test "" 120
 # respostas: atualizar(n) · usar o pacote novo?(Enter) · caminho(Enter) · senha · gestão · nome · trocar o token?(Enter=não) · chave · IP · validade · nginx(s) · portal(s) · ativador(s)
 SAIDA=$(printf 'n\n\n\nsenha-do-pacote-teste-123\n\n\n\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
-checa '[ $RC = 0 ] && grep -qxF "NO_NOME=no6.exemplo.test" $E && grep -qxF "NO_TOKEN=$TOKEN2" $E' "pacote sem token novo: nome do pacote e token mantido (rc=$RC)"
+checa '[ $RC = 0 ] && grep -qxF "NO_NOME=no3.exemplo.test" $E && grep -qxF "NO_TOKEN=$TOKEN2" $E' "pacote sem token novo: nome do pacote e token mantido (rc=$RC)"
 # recusar o pacote novo: segue com o já importado
-pacote_novo no7.exemplo.test "" 180
+pacote_novo no3.exemplo.test "" 180
 SAIDA=$(printf 'n\nn\n\n\n\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
-checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "segredos da gestão já importados" && grep -qxF "NO_NOME=no6.exemplo.test" $E' "pacote novo recusado: mantém o importado (rc=$RC)"
+checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "segredos da gestão já importados" && grep -qxF "NO_NOME=no3.exemplo.test" $E' "pacote novo recusado: mantém o importado (rc=$RC)"
+# trava (19/11/2026): pacote de OUTRO nó na pasta deste nó — o caso real: o 2º nó instalado por cima do 1º. Para sem mexer em nada.
+H2=$(sha256sum "$E" "$P/.env.origem" | sha256sum); : > /tmp/chamadas
+pacote_novo outro-no.exemplo.test tokenDeOutroNo-0123456789abcdefghijklmnopq 240
+SAIDA=$(printf 'n\n\n\nsenha-do-pacote-teste-123\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "já é do nó no3.exemplo.test, e o pacote é do nó outro-no.exemplo.test" && echo "$SAIDA" | grep -q "preencha a INSTÂNCIA"' "pacote de outro nó: para e explica o que fazer (rc=$RC)"
+checa '[ "$(sha256sum "$E" "$P/.env.origem" | sha256sum)" = "$H2" ] && ! grep -qE "compose (up|build)" /tmp/chamadas' 'pacote de outro nó: .env e segredos intactos, nada subido'
+checa 'echo "$SAIDA" | grep -q "TIPO: ATUALIZAÇÃO do nó no3.exemplo.test" && echo "$SAIDA" | grep -q "PASTA DESTE NÓ: /opt/portal_web"' 'resumo inicial: pasta e tipo (atualização) em linguagem simples'
+checa 'grep -qxF "NO_PASTA=/opt/portal_web" $E' '.env registra a pasta do nó (vai para a gestão no relatório)'
 rm -f /root/segredos-no.tar.gz.enc
 # as recusas abaixo testam o token digitado: tira do pacote importado o que veio do console
 grep -vE '^(NO_TOKEN|NO_NOME|GESTAO_URL|LICENCA_CHAVE_PUBLICA)=' "$P/.env.origem" > /tmp/origem && install -m 600 /tmp/origem "$P/.env.origem"
@@ -271,6 +280,26 @@ checa 'grep -q "/opt/portal_web-camara/deploy/backup.sh" /etc/cron.d/portal-back
 checa '[ "$(cat $E $P/deploy/no/proxy/conf.d/portal-comum.inc /etc/systemd/system/portal-ativador.service.d/no.conf /etc/cron.d/portal-backup | sha256sum)" = "$H1" ]' 'instância: nada do primeiro nó foi alterado (.env, trecho do nginx, ativador, backup)'
 checa '! grep -qE "deploy/no/proxy.*up -d|compose -f .*proxy" /tmp/chamadas && echo "$SAIDA" | grep -q "instância \"camara\""' 'instância: não sobe outro nginx e avisa a instância'
 rm -rf "$PC" /root/segredos-no@camara.tar.gz.enc /tmp/no-proprio /tmp/portas-ocupadas /tmp/pc
+
+# ---------- instância criada SEM TERMINAL, a pedido da gestão (19/11/2026): criar_instancia.sh + instalador automático ----------
+PC=/opt/portal_web-camara; rm -rf "$PC"
+printf 'PAPEL=no\nNO_NOME=no1.exemplo.test\nPROXY_MODO=proprio\nNGINX_C=portal-nginx\nCERTBOT_C=portal-certbot\nCONF_DIR=%s/deploy/no/proxy/conf.d\nPROXY_CERTS_DIR=/tmp/pc/certs\nREDE_PROXY=portal-proxy\nVPS_IP=198.51.100.5\n' "$P" > "$E"; chmod 600 "$E"
+mkdir -p /tmp/pc/certs /tmp/pc/www; H1=$(sha256sum "$E" | cut -c1-16); touch /tmp/portas-ocupadas /tmp/no-proprio; : > /tmp/chamadas
+printf 'SECRET_KEY=segredo-teste-AAAA\nTOTP_CHAVE=totp-teste-BBBB\nCPF_HMAC_CHAVE=hmac-teste-CCCC\nCHAVE_CREDENCIAIS=cred-teste-DDDD\nPG_USER=portal\nGESTAO_URL=https://gestao.exemplo.test\nNO_NOME=no-cm.exemplo.test\nNO_TOKEN=%s\nLICENCA_CHAVE_PUBLICA=%s\nINSTANCIA=camara\n' "$TOKEN3" "$PUB" > /tmp/env-instancia
+SAIDA=$(bash "$P/deploy/no/criar_instancia.sh" 77 2>&1); RC=$?
+checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "nó no-cm.exemplo.test instalado em /opt/portal_web-camara"' "sem terminal: instância criada (rc=$RC): $(echo "$SAIDA" | grep -E '✘' | head -3)"
+for l in PAPEL=no INSTANCIA=camara APP_ALIAS=portal-web-app-camara NO_NOME=no-cm.exemplo.test "NO_TOKEN=$TOKEN3" PROXY_MODO=existente NGINX_C=portal-nginx REDE_PROXY=portal-proxy NO_PASTA=/opt/portal_web-camara SECRET_KEY=segredo-teste-AAAA; do
+  checa "grep -qxF '$l' $PC/.env" "sem terminal: .env do nó novo tem $l"
+done
+checa '[ -f $PC/app/main.py ] && [ -z "$(ls -A $PC/backups 2>/dev/null)" ] && [ "$(stat -c %a $PC/.env)" = 600 ]' 'sem terminal: código copiado, sem backups do outro nó, .env protegido'
+checa 'grep -q "ExecStart=/opt/portal_web-camara/deploy/ativador.sh" /etc/systemd/system/portal-ativador-camara.service && grep -q "/opt/portal_web-camara/deploy/backup.sh" /etc/cron.d/portal-backup-camara' 'sem terminal: ativador e backup do nó novo'
+checa '[ "$(sha256sum "$E" | cut -c1-16)" = "$H1" ] && ! grep -qE "apt-get upgrade|ufw --force" /tmp/chamadas' 'sem terminal: nada do primeiro nó mudou; sem atualização nem firewall'
+checa '! echo "$SAIDA" | grep -qF "$TOKEN3" && ! echo "$SAIDA" | grep -qF "segredo-teste-AAAA"' 'sem terminal: token e chaves fora da saída (que vai para a gestão)'
+# pasta da instância já é de outro nó: para sem mexer
+sed -i 's/^NO_NOME=.*/NO_NOME=outro-no.exemplo.test/' "$PC/.env"; H3=$(sha256sum "$PC/.env")
+SAIDA=$(bash "$P/deploy/no/criar_instancia.sh" 78 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "já é de outro nó" && [ "$(sha256sum "$PC/.env")" = "$H3" ]' 'sem terminal: pasta de outro nó recusada'
+rm -rf "$PC" /tmp/env-instancia /tmp/no-proprio /tmp/portas-ocupadas /tmp/pc
 
 if [ "$ERROS" -gt 0 ]; then echo "ERROS: $ERROS"; exit 1; fi
 echo 'instalador do nó (simulado): tudo ok'

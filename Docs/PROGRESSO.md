@@ -2659,3 +2659,52 @@ Pedido do usuário: separar Prefeitura e Câmara, que hoje estão no mesmo nó (
     - o nó `726025036` buscou as licenças às 18h57, depois da implantação, sem problema (a versão atual dele ignora o inventário);
     - casemaster 200; sem erros nos logs.
 - **Próximo (usuário, na VPS do nó):** seguir `Docs/ROTEIRO-SEPARAR-CAMARA.md`, a partir do passo 0 (memória) e do passo 1 (atualizar o nó atual).
+
+## 19/11/2026 — Nó da Câmara instalado por cima do nó da Prefeitura; recuperação
+- **O que aconteceu (07h27–07h47):**
+  - o nó `726025036.camara.conectatech.tech` foi cadastrado **sem instância**;
+  - a hospedagem da Câmara foi trocada para ele antes de mover os dados;
+  - o pacote dele foi instalado em `/opt/portal_web` na VPS 72.60.250.36, a pasta do nó da Prefeitura. O instalador gravou o token e o nome do nó novo no `.env` dessa pasta;
+  - resultado: a instalação passou a ser o nó 3, que só tinha a licença da Câmara, e **a Prefeitura do nó ficou fora do ar das 07h40 às 08h20**. Os dados não foram afetados: os dois bancos ficaram no mesmo PostgreSQL.
+- **Recuperação** (aprovada pelo usuário: "aprovo a recuperação"):
+  - gestão: nó 3 marcado com a instância `camara`;
+  - VPS do nó (usuário): `.env` do nó 1 restaurado (`.env.anterior-20261119074021`; o do nó 3 foi guardado em `.env.no3-por-engano`) e `docker compose up -d app worker`; o nó 1 voltou às 08h20;
+  - gestão: hospedagem da Câmara de volta ao nó 1 às 08h21; Câmara de novo no ar às 08h26.
+  - Conferido: pmbora.prefbora.cloud/admin e cmbora.prefbora.cloud (início e /admin) respondem 200; a página inicial da Prefeitura responde 503 como antes (portal em preparação).
+- O nó 3 continua cadastrado (instância `camara`), sem instalação. Na VPS ficou `/opt/portal_web/.env.no3-por-engano`, com o token do nó 3: apagar depois.
+
+## 19/11/2026 — A gestão comanda o nó: mudança de órgão e nova instância sem terminal (branch gestao-comanda-no)
+Pedido do usuário: "melhore essa parte de exportação/instalação, preferencialmente que tudo seja possibilitado ser realizado pela gestão, e que na gestão ao final fique registrado o repositório do nó; melhore os questionamentos do script para que uma pessoa leiga entenda".
+
+**Instalador mais claro e com trava:**
+- **Resumo no começo:** o que o programa faz, a pasta do nó, se é instalação nova ou atualização e como responder ([colchetes], s/N, S/n).
+- **Explicações em linguagem simples** em cada etapa (o que é, o que fazer).
+- **Trava:** se a pasta já é de **outro nó** (nome do pacote diferente do `.env`), para antes de gravar qualquer coisa e explica as duas saídas: dar uma instância ao nó novo, ou apagar o `.env` para trocar de propósito.
+- O `.env` passa a registrar a pasta (`NO_PASTA`). O relatório leva a pasta e a instância, e a gestão as mostra em Nós e licenças, com alerta se a pasta relatada diferir do cadastro.
+
+**Console:**
+- Pasta de cada nó e opção "Mudar a pasta (instância)".
+- Na tela de instalação: "Onde este nó fica" e aviso quando outro nó já usa a mesma pasta.
+- O campo instância ficou explícito no cadastro: "preencha se esta VPS já tem outro nó".
+
+**Tudo pela gestão** (sem terminal, entre nós da mesma VPS):
+- Tarefas da gestão: ordem assinada "tarefa" → fila do nó (`tarefas_no`) → **ativador do nó (root)** executa → passos e resultado voltam pelo relatório. Lista fechada de tipos: `exportar`, `importar`, `limpar`, `instalar_instancia`. Parâmetros conferidos na gestão, no nó e no ativador; o arquivo de transferência fica em `/var/lib/portal-transferencias` (só root).
+- **Mudar de nó pela gestão** (página do órgão): tirar do ar → exportar → importar e conferir → trocar a hospedagem → esperar a licença no destino → publicar → concluída.
+  - Depois: "Apagar da origem" (exige digitar o identificador; guarda cópia do banco) ou "Desfazer" (volta tudo).
+  - Erro numa etapa: para, explica e não apaga nada.
+  - Avança sozinha (worker da gestão a cada minuto e a cada relatório).
+- **Instalar sem terminal** (tela de instalação do nó com instância): o gestor escolhe um nó que já roda na mesma VPS e confirma com senha e 2FA. Esse nó cria a pasta `/opt/portal_web-<instância>`, copia o código, prepara a configuração (mesmas chaves, identidade nova, mesmo proxy) e roda o instalador em **modo automático**.
+  - O token novo do nó vai cifrado (CHAVE_CREDENCIAIS) e não aparece em tarefa, tela nem log.
+
+**Testes:**
+- Novo `teste_mudancas.py`:
+  - mudança completa (retirar, exportar, importar, hospedagem, licença, publicar, limpar);
+  - erro e encerrar; desfazer;
+  - recusas (outra VPS, sem confirmação, segunda mudança, identificador errado);
+  - relatório de outro nó ignorado;
+  - fila do nó (recusa de parâmetro malicioso, sem token nos pendentes);
+  - instalação sem terminal (senha, 2FA, token novo cifrado).
+- `teste_ativador.sh`: tarefas executadas, erro com a explicação do script e parâmetro inválido recusado sem executar.
+- `teste_instalador_no.sh`: trava de pasta de outro nó, resumo inicial, `NO_PASTA`, instância criada sem terminal (`.env`, ativador e backup próprios, primeiro nó intacto, sem segredos na saída).
+- `teste_instalacao.py`: aviso de pasta em uso, mudar instância, pasta do relatório.
+- As 37 suítes passaram contra o código. **Não implantado:** aguarda aprovação do usuário (e snapshot). Implantação na gestão: migração 039 (tabelas novas); os nós recebem a versão nova pelo pacote.

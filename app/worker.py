@@ -150,8 +150,20 @@ def convites_tick():
     except Exception:
         traceback.print_exc()
 
+def mudancas_tick(estado):
+    """Gestão: leva adiante as mudanças de órgão entre nós (uma etapa por vez, a cada minuto)."""
+    if config.PAPEL == 'no' or time.monotonic() - estado.get('t', -1e9) < 60:
+        return
+    estado['t'] = time.monotonic()
+    from . import mudancas
+    try:
+        mudancas.avancar_todas()
+    except Exception:
+        traceback.print_exc()
+
 def main():
     ultimo = ultimas_execucoes()
+    mud = {}
     lic, ords, rel = {}, {}, {}
     print('worker iniciado', flush=True)
     while True:
@@ -159,6 +171,7 @@ def main():
         ordens_tick(ords)
         relatorio_tick(rel)
         convites_tick()
+        mudancas_tick(mud)
         agora = datetime.now()
         try:
             for f in fontes_ativas():
