@@ -2708,3 +2708,16 @@ Pedido do usuário: "melhore essa parte de exportação/instalação, preferenci
 - `teste_instalador_no.sh`: trava de pasta de outro nó, resumo inicial, `NO_PASTA`, instância criada sem terminal (`.env`, ativador e backup próprios, primeiro nó intacto, sem segredos na saída).
 - `teste_instalacao.py`: aviso de pasta em uso, mudar instância, pasta do relatório.
 - As 37 suítes passaram contra o código. **Não implantado:** aguarda aprovação do usuário (e snapshot). Implantação na gestão: migração 039 (tabelas novas); os nós recebem a versão nova pelo pacote.
+- **Implantado na gestão em 19/11/2026, 08h42 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"):
+  - mescla `7df35ee`; backup ok às 08h27; versão `gestao-comanda-no (7df35ee)`;
+  - as 37 suítes passaram contra a imagem nova; migração 039 aplicada (tabelas `tarefas` e `mudancas`, vazias);
+  - conferido:
+    - gestão 303, portais 200, logins da gestão e dos painéis 200;
+    - portais do nó (pmbora/cmbora.prefbora.cloud) no ar;
+    - a imagem leva `criar_instancia.sh`, o instalador com o modo automático e o ativador com as tarefas;
+    - o nó 1 buscou as licenças às 08h41;
+    - casemaster 200; sem erros nos logs.
+- **Próximos passos (usuário):**
+  1. atualizar o nó 1 pelo pacote (Preparar instalação, sem token novo; na VPS, na pasta `/opt/portal_web`). Só então ele executa tarefas da gestão;
+  2. no console, instalar o nó da Câmara sem terminal (Nós e licenças → nó `…camara` → Preparar instalação → "Instalar sem terminal", escolhendo o nó 1);
+  3. página da Câmara → "Mudar de nó pela gestão".
