@@ -2734,3 +2734,5 @@ Pedido: "como não tem nada publicado em nenhum dos dois, como apago tudo e refa
   - `docker compose down -v` do projeto `portal_web` (containers, volumes e rede dele), imagens do portal removidas, `/opt/portal_web` apagada.
   - Conferido: nada do portal sobrou; os outros 53 containers da VPS seguem de pé.
 - **Próximo:** cadastrar os nós `prefeitura` e `camara` com instância; instalar o primeiro pelo terminal e o segundo sem terminal; cadastrar cada órgão já no seu nó.
+- **19/11/2026, 09h35 — segunda limpeza para refazer com instância:** o usuário instalou um nó na pasta padrão (`726025036.pmbora…`, Prefeitura `pm-prefbora`, publicada às 09h27) e decidiu refazer com instância. Ele limpou a VPS com os mesmos comandos; eu removi da gestão o órgão `pm-prefbora` e o nó, com backup antes (`backups/plataforma-antes-apagar-no4-…dump`). Piloto e console conferidos 200.
+  - Atenção: o backup final foi copiado para a mesma pasta da primeira limpeza (`/root/portal-removido-20261119`), e o `.env` do nó anterior foi sobrescrito por este. Os dumps dos bancos dos dois têm nomes diferentes e ficaram.
