@@ -116,6 +116,40 @@ checa 'ls /tmp/inst/portal_web/backups/removido-bd_cm_bora-*.dump >/dev/null 2>&
 checa '[ "$(cont mover-db-a no_local "coletas WHERE orgao_slug='"'"'cm-bora'"'"'")" = 0 ] && [ "$(cont mover-db-a no_local "coletas WHERE orgao_slug='"'"'pm-bora'"'"'")" = 1 ]' 'limpar: linhas do banco local só da Câmara apagadas'
 checa 'existe mover-db-a bd_pm_bora && [ "$(cd /srv && $NA python -m app.mover_orgao contar bd_pm_bora)" = "$PM_ANTES" ] && [ -f /tmp/vol-a/pm-bora/x.txt ]' 'a Prefeitura no nó A ficou intacta'
 checa '[ "$(cd /srv && $NB python -m app.mover_orgao contar bd_cm_bora)" = "$ANTES" ]' 'a Câmara no nó B continua igual depois da limpeza do A'
+# 6. EXCLUIR um órgão pela gestão (19/11/2026): backup final conferido ANTES de apagar; domínio no ar recusa
+cp /codigo/deploy/no/desinstalar.sh /tmp/inst/portal_web/deploy/no/; cp /codigo/deploy/no/desinstalar.sh /tmp/inst/portal_web-camara/deploy/no/
+PM=$(python3 -c "import json; print(json.load(open('/tmp/prep.json'))['pm'])")
+BKO=/var/backups/portal-removidos/20261119-1000-orgao-pm-bora
+PGPASSWORD=teste psql -h mover-db-a -U portal -d no_local -qc "INSERT INTO dominios_publicados (orgao_id, dominio) VALUES ($PM, 'pmbora.localhost')"
+S=$($MA excluir pm-bora --saida $BKO/orgao-pm-bora.tgz --auto 2>&1); checa '[ $? != 0 ] && echo "$S" | grep -q "ainda está publicado" && existe mover-db-a bd_pm_bora' 'excluir com domínio no ar: recusado, nada apagado'
+PGPASSWORD=teste psql -h mover-db-a -U portal -d no_local -qc "DELETE FROM dominios_publicados"
+PM_ORIG=$(cd /srv && $NA python -m app.mover_orgao contar bd_pm_bora)
+S=$($MA excluir pm-bora --saida $BKO/orgao-pm-bora.tgz --auto 2>&1); RC=$?
+checa '[ $RC = 0 ] && [ -f $BKO/orgao-pm-bora.tgz ] && [ "$(stat -c %a $BKO/orgao-pm-bora.tgz)" = 600 ] && [ "$(stat -c %a $BKO)" = 700 ]' "excluir: backup final guardado, só root (rc=$RC): $(echo "$S" | grep ✘)"
+checa '! existe mover-db-a bd_pm_bora && [ ! -e /tmp/vol-a/pm-bora ] && [ "$(cont mover-db-a no_local "coletas WHERE orgao_slug='"'"'pm-bora'"'"'")" = 0 ] && [ "$(cont mover-db-a no_local "licencas_cache WHERE orgao_id='$PM'")" = 0 ]' 'excluir: banco, arquivos, banco local e licença do órgão apagados'
+R=$(echo "$S" | sed -n 's/^RESULTADO //p'); checa 'echo "$R" | python3 -c "import json,sys; d=json.load(sys.stdin); a=d[\"arquivos\"][0]; assert d[\"pasta\"]==\"'$BKO'\" and a[\"nome\"]==\"orgao-pm-bora.tgz\" and len(a[\"sha256\"])==64 and a[\"bytes\"]>0"' 'excluir: resultado com pasta, tamanho e SHA-256 (vai para o registro na gestão)'
+# o backup final restaura igual: importa num banco novo do nó B e confere as contagens
+S2=$($MB importar $BKO/orgao-pm-bora.tgz 2>&1); checa '[ $? = 0 ] && [ "$(cd /srv && $NB python -m app.mover_orgao contar bd_pm_bora)" = "$PM_ORIG" ]' 'backup final restaura com as mesmas contagens'
+PGPASSWORD=teste dropdb -h mover-db-b -U portal bd_pm_bora; rm -rf /tmp/vol-b/pm-bora; PGPASSWORD=teste psql -h mover-db-b -U portal -d no_local -qc "DELETE FROM coletas WHERE orgao_slug='pm-bora'; DELETE FROM fontes WHERE orgao_id=$PM"
+
+# 7. DESINSTALAR um nó pela gestão: recusa com órgão; sem órgão, backup final + remoção agendada só do que é dele
+mkdir -p /tmp/inst/portal_web/deploy /tmp/inst/portal_web-camara/deploy
+for i in portal_web portal_web-camara; do cp /codigo/deploy/backup.sh /tmp/inst/$i/deploy/; mkdir -p /var/lib/docker/volumes/${i}_dados/_data; done
+printf 'PAPEL=no\nPG_USER=portal\nNO_NOME=no-a.exemplo.test\nPROXY_MODO=traefik\nCONF_DIR=/tmp/dyn\n' > /tmp/inst/portal_web/.env
+printf 'PAPEL=no\nPG_USER=portal\nNO_NOME=no-b.exemplo.test\nINSTANCIA=camara\nPROXY_MODO=traefik\nCONF_DIR=/tmp/dyn\n' > /tmp/inst/portal_web-camara/.env
+printf '#!/bin/bash\necho "$@" > /tmp/systemd-run.args\n' > /tmp/stub/systemd-run; chmod +x /tmp/stub/systemd-run
+DA="env PATH=/tmp/stub:$PATH DOCKER=/tmp/stub/docker SYSTEMD_RUN=/tmp/stub/systemd-run bash /tmp/inst/portal_web/deploy/no/desinstalar.sh"
+DB="env PATH=/tmp/stub:$PATH DOCKER=/tmp/stub/docker SYSTEMD_RUN=/tmp/stub/systemd-run bash /tmp/inst/portal_web-camara/deploy/no/desinstalar.sh"
+PGPASSWORD=teste psql -h mover-db-b -U portal -d no_local -qc "INSERT INTO licencas_cache (orgao_id, slug, dominio, serial, pacote, valida_ate) VALUES ($CM, 'cm-bora', 'cmbora.localhost', 1, '{}', now())"
+S=$($DB --backup /var/backups/portal-removidos/20261119-1100-no-camara 2>&1); checa '[ $? != 0 ] && echo "$S" | grep -q "ainda hospeda" && [ ! -e /var/backups/portal-removidos/20261119-1100-no-camara ]' 'desinstalar nó com órgão: recusado, nada feito'
+PGPASSWORD=teste psql -h mover-db-b -U portal -d no_local -qc "DELETE FROM licencas_cache"
+S=$($DB --backup /var/backups/portal-removidos/20261119-1100-no-camara 2>&1); RC=$?; BKN=/var/backups/portal-removidos/20261119-1100-no-camara
+checa '[ $RC = 0 ] && ls $BKN/bd_cm_bora-*.dump $BKN/no_local-*.dump $BKN/dados-*.tgz $BKN/env >/dev/null 2>&1 && (cd $BKN && sha256sum -c --quiet sha256.txt)' "desinstalar: backup final de bancos, arquivos e configuração, conferido (rc=$RC): $(echo "$S" | grep ✘)"
+checa 'grep -q -- "--unit=portal-remocao-camara --on-active=90 /bin/bash /var/lib/portal-remocao-camara.sh" /tmp/systemd-run.args' 'desinstalar: remoção agendada para depois do aviso à gestão'
+RS=/var/lib/portal-remocao-camara.sh
+checa 'grep -q "systemctl disable --now portal-ativador-camara.timer" $RS && grep -q "rm -f .*/tmp/dyn/portal-orgaos-camara.yml" $RS && grep -q "cd ./tmp/inst/portal_web-camara. && docker compose down -v" $RS && grep -q "portal_web-camara-app" $RS && grep -q "rm -f /etc/cron.d/portal-backup-camara" $RS' 'remoção: só os nomes da instância camara'
+checa '! grep -qE "portal-ativador\.timer|portal-orgaos\.yml|/tmp/inst/portal_web\x27|portal_web-app\x27" $RS' 'remoção: nada do outro nó (instância padrão)'
+checa 'echo "$S" | sed -n "s/^RESULTADO //p" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d[\"pasta\"].endswith(\"no-camara\") and any(a[\"nome\"]==\"env\" for a in d[\"arquivos\"])"' 'desinstalar: resultado com os arquivos do backup'
 grep -rqE "teste@|SECRET|senha" /tmp/inst/*/logs/mover-orgao.log && checa 'false' 'log sem segredos' || true
 
 if [ "$ERROS" -gt 0 ]; then echo "ERROS: $ERROS"; exit 1; fi

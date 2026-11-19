@@ -1,0 +1,21 @@
+{% extends 'console/base.html' %}{% block h1 %}Remoções{% endblock %}
+{% block conteudo %}
+<p>Registro de cada órgão e nó excluído pelo console: o que era, quando, quem pediu e <strong>onde está o backup final</strong>. O cadastro do que foi excluído não existe mais; este registro fica. Os backups ficam na VPS do nó, só para o root, até alguém apagá-los.</p>
+<div class="tabela"><table><caption class="sr">Remoções</caption><thead><tr><th scope="col">Quando</th><th scope="col">O quê</th><th scope="col">Situação</th><th scope="col">Backup final</th><th scope="col">Quem pediu</th></tr></thead><tbody>
+{% for r in lista %}{% set t = tar.get(r.id) %}<tr>
+<td>{{ r.criada_em|br }}{% if r.concluida_em %}<br><small>concluída {{ r.concluida_em|br }}</small>{% endif %}</td>
+<td><strong>{{ 'Órgão' if r.tipo == 'orgao' else 'Nó' }}</strong> {{ r.nome }}<br><small>{% if r.tipo == 'orgao' %}{{ r.detalhes.slug }} · {{ r.detalhes.dominio }} · banco {{ r.detalhes.banco }} · no nó {{ r.no_nome }}{% else %}pasta {{ r.detalhes.pasta_no }}{% if r.detalhes.instancia %} (instância {{ r.detalhes.instancia }}){% endif %}{% endif %}{% if r.vps_ip %} · VPS {{ r.vps_ip }}{% endif %}</small></td>
+<td><span class="chip {{ 'ok' if r.situacao == 'concluida' else ('erro' if r.situacao == 'erro' else ('' if r.situacao == 'cancelada' else 'azul')) }}">{{ NOMES[r.situacao] }}</span>
+{% if r.mensagem and r.situacao == 'erro' %}<br><small>{{ r.mensagem }}</small>{% endif %}
+<details><summary>Histórico</summary><ol>{% for h in r.historico %}<li><small>{{ h.em[11:16] }}</small> {{ h.texto }}</li>{% endfor %}</ol>
+{% if t %}<p><strong>No nó:</strong></p><ul>{% for p in t.passos %}<li><small>{{ p.em[11:16] }}</small> {{ p.texto }}</li>{% else %}<li>aguardando o nó (até 5 minutos)</li>{% endfor %}</ul>{% endif %}</details>
+{% if r.situacao == 'erro' %}<form class="inline" method="post" action="/remocoes/{{ r.id }}"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn sec" name="acao" value="encerrar">Encerrar (nada foi apagado)</button></form>{% endif %}</td>
+<td>{% if r.pasta %}<code>{{ r.pasta }}</code>{% for a in (r.backup.arquivos or []) %}<br><small>{{ a.nome }} · {{ (a.bytes / 1048576)|round(1) }} MB · SHA-256 {{ a.sha256[:16] }}…</small>{% endfor %}
+{% if r.backup_apagado_em %}<br><span class="chip">backup apagado em {{ r.backup_apagado_em|br }} ({{ r.backup_apagado_por }})</span>
+{% elif r.situacao == 'concluida' %}<details><summary>Apagar este backup</summary><p class="legal">Na VPS do nó, como root: <code>rm -rf {{ r.pasta }}</code>. Depois registre aqui:</p><form class="inline" method="post" action="/remocoes/{{ r.id }}"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn sec" name="acao" value="backup_apagado">Registrar que apaguei</button></form></details>{% endif %}
+{% else %}<small>sem backup (nunca instalado)</small>{% endif %}</td>
+<td>{{ r.pedido_por }}</td></tr>
+{% else %}<tr><td colspan="5">Nenhuma remoção ainda.</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="legal">Base: LGPD (Lei 13.709/2018), arts. 15 e 16 — eliminação dos dados ao fim do tratamento, com guarda pelo tempo necessário; o backup final permite atender a pedidos e obrigações legais antes de ser apagado.</p>
+{% endblock %}

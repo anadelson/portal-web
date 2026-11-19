@@ -2736,3 +2736,28 @@ Pedido: "como não tem nada publicado em nenhum dos dois, como apago tudo e refa
 - **Próximo:** cadastrar os nós `prefeitura` e `camara` com instância; instalar o primeiro pelo terminal e o segundo sem terminal; cadastrar cada órgão já no seu nó.
 - **19/11/2026, 09h35 — segunda limpeza para refazer com instância:** o usuário instalou um nó na pasta padrão (`726025036.pmbora…`, Prefeitura `pm-prefbora`, publicada às 09h27) e decidiu refazer com instância. Ele limpou a VPS com os mesmos comandos; eu removi da gestão o órgão `pm-prefbora` e o nó, com backup antes (`backups/plataforma-antes-apagar-no4-…dump`). Piloto e console conferidos 200.
   - Atenção: o backup final foi copiado para a mesma pasta da primeira limpeza (`/root/portal-removido-20261119`), e o `.env` do nó anterior foi sobrescrito por este. Os dumps dos bancos dos dois têm nomes diferentes e ficaram.
+
+## 19/11/2026 — Exclusão de órgão e de nó pela gestão (branch excluir-pela-gestao)
+Pedido do usuário: "conseguimos replicar essa limpeza via gestão, se um dia precisarmos excluir algum, e ter o registro somente do backup" → "Sim, implemente".
+- **Excluir órgão** (página do órgão, só para órgão hospedado em nó; o piloto desta VPS fica de fora):
+  - confirmação: identificador digitado, senha e 2FA;
+  - a gestão tira o domínio do ar e manda a tarefa `excluir_orgao`;
+  - o nó faz o **backup final** (banco, contagens, arquivos e banco local) em `/var/backups/portal-removidos/AAAAMMDD-HHMM-orgao-SLUG/` (só root) e **confere o SHA-256**; só então apaga banco, arquivos, linhas do banco local e licença;
+  - a gestão apaga o cadastro (licença, contratos, módulos, ordens, convites, coletas, mudanças);
+  - se o backup falhar, nada é apagado e a exclusão para com a explicação ("Encerrar" em Remoções).
+- **Excluir nó** (Nós e licenças → Excluir nó; só nó sem órgãos):
+  - confirmação: nome digitado, senha e 2FA;
+  - nó que nunca foi instalado sai só do cadastro;
+  - nó instalado (tarefa `desinstalar_no`, `deploy/no/desinstalar.sh`): backup final conferido de todos os bancos, dos arquivos e do `.env` em `/var/backups/portal-removidos/…-no-…/`. Depois, ele agenda (`systemd-run`, 90 s, para avisar a gestão antes) a remoção **só do que é dele**: ativador e backup automático da instância, a rota dele no nginx/Traefik, `docker compose down -v`, imagens do projeto e a pasta. O proxy e os outros sistemas e nós da VPS não são tocados;
+  - a gestão apaga o cadastro do nó.
+- **Remoções** (console, menu novo): registro permanente de cada exclusão.
+  - O que era, nó e VPS, quando e por quem.
+  - Pasta do backup com arquivos, tamanhos e SHA-256.
+  - Histórico e passos do nó.
+  - "Apagar este backup": mostra o `rm -rf` para a VPS e registra quando foi apagado.
+- Migração 040 (`remocoes`; novos tipos de tarefa). O ativador repassa o resultado (onde ficou o backup) à gestão.
+- A tela Nós e licenças ficou tolerante a relatório sem o campo de falhas de coleta.
+- Testes:
+  - novo `teste_remocoes.py` (recusas, domínio retirado antes, erro no nó sem apagar nada, encerrar, cadastro apagado com registro, backup marcado como apagado, nó com órgão recusado, nó nunca instalado, nó desinstalado);
+  - `teste_mover_orgao.sh` com PostgreSQL real: excluir com domínio no ar recusa; excluir faz backup 600/700 e apaga só o órgão; **o backup final restaura com as mesmas contagens**; desinstalar recusa com órgão; backup final conferido; remoção agendada só com os nomes da instância.
+- Suítes: as 38 rodaram. O teste simulado do instalador falhou uma vez na bateria, sem mostrar a verificação, e passou em 10 rodadas seguidas depois. As baterias agora mostram as linhas de falha dele para identificar se repetir. **Não implantado:** aguarda aprovação do usuário (e snapshot). Migração 040; os nós recebem a versão nova pelo pacote.

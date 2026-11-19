@@ -127,9 +127,10 @@ def importar_local(conteudo):
     return man, feitas
 
 
-def limpar_local(slug, orgao_id):
-    """Apaga do banco local as linhas do órgão. Recusa se o órgão ainda for deste nó (licença no cache)."""
-    if db.um(db.LOCAL, 'SELECT 1 x FROM licencas_cache WHERE orgao_id=%s', (orgao_id,)):
+def limpar_local(slug, orgao_id, mesmo_hospedado=False):
+    """Apaga do banco local as linhas do órgão. Recusa se o órgão ainda for deste nó (licença no cache), salvo na
+    EXCLUSÃO pedida pela gestão (mesmo_hospedado): aí a licença também sai daqui e o inventário confirma depois."""
+    if not mesmo_hospedado and db.um(db.LOCAL, 'SELECT 1 x FROM licencas_cache WHERE orgao_id=%s', (orgao_id,)):
         raise SystemExit('o órgão ainda está neste nó (licença no cache): mude a hospedagem no console e espere até 5 minutos')
     filtro, feitas = {'id': orgao_id, 'slug': slug}, {}
     with db.conn(db.LOCAL) as c:
@@ -137,6 +138,8 @@ def limpar_local(slug, orgao_id):
             for t, (onde, _) in TABELAS.items():
                 feitas[t] = c.execute(f'DELETE FROM {t} WHERE {onde}', filtro).rowcount
             c.execute('DELETE FROM dominios_publicados WHERE orgao_id=%s', (orgao_id,))
+            if mesmo_hospedado:
+                c.execute('DELETE FROM licencas_cache WHERE orgao_id=%s', (orgao_id,))
     return feitas
 
 
@@ -148,6 +151,8 @@ def main(a):
     cmd = a[0]
     if cmd == 'info' and len(a) == 2:
         print(json.dumps(info(a[1]), ensure_ascii=False))
+    elif cmd == 'orgaos' and len(a) == 1:   # órgãos com licença neste nó (o nó só é desinstalado sem nenhum)
+        print(json.dumps(sorted(r['slug'] for r in db.todos(db.LOCAL, 'SELECT slug FROM licencas_cache'))))
     elif cmd == 'contar' and len(a) == 2:
         print(json.dumps(contar(a[1]), ensure_ascii=False, sort_keys=True))
     elif cmd == 'exportar-local' and len(a) == 3 and a[2] == '-':
@@ -157,8 +162,8 @@ def main(a):
     elif cmd == 'importar-local' and len(a) >= 2 and a[1] == '-':
         man, feitas = importar_local(sys.stdin.buffer.read())
         print(f"linhas do banco local do órgão {man['orgao']['slug']} importadas: " + ' · '.join(f'{t}: {n}' for t, n in feitas.items()))
-    elif cmd == 'limpar-local' and len(a) == 3:
-        feitas = limpar_local(a[1], int(a[2]))
+    elif cmd == 'limpar-local' and len(a) in (3, 4):
+        feitas = limpar_local(a[1], int(a[2]), mesmo_hospedado=a[3:] == ['--mesmo-hospedado'])
         print('linhas do banco local apagadas: ' + ' · '.join(f'{t}: {n}' for t, n in feitas.items()))
     else:
         print(__doc__, file=sys.stderr); return 2

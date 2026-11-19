@@ -199,22 +199,29 @@ PEND=$(tarefa_app pendentes 2>/dev/null || true)
 while IFS=$'\t' read -r tid tipo params; do
   [[ "$tid" =~ ^[0-9]+$ ]] || continue
   log "tarefa $tid: $tipo"
-  slug=$(campo "$params" slug); arq=$(campo "$params" arquivo)
+  slug=$(campo "$params" slug); arq=$(campo "$params" arquivo); pasta=$(campo "$params" pasta)
   if [[ "$tipo" =~ ^(exportar|importar|limpar)$ ]] && ! { [[ "$slug" =~ ^[a-z0-9-]{2,40}$ ]] && [[ "$arq" =~ ^/var/lib/portal-transferencias/[a-z0-9-]{1,80}\.tgz$ ]]; }; then
     tarefa_app concluir "$tid" erro "parâmetros inválidos"; continue
   fi
+  if [[ "$tipo" =~ ^(excluir_orgao|desinstalar_no)$ ]] && ! [[ "$pasta" =~ ^/var/backups/portal-removidos/[a-z0-9-]{1,100}$ ]]; then
+    tarefa_app concluir "$tid" erro "parâmetros inválidos"; continue
+  fi
+  if [ "$tipo" = excluir_orgao ] && ! [[ "$slug" =~ ^[a-z0-9-]{2,40}$ ]]; then tarefa_app concluir "$tid" erro "parâmetros inválidos"; continue; fi
   case "$tipo" in
     exportar) cmd=(bash "$PROJ/deploy/no/mover_orgao.sh" exportar "$slug" --saida "$arq") ;;
     importar) cmd=(bash "$PROJ/deploy/no/mover_orgao.sh" importar "$arq") ;;
     limpar) cmd=(bash "$PROJ/deploy/no/mover_orgao.sh" limpar "$arq" --auto) ;;
     instalar_instancia) cmd=(bash "$PROJ/deploy/no/criar_instancia.sh" "$tid") ;;
+    excluir_orgao) cmd=(bash "$PROJ/deploy/no/mover_orgao.sh" excluir "$slug" --saida "$pasta/orgao-$slug.tgz" --auto) ;;
+    desinstalar_no) cmd=(bash "$PROJ/deploy/no/desinstalar.sh" --backup "$pasta") ;;
     *) tarefa_app concluir "$tid" erro "tipo de tarefa desconhecido"; continue ;;
   esac
   tarefa_app passo "$tid" "Começando no nó: $tipo"
   saida=$("${cmd[@]}" < /dev/null 2>&1); rc=$?
   limpa=$(printf '%s\n' "$saida" | sed 's/\x1b\[[0-9;]*m//g')
   while IFS= read -r l; do [ -n "$l" ] && tarefa_app passo "$tid" "$l"; done < <(printf '%s\n' "$limpa" | grep -E '✔|!' | sed -E 's/^ *(✔|!) *//')
-  if [ "$rc" = 0 ]; then tarefa_app concluir "$tid" ok "$(printf '%s\n' "$limpa" | grep '✔' | tail -1 | sed -E 's/^ *✔ *//')"
+  resultado=$(printf '%s\n' "$limpa" | sed -n 's/^RESULTADO //p' | tail -1)   # onde ficou o backup (vai para o registro na gestão)
+  if [ "$rc" = 0 ]; then tarefa_app concluir "$tid" ok "$(printf '%s\n' "$limpa" | grep '✔' | tail -1 | sed -E 's/^ *✔ *//')" ${resultado:+"$resultado"}
   else tarefa_app concluir "$tid" erro "$(printf '%s\n' "$limpa" | grep '✘' | tail -1 | sed -E 's/^ *✘ *//')"; fi
   log "tarefa $tid: $tipo → código $rc"
 done <<< "$PEND"
