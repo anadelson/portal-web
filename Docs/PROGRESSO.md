@@ -2721,3 +2721,16 @@ Pedido do usuário: "melhore essa parte de exportação/instalação, preferenci
   1. atualizar o nó 1 pelo pacote (Preparar instalação, sem token novo; na VPS, na pasta `/opt/portal_web`). Só então ele executa tarefas da gestão;
   2. no console, instalar o nó da Câmara sem terminal (Nós e licenças → nó `…camara` → Preparar instalação → "Instalar sem terminal", escolhendo o nó 1);
   3. página da Câmara → "Mudar de nó pela gestão".
+
+## 19/11/2026 — Nó 72.60.250.36 apagado para refazer do zero (pedido do usuário)
+Pedido: "como não tem nada publicado em nenhum dos dois, como apago tudo e refaço do zero da forma correta para testar"; confirmação: "pode apagar os dois nós, sem mexer nas outras aplicações".
+- **Gestão (08h55):** backup antes (`backups/plataforma-antes-apagar-nos-20261119-1155.dump`). Removidos, numa transação:
+  - os órgãos `prefbora` (pmbora.prefbora.cloud) e `cmb-bora` (cmbora.prefbora.cloud), com contratos, módulos, licenças, convites, ordens e coletas;
+  - os nós `726025036.conectatech.tech` e `726025036.camara.conectatech.tech`.
+  - Ficaram o piloto (`pm-bora`, `cm-bora`) e o console, conferidos 200 depois.
+- **VPS do nó (usuário, 08h56):**
+  - backup final em `/root/portal-removido-20261119` (bancos `bd_prefbora`, `bd_cmb_bora`, `no_local`, arquivos e `.env`);
+  - ativador e backup automático desligados e removidos; `portal-orgaos.yml` tirado da pasta do Traefik (Dokploy);
+  - `docker compose down -v` do projeto `portal_web` (containers, volumes e rede dele), imagens do portal removidas, `/opt/portal_web` apagada.
+  - Conferido: nada do portal sobrou; os outros 53 containers da VPS seguem de pé.
+- **Próximo:** cadastrar os nós `prefeitura` e `camara` com instância; instalar o primeiro pelo terminal e o segundo sem terminal; cadastrar cada órgão já no seu nó.
