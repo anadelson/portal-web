@@ -2761,3 +2761,9 @@ Pedido do usuário: "conseguimos replicar essa limpeza via gestão, se um dia pr
   - novo `teste_remocoes.py` (recusas, domínio retirado antes, erro no nó sem apagar nada, encerrar, cadastro apagado com registro, backup marcado como apagado, nó com órgão recusado, nó nunca instalado, nó desinstalado);
   - `teste_mover_orgao.sh` com PostgreSQL real: excluir com domínio no ar recusa; excluir faz backup 600/700 e apaga só o órgão; **o backup final restaura com as mesmas contagens**; desinstalar recusa com órgão; backup final conferido; remoção agendada só com os nomes da instância.
 - Suítes: as 38 rodaram. O teste simulado do instalador falhou uma vez na bateria, sem mostrar a verificação, e passou em 10 rodadas seguidas depois. As baterias agora mostram as linhas de falha dele para identificar se repetir. **Não implantado:** aguarda aprovação do usuário (e snapshot). Migração 040; os nós recebem a versão nova pelo pacote.
+- **Implantado na gestão em 19/11/2026, 10h35 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"):
+  - mescla `40abab2`; backup ok às 10h17; versão `excluir-pela-gestao (40abab2)`;
+  - **as 38 suítes passaram contra a imagem nova**, incluindo o instalador, desta vez sem falha intermitente;
+  - migração 040 aplicada (tabela `remocoes`, vazia);
+  - conferido: gestão 303, portais 200, logins 200, `/remocoes` sem login redireciona para o login; a imagem leva `desinstalar.sh`; casemaster 200; sem erros nos logs.
+  - Nenhum nó cadastrado no momento: o usuário vai recriar os nós com instância.
