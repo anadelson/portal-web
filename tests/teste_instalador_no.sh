@@ -33,6 +33,7 @@ if [ -f /tmp/traefik ]; then  # VPS com Dokploy: Traefik nas portas 80/443, rede
   esac
 fi
 case "$*" in
+  *"app.tarefas env-instancia"*) cat /tmp/env-instancia; exit 0 ;;   # o app do nó entrega a configuração do nó novo (simulado)
   *Config.Env*) [ -f /tmp/gestao ] && printf 'PG_USER=portal\nPG_HOST=db\n'; exit 0 ;;   # container do portal na VPS da gestão (simulado; sem PAPEL = "tudo", como na gestão real)
   --version) echo "Docker version 27.0.0, build x" ;;
   "compose version"*) echo "2.29.0" ;;
@@ -279,6 +280,26 @@ checa 'grep -q "/opt/portal_web-camara/deploy/backup.sh" /etc/cron.d/portal-back
 checa '[ "$(cat $E $P/deploy/no/proxy/conf.d/portal-comum.inc /etc/systemd/system/portal-ativador.service.d/no.conf /etc/cron.d/portal-backup | sha256sum)" = "$H1" ]' 'instância: nada do primeiro nó foi alterado (.env, trecho do nginx, ativador, backup)'
 checa '! grep -qE "deploy/no/proxy.*up -d|compose -f .*proxy" /tmp/chamadas && echo "$SAIDA" | grep -q "instância \"camara\""' 'instância: não sobe outro nginx e avisa a instância'
 rm -rf "$PC" /root/segredos-no@camara.tar.gz.enc /tmp/no-proprio /tmp/portas-ocupadas /tmp/pc
+
+# ---------- instância criada SEM TERMINAL, a pedido da gestão (19/11/2026): criar_instancia.sh + instalador automático ----------
+PC=/opt/portal_web-camara; rm -rf "$PC"
+printf 'PAPEL=no\nNO_NOME=no1.exemplo.test\nPROXY_MODO=proprio\nNGINX_C=portal-nginx\nCERTBOT_C=portal-certbot\nCONF_DIR=%s/deploy/no/proxy/conf.d\nPROXY_CERTS_DIR=/tmp/pc/certs\nREDE_PROXY=portal-proxy\nVPS_IP=198.51.100.5\n' "$P" > "$E"; chmod 600 "$E"
+mkdir -p /tmp/pc/certs /tmp/pc/www; H1=$(sha256sum "$E" | cut -c1-16); touch /tmp/portas-ocupadas /tmp/no-proprio; : > /tmp/chamadas
+printf 'SECRET_KEY=segredo-teste-AAAA\nTOTP_CHAVE=totp-teste-BBBB\nCPF_HMAC_CHAVE=hmac-teste-CCCC\nCHAVE_CREDENCIAIS=cred-teste-DDDD\nPG_USER=portal\nGESTAO_URL=https://gestao.exemplo.test\nNO_NOME=no-cm.exemplo.test\nNO_TOKEN=%s\nLICENCA_CHAVE_PUBLICA=%s\nINSTANCIA=camara\n' "$TOKEN3" "$PUB" > /tmp/env-instancia
+SAIDA=$(bash "$P/deploy/no/criar_instancia.sh" 77 2>&1); RC=$?
+checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "nó no-cm.exemplo.test instalado em /opt/portal_web-camara"' "sem terminal: instância criada (rc=$RC): $(echo "$SAIDA" | grep -E '✘' | head -3)"
+for l in PAPEL=no INSTANCIA=camara APP_ALIAS=portal-web-app-camara NO_NOME=no-cm.exemplo.test "NO_TOKEN=$TOKEN3" PROXY_MODO=existente NGINX_C=portal-nginx REDE_PROXY=portal-proxy NO_PASTA=/opt/portal_web-camara SECRET_KEY=segredo-teste-AAAA; do
+  checa "grep -qxF '$l' $PC/.env" "sem terminal: .env do nó novo tem $l"
+done
+checa '[ -f $PC/app/main.py ] && [ -z "$(ls -A $PC/backups 2>/dev/null)" ] && [ "$(stat -c %a $PC/.env)" = 600 ]' 'sem terminal: código copiado, sem backups do outro nó, .env protegido'
+checa 'grep -q "ExecStart=/opt/portal_web-camara/deploy/ativador.sh" /etc/systemd/system/portal-ativador-camara.service && grep -q "/opt/portal_web-camara/deploy/backup.sh" /etc/cron.d/portal-backup-camara' 'sem terminal: ativador e backup do nó novo'
+checa '[ "$(sha256sum "$E" | cut -c1-16)" = "$H1" ] && ! grep -qE "apt-get upgrade|ufw --force" /tmp/chamadas' 'sem terminal: nada do primeiro nó mudou; sem atualização nem firewall'
+checa '! echo "$SAIDA" | grep -qF "$TOKEN3" && ! echo "$SAIDA" | grep -qF "segredo-teste-AAAA"' 'sem terminal: token e chaves fora da saída (que vai para a gestão)'
+# pasta da instância já é de outro nó: para sem mexer
+sed -i 's/^NO_NOME=.*/NO_NOME=outro-no.exemplo.test/' "$PC/.env"; H3=$(sha256sum "$PC/.env")
+SAIDA=$(bash "$P/deploy/no/criar_instancia.sh" 78 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "já é de outro nó" && [ "$(sha256sum "$PC/.env")" = "$H3" ]' 'sem terminal: pasta de outro nó recusada'
+rm -rf "$PC" /tmp/env-instancia /tmp/no-proprio /tmp/portas-ocupadas /tmp/pc
 
 if [ "$ERROS" -gt 0 ]; then echo "ERROS: $ERROS"; exit 1; fi
 echo 'instalador do nó (simulado): tudo ok'

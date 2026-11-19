@@ -6,6 +6,8 @@
 #    bash deploy/no/mover_orgao.sh exportar SLUG          # no nó de ORIGEM: gera /root/mover-SLUG-AAAAMMDD-HHMM.tgz (permissão 600)
 #    bash deploy/no/mover_orgao.sh importar ARQUIVO.tgz   # no nó de DESTINO: cria o banco, restaura e confere tabela por tabela
 #    bash deploy/no/mover_orgao.sh limpar ARQUIVO.tgz     # no nó de ORIGEM, depois de conferido o destino: apaga o que ficou
+#  Pela GESTÃO (19/11/2026): o ativador do nó roda os mesmos comandos, sem perguntas (--auto), com o arquivo na pasta de
+#  transferências da VPS (--saida /var/lib/portal-transferencias/…), quando o console pede "Mudar de nó".
 #
 #  Ordem completa (o console mostra o mesmo roteiro em Órgão → Hospedagem):
 #    1. Console: tirar o domínio do ar   2. exportar (origem)   3. importar (destino)   4. Console: mudar a hospedagem
@@ -18,6 +20,10 @@
 # =====================================================================================================================
 set -uo pipefail
 PROJ=$(cd "$(dirname "$0")/../.." && pwd)
+AUTO=0; SAIDA=""; ARGS=()   # --auto: sem perguntas (pedido confirmado no console); --saida ARQ: onde gravar o arquivo exportado
+while [ $# -gt 0 ]; do case "$1" in --auto) AUTO=1; shift ;; --saida) SAIDA=${2:-}; shift 2 ;; *) ARGS+=("$1"); shift ;; esac; done
+set -- "${ARGS[@]+"${ARGS[@]}"}"
+TRANSF=/var/lib/portal-transferencias
 DOCKER=${DOCKER:-docker}
 DESTINO_ARQ=${DESTINO_ARQ:-/root}
 LOG="$PROJ/logs/mover-orgao.log"; mkdir -p "$PROJ/logs"
@@ -72,6 +78,10 @@ json.dump({'slug': i['slug'], 'id': i['id'], 'banco': i['banco'], 'dominio': i['
 PY
   (cd "$T" && sha256sum banco.dump contagens.json local.zip dados.tgz manifesto.json > sha256.txt)
   ARQ="$DESTINO_ARQ/mover-$SLUG-$(date +%Y%m%d-%H%M).tgz"
+  if [ -n "$SAIDA" ]; then   # pedido pela gestão: grava na pasta de transferências da VPS (só root), que o outro nó lê
+    [[ "$SAIDA" =~ ^${TRANSF_RE:-/var/lib/portal-transferencias}/[a-z0-9-]{1,80}\.tgz$ ]] || para "--saida fora da pasta de transferências"
+    mkdir -p "$(dirname "$SAIDA")"; chmod 700 "$(dirname "$SAIDA")"; ARQ=$SAIDA
+  fi
   (umask 077 && tar -czf "$ARQ" -C "$T" banco.dump contagens.json local.zip dados.tgz manifesto.json sha256.txt) || para "não consegui gravar $ARQ"
   chmod 600 "$ARQ"
   ok "arquivo gerado: $ARQ (permissão 600)"
@@ -109,7 +119,8 @@ limpar)
   app info "$SLUG" > "$T/info.json" || para "não consegui consultar o app"
   [ "$(json "$T/info.json" hospedado_aqui)" = nao ] || para "o órgão $SLUG ainda está neste nó (licença): mude a hospedagem no console e espere até 5 minutos"
   existe_banco "$BANCO" || av "o banco $BANCO já não existe aqui"
-  read -r -p "  Confira o portal no nó novo antes. Para apagar, digite o slug do órgão ($SLUG): " R
+  if [ "$AUTO" = 1 ]; then R=$SLUG; ok "confirmado no console da gestão"   # o gestor confirmou na tela (com o slug digitado)
+  else read -r -p "  Confira o portal no nó novo antes. Para apagar, digite o slug do órgão ($SLUG): " R; fi
   [ "$R" = "$SLUG" ] || para "confirmação não confere"
   mkdir -p "$PROJ/backups"
   if existe_banco "$BANCO"; then

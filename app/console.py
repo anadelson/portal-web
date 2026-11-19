@@ -187,8 +187,42 @@ def orgao(request: Request, oid: int):
         lic['relatorio'] = ((n_ or {}).get('relatorio') or {}).get('orgaos', {}).get(o['slug'])
         lic['relatorio_em'] = (n_ or {}).get('relatorio_em')
     cad = _criacao_pendente(oid)
+    from . import mudancas as MU
+    mud = MU.ativa(oid)
+    mud_tarefas = db.todos(db.PLATAFORMA, 'SELECT t.*, n.nome no_nome FROM tarefas t JOIN nos n ON n.id=t.no_id WHERE t.mudanca_id=%s ORDER BY t.id', (mud['id'],)) if mud else []
     return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub, lic=lic, nos=nos_, validade=config.LICENCA_VALIDADE_DIAS,
-             cad=(cad['payload'].get('identidade') or {}) if cad else None)
+             cad=(cad['payload'].get('identidade') or {}) if cad else None, mud=mud, mud_tarefas=mud_tarefas, mud_destinos=MU.destinos(o), MUD_NOMES=MU.NOMES,
+             mud_nos={n['id']: n['nome'] for n in db.todos(db.PLATAFORMA, 'SELECT id, nome FROM nos')})
+
+@r.post('/orgao/{oid}/mudanca')
+async def orgao_mudanca(request: Request, oid: int):
+    """Mudar o órgão de nó pela gestão (mesma VPS): iniciar, limpar a origem ou desfazer. Ver mudancas.py."""
+    g = gestor(request); f = await ler_form(request)
+    from . import mudancas as MU
+    o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    if not o:
+        raise HTTPException(404)
+    volta, acao = f'/orgao/{oid}#mudanca', f.get('acao', '')
+    if acao == 'iniciar':
+        if f.get('confirmo') != '1':
+            return ir(volta, 'Marque a confirmação para começar a mudança.', request)
+        ok, msg = MU.iniciar(o, int(f.get('para_no') or 0), g['nome'])
+    elif acao == 'limpar':
+        if f.get('slug') != o['slug']:
+            return ir(volta, f"Para apagar os dados da origem, digite o identificador do órgão ({o['slug']}).", request)
+        ok, msg = MU.limpar(oid, g['nome'])
+    elif acao == 'desfazer':
+        ok, msg = MU.desfazer(oid, g['nome'])
+    elif acao == 'atualizar':
+        m = MU.ativa(oid)
+        if m:
+            MU.avancar(m['id'], g['nome'])
+        return ir(volta, '', request)
+    else:
+        raise HTTPException(400)
+    if ok:
+        log(g, f"{o['nome']}: mudança de nó — {acao} ({msg})")
+    return ir(volta, msg, request)
 
 def _criacao_pendente(oid):
     """Ordem criar_orgao ainda na fila do nó: enquanto não for entregue, a identidade inicial ainda pode ser corrigida
@@ -519,9 +553,47 @@ def instalar(request: Request, nid: int):
     res = IN.preparados(nid, f'https://{config.DOMINIO_GESTAO}/instalar/')
     # outros nós que usam a MESMA pasta: se ficarem na mesma VPS, um substituiria o outro (o instalador recusa; aqui o aviso vem antes)
     mesma_pasta = db.todos(db.PLATAFORMA, "SELECT nome, ultimo_ip, relatorio->>'pasta' pasta FROM nos WHERE id<>%s AND instancia=%s AND ativo ORDER BY nome", (nid, n['instancia']))
-    r = T('instalar', request, n=n, versao=IN.versao(), codigo_ok=IN.codigo_disponivel(), validade=IN.VALIDADE_MIN, res=res, mesma_pasta=mesma_pasta)
+    from . import mudancas as MU
+    hosts = [x for x in db.todos(db.PLATAFORMA, 'SELECT * FROM nos WHERE ativo AND id<>%s AND instancia<>%s ORDER BY nome', (nid, n['instancia'])) if MU.suporta_tarefas(x)]
+    auto = db.todos(db.PLATAFORMA, "SELECT t.*, h.nome host FROM tarefas t JOIN nos h ON h.id=t.no_id WHERE t.tipo='instalar_instancia' AND t.params->>'nome'=%s ORDER BY t.id DESC LIMIT 3", (n['nome'],))
+    r = T('instalar', request, n=n, versao=IN.versao(), codigo_ok=IN.codigo_disponivel(), validade=IN.VALIDADE_MIN, res=res, mesma_pasta=mesma_pasta, hosts=hosts, auto=auto)
     r.headers['Cache-Control'] = 'no-store'; r.headers['Referrer-Policy'] = 'no-referrer'
     return r
+
+@r.post('/nos/{nid}/instalar-auto')
+async def instalar_auto(request: Request, nid: int):
+    """Instala o nó (com instância) SEM TERMINAL: o ativador de outro nó da mesma VPS cria a pasta, copia o código e roda o
+    instalador em modo automático (tarefa "instalar_instancia"). Exige a senha e o 2FA do gestor; gera token novo do nó."""
+    g = gestor(request); f = await ler_form(request)
+    from . import licenca, acesso as AC, credenciais as CR, tarefas as TF, mudancas as MU
+    from .security import confere_senha
+    n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (nid,))
+    if not n:
+        raise HTTPException(404)
+    volta = f'/nos/{nid}/instalar#auto'
+    if not n['instancia']:
+        return ir(volta, 'Defina antes a instância deste nó (Nós e licenças → Mudar a pasta): a VPS já tem um nó na pasta padrão.', request)
+    host = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s AND ativo AND id<>%s', (int(f.get('host') or 0), nid))
+    if not host or not MU.suporta_tarefas(host) or host['instancia'] == n['instancia']:
+        return ir(volta, 'Escolha um nó já instalado na VPS onde este nó vai ficar (na versão nova e com outra pasta).', request)
+    if not CR.chave_ok():
+        return ir(volta, 'A CHAVE_CREDENCIAIS da gestão não está configurada: não dá para mandar o token cifrado.', request)
+    c = AC.Conta(request, 'gestor'); conta = c.por_id(g['id'])
+    if AC.origem_bloqueada(request, c) or AC.bloqueada(conta):
+        return ir(volta, 'Muitas tentativas. Aguarde alguns minutos.', request)
+    if not confere_senha(f.get('minha_senha', ''), conta['senha_hash']):
+        ate = AC.registrar_tentativa(request, c, conta, False)
+        return ir(volta, AC.msg_bloqueio(ate) if ate else 'Sua senha não confere. Nada foi pedido.', request)
+    ok, msg = AC.conferir_segundo_fator(request, c, conta, f.get('codigo', ''))
+    if not ok:
+        ate = AC.registrar_tentativa(request, c, conta, False)
+        return ir(volta, AC.msg_bloqueio(ate) if ate else 'Código do autenticador incorreto. Nada foi pedido.', request)
+    token = licenca.novo_token(n['id'])
+    tid = TF.criar(host, 'instalar_instancia', {'instancia': n['instancia'], 'nome': n['nome'], 'token': CR.cifrar('no', token)}, g['nome'],
+                   resumo=f"instalar o nó {n['nome']} em /opt/portal_web-{n['instancia']}")
+    credenciais_que_faltam(n, g['nome'], forcar=True)
+    log(g, f"Nó {n['nome']}: instalação pedida ao ativador do nó {host['nome']} (mesma VPS, pasta /opt/portal_web-{n['instancia']}; token novo; tarefa {tid})")
+    return ir(volta, f"Pedido enviado ao nó {host['nome']}: em até 5 minutos o nó {n['nome']} aparece instalado (acompanhe abaixo).", request)
 
 @r.post('/nos/{nid}/instalar/cancelar')
 async def instalar_cancelar(request: Request, nid: int):

@@ -11,6 +11,7 @@ Tipos:
   credencial    grava (ou apaga) uma credencial de fonte de dados — vai CIFRADA (CHAVE_CREDENCIAIS, igual na gestão e no nó).
   convite       grava no administrador do órgão o convite de primeiro acesso (só o HASH do link); a senha antiga deixa de valer.
                 O e-mail com o link sai da gestão depois que a ordem foi executada e o domínio do órgão responde.
+  tarefa        põe na fila do ativador do NÓ uma tarefa de root (exportar/importar/limpar órgão, instalar instância) — ver tarefas.py.
   dominio       põe na fila do ativador do NÓ o pedido de publicar/tirar do ar o domínio do órgão (mesmo id do pedido no console);
                 os passos (certificado, nginx, HTTPS) voltam para o console pelo relatório do nó.
 """
@@ -19,7 +20,7 @@ from datetime import datetime, timezone
 from psycopg.types.json import Jsonb
 from . import config, db
 
-TIPOS = ('criar_orgao', 'credencial', 'dominio', 'convite')
+TIPOS = ('criar_orgao', 'credencial', 'dominio', 'convite', 'tarefa')
 
 # ---------- execução (em quem hospeda) ----------
 def _criar_orgao(p):
@@ -63,7 +64,11 @@ def _convite(p):
     convites.aplicar(o['banco'], p['email'], p['convite_hash'], p['convite_expira'])
     return f"convite gravado para {p['email']}"
 
-EXECUTA = {'criar_orgao': _criar_orgao, 'credencial': _credencial, 'dominio': _dominio, 'convite': _convite}
+def _tarefa(p):
+    from . import tarefas
+    return tarefas.enfileirar(p)
+
+EXECUTA = {'criar_orgao': _criar_orgao, 'credencial': _credencial, 'dominio': _dominio, 'convite': _convite, 'tarefa': _tarefa}
 
 def executar(tipo, payload):
     if tipo not in EXECUTA:

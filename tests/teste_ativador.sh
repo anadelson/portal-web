@@ -153,5 +153,25 @@ INSTANCIA=camara TENTATIVAS=5 ESPERA=0 PROJ="$RAIZ" CONF_DIR="$T/conf.d" CERTS_D
 checa '[ "$(cut -d" " -f4 < "$T/fila-cm/62.ped")" = erro ] && ! grep -q primeiro.exemplo.com "$T/conf.d/portal-orgaos-camara.conf" && grep -q "server_name primeiro.exemplo.com;" "$T/conf.d/portal-orgaos.conf"' 'instância: domínio já publicado pelo outro nó é recusado (sem duplicar)'
 saida=$(INSTANCIA='Camara!' PROJ="$RAIZ" CONF_DIR="$T/conf.d" ESTADO="$T/estado-x" LOG="$T/x.log" bash "$RAIZ/deploy/ativador.sh" 2>&1); checa '[ $? != 0 ] && echo "$saida" | grep -q "INSTANCIA inválida"' 'instância inválida: o ativador recusa'
 
+# 13. tarefas da gestão (19/11/2026): o ativador executa, manda os passos e o resultado; parâmetro inválido não executa nada
+mkdir -p "$T/proj/deploy/no" "$T/tar" "$T/fila-t"
+printf '#!/bin/bash\necho "$*" >> %s/tar/chamadas\nif [ "$1" = importar ]; then printf "  \\033[31m✘\\033[0m as contagens não conferem\\n"; exit 1; fi\nprintf "  \\033[32m✔\\033[0m banco copiado\\n  \\033[32m✔\\033[0m arquivo gerado: X\\n"\n' "$T" > "$T/proj/deploy/no/mover_orgao.sh"
+cat > "$T/bin/tarefas" <<EOF2
+#!/bin/bash
+case "\$1" in
+  pendentes) cat "$T/tar/pend" 2>/dev/null; : > "$T/tar/pend" ;;
+  passo) echo "\$2|\$3" >> "$T/tar/passos" ;;
+  concluir) echo "\$2|\$3|\$4" >> "$T/tar/fim" ;;
+esac
+EOF2
+chmod +x "$T/bin/tarefas"
+printf '71\texportar\t{"slug": "cmb-bora", "arquivo": "/var/lib/portal-transferencias/mover-cmb-bora-9.tgz"}\n72\timportar\t{"slug": "cmb-bora", "arquivo": "/var/lib/portal-transferencias/mover-cmb-bora-9.tgz"}\n73\texportar\t{"slug": "x; rm -rf /", "arquivo": "/etc/passwd"}\n' > "$T/tar/pend"
+TAREFAS_CMD="$T/bin/tarefas" PROJ="$T/proj" CONF_DIR="$T/conf.d" CERTS_DIR="$T/certs" ESTADO="$T/estado-t" LOG="$T/ativador-t.log" DOCKER="$T/bin/docker" CURL="$T/bin/curl" \
+  APP_CMD="$T/bin/app" FILA="$T/fila-t" bash "$RAIZ/deploy/ativador.sh"
+checa 'grep -qx "71|ok|arquivo gerado: X" "$T/tar/fim" && grep -qx "71|banco copiado" "$T/tar/passos" && grep -q "71|Começando no nó: exportar" "$T/tar/passos"' 'tarefa exportar: passos e conclusão ok'
+checa 'grep -qx "exportar cmb-bora --saida /var/lib/portal-transferencias/mover-cmb-bora-9.tgz" "$T/tar/chamadas"' 'tarefa exportar: comando com a pasta de transferências'
+checa 'grep -qx "72|erro|as contagens não conferem" "$T/tar/fim"' 'tarefa que falha: erro com a explicação do script (sem códigos de cor)'
+checa 'grep -qx "73|erro|parâmetros inválidos" "$T/tar/fim" && [ "$(grep -c . "$T/tar/chamadas")" = 2 ]' 'tarefa com parâmetros inválidos: recusada sem executar nada'
+
 if [ "$ERROS" -gt 0 ]; then echo "ERROS: $ERROS"; exit 1; fi
 echo 'ativador (simulado): tudo ok'

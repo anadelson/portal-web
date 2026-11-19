@@ -37,6 +37,29 @@
 <label class="opc"><input type="checkbox" name="confirmo" value="1"> Confirmo: a partir de agora as licenças deste órgão são entregues a quem o hospeda. A mudança dos dados e do DNS é feita na virada, com aprovação.</label>
 <div class="acoes"><button class="btn sec">Salvar hospedagem</button></div></form>
 <details><summary>Como mudar o órgão de nó (sem perder dados)</summary><ol><li>Publicação → <strong>Tirar do ar</strong> (o nó atual retira o domínio).</li><li>Na VPS do nó atual, na pasta dele: <code>bash deploy/no/mover_orgao.sh exportar {{ o.slug }}</code> (gera o arquivo do órgão em /root).</li><li>Na VPS do nó novo, na pasta dele: <code>bash deploy/no/mover_orgao.sh importar /root/mover-{{ o.slug }}-….tgz</code> (confere as contagens).</li><li>Aqui: <strong>mudar a hospedagem</strong> para o nó novo (em até 5 minutos o nó antigo deixa de servir o órgão e o novo passa a servir).</li><li>Publicação → <strong>Publicar</strong> (no nó novo).</li><li>Conferido o portal no nó novo: <code>bash deploy/no/mover_orgao.sh limpar {{ o.slug }}</code> no nó antigo. Até aqui, para voltar atrás basta mudar a hospedagem de volta e publicar.</li></ol></details>
+<div id="mudanca"><h3>Mudar de nó pela gestão</h3>
+{% if mud and mud.situacao not in ('finalizada', 'desfeita', 'cancelada') %}
+<p><span class="chip {{ 'erro' if mud.situacao == 'erro' else ('ok' if mud.situacao == 'concluida' else 'azul') }}">{{ MUD_NOMES[mud.situacao] }}</span> de <strong>{{ mud_nos.get(mud.de_no) }}</strong> para <strong>{{ mud_nos.get(mud.para_no) }}</strong>{% if mud.situacao not in ('concluida', 'erro') %} · avança sozinha a cada minuto{% endif %}</p>
+{% if mud.mensagem and mud.situacao == 'erro' %}<p class="msg" role="alert">{{ mud.mensagem }}</p>{% endif %}
+<ol class="passos-mudanca">{% for h in mud.historico %}<li><small>{{ h.em[11:16] }}</small> {{ h.texto }}</li>{% endfor %}</ol>
+{% for t in mud_tarefas %}<details><summary>Tarefa “{{ t.tipo }}” no nó {{ t.no_nome }}: {{ {'pendente': 'na fila', 'processando': 'em andamento', 'ok': 'concluída', 'erro': 'erro'}[t.situacao] }}</summary><ul>{% for p in t.passos %}<li><small>{{ p.em[11:16] }}</small> {{ p.texto }}</li>{% else %}<li>aguardando o nó (até 5 minutos)</li>{% endfor %}</ul>{% if t.mensagem %}<p>{{ t.mensagem }}</p>{% endif %}</details>{% endfor %}
+<form class="inline" method="post" action="/orgao/{{ o.id }}/mudanca"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn sec" name="acao" value="atualizar">Atualizar agora</button></form>
+{% if mud.situacao == 'concluida' %}
+<p>O órgão já está no nó novo. <strong>Confira o portal e o painel</strong> antes de continuar. Os dados ainda estão guardados no nó de origem: se algo estiver errado, use <strong>Desfazer</strong>.</p>
+<form class="campos" method="post" action="/orgao/{{ o.id }}/mudanca"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><label>Para apagar os dados que ficaram no nó de origem, digite o identificador do órgão (<code>{{ o.slug }}</code>)<input name="slug" autocomplete="off"></label><div class="acoes"><button class="btn perigo" name="acao" value="limpar">Apagar da origem (guarda uma cópia do banco antes)</button></div></form>
+{% endif %}
+{% if mud.situacao in ('concluida', 'erro') %}<form class="inline" method="post" action="/orgao/{{ o.id }}/mudanca"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn sec" name="acao" value="desfazer">{{ 'Desfazer (voltar para a origem)' if mud.situacao == 'concluida' else 'Encerrar / voltar para a origem' }}</button></form>{% endif %}
+{% elif o.no_id %}
+{% if mud and mud.situacao in ('finalizada', 'desfeita') %}<p class="legal">Última mudança: {{ MUD_NOMES[mud.situacao] }} ({{ mud.atualizada_em|br }}).</p>{% endif %}
+{% if mud_destinos %}
+<p>Leva o órgão (banco, arquivos e configurações) para outro nó <strong>desta mesma VPS</strong>, sem terminal. O que acontece, nesta ordem:</p>
+<ol><li>o domínio sai do ar por alguns minutos (se estiver publicado);</li><li>o nó atual copia os dados; o nó novo restaura e confere tabela por tabela;</li><li>a hospedagem muda e o domínio volta ao ar, agora pelo nó novo;</li><li>você confere e, só então, apaga a cópia que ficou no nó antigo (ou desfaz).</li></ol>
+<form class="campos" method="post" action="/orgao/{{ o.id }}/mudanca"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<label>Nó de destino<select name="para_no">{% for n in mud_destinos %}<option value="{{ n.id }}">{{ n.nome }}{% if n.instancia %} (instância {{ n.instancia }}){% endif %}</option>{% endfor %}</select></label>
+<label class="opc"><input type="checkbox" name="confirmo" value="1"> Confirmo: o portal deste órgão fica fora do ar por alguns minutos durante a mudança.</label>
+<div class="acoes"><button class="btn">Começar a mudança</button></div><input type="hidden" name="acao" value="iniciar"></form>
+{% else %}<p class="legal">Para mudar pela gestão, é preciso outro nó na mesma VPS (mesmo IP no relatório) e os dois na versão nova. Cadastre o nó novo com uma instância em Nós e licenças (lá dá para instalá-lo pela VPS de um nó existente).</p>{% endif %}
+{% endif %}</div>
 <p class="legal">Licença sem renovação por mais de {{ validade }} dias (gestão fora do ar): o órgão entra em carência no nó — transparência, e-SIC e ouvidoria continuam no ar (LAI, art. 8º).</p>
 {% if lic.no %}<h3>No nó (relatório de {{ lic.relatorio_em|br if lic.relatorio_em else '—' }})</h3>
 {% set rr = lic.relatorio %}{% if rr %}<p>Licença no nó: {% if rr.licenca_valida %}<span class="chip ok">válida</span> até {{ rr.licenca_valida_ate }}{% else %}<span class="chip erro">vencida ou ausente — órgão em carência no nó</span>{% endif %}{% if rr.falhas_24h %} · <span class="chip erro">{{ rr.falhas_24h }} falha(s) de coleta em 24 h</span>{% endif %}</p>

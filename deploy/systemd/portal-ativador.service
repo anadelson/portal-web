@@ -7,4 +7,4 @@ Requires=docker.service
 Type=oneshot
 ExecStart=/opt/portal_web/deploy/ativador.sh
 Nice=10
-TimeoutStartSec=600
+TimeoutStartSec=1800

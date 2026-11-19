@@ -36,6 +36,8 @@ def montar():
         rel['orgaos'][o['slug']] = {'id': o['id'], 'licenca_valida_ate': _iso(c and c['valida_ate']), 'licenca_recebida_em': _iso(c and c['recebida_em']),
                                     'licenca_valida': bool(licenca.vigente(o)), 'falhas_24h': f24, 'convites_pendentes': _pendentes(o),
                                     'coletas': [{'fonte': x['fonte'], 'ok': x['ok'], 'inicio': _iso(x['inicio']), 'registros': x['registros'], 'mensagem': (x['mensagem'] or '')[:160]} for x in col[:40]]}
+    from . import tarefas
+    rel['tarefas'] = tarefas.para_relatorio()
     try:
         rel['ativacoes'] = [{'id': a['id'], 'situacao': a['situacao'], 'passos': a['passos'], 'mensagem': a['mensagem'], 'concluido_em': _iso(a['concluido_em'])}
                             for a in db.todos(db.LOCAL, "SELECT * FROM ativacoes WHERE pedido_em > now() - interval '30 days' ORDER BY id DESC LIMIT 20")]
@@ -55,7 +57,8 @@ def _pendentes(o):
 def com_pressa():
     """Há publicação de domínio em andamento (ou recém-concluída)? Então o relatório vai a cada minuto."""
     try:
-        return bool(db.um(db.LOCAL, "SELECT 1 FROM ativacoes WHERE situacao IN ('pendente','processando') OR concluido_em > now() - interval '10 minutes' LIMIT 1"))
+        from . import tarefas
+        return tarefas.em_andamento() or bool(db.um(db.LOCAL, "SELECT 1 FROM ativacoes WHERE situacao IN ('pendente','processando') OR concluido_em > now() - interval '10 minutes' LIMIT 1"))
     except Exception:
         return False
 
@@ -81,7 +84,9 @@ def receber(no, rel):
     if len(json.dumps(rel, default=str)) > MAX_BYTES:
         raise ValueError('relatório grande demais')
     db.exe(db.PLATAFORMA, 'UPDATE nos SET relatorio=%s, relatorio_em=now(), ultimo_contato=now(), versao=%s WHERE id=%s',
-           (Jsonb({k: v for k, v in rel.items() if k != 'ativacoes'}), str(rel.get('versao', ''))[:40], no['id']))
+           (Jsonb(dict({k: v for k, v in rel.items() if k not in ('ativacoes', 'tarefas')}, executa_tarefas='tarefas' in rel)), str(rel.get('versao', ''))[:40], no['id']))
+    from . import tarefas, mudancas
+    nt = tarefas.receber(no, rel.get('tarefas'))
     from . import convites
     for slug, info in (rel.get('orgaos') or {}).items():  # convite usado no nó: o e-mail sai da lista de pendentes
         o = db.um(db.PLATAFORMA, 'SELECT id, no_id FROM orgaos WHERE slug=%s', (slug,))
@@ -105,6 +110,8 @@ def receber(no, rel):
             db.exe(db.PLATAFORMA, 'INSERT INTO log_console (quem, acao) VALUES (%s,%s)',
                    (f"ativador do nó {no['nome']}", f"Domínio {atual['dominio']}: {atual['acao']} → {a['situacao']}. {str(a.get('mensagem', ''))[:300]}"))
         n += 1
+    if n or nt:  # domínio ou tarefa mudou: a mudança de órgão (se houver) avança na hora
+        mudancas.avancar_todas()
     return n
 
 if __name__ == '__main__':  # python -m app.relatorio enviar | ver  (no nó; "ver" mostra o que seria enviado)

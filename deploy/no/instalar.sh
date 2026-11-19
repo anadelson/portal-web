@@ -60,6 +60,15 @@ confirma()   { local r; read -r -p "  $1 [s/N] " r; [[ "$r" =~ ^[sS]$ ]]; }
 confirma_s() { local r; read -r -p "  $1 [S/n] " r; ! [[ "$r" =~ ^[nN]$ ]]; }
 pergunta()   { local r; read -r -p "  $1${2:+ [$2]}: " r; echo "${r:-${2:-}}"; }          # Enter = valor entre [ ]
 segredo()    { local r; read -r -s -p "  $1 (não aparece na tela): " r; echo >&2; echo "$r"; }
+# Modo automático (INSTALAR_AUTO=1): usado quando a GESTÃO pede uma instância nova (deploy/no/criar_instancia.sh, pelo ativador).
+# Sem ninguém no terminal: cada pergunta fica com o padrão; só "subir o portal" e "instalar o ativador" são SIM;
+# atualizar o sistema, instalar Docker e ligar firewall ficam NÃO (VPS já em uso). Pedido de senha = para.
+if [ "${INSTALAR_AUTO:-}" = 1 ]; then
+  confirma()   { echo "  $1 [automático]"; case "$1" in *"Gerar a imagem"*|*"Instalar o ativador"*) return 0 ;; *) return 1 ;; esac; }
+  confirma_s() { echo "  $1 [automático: sim]"; return 0; }
+  pergunta()   { echo "  $1 [automático: ${2:-}]" >&2; echo "${2:-}"; }
+  segredo()    { echo "  $1: não há quem digite no modo automático" >&2; echo ""; }
+fi
 explica()    { local l; for l in "$@"; do printf '  \033[2m│ %s\033[0m\n' "$l"; done; }   # explicação em linguagem simples (não vai para o registro)
 
 env_val() { [ -f "$PROJ/.env" ] && grep -E "^$1=" "$PROJ/.env" | tail -1 | cut -d= -f2- || true; }  # valor já gravado
