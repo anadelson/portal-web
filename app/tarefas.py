@@ -10,6 +10,8 @@ Tipos (lista fechada; os parâmetros são conferidos aqui e de novo no script qu
   importar            {slug, arquivo}          deploy/no/mover_orgao.sh importar   (nó de destino, mesma VPS)
   limpar              {slug, arquivo}          deploy/no/mover_orgao.sh limpar     (nó de origem, depois de conferido)
   instalar_instancia  {instancia, nome, token} deploy/no/criar_instancia.sh       (um nó existente cria outro nó na MESMA VPS)
+  excluir_orgao       {slug, pasta}            deploy/no/mover_orgao.sh excluir    (backup final conferido; depois apaga o órgão)
+  desinstalar_no      {pasta}                  deploy/no/desinstalar.sh            (backup final; depois o nó se remove da VPS)
 
 Linha de comando (no nó, usada pelo ativador):
   python -m app.tarefas pendentes                  # ID<TAB>TIPO<TAB>PARAMS(JSON) por linha (marca como processando)
@@ -23,12 +25,14 @@ from zoneinfo import ZoneInfo
 from psycopg.types.json import Jsonb
 from . import config, db
 
-TIPOS = ('exportar', 'importar', 'limpar', 'instalar_instancia')
+TIPOS = ('exportar', 'importar', 'limpar', 'instalar_instancia', 'excluir_orgao', 'desinstalar_no')
 PASTA_TRANSF = '/var/lib/portal-transferencias'          # na VPS (só root); exportar grava, importar lê (mesma VPS)
 SLUG = re.compile(r'^[a-z0-9-]{2,40}$')
 INST = re.compile(r'^[a-z0-9]{1,20}$')
 NOME_NO = re.compile(r'^[a-z0-9][a-z0-9.-]{1,60}$')
 ARQ = re.compile(r'^' + re.escape(PASTA_TRANSF) + r'/[a-z0-9-]{1,80}\.tgz$')
+PASTA_REMOVIDOS = '/var/backups/portal-removidos'       # backup final de órgão/nó excluído (fora da pasta do nó; só root)
+REMOV = re.compile(r'^' + re.escape(PASTA_REMOVIDOS) + r'/[a-z0-9-]{1,100}$')
 SITUACOES = ('pendente', 'processando', 'ok', 'erro')
 
 
@@ -41,6 +45,12 @@ def validar(tipo, p):
     if tipo in ('exportar', 'importar', 'limpar'):
         if not SLUG.match(str(p.get('slug', ''))) or not ARQ.match(str(p.get('arquivo', ''))):
             return 'slug ou arquivo inválido'
+    if tipo == 'excluir_orgao':
+        if not SLUG.match(str(p.get('slug', ''))) or not REMOV.match(str(p.get('pasta', ''))):
+            return 'slug ou pasta do backup inválida'
+    if tipo == 'desinstalar_no':
+        if not REMOV.match(str(p.get('pasta', ''))):
+            return 'pasta do backup inválida'
     if tipo == 'instalar_instancia':
         if not INST.match(str(p.get('instancia', ''))) or not NOME_NO.match(str(p.get('nome', ''))) or not p.get('token'):
             return 'instância, nome ou token inválido'
@@ -48,14 +58,14 @@ def validar(tipo, p):
 
 
 # ---------- gestão ----------
-def criar(no, tipo, params, quem, mudanca_id=None, resumo=''):
+def criar(no, tipo, params, quem, mudanca_id=None, resumo='', remocao_id=None):
     """Grava a tarefa e manda a ordem ao nó. Devolve o id."""
     err = validar(tipo, params)
     if err:
         raise ValueError(err)
     from . import ordens
-    t = db.um(db.PLATAFORMA, 'INSERT INTO tarefas (no_id, tipo, params, mudanca_id, pedido_por) VALUES (%s,%s,%s,%s,%s) RETURNING id',
-              (no['id'], tipo, Jsonb({k: v for k, v in params.items() if k != 'token'}), mudanca_id, quem[:120]))
+    t = db.um(db.PLATAFORMA, 'INSERT INTO tarefas (no_id, tipo, params, mudanca_id, remocao_id, pedido_por) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
+              (no['id'], tipo, Jsonb({k: v for k, v in params.items() if k != 'token'}), mudanca_id, remocao_id, quem[:120]))
     ordens.enviar('tarefa', {'tarefa_id': t['id'], 'tipo': tipo, 'params': params}, no_id=no['id'], quem=quem,
                   resumo=resumo or f"tarefa {tipo} ({params.get('slug') or params.get('instancia')})")
     return t['id']

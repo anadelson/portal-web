@@ -6,6 +6,9 @@
 #    bash deploy/no/mover_orgao.sh exportar SLUG          # no nó de ORIGEM: gera /root/mover-SLUG-AAAAMMDD-HHMM.tgz (permissão 600)
 #    bash deploy/no/mover_orgao.sh importar ARQUIVO.tgz   # no nó de DESTINO: cria o banco, restaura e confere tabela por tabela
 #    bash deploy/no/mover_orgao.sh limpar ARQUIVO.tgz     # no nó de ORIGEM, depois de conferido o destino: apaga o que ficou
+#    bash deploy/no/mover_orgao.sh excluir SLUG --saida /var/backups/portal-removidos/X/orgao-SLUG.tgz --auto
+#                                                         # EXCLUIR o órgão deste nó (pedido pela gestão): backup completo,
+#                                                         # conferido, e só então apaga banco, arquivos e banco local
 #  Pela GESTÃO (19/11/2026): o ativador do nó roda os mesmos comandos, sem perguntas (--auto), com o arquivo na pasta de
 #  transferências da VPS (--saida /var/lib/portal-transferencias/…), quando o console pede "Mudar de nó".
 #
@@ -79,7 +82,7 @@ PY
   (cd "$T" && sha256sum banco.dump contagens.json local.zip dados.tgz manifesto.json > sha256.txt)
   ARQ="$DESTINO_ARQ/mover-$SLUG-$(date +%Y%m%d-%H%M).tgz"
   if [ -n "$SAIDA" ]; then   # pedido pela gestão: grava na pasta de transferências da VPS (só root), que o outro nó lê
-    [[ "$SAIDA" =~ ^${TRANSF_RE:-/var/lib/portal-transferencias}/[a-z0-9-]{1,80}\.tgz$ ]] || para "--saida fora da pasta de transferências"
+    [[ "$SAIDA" =~ ^(/var/lib/portal-transferencias|/var/backups/portal-removidos/[a-z0-9-]{1,100})/[a-z0-9-]{1,80}\.tgz$ ]] || para "--saida fora da pasta de transferências ou de removidos"
     mkdir -p "$(dirname "$SAIDA")"; chmod 700 "$(dirname "$SAIDA")"; ARQ=$SAIDA
   fi
   (umask 077 && tar -czf "$ARQ" -C "$T" banco.dump contagens.json local.zip dados.tgz manifesto.json sha256.txt) || para "não consegui gravar $ARQ"
@@ -132,6 +135,21 @@ limpar)
   app limpar-local "$SLUG" "$OID" >> "$LOG" 2>&1 || para "não consegui apagar as linhas do banco local (veja $LOG)"
   ok "linhas do banco local do órgão apagadas"
   echo "  Pronto. Apague também o arquivo de transferência quando não precisar mais: rm ${2}"
+  ;;
+# ---------------------------------------------------------------------------------------------------------------------
+excluir)   # pedido pela gestão (Console → órgão → Excluir): backup completo e conferido ANTES de apagar qualquer coisa
+  SLUG=${2:-}; [[ "$SLUG" =~ ^[a-z0-9-]{2,40}$ ]] || para "informe o slug do órgão"
+  [ -n "$SAIDA" ] || para "informe --saida (arquivo do backup final)"
+  [ "$AUTO" = 1 ] || { read -r -p "  EXCLUIR o órgão $SLUG deste nó (backup antes)? Digite o slug para confirmar: " R; [ "$R" = "$SLUG" ] || para "confirmação não confere"; }
+  echo "Excluir o órgão $SLUG deste nó ($PROJ), com backup final antes"
+  env DOCKER="$DOCKER" DESTINO_ARQ="$DESTINO_ARQ" VOL_DADOS="$VOL" bash "$0" exportar "$SLUG" --saida "$SAIDA" || para "o backup final não foi feito: nada foi apagado"
+  abrir "$SAIDA"; trap 'rm -rf "$T"' EXIT     # confere o backup (SHA-256 de cada parte) antes de apagar
+  ok "backup final conferido: $SAIDA ($(du -h "$SAIDA" | cut -f1))"
+  if existe_banco "$BANCO"; then dc exec -T db dropdb -U "$PG_USER" "$BANCO" || para "não consegui apagar o banco $BANCO (o backup está guardado)"; ok "banco $BANCO apagado deste nó"; fi
+  [ -d "$VOL/$SLUG" ] && { rm -rf "${VOL:?}/$SLUG"; ok "pasta de arquivos $SLUG apagada deste nó"; }
+  app limpar-local "$SLUG" "$OID" --mesmo-hospedado >> "$LOG" 2>&1 || para "não consegui apagar as linhas do banco local (veja $LOG)"
+  ok "linhas do banco local do órgão apagadas; o órgão foi excluído deste nó"
+  echo "RESULTADO $(python3 -c "import json,sys,hashlib,os; p=sys.argv[1]; print(json.dumps({'pasta': os.path.dirname(p), 'arquivos': [{'nome': os.path.basename(p), 'bytes': os.path.getsize(p), 'sha256': hashlib.sha256(open(p,'rb').read()).hexdigest()}]}))" "$SAIDA")"
   ;;
 *) sed -n '2,20p' "$0"; exit 2 ;;
 esac

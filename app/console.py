@@ -190,9 +190,89 @@ def orgao(request: Request, oid: int):
     from . import mudancas as MU
     mud = MU.ativa(oid)
     mud_tarefas = db.todos(db.PLATAFORMA, 'SELECT t.*, n.nome no_nome FROM tarefas t JOIN nos n ON n.id=t.no_id WHERE t.mudanca_id=%s ORDER BY t.id', (mud['id'],)) if mud else []
+    from . import remocoes as RM
+    rem = RM.em_andamento(orgao_id=oid) or (lambda x: x if x and x['situacao'] == 'erro' else None)(RM.ultima(orgao_id=oid))
+    rem_tarefa = db.um(db.PLATAFORMA, 'SELECT * FROM tarefas WHERE remocao_id=%s ORDER BY id DESC LIMIT 1', (rem['id'],)) if rem else None
     return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub, lic=lic, nos=nos_, validade=config.LICENCA_VALIDADE_DIAS,
              cad=(cad['payload'].get('identidade') or {}) if cad else None, mud=mud, mud_tarefas=mud_tarefas, mud_destinos=MU.destinos(o), MUD_NOMES=MU.NOMES,
-             mud_nos={n['id']: n['nome'] for n in db.todos(db.PLATAFORMA, 'SELECT id, nome FROM nos')})
+             mud_nos={n['id']: n['nome'] for n in db.todos(db.PLATAFORMA, 'SELECT id, nome FROM nos')}, rem=rem, rem_tarefa=rem_tarefa, REM_NOMES=RM.NOMES)
+
+def _confirma_gestor(request, g, f, oque):
+    """Senha + segundo fator do gestor (com bloqueio por tentativas). Devolve a mensagem de recusa ou None."""
+    from . import acesso as AC
+    from .security import confere_senha
+    c = AC.Conta(request, 'gestor'); conta = c.por_id(g['id'])
+    if AC.origem_bloqueada(request, c) or AC.bloqueada(conta):
+        return 'Muitas tentativas. Aguarde alguns minutos.'
+    if not confere_senha(f.get('minha_senha', ''), conta['senha_hash']):
+        ate = AC.registrar_tentativa(request, c, conta, False)
+        log(g, f'{oque}: confirmação recusada (senha)')
+        return AC.msg_bloqueio(ate) if ate else 'Sua senha não confere. Nada foi feito.'
+    ok, _ = AC.conferir_segundo_fator(request, c, conta, f.get('codigo', ''))
+    if not ok:
+        ate = AC.registrar_tentativa(request, c, conta, False)
+        log(g, f'{oque}: confirmação recusada (segundo fator)')
+        return AC.msg_bloqueio(ate) if ate else 'Código do autenticador incorreto. Nada foi feito.'
+    return None
+
+@r.post('/orgao/{oid}/excluir')
+async def orgao_excluir(request: Request, oid: int):
+    """Excluir o órgão hospedado num nó: backup final no nó, depois apaga do nó e da gestão (fica o registro em Remoções)."""
+    g = gestor(request); f = await ler_form(request)
+    from . import remocoes as RM
+    o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    if not o:
+        raise HTTPException(404)
+    volta = f'/orgao/{oid}#excluir'
+    if f.get('slug') != o['slug']:
+        return ir(volta, f"Para excluir, digite o identificador do órgão ({o['slug']}).", request)
+    erro = _confirma_gestor(request, g, f, f"Exclusão do órgão {o['nome']}")
+    if erro:
+        return ir(volta, erro, request)
+    ok, msg = RM.iniciar_orgao(o, g['nome'])
+    if ok:
+        log(g, f"{o['nome']} ({o['slug']}): exclusão pedida (backup final no nó antes de apagar)")
+    return ir(volta, msg, request)
+
+@r.post('/nos/{nid}/excluir')
+async def no_excluir(request: Request, nid: int):
+    g = gestor(request); f = await ler_form(request)
+    from . import remocoes as RM
+    n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (nid,))
+    if not n:
+        raise HTTPException(404)
+    if f.get('nome') != n['nome']:
+        return ir('/nos', f"Para excluir o nó, digite o nome dele ({n['nome']}).", request)
+    erro = _confirma_gestor(request, g, f, f"Exclusão do nó {n['nome']}")
+    if erro:
+        return ir('/nos', erro, request)
+    ok, msg = RM.iniciar_no(n, g['nome'])
+    if ok:
+        log(g, f"Nó {n['nome']}: exclusão pedida")
+    return ir('/remocoes' if ok else '/nos', msg, request)
+
+@r.get('/remocoes')
+def remocoes_tela(request: Request):
+    gestor(request)
+    from . import remocoes as RM
+    RM.avancar_todas()
+    lista = db.todos(db.PLATAFORMA, 'SELECT * FROM remocoes ORDER BY id DESC LIMIT 200')
+    tar = {t['remocao_id']: t for t in db.todos(db.PLATAFORMA, 'SELECT * FROM tarefas WHERE remocao_id IS NOT NULL ORDER BY id')}
+    return T('remocoes', request, lista=lista, tar=tar, NOMES=RM.NOMES)
+
+@r.post('/remocoes/{rid}')
+async def remocoes_post(request: Request, rid: int):
+    g = gestor(request); f = await ler_form(request)
+    from . import remocoes as RM
+    if f.get('acao') == 'encerrar':
+        ok, msg = RM.encerrar(rid, g['nome'])
+    elif f.get('acao') == 'backup_apagado':
+        ok, msg = RM.marcar_backup_apagado(rid, g['nome'])
+    else:
+        raise HTTPException(400)
+    if ok:
+        log(g, f'Remoção {rid}: {msg}')
+    return ir('/remocoes', msg, request)
 
 @r.post('/orgao/{oid}/mudanca')
 async def orgao_mudanca(request: Request, oid: int):

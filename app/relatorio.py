@@ -110,8 +110,10 @@ def receber(no, rel):
             db.exe(db.PLATAFORMA, 'INSERT INTO log_console (quem, acao) VALUES (%s,%s)',
                    (f"ativador do nó {no['nome']}", f"Domínio {atual['dominio']}: {atual['acao']} → {a['situacao']}. {str(a.get('mensagem', ''))[:300]}"))
         n += 1
-    if n or nt:  # domínio ou tarefa mudou: a mudança de órgão (se houver) avança na hora
+    if n or nt:  # domínio ou tarefa mudou: a mudança de órgão e a exclusão (se houver) avançam na hora
+        from . import remocoes
         mudancas.avancar_todas()
+        remocoes.avancar_todas()
     return n
 
 if __name__ == '__main__':  # python -m app.relatorio enviar | ver  (no nó; "ver" mostra o que seria enviado)

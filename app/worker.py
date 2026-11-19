@@ -155,9 +155,10 @@ def mudancas_tick(estado):
     if config.PAPEL == 'no' or time.monotonic() - estado.get('t', -1e9) < 60:
         return
     estado['t'] = time.monotonic()
-    from . import mudancas
+    from . import mudancas, remocoes
     try:
         mudancas.avancar_todas()
+        remocoes.avancar_todas()
     except Exception:
         traceback.print_exc()
 
