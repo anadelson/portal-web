@@ -26,6 +26,7 @@ def montar():
     except OSError:
         disco = {}
     rel = {'v': 1, 'versao': licenca.VERSAO_APP(), 'ip': config.env('VPS_IP') or ativacao.vps_ip(), 'disco': disco,
+           'pasta': config.env('NO_PASTA'), 'instancia': config.INSTANCIA,   # onde o nó está instalado na VPS (registrado na gestão)
            'gerado_em': datetime.now(timezone.utc).isoformat(), 'orgaos': {}, 'ativacoes': [], 'dominios': []}
     for o in orgaos.todos(ativos=False):
         c = db.um(db.LOCAL, 'SELECT valida_ate, recebida_em FROM licencas_cache WHERE orgao_id=%s', (o['id'],))

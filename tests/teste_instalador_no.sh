@@ -154,21 +154,29 @@ pacote_novo() {  # $1 = nome do nó, $2 = token (vazio = pacote sem token novo);
   touch -d "@$(( $(date +%s) + ${3:-60} ))" /root/segredos-no.tar.gz.enc; rm -rf "$T3"
 }
 TOKEN2=tokenNovoDoConsole-ZYXWVUTSRQPONMLKJIHGFEDCBA9876
-pacote_novo no5.exemplo.test "$TOKEN2"
+pacote_novo no3.exemplo.test "$TOKEN2"
 # respostas: atualizar(n) · usar o pacote novo?(Enter=S) · caminho(Enter) · senha · gestão · nome · [token vem do pacote] · chave · IP · validade · nginx(s) · portal(s) · ativador(s)
 SAIDA=$(printf 'n\n\n\nsenha-do-pacote-teste-123\n\n\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
 checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "pacote de segredos mais novo que o já importado"' "reinstalação: oferece o pacote novo (rc=$RC): $(echo "$SAIDA" | grep -E '✘|ERRO' | head -3)"
-checa 'grep -qxF "NO_TOKEN=$TOKEN2" $E && grep -qxF "NO_NOME=no5.exemplo.test" $E && [ "$(grep -c "^NO_TOKEN=" $E)" = 1 ]' 'reinstalação: token e nome do pacote novo no .env (não os antigos)'
+checa 'grep -qxF "NO_TOKEN=$TOKEN2" $E && grep -qxF "NO_NOME=no3.exemplo.test" $E && [ "$(grep -c "^NO_TOKEN=" $E)" = 1 ]' 'reinstalação: token novo do pacote no .env (não o antigo)'
 checa 'ls $P/.env.origem.anterior-* >/dev/null 2>&1' 'reinstalação: .env.origem anterior guardado'
 # pacote novo SEM token novo: o nome vem do pacote e o token gravado no nó é mantido
-pacote_novo no6.exemplo.test "" 120
+pacote_novo no3.exemplo.test "" 120
 # respostas: atualizar(n) · usar o pacote novo?(Enter) · caminho(Enter) · senha · gestão · nome · trocar o token?(Enter=não) · chave · IP · validade · nginx(s) · portal(s) · ativador(s)
 SAIDA=$(printf 'n\n\n\nsenha-do-pacote-teste-123\n\n\n\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
-checa '[ $RC = 0 ] && grep -qxF "NO_NOME=no6.exemplo.test" $E && grep -qxF "NO_TOKEN=$TOKEN2" $E' "pacote sem token novo: nome do pacote e token mantido (rc=$RC)"
+checa '[ $RC = 0 ] && grep -qxF "NO_NOME=no3.exemplo.test" $E && grep -qxF "NO_TOKEN=$TOKEN2" $E' "pacote sem token novo: nome do pacote e token mantido (rc=$RC)"
 # recusar o pacote novo: segue com o já importado
-pacote_novo no7.exemplo.test "" 180
+pacote_novo no3.exemplo.test "" 180
 SAIDA=$(printf 'n\nn\n\n\n\n\n\n\ns\ns\ns\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
-checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "segredos da gestão já importados" && grep -qxF "NO_NOME=no6.exemplo.test" $E' "pacote novo recusado: mantém o importado (rc=$RC)"
+checa '[ $RC = 0 ] && echo "$SAIDA" | grep -q "segredos da gestão já importados" && grep -qxF "NO_NOME=no3.exemplo.test" $E' "pacote novo recusado: mantém o importado (rc=$RC)"
+# trava (19/11/2026): pacote de OUTRO nó na pasta deste nó — o caso real: o 2º nó instalado por cima do 1º. Para sem mexer em nada.
+H2=$(sha256sum "$E" "$P/.env.origem" | sha256sum); : > /tmp/chamadas
+pacote_novo outro-no.exemplo.test tokenDeOutroNo-0123456789abcdefghijklmnopq 240
+SAIDA=$(printf 'n\n\n\nsenha-do-pacote-teste-123\n' | bash "$P/deploy/no/instalar.sh" 2>&1); RC=$?
+checa '[ $RC != 0 ] && echo "$SAIDA" | grep -q "já é do nó no3.exemplo.test, e o pacote é do nó outro-no.exemplo.test" && echo "$SAIDA" | grep -q "preencha a INSTÂNCIA"' "pacote de outro nó: para e explica o que fazer (rc=$RC)"
+checa '[ "$(sha256sum "$E" "$P/.env.origem" | sha256sum)" = "$H2" ] && ! grep -qE "compose (up|build)" /tmp/chamadas' 'pacote de outro nó: .env e segredos intactos, nada subido'
+checa 'echo "$SAIDA" | grep -q "TIPO: ATUALIZAÇÃO do nó no3.exemplo.test" && echo "$SAIDA" | grep -q "PASTA DESTE NÓ: /opt/portal_web"' 'resumo inicial: pasta e tipo (atualização) em linguagem simples'
+checa 'grep -qxF "NO_PASTA=/opt/portal_web" $E' '.env registra a pasta do nó (vai para a gestão no relatório)'
 rm -f /root/segredos-no.tar.gz.enc
 # as recusas abaixo testam o token digitado: tira do pacote importado o que veio do console
 grep -vE '^(NO_TOKEN|NO_NOME|GESTAO_URL|LICENCA_CHAVE_PUBLICA)=' "$P/.env.origem" > /tmp/origem && install -m 600 /tmp/origem "$P/.env.origem"

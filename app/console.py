@@ -409,6 +409,17 @@ async def nos_post(request: Request):
         token = licenca.criar_no(nome, inst)
         log(g, f'Nó {nome} criado' + (f' (instância {inst}: /opt/portal_web-{inst})' if inst else '') + ' (token mostrado uma vez)')
         n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE nome=%s', (nome,))
+    elif acao == 'instancia':
+        n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (int(f.get('id') or 0),))
+        if not n:
+            raise HTTPException(404)
+        inst = (f.get('instancia') or '').strip().lower()
+        if inst and not re.fullmatch(r'[a-z0-9]{1,20}', inst):
+            return ir('/nos', 'Instância: só letras minúsculas e números, até 20 (ex.: camara). Vazio = pasta /opt/portal_web.', request)
+        db.exe(db.PLATAFORMA, 'UPDATE nos SET instancia=%s WHERE id=%s', (inst, n['id']))
+        pasta = f'/opt/portal_web-{inst}' if inst else '/opt/portal_web'
+        log(g, f"Nó {n['nome']}: instância {'“' + inst + '”' if inst else 'padrão'} (pasta {pasta}) — vale para os próximos pacotes")
+        return ir('/nos', f"Nó {n['nome']}: pasta na VPS agora é {pasta}. Vale para os próximos pacotes (gere de novo em Preparar instalação).", request)
     elif acao == 'token':
         n = db.um(db.PLATAFORMA, 'SELECT * FROM nos WHERE id=%s', (int(f.get('id') or 0),))
         if not n:
@@ -506,7 +517,9 @@ def instalar(request: Request, nid: int):
         raise HTTPException(404)
     IN.limpar()
     res = IN.preparados(nid, f'https://{config.DOMINIO_GESTAO}/instalar/')
-    r = T('instalar', request, n=n, versao=IN.versao(), codigo_ok=IN.codigo_disponivel(), validade=IN.VALIDADE_MIN, res=res)
+    # outros nós que usam a MESMA pasta: se ficarem na mesma VPS, um substituiria o outro (o instalador recusa; aqui o aviso vem antes)
+    mesma_pasta = db.todos(db.PLATAFORMA, "SELECT nome, ultimo_ip, relatorio->>'pasta' pasta FROM nos WHERE id<>%s AND instancia=%s AND ativo ORDER BY nome", (nid, n['instancia']))
+    r = T('instalar', request, n=n, versao=IN.versao(), codigo_ok=IN.codigo_disponivel(), validade=IN.VALIDADE_MIN, res=res, mesma_pasta=mesma_pasta)
     r.headers['Cache-Control'] = 'no-store'; r.headers['Referrer-Policy'] = 'no-referrer'
     return r
 

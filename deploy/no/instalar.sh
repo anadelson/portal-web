@@ -60,6 +60,7 @@ confirma()   { local r; read -r -p "  $1 [s/N] " r; [[ "$r" =~ ^[sS]$ ]]; }
 confirma_s() { local r; read -r -p "  $1 [S/n] " r; ! [[ "$r" =~ ^[nN]$ ]]; }
 pergunta()   { local r; read -r -p "  $1${2:+ [$2]}: " r; echo "${r:-${2:-}}"; }          # Enter = valor entre [ ]
 segredo()    { local r; read -r -s -p "  $1 (não aparece na tela): " r; echo >&2; echo "$r"; }
+explica()    { local l; for l in "$@"; do printf '  \033[2m│ %s\033[0m\n' "$l"; done; }   # explicação em linguagem simples (não vai para o registro)
 
 env_val() { [ -f "$PROJ/.env" ] && grep -E "^$1=" "$PROJ/.env" | tail -1 | cut -d= -f2- || true; }  # valor já gravado
 porta_ocupada() { ss -ltnH "( sport = :$1 )" 2>/dev/null | grep -q .; }
@@ -225,6 +226,7 @@ echo "Registro detalhado (sem segredos): $LOG   ·   para acompanhar em outro te
 #  1. Conferência do servidor — só lê, não altera nada
 # =====================================================================================================================
 etapa 1 "Conferência do servidor (só leitura)"
+explica "Só olho o servidor (sistema, memória, disco e portas). Nada é alterado nesta etapa."
 . /etc/os-release 2>/dev/null || true
 echo "  Sistema: ${PRETTY_NAME:-?} · $(nproc) vCPU · $(free -m | awk '/Mem:/{print $2}') MB de RAM · disco livre em /: $(df -h / | awk 'NR==2{print $4}')"
 [ "${ID:-}" = "ubuntu" ] || c_av "o instalador foi pensado para Ubuntu LTS"
@@ -258,6 +260,16 @@ elif [ ! -f "$PROJ/.env" ] && [ -n "$PAPEL_APP" ] && [ "$PAPEL_APP" != "no" ]; t
 elif [ -f "$PROJ/.env" ]; then
   c_ok ".env do nó já existe (as respostas anteriores viram padrão)"
 fi
+echo
+explica "O QUE ESTE PROGRAMA FAZ: instala (ou atualiza) os portais e painéis dos órgãos nesta VPS e liga este servidor à gestão." \
+        "PASTA DESTE NÓ: $PROJ${INST:+  (instância \"$INST\": um nó separado de outro que exista nesta VPS)}"
+if [ "$(env_val PAPEL)" = no ] && [ -n "$(env_val NO_NOME)" ]; then
+  explica "TIPO: ATUALIZAÇÃO do nó $(env_val NO_NOME). As respostas da vez anterior aparecem entre [colchetes]: basta Enter."
+else
+  explica "TIPO: INSTALAÇÃO NOVA nesta pasta."
+fi
+explica "COMO RESPONDER: Enter aceita o que está entre [colchetes]. Em [s/N] o Enter é NÃO; em [S/n] o Enter é SIM." \
+        "Nada é alterado sem você confirmar. Se algo der errado, o programa para e explica; rodar de novo continua de onde parou."
 if [ "$VERIFICAR" = 1 ]; then               # modo --verificar: mostra a situação e sai sem mexer em nada
   etapa V "Situação do nó"
   if [ -f "$PROJ/.env" ] && command -v docker >/dev/null; then
@@ -278,6 +290,8 @@ fi
 #     O relógio certo importa: 2FA, validade das licenças e horário de publicação do Diário dependem dele.
 # =====================================================================================================================
 etapa 2 "Atualizações, fuso horário e relógio"
+explica "Atualizar o sistema traz correções de segurança. Numa VPS que também roda outros sistemas, o mais seguro" \
+        "é responder NÃO (Enter) e combinar outro horário com quem cuida da VPS."
 # Na VPS compartilhada: o Docker fica de fora da atualização (atualizá-lo reinicia TODOS os containers da VPS),
 # o needrestart só lista (não reinicia serviços) e o fuso do servidor não muda (os containers do portal já usam
 # America/Sao_Paulo por conta própria).
@@ -315,6 +329,7 @@ else c_av "etapa pulada"; fi
 #  3. Docker (repositório oficial download.docker.com). Banco, app, worker e nginx rodam em contêineres.
 # =====================================================================================================================
 etapa 3 "Docker"
+explica "Docker é o programa que roda o portal em \"caixas\" separadas do resto do servidor. Sem ele não há portal."
 instalar_docker() {
   install -m 0755 -d /etc/apt/keyrings \
   && curl -fsSL "https://download.docker.com/linux/${ID:-ubuntu}/gpg" -o /etc/apt/keyrings/docker.asc && chmod a+r /etc/apt/keyrings/docker.asc \
@@ -335,6 +350,7 @@ else para "o nó precisa do Docker"; fi
 #  4. Firewall (ufw): deixa entrar só SSH, 80 (http) e 443 (https). A conexão SSH atual não cai.
 # =====================================================================================================================
 etapa 4 "Firewall"
+explica "Firewall bloqueia acessos por portas que não são usadas. Numa VPS com outros sistemas, Enter (NÃO) é o seguro."
 if ufw status 2>/dev/null | grep -q "Status: active"; then
   c_ok "firewall já ativo"; ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null
 elif [ "$COMPARTILHADA" = 1 ] && ! confirma "VPS compartilhada: ligar o firewall pode BLOQUEAR serviços desta VPS que não estão em Docker. Ligar mesmo assim (só SSH, 80 e 443)?"; then
@@ -351,8 +367,9 @@ else c_av "firewall não ligado: faça isso pelo painel do provedor"; fi
 #     O pacote .enc vem do console (Nós e licenças → Preparar instalação) e é aberto com a senha do pacote.
 # =====================================================================================================================
 etapa 5 "Segredos (iguais aos da VPS da gestão)"
-echo "  As chaves abaixo PRECISAM ser as mesmas da gestão, senão o 2FA dos administradores, o login por CPF,"
-echo "  as credenciais das fontes e os códigos do Diário param de funcionar."
+explica "São as chaves de segurança. Elas PRECISAM ser iguais às da gestão: sem isso, o login com 2FA, o CPF e o Diário não funcionam." \
+        "O QUE FAZER: se você baixou o \"pacote de segredos\" com os comandos do console, aperte Enter quando ele for encontrado" \
+        "e depois digite a SENHA DO PACOTE (a que você escolheu no console ao gerar). Ela não aparece enquanto você digita."
 ORIGEM=""
 if [ -n "$INST" ]; then ACHADO=$(ls -1t "/root/segredos-no@$INST.tar.gz.enc" 2>/dev/null | head -1 || true)   # pacote da instância
 else ACHADO=$(ls -1t /root/segredos-no*.enc /root/segredos-no-*.tar.gz 2>/dev/null | grep -v '@' | head -1 || true); fi  # "@" = pacote de outra instância
@@ -382,6 +399,17 @@ else
       tar -xzf "$ARQ" -C "$T" || para "pacote de segredos ilegível"
     fi
     [ -f "$T/env-origem" ] || para "pacote sem env-origem (gere de novo no console)"
+    # Trava (19/11/2026): pasta que já é de OUTRO nó. Antes, o pacote do 2º nó era instalado por cima do 1º e o 1º saía do ar.
+    P_NOME=$(grep -E '^NO_NOME=' "$T/env-origem" | tail -1 | cut -d= -f2- || true); E_NOME=$(env_val NO_NOME)
+    if [ "$(env_val PAPEL)" = no ] && [ -n "$E_NOME" ] && [ -n "$P_NOME" ] && [ "$P_NOME" != "$E_NOME" ]; then
+      rm -rf "$T"
+      c_er "esta pasta ($PROJ) já é do nó $E_NOME, e o pacote é do nó $P_NOME"
+      explica "Nada foi alterado: o nó $E_NOME continua funcionando." \
+              "Para ter OS DOIS nós nesta VPS: no console da gestão, abra o nó $P_NOME, preencha a INSTÂNCIA (ex.: camara)," \
+              "gere o pacote de novo e use os comandos da tela, que passam a usar outra pasta (ex.: /opt/portal_web-camara)." \
+              "Para TROCAR este nó pelo outro de propósito (o $E_NOME deixa de funcionar aqui): apague $PROJ/.env e rode de novo."
+      exit 1
+    fi
     [ -f "$PROJ/.env.origem" ] && cp -p "$PROJ/.env.origem" "$PROJ/.env.origem.anterior-$(date +%Y%m%d%H%M%S)"
     install -m 600 "$T/env-origem" "$PROJ/.env.origem"; ORIGEM="$PROJ/.env.origem"
     if [ -d "$T/segredos" ]; then                # certificado do Diário e afins
@@ -411,6 +439,7 @@ fi
 #     (basta Enter). O IP público é descoberto pela rota de saída; confira no painel do provedor.
 # =====================================================================================================================
 etapa 6 "Configuração do nó"
+explica "Identificação deste nó na gestão. Quando os dados vêm do pacote, já estão entre [colchetes]: aperte Enter em cada um."
 org_val() { grep -E "^$1=" "$ORIGEM" 2>/dev/null | tail -1 | cut -d= -f2- || true; }  # valor vindo do pacote
 # Endereço da gestão: pacote → .env anterior → https:// + domínio da gestão
 DG=$(org_val DOMINIO_GESTAO)
@@ -421,6 +450,12 @@ GESTAO_URL=$(pergunta "Endereço da gestão" "$PADRAO")
 PADRAO=$(org_val NO_NOME); [ -n "$PADRAO" ] || PADRAO=$(env_val NO_NOME)
 NO_NOME=$(pergunta "Nome do nó (o mesmo cadastrado no console)" "$PADRAO")
 [[ "$NO_NOME" =~ ^[a-z0-9][a-z0-9.-]{1,60}$ ]] || para "nome do nó inválido"
+if [ "$(env_val PAPEL)" = no ] && [ -n "$(env_val NO_NOME)" ] && [ "$NO_NOME" != "$(env_val NO_NOME)" ]; then
+  c_er "esta pasta ($PROJ) já é do nó $(env_val NO_NOME); você informou $NO_NOME"
+  explica "Nada foi alterado. Para um SEGUNDO nó nesta VPS, cadastre-o no console com uma INSTÂNCIA e use a pasta que a tela mostrar." \
+          "Para trocar este nó pelo outro de propósito, apague $PROJ/.env e rode de novo."
+  exit 1
+fi
 # Token do nó: pacote → .env anterior (pergunta se troca) → digitar
 NO_TOKEN=$(org_val NO_TOKEN)
 if [ -n "$NO_TOKEN" ]; then
@@ -437,6 +472,7 @@ python3 -c "import base64,sys; sys.exit(0 if len(base64.b64decode(sys.argv[1], v
 # IP público: descoberto pela rota de saída
 IP_DET=$(ip -4 route get 1.1.1.1 2>/dev/null | sed -nE 's/.* src ([0-9.]+).*/\1/p')
 PADRAO=$(env_val VPS_IP); [ -n "$PADRAO" ] || PADRAO="$IP_DET"
+explica "Confira se o IP abaixo é o mesmo do painel do provedor da VPS: é para ele que os domínios dos órgãos vão apontar."
 VPS_IP=$(pergunta "IP público deste nó (o DNS dos órgãos vai apontar para ele)" "$PADRAO")
 [[ "$VPS_IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] || para "IP inválido"
 # Validade da licença sem contato com a gestão
@@ -452,6 +488,8 @@ VALID=$(pergunta "Dias de validade da licença sem contato com a gestão" "$PADR
 #                encontrado é perguntado.
 # =====================================================================================================================
 etapa 7 "Proxy (nginx ou Traefik) e certificados (Let's Encrypt)"
+explica "O proxy recebe os acessos da internet (portas 80 e 443) e entrega cada endereço ao portal certo, com o cadeado (HTTPS)." \
+        "Se já existe um nesta VPS, o portal só acrescenta os arquivos dele, sem mexer no que já está no ar. Na dúvida, aceite o padrão."
 MODO=$(env_val PROXY_MODO)
 if [ -z "$MODO" ]; then
   if [ "$COMPARTILHADA" = 1 ]; then
@@ -550,9 +588,9 @@ fi
 # =====================================================================================================================
 PGP=$(env_val PG_PASSWORD); [ -n "$PGP" ] && [ "$(env_val PAPEL)" = no ] || PGP=$(openssl rand -hex 24)
 NOVO=$(mktemp)
-grep -vE '^(PAPEL|INSTANCIA|APP_ALIAS|NO_BANCO|GESTAO_URL|NO_TOKEN|NO_NOME|LICENCA_CHAVE_PUBLICA|LICENCA_VALIDADE_DIAS|VPS_IP|PG_PASSWORD|PG_HOST|COMPOSE_FILE|REDE_PROXY|PROXY_MODO|NGINX_C|CERTBOT_C|CONF_DIR|CERTS_DIR|PROXY_CERTS_DIR|TRAEFIK_C|TRAEFIK_ENTRADA_HTTP|TRAEFIK_ENTRADA_HTTPS|TRAEFIK_RESOLVEDOR|DOMINIO_PM|DOMINIO_CM|SENHA_INICIAL_ADMIN|SENHA_INICIAL_GESTOR)=' "$ORIGEM" > "$NOVO" || true
+grep -vE '^(PAPEL|INSTANCIA|APP_ALIAS|NO_PASTA|NO_BANCO|GESTAO_URL|NO_TOKEN|NO_NOME|LICENCA_CHAVE_PUBLICA|LICENCA_VALIDADE_DIAS|VPS_IP|PG_PASSWORD|PG_HOST|COMPOSE_FILE|REDE_PROXY|PROXY_MODO|NGINX_C|CERTBOT_C|CONF_DIR|CERTS_DIR|PROXY_CERTS_DIR|TRAEFIK_C|TRAEFIK_ENTRADA_HTTP|TRAEFIK_ENTRADA_HTTPS|TRAEFIK_RESOLVEDOR|DOMINIO_PM|DOMINIO_CM|SENHA_INICIAL_ADMIN|SENHA_INICIAL_GESTOR)=' "$ORIGEM" > "$NOVO" || true
 { echo; echo "# ---- nó de portais (gerado por deploy/no/instalar.sh em $(date -Is)) ----"
-  echo "PAPEL=no"; echo "INSTANCIA=$INST"; echo "APP_ALIAS=$APP_ALIAS"; echo "GESTAO_URL=$GESTAO_URL"; echo "NO_NOME=$NO_NOME"; echo "NO_TOKEN=$NO_TOKEN"; echo "LICENCA_CHAVE_PUBLICA=$PUB"
+  echo "PAPEL=no"; echo "INSTANCIA=$INST"; echo "APP_ALIAS=$APP_ALIAS"; echo "NO_PASTA=$PROJ"; echo "GESTAO_URL=$GESTAO_URL"; echo "NO_NOME=$NO_NOME"; echo "NO_TOKEN=$NO_TOKEN"; echo "LICENCA_CHAVE_PUBLICA=$PUB"
   echo "LICENCA_VALIDADE_DIAS=$VALID"; echo "VPS_IP=$VPS_IP"; echo "PG_PASSWORD=$PGP"; echo "PG_HOST=db"
   echo "COMPOSE_FILE=docker-compose.yml:deploy/no/docker-compose.no.yml"; echo "REDE_PROXY=$REDE"; echo "PROXY_MODO=$MODO"
   echo "NGINX_C=$NGINX_C"; echo "CERTBOT_C=$CERTBOT_C"; echo "CONF_DIR=$CONF_DIR"; echo "PROXY_CERTS_DIR=$CERTS_DIR"  # não "CERTS_DIR": o app lê o .env e esse nome era o dos certificados do INEP
@@ -568,6 +606,8 @@ c_ok ".env do nó gravado (permissão 600; valores não exibidos)"
 #  8. Portal: gera a imagem, sobe o banco, espera ficar pronto, sobe o app, prepara o banco local e sobe o worker.
 # =====================================================================================================================
 etapa 8 "Portal: banco, app e worker"
+explica "Agora o portal é ligado: banco de dados, sites e painéis, e as tarefas de fundo. Responda s para continuar." \
+        "A primeira vez leva alguns minutos; atualizar costuma levar menos de um minuto."
 app_responde() { docker compose exec -T app python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/saude', timeout=5)"; }
 if confirma "Gerar a imagem e subir banco, app e worker (com os limites de memória do projeto)?"; then
   cd "$PROJ"
@@ -585,6 +625,7 @@ else para "o nó precisa do portal no ar"; fi
 #     O ativador recebe por um "drop-in" do systemd as pastas e containers do nginx escolhidos na etapa 7.
 # =====================================================================================================================
 etapa 9 "Ativador de domínios e backup diário"
+explica "Tarefas automáticas: a cada minuto, publicar os endereços que você pedir no console; todo dia às 02h, backup. Responda s."
 if confirma "Instalar o ativador (a cada minuto) e o backup diário (02h00, guarda 14 dias)?"; then
   for u in service timer; do   # unidades da instância: portal-ativador[-INST].service/.timer, apontando para o ativador desta pasta
     sed -e "s#/opt/portal_web/deploy/ativador.sh#$PROJ/deploy/ativador.sh#" -e "s#Ativador dos Portais#Ativador dos Portais${INST:+ (instância $INST)}#;s#o ativador dos Portais#o ativador dos Portais${INST:+ (instância $INST)}#" \
@@ -608,6 +649,7 @@ else c_av "etapa pulada: sem ativador, nenhum domínio é publicado"; fi
 #  10. Conferência com a gestão: busca as licenças e envia o primeiro relatório (o nó aparece no console).
 # =====================================================================================================================
 etapa 10 "Conferência com a gestão"
+explica "Aviso a gestão de que este nó está pronto e busco as licenças dos órgãos que ele hospeda."
 cd "$PROJ"
 R=$(docker compose exec -T app python -m app.licenca puxar 2>&1 | tail -1) || true
 [[ "$R" == *"aceitas"* ]] && c_ok "licenças: $R" || c_er "licenças: $R"
@@ -615,6 +657,7 @@ R=$(docker compose exec -T app python -m app.relatorio enviar 2>&1 | tail -1) ||
 [[ "$R" == relatório\ entregue* ]] && c_ok "$R" || c_er "relatório: $R"
 echo
 echo "Pronto em $(tempo $((SECONDS - INICIO))). No console da gestão, em Nós e licenças, o nó $NO_NOME deve aparecer com IP $VPS_IP e o relatório de agora."
+explica "RESUMO: nó $NO_NOME · pasta $PROJ${INST:+ (instância $INST)} · IP $VPS_IP. A gestão registra a pasta junto com o relatório do nó."
 echo "Próximos passos (no console da gestão): hospedar órgãos neste nó; o nó cria cada banco em até 1 minuto e publica"
 echo "o domínio de cada órgão quando você pedir (DNS do órgão apontando para $VPS_IP)."
 echo "Para conferir depois sem mudar nada: bash deploy/no/instalar.sh --verificar"

@@ -1,5 +1,6 @@
 {% extends 'console/base.html' %}{% block h1 %}Instalação do nó {{ n.nome }}{% endblock %}
 {% block conteudo %}
+{% set pasta_no = '/opt/portal_web' ~ (('-' ~ n.instancia) if n.instancia else '') %}<section class="cx" aria-labelledby="h-onde"><h2 id="h-onde">Onde este nó fica</h2><p>Na VPS do nó, na pasta <code>{{ pasta_no }}</code>{% if n.instancia %} (instância <strong>{{ n.instancia }}</strong>){% endif %}. Depois de instalado, a pasta e o IP aparecem em Nós e licenças, vindos do relatório do próprio nó.</p>{% if mesma_pasta %}<p class="msg" role="alert"><strong>Atenção:</strong> {% for x in mesma_pasta %}o nó <strong>{{ x.nome }}</strong>{% if x.ultimo_ip %} (IP {{ x.ultimo_ip }}){% endif %}{{ ', ' if not loop.last }}{% endfor %} também usa a pasta <code>{{ pasta_no }}</code>. Se este nó for para a <strong>mesma VPS</strong>, preencha antes uma instância diferente em Nós e licenças → Mudar a pasta; senão o instalador recusa (para não apagar o outro nó).</p>{% endif %}</section>
 {% if res %}
 <section class="cx" aria-labelledby="h-prep"><h2 id="h-prep">Pacotes preparados</h2>
 <p>Gerados em {{ res.criado_em|br }} por {{ res.criado_por }}. Os links valem <strong>uma vez só</strong>, até {{ res.expira_em|br }}. Esta tela pode ser aberta de novo enquanto eles valerem (Nós e licenças → Preparar instalação).</p>
