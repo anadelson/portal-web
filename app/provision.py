@@ -80,13 +80,13 @@ FONTES_PAINEL = {'painel': True, 'ibge': True, 'cnes': True, 'inep': True, 'iegm
 
 def configurar_painel(o):
     """Semeia o catálogo de indicadores e cadastra as fontes do painel (nunca sobrescreve o que já existe)."""
-    if o['tipo'] != 'executivo':
-        return 0, 0
-    from . import painel
+    from . import painel   # indicadores do município: valem também para a Câmara com o módulo (23/11/2026)
     novos = painel.semear(o['banco'])
     nf = 0
     for fonte, ativo in FONTES_PAINEL.items():
         params = {'ibge': o['ibge']}
+        if fonte == 'financas' and o['tipo'] != 'executivo':
+            continue  # a série mensal de finanças é da Prefeitura (o Fiorilli da Câmara lê a entidade da Prefeitura)
         if fonte == 'financas':  # usa a mesma API e entidade da fonte fiorilli do órgão
             fio = db.um(db.LOCAL, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='fiorilli'", (o['id'],))
             if not fio:

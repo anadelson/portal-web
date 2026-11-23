@@ -87,7 +87,7 @@ def diario_tick(agora):
     from . import diario_servico as DS
     from .web import modulos_do_orgao
     from . import orgaos
-    for o in orgaos.todos(tipo='executivo'):
+    for o in orgaos.todos():  # qualquer órgão com o módulo (a Câmara pode ter Diário próprio, 23/11/2026)
         try:
             if not modulos_do_orgao(o).get('diario'):
                 continue
