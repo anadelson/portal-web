@@ -1,0 +1,4 @@
+<form class="campos" method="post" action="/acesso/consultar"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<label>Número do protocolo<input name="protocolo" value="{{ protocolo or '' }}" placeholder="Ex.: OUV-2026-ABC123" required autocomplete="off"></label>
+<label>Código de acesso<input name="codigo" placeholder="Ex.: K7QX-2M9P-H4TD" required autocomplete="off" spellcheck="false"></label>
+<button class="btn sec" type="submit">Consultar</button></form>

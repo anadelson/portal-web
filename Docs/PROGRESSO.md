@@ -2767,3 +2767,23 @@ Pedido do usuário: "conseguimos replicar essa limpeza via gestão, se um dia pr
   - migração 040 aplicada (tabela `remocoes`, vazia);
   - conferido: gestão 303, portais 200, logins 200, `/remocoes` sem login redireciona para o login; a imagem leva `desinstalar.sh`; casemaster 200; sem erros nos logs.
   - Nenhum nó cadastrado no momento: o usuário vai recriar os nós com instância.
+
+### Instalações independentes, paridade e e-SIC/Ouvidoria completos (23/11/2026, branch `integracao-esic-ouvidoria`, nada aplicado na VPS)
+- Pedido: Prefeitura e Câmara instaladas de forma independente, com os mesmos serviços e conversando como se estivessem juntas; e-SIC e Ouvidoria nos dois órgãos com acompanhamento e e-mail. Análise completa em `Docs/ANALISE-INTEGRACAO-ESIC-OUVIDORIA.md`.
+- **Integração entre nós** (`app/integracao.py`):
+  - a gestão cria os pares (um token por sentido) e manda a cada nó, junto com as licenças, um diretório assinado (Ed25519) com os parceiros de outra instalação e só os tokens dos seus pares;
+  - chamada para parceiro em outra instalação vai pelo domínio público em HTTPS, com o mesmo HMAC;
+  - remessa ao Diário, legislação da Câmara e links entre portais funcionam entre nós;
+  - console: renovar/desligar a integração; painel: "Órgãos parceiros" com "Testar conversa";
+  - migração local `006_local_diretorio.sql`.
+- **Paridade:** Diário Oficial, painel de indicadores e o bloco "Serviços mais procurados" passaram a valer para os dois tipos de órgão (Diário da Câmara por resolução; finanças Fiorilli seguem só no Executivo).
+- **e-SIC e Ouvidoria** (`atendimento.py`, `portal_atendimento.py`, `admin_atendimento.py`, `notificacoes.py`, migração 041):
+  - prazos legais com prorrogação única, complementação, código de acesso do cidadão;
+  - recurso em 1ª e 2ª instância, decidido por outra pessoa (perfil novo "Autoridade de recurso");
+  - identidade protegida (perfil novo "Ouvidoria / SIC"), denúncia anônima;
+  - encaminhamento ao órgão parceiro (mesma instalação ou outra);
+  - fila de e-mail com SMTP do próprio órgão (senha cifrada);
+  - relatório estatístico (CSV/JSON), relatório anual da Ouvidoria, rol de informações classificadas;
+  - PNTP 12.1, 12.3 e 12.5–12.9 medidos.
+- Testes: novo `tests/teste_atendimento.py` (inclui Prefeitura no nó A e Câmara no nó B com bancos locais próprios). `teste_licenca.py`: conferência da mensagem de `puxar()` pelo começo.
+- **Pendências do órgão:** norma local da LAI/Ouvidoria, autoridades de recurso, SMTP próprio, usuários com os perfis novos. **Implantação:** aguarda aprovação do usuário e snapshot.

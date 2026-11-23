@@ -87,7 +87,7 @@ def diario_tick(agora):
     from . import diario_servico as DS
     from .web import modulos_do_orgao
     from . import orgaos
-    for o in orgaos.todos(tipo='executivo'):
+    for o in orgaos.todos():  # Prefeitura e, desde 23/11/2026, Câmara com Diário próprio
         try:
             if not modulos_do_orgao(o).get('diario'):
                 continue
@@ -106,7 +106,7 @@ def licencas_tick(estado):
     from . import licenca
     try:
         msg = licenca.puxar()
-        comum.registrar('', 'licencas:gestao', 'RECUSADA' not in msg, 0, msg)
+        comum.registrar('', 'licencas:gestao', 'RECUSAD' not in msg, 0, msg)
     except Exception as e:
         comum.registrar('', 'licencas:gestao', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
 
@@ -162,8 +162,27 @@ def mudancas_tick(estado):
     except Exception:
         traceback.print_exc()
 
+def atendimento_tick(estado, agora=None):
+    """e-SIC e Ouvidoria: envia os e-mails da fila de cada órgão (a cada minuto) e, uma vez por dia a partir das 7h,
+    encerra complementos vencidos e manda à equipe o resumo dos prazos. Falha de um órgão não para os outros."""
+    from . import orgaos, atendimento as AT, notificacoes as NT
+    agora = agora or datetime.now()
+    for o in orgaos.todos():
+        try:
+            ok, ruim = NT.processar(o)
+            if ok or ruim:
+                print(agora, 'E-MAIL', o['slug'], ok, 'enviado(s)', ruim, 'com falha', flush=True)
+            if agora.hour >= 7 and estado.get(o['slug']) != agora.date():
+                estado[o['slug']] = agora.date()
+                n = AT.rotina(o, agora.date())
+                if n:
+                    comum.registrar(o['slug'], 'atendimento:rotina', True, n, f'{n} atendimento(s) encerrado(s) sem complemento')
+        except Exception:
+            traceback.print_exc()
+
 def main():
     ultimo = ultimas_execucoes()
+    atend = {}
     mud = {}
     lic, ords, rel = {}, {}, {}
     print('worker iniciado', flush=True)
@@ -190,6 +209,7 @@ def main():
         except Exception:
             traceback.print_exc()
         diario_tick(datetime.now())
+        atendimento_tick(atend)
         time.sleep(60)
 
 if __name__ == '__main__':

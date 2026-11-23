@@ -20,5 +20,7 @@ def por_slug(slug):
     return next((o for o in todos(ativos=False) if o['slug'] == slug), None)
 
 def executivo_do(ibge):
-    """A Prefeitura (ativa) do mesmo município, se estiver neste nó."""
-    return next((o for o in todos(tipo='executivo') if o['ibge'] == ibge), None)
+    """A Prefeitura (ativa) do mesmo município: nesta instalação ou, desde 23/11/2026, em outra (diretório da gestão).
+    O resultado traz 'local' (True = mesma instalação) para quem for chamar a API pública dela."""
+    from . import integracao
+    return next((o for o in sorted(integracao.conhecidos().values(), key=lambda x: x['id']) if o['tipo'] == 'executivo' and o['ibge'] == ibge and o['ativo']), None)

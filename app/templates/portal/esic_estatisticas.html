@@ -1,0 +1,15 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ titulo_pag }} {{ ano }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/e-sic">Acesso à informação</a><span aria-hidden="true">›</span><span aria-current="page">Relatório estatístico</span></nav>
+<h1>{{ titulo_pag }}</h1><p class="intro">Pedidos de acesso à informação recebidos, atendidos e indeferidos, recursos e informações genéricas sobre os solicitantes. Números gerados pelo próprio sistema do e-SIC, sem dados pessoais.</p>{{ legal_topo(legal) }}
+<form class="filtros" method="get" action="/e-sic/estatisticas"><label>Ano<select name="ano">{% for a in anos %}<option {{ 'selected' if a == ano }}>{{ a }}</option>{% endfor %}</select></label><button class="btn sec">Ver</button>
+<a class="btn sec" href="/e-sic/estatisticas.csv?ano={{ ano }}">Baixar CSV</a><a class="btn sec" href="/e-sic/estatisticas.json?ano={{ ano }}">Baixar JSON</a></form>
+<p class="legal">Atualizado em {{ hoje|br }}{% if ano == hoje.year %} (ano em curso: números parciais){% endif %}.</p>
+<div class="tabela"><table><caption>Pedidos de acesso à informação em {{ ano }}</caption><thead><tr><th scope="col">Indicador</th><th scope="col" class="num">Quantidade</th></tr></thead><tbody>
+{% for k, v in linhas %}<tr><td>{{ k }}</td><td class="num">{{ v }}</td></tr>{% endfor %}</tbody></table></div>
+{% if e.meses %}<div class="tabela"><table><caption>Por mês</caption><thead><tr><th scope="col">Mês</th><th scope="col" class="num">Pedidos (e-SIC)</th><th scope="col" class="num">Manifestações (Ouvidoria)</th></tr></thead><tbody>
+{% for m in e.meses %}<tr><td>{{ '%02d'|format(m.mes) }}/{{ ano }}</td><td class="num">{{ m.pedidos }}</td><td class="num">{{ m.manifestacoes }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% if e.canais %}<div class="tabela"><table><caption>Pedidos por canal de entrada</caption><thead><tr><th scope="col">Canal</th><th scope="col" class="num">Pedidos</th></tr></thead><tbody>{% for c in e.canais %}<tr><td>{{ c.nome }}</td><td class="num">{{ c.n }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+<p><a href="/e-sic">Fazer um pedido de informação</a> · <a href="/e-sic/informacoes-classificadas">Informações classificadas</a> · <a href="/ouvidoria/relatorio">Relatório da Ouvidoria</a></p>
+{% endblock %}

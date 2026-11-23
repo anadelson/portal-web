@@ -1,5 +1,47 @@
-{% extends 'admin/base.html' %}{% block h1 %}{{ p.protocolo }}{% endblock %}
-{% block conteudo %}<section class="cx"><h2>{{ p.assunto }}</h2><p>{{ 'Pedido de informação (LAI)' if p.tipo == 'pedido' else 'Ouvidoria · ' ~ p.categoria }} · recebido em {{ p.recebido|br }} · <span class="chip {{ p.prazo_cls }}">{{ p.prazo }}</span></p><p style="white-space:pre-line">{{ p.texto }}</p><p class="legal">Solicitante: {{ p.nome }} · {{ p.email }} (dado pessoal: uso restrito ao atendimento)</p></section>
-<form class="campos" method="post" action="/admin/atendimento/{{ p.id }}"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
-<label>Setor responsável<input name="setor" value="{{ p.setor }}"></label><label>Resposta<textarea name="resposta" rows="6">{{ p.resposta }}</textarea></label><label>Justificativa da prorrogação<input name="justificativa" value="{{ p.justificativa }}"></label>
-<div class="acoes"><button class="btn" name="acao" value="responder">Responder</button>{% if p.tipo == 'pedido' and p.situacao in ('recebido','analise') %}<button class="btn sec" name="acao" value="prorrogar">Prorrogar por 10 dias</button>{% endif %}{% if p.situacao == 'recebido' %}<button class="btn sec" name="acao" value="encaminhar">Encaminhar ao setor</button>{% endif %}</div></form>{% endblock %}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import voltar with context %}{% block h1 %}{{ p.protocolo }}{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}{% set aberto = p.situacao in ('recebido','analise','prorrogado','complementacao') %}
+{{ voltar('/admin/atendimento') }}
+{% if codigo_balcao %}<section class="cx" style="border-left:4px solid #0E7C3A"><h2>Entregue ao cidadão</h2><p>Protocolo <strong>{{ p.protocolo }}</strong> · código de acesso <strong><code>{{ codigo_balcao }}</code></strong></p><p class="legal">O código aparece só agora. Com ele o cidadão acompanha pelo portal em /acesso.</p></section>{% endif %}
+<section class="cx"><h2>{{ p.assunto }}</h2>
+<p>{{ 'Pedido de informação (LAI)' if p.tipo == 'pedido' else 'Ouvidoria · ' ~ p.categoria }} · {{ CANAIS[p.canal] }} · recebido em {{ p.recebido|br }} · <strong>{{ SIT_AT[p.situacao] }}</strong> · <span class="chip {{ p.prazo_cls }}">{{ p.prazo_txt }}</span>{% if p.setor %} · setor: {{ p.setor }}{% endif %}</p>
+{% if p.origem_nome %}<p>Recebido de <strong>{{ p.origem_nome }}</strong> (protocolo de origem {{ p.protocolo_origem }}).</p>{% endif %}
+{% if p.situacao == 'encaminhado' %}<p>Encaminhado a <strong>{{ p.encaminhado_nome }}</strong>, protocolo <strong>{{ p.protocolo_destino }}</strong>.</p>{% endif %}
+<p style="white-space:pre-line">{{ p.texto }}</p>
+<div class="legal">{% if p.anonimo %}Comunicação sem identificação (denúncia anônima): não há nome nem e-mail; o cidadão acompanha só pelo protocolo e código.
+{% elif ver_id %}Solicitante: {{ p.nome }} · {{ p.email or 'sem e-mail' }}{% if p.tipo_pessoa %} · pessoa {{ p.tipo_pessoa }}{% endif %} (dado pessoal: uso restrito ao atendimento){% if restrita %} · <strong>identidade preservada</strong>: não repasse a outros setores ou órgãos{% endif %}
+{% elif pode_ver_id %}<form class="inline" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="identidade">Identificação protegida{% if restrita %} ({{ 'denúncia' if p.categoria == 'Denúncia' else 'o cidadão pediu sigilo' }}){% endif %}. <button class="btn sec">Mostrar identificação (o acesso fica registrado)</button></form>
+{% else %}Identificação do solicitante visível só para a Ouvidoria/SIC e o administrador (Lei 13.460/2017, art. 10, § 7º).{% endif %}</div></section>
+
+{% if p.situacao == 'recurso' and recurso_aberto %}<section class="cx" style="border-left:4px solid #B45309"><h2>Recurso de {{ recurso_aberto.instancia }}ª instância — decidir até {{ recurso_aberto.prazo|br }}</h2><p style="white-space:pre-line">{{ recurso_aberto.texto }}</p>
+{% if pode_recurso %}<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="recurso">
+<label>Decisão<select name="decisao" required><option value="">— escolha —</option>{% for k, v in DECISOES_RECURSO.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+<label>Fundamentação (vai para o cidadão)<textarea name="resposta" rows="6" required></textarea></label>
+<p class="legal">Quem respondeu o pedido ({{ p.respondido_por or '—' }}) não pode decidir o recurso (LAI, art. 15, parágrafo único).</p><button class="btn">Decidir recurso</button></form>
+{% else %}<p class="legal">Decisão da autoridade de recurso{% if conf_at.autoridade_1 %} ({{ conf_at.autoridade_1 if recurso_aberto.instancia == 1 else conf_at.autoridade_2 }}){% endif %}: perfis Administrador, Autoridade de recurso ou Procuradoria/Controle.</p>{% endif %}</section>{% endif %}
+
+{% if aberto %}
+<section class="cx"><h2>Responder</h2>
+{% if p.situacao == 'complementacao' %}<p class="legal">Aguardando o complemento do cidadão até {{ p.complemento_ate|br }}: o prazo está suspenso. Sem resposta dele, o sistema encerra o atendimento.</p>{% else %}
+<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="responder">
+{% if p.tipo == 'pedido' %}<label>Resultado<select name="decisao" required><option value="">— escolha —</option>{% for k, v in DECISOES.items() if k != 'encaminhado' %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>{% endif %}
+<label>Resposta (vai para o cidadão por e-mail e no portal)<textarea name="resposta" rows="8" required></textarea></label>
+{% if p.tipo == 'pedido' %}<label>Fundamento legal da negativa (obrigatório se negado ou parcial)<input name="fundamento" placeholder="Ex.: LAI, art. 31 (informação pessoal) ou art. 23, inciso ..."></label>{% endif %}
+<button class="btn">Enviar resposta</button></form>{% endif %}</section>
+
+<section class="cx"><h2>Outras ações</h2>
+<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="setor"><label>Encaminhar a um setor (interno)<input name="setor" value="{{ p.setor }}" placeholder="Ex.: Secretaria de Obras"></label><button class="btn sec">Registrar andamento</button></form>
+{% if p.situacao in ('recebido','analise') and not p.prorrogado_em %}<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="prorrogar"><label>Justificativa da prorrogação ({{ '10' if p.tipo == 'pedido' else '30' }} dias, uma única vez; vai para o cidadão)<textarea name="justificativa" rows="3"></textarea></label><button class="btn sec">Prorrogar prazo</button></form>{% endif %}
+{% if p.situacao in ('recebido','analise','prorrogado') and not p.complemento_usado and p.email and not p.anonimo %}<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="complemento"><label>Pedir complemento ao cidadão (uma única vez; prazo suspenso por até 20 dias)<textarea name="complemento" rows="3"></textarea></label><button class="btn sec">Pedir complemento</button></form>{% endif %}
+{% if destinos %}<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="encaminhar_orgao">
+<label>O assunto é de outro órgão? Encaminhar a<select name="destino_id" required>{% for d in destinos %}<option value="{{ d.id }}">{{ d.nome }}{% if not d.banco %} (outra instalação){% endif %}</option>{% endfor %}</select></label>
+{% if not restrita %}<label class="check"><input type="checkbox" name="com_identificacao" value="1" checked> Enviar nome e e-mail do solicitante (o outro órgão responde direto a ele)</label>{% else %}<p class="legal">Identidade preservada: o pedido vai sem nome e e-mail; a resposta volta para cá e o sistema avisa o cidadão.</p>{% endif %}
+<p class="legal">LAI, art. 11, § 1º, III, e Lei 13.460/2017, art. 13: o cidadão é avisado da remessa. A integração é segura (assinada) e funciona com o outro órgão na mesma instalação ou em outra.</p><button class="btn sec">Encaminhar ao órgão</button></form>{% endif %}
+</section>{% endif %}
+{% if p.situacao == 'encaminhado' %}<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="atualizar_encaminhamento"><button class="btn sec">Consultar situação no órgão de destino</button></form>{% endif %}
+<section class="cx"><h2>Nota interna</h2><form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="nota"><label>Só a equipe vê<textarea name="nota" rows="2"></textarea></label><button class="btn sec">Registrar nota</button></form></section>
+
+{% if recursos %}<section class="cx"><h2>Recursos</h2>{% for x in recursos %}<p><strong>{{ x.instancia }}ª instância</strong> · apresentado em {{ x.recebido|br }} · {{ DECISOES_RECURSO[x.decisao] if x.decisao else 'aguardando decisão até ' ~ (x.prazo|br) }}{% if x.autoridade %} · {{ x.autoridade }}{% endif %}</p>{% endfor %}</section>{% endif %}
+<section class="cx"><h2>Histórico</h2><ol class="linha-tempo">{% for h in hist %}<li><time>{{ h.quando|br }}</time> {% if not h.publico %}<span class="chip">interno</span> {% endif %}<span style="white-space:pre-line">{{ h.texto }}</span>{% if h.autor %} <small>— {{ h.autor }}</small>{% endif %}</li>{% endfor %}</ol></section>
+{% if notif %}<section class="cx"><h2>Avisos por e-mail</h2><ul>{% for n in notif %}<li>{{ n.criado_em|br }} · {{ n.assunto }} · {% if n.enviado_em %}<span class="chip ok">enviado {{ n.enviado_em|br }}</span>{% else %}<span class="chip alerta">{{ n.erro or 'na fila' }}</span>{% endif %}</li>{% endfor %}</ul><p class="legal">Os destinatários não aparecem aqui (LGPD).</p></section>{% endif %}
+{% if p.avaliacao %}<p class="legal">Avaliação do cidadão: {{ p.avaliacao }}/5{% if p.avaliacao_resolveu is not none %} · {{ 'resolveu' if p.avaliacao_resolveu else 'não resolveu' }}{% endif %}.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import voltar with context %}{% block h1 %}Registrar atendimento{% endblock %}
+{% block conteudo %}{{ voltar('/admin/atendimento') }}
+<section class="cx form-tela"><p>Pedido ou manifestação feito no balcão, por telefone, carta ou e-mail: o registro gera protocolo e código de acesso, com os mesmos prazos do portal (Lei 13.460/2017, art. 10, § 4º: manifestação verbal é reduzida a termo).</p>
+<form class="campos" method="post" action="/admin/atendimento/novo"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<div class="grade2"><label>Tipo<select name="tipo"><option value="pedido">Pedido de informação (LAI)</option><option value="manifestacao">Ouvidoria</option></select></label>
+<label>Canal<select name="canal">{% for k in ('presencial','telefone','carta','email') %}<option value="{{ k }}">{{ CANAIS[k] }}</option>{% endfor %}</select></label></div>
+<label>Tipo de manifestação (só Ouvidoria)<select name="categoria"><option value="">—</option>{% for x in CATEGORIAS %}<option>{{ x }}</option>{% endfor %}</select></label>
+<label>Assunto<input name="assunto" required maxlength="200"></label><label>Texto (como relatado pelo cidadão)<textarea name="texto" rows="6" required></textarea></label>
+<div class="grade2"><label>Nome do solicitante<input name="nome" maxlength="120"></label><label>E-mail (opcional; sem ele, a resposta é entregue pelo canal de entrada)<input name="email" type="email" maxlength="120"></label></div>
+<label>Pessoa<select name="tipo_pessoa"><option value="">Não informado</option><option value="fisica">Física</option><option value="juridica">Jurídica</option></select></label>
+<label class="check"><input type="checkbox" name="preservar" value="1"> O cidadão pediu que a identidade seja preservada</label>
+<label class="check"><input type="checkbox" name="anonimo" value="1"> Denúncia sem identificação</label>
+<button class="btn">Registrar</button></form></section>{% endblock %}

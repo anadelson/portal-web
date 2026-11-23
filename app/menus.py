@@ -33,6 +33,8 @@ PADRAO = {
         ('institucional', 'Proposições', '/proposicoes', 'prop', 'transp'),
         ('institucional', 'Legislação', '/legislacao', '', 'ato'),
         ('institucional', 'Emendas', '/emendas', 'emend', 'transp'),
+        ('institucional', 'Diário Oficial', '/diario', 'diario', 'ato'),
+        ('institucional', 'Painel de indicadores', '/painel', 'bi', 'transp'),
         ('institucional', 'Serviços', '/servicos', 'carta', 'serv'),
         ('institucional', 'Ouvidoria', '/ouvidoria', 'ouv', 'serv'),
         ('institucional', 'e-SIC', '/e-sic', 'sic', 'transp'),

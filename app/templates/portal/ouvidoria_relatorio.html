@@ -1,0 +1,16 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ titulo_pag }} {{ ano }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}{% set t = rel.total %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/ouvidoria">Ouvidoria</a><span aria-hidden="true">›</span><span aria-current="page">Relatório de gestão</span></nav>
+<h1>{{ titulo_pag }}</h1><p class="intro">Manifestações recebidas, motivos, pontos recorrentes e providências adotadas.</p>{{ legal_topo(legal) }}
+<form class="filtros" method="get" action="/ouvidoria/relatorio"><label>Ano<select name="ano">{% for a in anos %}<option {{ 'selected' if a == ano }}>{{ a }}</option>{% endfor %}</select></label><button class="btn sec">Ver</button></form>
+<div class="tabela"><table><caption>Números de {{ ano }}{% if ano == hoje.year %} (parciais){% endif %}</caption><tbody>
+<tr><th scope="row">Manifestações recebidas</th><td class="num">{{ t.n }}</td></tr><tr><th scope="row">Concluídas</th><td class="num">{{ t.concluidas }}</td></tr>
+<tr><th scope="row">Respondidas no prazo</th><td class="num">{{ t.no_prazo }}</td></tr><tr><th scope="row">Tempo médio de resposta (dias)</th><td class="num">{{ t.media_dias if t.media_dias is not none else '—' }}</td></tr>
+<tr><th scope="row">Satisfação média (1 a 5)</th><td class="num">{% if t.avaliacoes >= 5 %}{{ t.satisfacao }} ({{ t.avaliacoes }} avaliações){% elif t.avaliacoes %}menos de 5 avaliações{% else %}—{% endif %}</td></tr></tbody></table></div>
+{% if rel.categorias %}<div class="tabela"><table><caption>Motivos (tipo de manifestação)</caption><thead><tr><th scope="col">Tipo</th><th scope="col" class="num">Quantidade</th></tr></thead><tbody>{% for c in rel.categorias %}<tr><td>{{ c.categoria or 'Não informado' }}</td><td class="num">{{ c.n }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% if rel.servicos %}<div class="tabela"><table><caption>Serviços mais citados (Carta de Serviços)</caption><thead><tr><th scope="col">Serviço</th><th scope="col" class="num">Manifestações</th></tr></thead><tbody>{% for s in rel.servicos %}<tr><td>{{ s.nome }}</td><td class="num">{{ s.n if s.n >= 5 else 'menos de 5' }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+<section class="secao"><h2>Pontos recorrentes</h2>{% if rel.texto and rel.texto.publicado_em and rel.texto.analise %}<p style="white-space:pre-line">{{ rel.texto.analise }}</p>{% else %}<p class="vazio">A análise de {{ ano }} ainda não foi publicada pela Ouvidoria.</p>{% endif %}</section>
+<section class="secao"><h2>Providências adotadas</h2>{% if rel.texto and rel.texto.publicado_em and rel.texto.providencias %}<p style="white-space:pre-line">{{ rel.texto.providencias }}</p>{% else %}<p class="vazio">As providências de {{ ano }} ainda não foram publicadas.</p>{% endif %}</section>
+{% if rel.texto and rel.texto.publicado_em %}<p class="legal">Publicado em {{ rel.texto.publicado_em|br }}.</p>{% endif %}
+{% endblock %}

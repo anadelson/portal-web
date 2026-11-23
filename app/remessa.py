@@ -1,76 +1,52 @@
 """Remessa de atos entre órgãos (ex.: Câmara → caderno Legislativo do Diário da Prefeitura) por API interna.
 
-Segurança: um token por par de órgãos (tabela pares_orgaos, no banco de controle); cada chamada leva
+Funciona com os dois órgãos na mesma instalação ou em instalações separadas (ver app/integracao.py).
+Segurança: um token por par de órgãos (tabela pares_orgaos, criado e distribuído pela gestão); cada chamada leva
 X-Portal-Origem, X-Portal-Momento e X-Portal-Assinatura = HMAC-SHA256(token, momento\\nMÉTODO\\ncaminho\\nsha256(corpo)),
 com janela de 5 minutos, e fica registrada em remessas_log. A Câmara nunca acessa o banco da Prefeitura."""
-import hashlib, hmac, json, re, secrets, time
-import httpx
+import json, re
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse
 from . import config, db
+from . import integracao as I
 
 r = APIRouter(prefix='/_p')
-JANELA = 300
+JANELA = I.JANELA
 TIPOS_REMESSA = ['Ato da Mesa', 'Resolução', 'Decreto Legislativo', 'Extrato de contrato', 'Portaria da Câmara', 'Aviso']
 
 def _orgao(slug=None, id_=None):
-    from . import orgaos
-    return orgaos.por_slug(slug) if slug else orgaos.por_id(id_)
+    return I.parceiro(slug=slug, id_=id_)
 
 def par(origem, destino):
-    return db.um(db.LOCAL, 'SELECT * FROM pares_orgaos WHERE origem_id=%s AND destino_id=%s AND ativo', (origem['id'], destino['id']))
+    return I.par(origem, destino)
 
 def configurar_pares():
-    """Cria o par Legislativo → Executivo do mesmo município (Prefeitura com Diário contratado) se ainda não existir."""
-    from . import orgaos, licenca
-    n = 0
-    for c in orgaos.todos(tipo='legislativo'):
-        for p in [x for x in orgaos.todos(tipo='executivo') if x['ibge'] == c['ibge'] and 'diario' in ((licenca.vigente(x) or {}).get('modulos') or [])]:
-            if not db.um(db.LOCAL, 'SELECT 1 FROM pares_orgaos WHERE origem_id=%s AND destino_id=%s', (c['id'], p['id'])):
-                db.exe(db.LOCAL, 'INSERT INTO pares_orgaos (origem_id, destino_id, token) VALUES (%s,%s,%s)', (c['id'], p['id'], secrets.token_urlsafe(32)))
-                n += 1
-    return n
+    """Pares entre os órgãos do mesmo município (um token por sentido). Desde 23/11/2026 a gestão cria e distribui os
+    pares para todos os nós (integracao.garantir_pares); aqui fica o nome antigo, usado pelo provision e pelas ordens."""
+    return I.garantir_pares()
 
 def destino_do(origem):
-    from . import orgaos
-    for p in db.todos(db.LOCAL, 'SELECT destino_id FROM pares_orgaos WHERE origem_id=%s AND ativo ORDER BY destino_id', (origem['id'],)):
-        o = orgaos.por_id(p['destino_id'])
-        if o:
-            return o
+    """O Diário de destino da remessa: Prefeitura do mesmo município com o Diário contratado e par ativo, esteja ela
+    nesta instalação ou em outra."""
+    for p in sorted(I.parceiros(origem), key=lambda x: x['id']):
+        if p['tipo'] == 'executivo' and 'diario' in (p.get('servicos') or []) and par(origem, p):
+            return p
     return None
 
 def _assinatura(token, momento, metodo, caminho, corpo: bytes):
-    msg = f'{momento}\n{metodo}\n{caminho}\n{hashlib.sha256(corpo).hexdigest()}'.encode()
-    return hmac.new(token.encode(), msg, hashlib.sha256).hexdigest()
+    return I.assinatura(token, momento, metodo, caminho, corpo)
 
 def _log(origem, destino, acao, ok, detalhe=''):
-    db.exe(db.LOCAL, 'INSERT INTO remessas_log (origem, destino, acao, ok, detalhe) VALUES (%s,%s,%s,%s,%s)', (origem, destino, acao, ok, detalhe[:500]))
+    I.log(origem, destino, acao, ok, detalhe)
 
 # ---------- cliente (órgão de origem) ----------
 def _cliente():
-    """Cliente HTTP da API interna (substituível nos testes). Chame sempre fora do laço de eventos (run_in_threadpool),
-    porque o destino pode ser o próprio processo."""
-    return httpx.Client(base_url=config.INTERNO_BASE, timeout=30)
+    """Cliente HTTP da API interna para Diário NESTA instalação (substituível nos testes). Chame sempre fora do laço de
+    eventos (run_in_threadpool), porque o destino pode ser o próprio processo. Diário em outra instalação: HTTPS público."""
+    return I.cliente_local()
 
 def chamar(origem, destino, metodo, caminho, dados=None):
-    p = par(origem, destino)
-    if not p:
-        raise ValueError('Não há integração ativa entre os órgãos (par sem token).')
-    corpo = json.dumps(dados or {}, ensure_ascii=False).encode() if metodo == 'POST' else b''
-    m = str(int(time.time()))
-    h = {'Host': destino['dominio'], 'Content-Type': 'application/json', 'X-Portal-Origem': origem['slug'], 'X-Portal-Momento': m,
-         'X-Portal-Assinatura': _assinatura(p['token'], m, metodo, caminho, corpo), 'X-Forwarded-Proto': 'https'}
-    try:
-        with _cliente() as c:
-            resp = c.request(metodo, caminho, content=corpo or None, headers=h)
-        ok = resp.status_code < 400
-        _log(origem['slug'], destino['slug'], f'{metodo} {caminho}', ok, '' if ok else resp.text[:200])
-        if not ok:
-            raise ValueError(f'O Diário de destino recusou ({resp.status_code}): {resp.json().get("erro", "") if resp.headers.get("content-type", "").startswith("application/json") else ""}')
-        return resp.json()
-    except httpx.HTTPError as e:
-        _log(origem['slug'], destino['slug'], f'{metodo} {caminho}', False, type(e).__name__)
-        raise ValueError(f'Não foi possível falar com o Diário de destino ({type(e).__name__}).')
+    return I.chamar(origem, destino, metodo, caminho, dados, cliente=lambda: _cliente(), rotulo='Diário de destino')
 
 def enviar(origem, quem, tipo, numero, ementa, texto):
     destino = destino_do(origem)
@@ -101,19 +77,7 @@ def atualizar(origem, rid):
 
 # ---------- servidor (Diário de destino) ----------
 async def _autenticar(request: Request):
-    destino = request.state.orgao
-    origem = _orgao(slug=request.headers.get('x-portal-origem', ''))
-    corpo = await request.body()
-    m = request.headers.get('x-portal-momento', '')
-    if not origem or not m.isdigit() or abs(time.time() - int(m)) > JANELA:
-        _log(request.headers.get('x-portal-origem', '?')[:40], destino['slug'], request.url.path, False, 'origem ou momento inválido')
-        raise HTTPException(401, 'Remessa recusada: origem ou horário inválido.')
-    p = par(origem, destino)
-    caminho = request.url.path.replace('/_p', '', 1)
-    if not p or not hmac.compare_digest(_assinatura(p['token'], m, request.method, caminho, corpo), request.headers.get('x-portal-assinatura', '')):
-        _log(origem['slug'], destino['slug'], caminho, False, 'assinatura inválida')
-        raise HTTPException(401, 'Remessa recusada: assinatura inválida.')
-    return origem, destino, corpo
+    return await I.autenticar(request)
 
 def _situacao(b, a):
     if not a:

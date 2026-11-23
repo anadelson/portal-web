@@ -98,7 +98,7 @@ config.PAPEL, config.GESTAO_URL, config.NO_TOKEN, config.LICENCA_CHAVE_PUBLICA =
 web.limpar_cache(); L._memo.clear()
 pt = TestClient(app, base_url='http://pmbora.localhost')
 checa(pt.get('/').status_code == 404 or 'não encontrado' in pt.get('/').text.lower() or web.orgao_por_dominio('pmbora.localhost') is None, 'nó sem licença: domínio ainda não servido')
-checa(L.puxar() == '1 licença(s) aceitas', 'nó busca e confere a licença')
+checa(L.puxar().startswith('1 licença(s) aceitas'), 'nó busca e confere a licença')
 web.limpar_cache(); L._memo.clear()
 checa(web.orgao_por_dominio('pmbora.localhost') and web.modulos_do_orgao(web.orgao_por_dominio('pmbora.localhost')) == antigo(PM), 'nó: mesmos módulos da gestão, vindos da licença')
 checa(pt.get('/').status_code == 200 and pt.get('/transparencia').status_code == 200, 'nó serve o portal pela licença')

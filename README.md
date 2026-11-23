@@ -155,6 +155,11 @@ Senha + **segundo fator (aplicativo autenticador)** obrigatório nos painéis e 
 - Tema próprio (nível 3) sob demanda; editor de layout com arrastar e soltar.
 
 
+## Instalações independentes, e-SIC e Ouvidoria (23/11/2026)
+- **Prefeitura e Câmara em nós diferentes** conversam como se estivessem juntas: a gestão distribui, com as licenças, um diretório assinado com os parceiros e as chaves dos pares (`app/integracao.py`). Chamadas para outra instalação vão por HTTPS público com HMAC. Painel → Administração → **Órgãos parceiros** → *Testar conversa*; console → órgão → *Integração com os órgãos do município*.
+- **Mesmos serviços:** Diário Oficial e painel de indicadores também para a Câmara (módulos opcionais).
+- **e-SIC e Ouvidoria:** protocolo com código de acesso, prazos legais, complemento, recurso em 1ª/2ª instância, identidade protegida, denúncia anônima, encaminhamento a órgão parceiro, e-mails pela fila do órgão (SMTP próprio em *e-SIC e Ouvidoria → Configuração*), `/e-sic/estatisticas`, `/ouvidoria/relatorio` e `/e-sic/informacoes-classificadas`. Detalhes e base legal: `Docs/ANALISE-INTEGRACAO-ESIC-OUVIDORIA.md`.
+
 ## Carta de Serviços — manual curto para as secretarias (Fase 10)
 
 1. **Quem faz o quê**

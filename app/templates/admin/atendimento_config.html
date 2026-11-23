@@ -1,0 +1,29 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import voltar with context %}{% block h1 %}e-SIC e Ouvidoria — configuração{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}{% set c = conf_at %}{{ voltar('/admin/atendimento') }}
+<section class="cx"><h2>Regras e responsáveis</h2><p class="legal">Aparecem nas páginas do e-SIC e da Ouvidoria (PNTP 2026, critérios 12.1, 12.5 e 12.6).</p>
+<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="regras">
+<div class="grade2"><label>Unidade responsável pelo SIC<input name="unidade" value="{{ c.unidade }}"></label><label>Unidade responsável pela Ouvidoria<input name="unidade_ouvidoria" value="{{ c.unidade_ouvidoria }}"></label></div>
+<div class="grade2"><label>Autoridade que decide o recurso (1ª instância)<input name="autoridade_1" value="{{ c.autoridade_1 }}" placeholder="Ex.: Chefe de Gabinete / Diretor-Geral da Câmara"></label>
+<label>Instâncias de recurso (conforme a norma local)<select name="instancias"><option value="1" {{ 'selected' if c.instancias == 1 }}>Uma (LAI, art. 15)</option><option value="2" {{ 'selected' if c.instancias == 2 }}>Duas (norma local prevê 2ª instância)</option></select></label></div>
+<label>Autoridade da 2ª instância<input name="autoridade_2" value="{{ c.autoridade_2 }}" placeholder="Ex.: Prefeito / Presidente da Câmara / Comissão de Reavaliação"></label>
+<div class="grade2"><label>Norma local da LAI (nome)<input name="norma_lai" value="{{ c.norma_lai }}" placeholder="Ex.: Decreto nº 1.234/2012"></label><label>Endereço da norma<input name="norma_lai_url" value="{{ c.norma_lai_url }}" placeholder="https://..."></label></div>
+<div class="grade2"><label>Norma da Ouvidoria (nome)<input name="norma_ouvidoria" value="{{ c.norma_ouvidoria }}"></label><label>Endereço da norma<input name="norma_ouvidoria_url" value="{{ c.norma_ouvidoria_url }}"></label></div>
+<label>E-mail(s) da equipe para avisos (novo pedido, recurso, prazos vencendo) — separe com vírgula<input name="email_equipe" value="{{ c.email_equipe }}"></label>
+<button class="btn">Salvar</button></form></section>
+
+<section class="cx" id="email"><h2>E-mail de saída do órgão</h2>
+<p>Usado para avisar o cidadão (protocolo, prorrogação, pedido de complemento, resposta, recurso, encaminhamento) e a equipe. Os avisos ficam numa fila e o sistema tenta de novo se o servidor falhar.</p>
+<p>Agora: {% if via_email == 'orgao' %}<span class="chip ok">e-mail próprio do órgão</span>{% elif via_email == 'plataforma' %}<span class="chip alerta">e-mail da plataforma (configure um próprio, com o domínio do órgão)</span>{% else %}<span class="chip erro">não configurado — avisos esperando na fila</span>{% endif %}
+· fila: {{ fila.pendentes }} pendente(s), {{ fila.desistidas }} sem entrega, {{ fila.enviadas_30d }} enviada(s) nos últimos 30 dias{% if fila.ultimo_erro %} · último erro: {{ fila.ultimo_erro }}{% endif %}</p>
+{% if papel == 'no' %}<p class="legal">Esta instalação está separada da gestão: os e-mails saem daqui, com os dados do cidadão ficando só nesta instalação (LGPD).</p>{% endif %}
+{% if not chave_ok %}<p class="msg" style="background:#FBE4D8">Falta a CHAVE_CREDENCIAIS no .env desta instalação: sem ela a senha do e-mail não pode ser guardada cifrada. Peça ao gestor da plataforma.</p>{% endif %}
+<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="smtp">
+<div class="grade2"><label>Servidor SMTP<input name="servidor" value="{{ smtp.servidor }}" placeholder="smtp.seudominio.gov.br" required></label><label>Porta<input name="porta" value="{{ smtp.porta or 465 }}" inputmode="numeric" required></label></div>
+<label>Segurança<select name="seguranca">{% for k, v in seguras.items() %}<option value="{{ k }}" {{ 'selected' if smtp.seguranca == k }}>{{ v }}</option>{% endfor %}</select></label>
+<div class="grade2"><label>Usuário<input name="usuario" value="{{ smtp.usuario }}" autocomplete="off"></label><label>Senha {% if smtp.tem_senha %}<small>(gravada; deixe vazio para manter)</small>{% endif %}<input name="senha" type="password" autocomplete="new-password"></label></div>
+<div class="grade2"><label>Remetente<input name="remetente" value="{{ smtp.remetente }}" placeholder="ouvidoria@seudominio.gov.br" required></label><label>Nome do remetente<input name="remetente_nome" value="{{ smtp.remetente_nome }}" placeholder="Ouvidoria — {{ orgao.nome }}"></label></div>
+<button class="btn">Salvar e-mail</button></form>
+{% if smtp.servidor %}<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="smtp_testar"><label>Enviar teste para<input name="para" type="email" required></label><button class="btn sec">Enviar teste</button>{% if smtp.teste_resultado %}<p class="legal">Último teste ({{ smtp.teste_em }}): {{ smtp.teste_resultado }}</p>{% endif %}</form>
+<form class="inline" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="smtp_apagar"><button class="btn sec">Remover e-mail próprio</button></form>{% endif %}
+{% if fila.desistidas or fila.pendentes %}<form class="inline" method="post"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="reenviar"><button class="btn sec">Tentar de novo os avisos pendentes</button></form>{% endif %}
+</section>{% endblock %}

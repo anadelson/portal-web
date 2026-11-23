@@ -39,6 +39,9 @@ def _num(s):
 def lista(request: Request, area: str = 'fin', sub: str = ''):
     u = exige(request, 'config'); _mods(request, u)
     b = request.state.orgao['banco']
+    if not db.um(b, 'SELECT 1 FROM indicadores LIMIT 1'):  # módulo contratado depois do provisionamento (ex.: Câmara)
+        from . import provision
+        provision.configurar_painel(request.state.orgao)
     itens = []
     for ind in P.catalogo(b, so_visiveis=False):
         ult = db.um(b, 'SELECT * FROM indicador_valores WHERE indicador_id=%s ORDER BY data_ref DESC, periodo DESC LIMIT 1', (ind['id'],))

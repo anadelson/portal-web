@@ -193,9 +193,32 @@ def orgao(request: Request, oid: int):
     from . import remocoes as RM
     rem = RM.em_andamento(orgao_id=oid) or (lambda x: x if x and x['situacao'] == 'erro' else None)(RM.ultima(orgao_id=oid))
     rem_tarefa = db.um(db.PLATAFORMA, 'SELECT * FROM tarefas WHERE remocao_id=%s ORDER BY id DESC LIMIT 1', (rem['id'],)) if rem else None
-    return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub, lic=lic, nos=nos_, validade=config.LICENCA_VALIDADE_DIAS,
+    from . import integracao as IG
+    IG.garantir_pares()
+    integ = IG.pares_do_console(o)
+    return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub, lic=lic, nos=nos_, validade=config.LICENCA_VALIDADE_DIAS, integ=integ,
              cad=(cad['payload'].get('identidade') or {}) if cad else None, mud=mud, mud_tarefas=mud_tarefas, mud_destinos=MU.destinos(o), MUD_NOMES=MU.NOMES,
              mud_nos={n['id']: n['nome'] for n in db.todos(db.PLATAFORMA, 'SELECT id, nome FROM nos')}, rem=rem, rem_tarefa=rem_tarefa, REM_NOMES=RM.NOMES)
+
+@r.post('/orgao/{oid}/integracao')
+async def orgao_integracao(request: Request, oid: int):
+    """Integração entre órgãos do mesmo município (23/11/2026): renovar a chave de um par ou ligar/desligar a conversa.
+    Os nós recebem a mudança com o diretório assinado, em até 5 minutos."""
+    g = gestor(request); f = await ler_form(request)
+    from . import integracao as IG
+    o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    d = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (int(f.get('parceiro') or 0),))
+    if not o or not d or d['ibge'] != o['ibge'] or d['id'] == o['id']:
+        raise HTTPException(400)
+    acao = f.get('acao')
+    if acao == 'renovar':
+        IG.renovar_par(o['id'], d['id']); msg = f"Chaves da integração com {d['nome']} renovadas. Os nós recebem em até 5 minutos."
+    elif acao in ('ligar', 'desligar'):
+        IG.ligar_par(o['id'], d['id'], acao == 'ligar'); msg = f"Integração com {d['nome']} {'ligada' if acao == 'ligar' else 'desligada'}."
+    else:
+        raise HTTPException(400)
+    log(g, f"Integração {o['slug']} ↔ {d['slug']}: {acao}")
+    return ir(f'/orgao/{oid}#integracao', msg, request)
 
 def _confirma_gestor(request, g, f, oque):
     """Senha + segundo fator do gestor (com bloqueio por tentativas). Devolve a mensagem de recusa ou None."""

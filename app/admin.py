@@ -13,7 +13,7 @@ r = APIRouter(prefix='/_a')
 
 def pendencias(b):
     """Contadores do menu: conteúdos esperando revisão e pedidos do e-SIC/Ouvidoria em aberto."""
-    return db.um(b, "SELECT (SELECT count(*) FROM conteudos WHERE situacao='revisao') revisao, (SELECT count(*) FROM esic WHERE situacao <> 'respondido') esic, (SELECT count(*) FROM opinioes WHERE situacao='pendente') + (SELECT count(*) FROM tribuna_inscricoes WHERE situacao='pendente') opinioes")
+    return db.um(b, "SELECT (SELECT count(*) FROM conteudos WHERE situacao='revisao') revisao, (SELECT count(*) FROM esic WHERE situacao IN ('recebido','analise','prorrogado','complementacao','recurso')) esic, (SELECT count(*) FROM opinioes WHERE situacao='pendente') + (SELECT count(*) FROM tribuna_inscricoes WHERE situacao='pendente') opinioes")
 
 def ctx(request, u, **kw):
     from . import aprovacao as AP
@@ -173,7 +173,7 @@ def painel(request: Request):
     k = db.um(b, """SELECT count(*) FILTER (WHERE situacao='revisao') revisao, count(*) FILTER (WHERE situacao='devolvido') devolvido,
         count(*) FILTER (WHERE situacao='agendado') agendado, count(*) FILTER (WHERE situacao='publicado') publicado,
         count(*) FILTER (WHERE situacao IN ('publicado','agendado') AND classe = ANY(%s) AND excecao_eleitoral='') vedados FROM conteudos""", (list(VEDADAS),))
-    sic = db.um(b, "SELECT count(*) FILTER (WHERE situacao NOT IN ('respondido')) abertos FROM esic")
+    sic = db.um(b, "SELECT count(*) FILTER (WHERE situacao IN ('recebido','analise','prorrogado','complementacao','recurso')) abertos FROM esic")
     log = db.todos(b, 'SELECT * FROM auditoria ORDER BY id DESC LIMIT 8')
     from . import avisos
     return T('painel', request, u, k=k, sic=sic, log=log, aviso_tv=avisos.transmissoes(request.state.orgao, modulos_do_orgao(request.state.orgao)))
@@ -448,52 +448,7 @@ async def eleicao_post(request: Request):
     auditar(request, f'Período eleitoral: {msg}')
     return ir('/admin/eleicao', msg, request)
 
-# ---------- e-SIC e Ouvidoria ----------
-def prazo(p):
-    if p['situacao'] == 'respondido':
-        return ('Concluído', '')
-    if p['situacao'] == 'recurso':
-        return ('Decidir em até 5 dias', 'alerta')
-    dias = (20 if p['tipo'] == 'pedido' else 30) + (10 if p['tipo'] == 'pedido' and p['situacao'] == 'prorrogado' else 0)
-    lim = p['recebido'] + timedelta(days=dias)
-    falta = (lim - config.hoje()).days
-    return (f"{'vencido há ' + str(-falta) + ' dia(s)' if falta < 0 else 'vence hoje' if falta == 0 else 'faltam ' + str(falta) + ' dia(s)'} ({lim.strftime('%d/%m/%Y')})", 'erro' if falta <= 5 else '')
-
-@r.get('/atendimento')
-def atendimento(request: Request):
-    u = exige(request, 'atendimento')
-    itens = db.todos(request.state.orgao['banco'], 'SELECT * FROM esic ORDER BY (situacao=%s), recebido', ('respondido',))
-    for p in itens:
-        p['prazo'], p['prazo_cls'] = prazo(p)
-    return T('atendimento', request, u, itens=itens)
-
-@r.get('/atendimento/{pid}')
-def atendimento_ver(request: Request, pid: int):
-    u = exige(request, 'atendimento')
-    p = db.um(request.state.orgao['banco'], 'SELECT * FROM esic WHERE id=%s', (pid,))
-    if not p:
-        raise HTTPException(404)
-    p['prazo'], p['prazo_cls'] = prazo(p)
-    return T('atendimento_item', request, u, p=p)
-
-@r.post('/atendimento/{pid}')
-async def atendimento_post(request: Request, pid: int):
-    u = exige(request, 'atendimento'); f = await ler_form(request)
-    b = request.state.orgao['banco']
-    p = db.um(b, 'SELECT * FROM esic WHERE id=%s', (pid,))
-    acao = f.get('acao')
-    if acao == 'responder':
-        if not f.get('resposta'):
-            return ir(f'/admin/atendimento/{pid}', 'Escreva a resposta.', request)
-        db.exe(b, "UPDATE esic SET resposta=%s, situacao='respondido', respondido=CURRENT_DATE, setor=%s WHERE id=%s", (f['resposta'], f.get('setor', ''), pid))
-    elif acao == 'prorrogar':
-        if p['tipo'] != 'pedido' or p['situacao'] not in ('recebido', 'analise') or not f.get('justificativa'):
-            return ir(f'/admin/atendimento/{pid}', 'Prorrogação só para pedidos e com justificativa.', request)
-        db.exe(b, "UPDATE esic SET situacao='prorrogado', justificativa=%s WHERE id=%s", (f['justificativa'], pid))
-    elif acao == 'encaminhar':
-        db.exe(b, "UPDATE esic SET situacao='analise', setor=%s WHERE id=%s", (f.get('setor', ''), pid))
-    auditar(request, f"Atendimento {p['protocolo']}: {acao}")
-    return ir('/admin/atendimento', 'Atendimento atualizado.', request)
+# ---------- e-SIC e Ouvidoria: admin_atendimento.py (23/11/2026) ----------
 
 # ---------- usuários ----------
 @r.get('/usuarios')

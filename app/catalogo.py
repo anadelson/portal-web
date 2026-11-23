@@ -15,8 +15,8 @@ MODULOS = [
     ('noticias', 'Notícias e avisos', 'Com fluxo de aprovação', 'plano', 'ambos', None),
     ('blocos', 'Página inicial em blocos', 'Personalização nível 2', 'plano', 'ambos', None),
     ('eleicao', 'Período eleitoral', 'Suspensão automática no defeso', 'plano', 'ambos', None),
-    ('diario', 'Diário Oficial eletrônico', 'Edições com assinatura ICP-Brasil (lei municipal de instituição)', 'opc', 'executivo', None),
-    ('bi', 'Painel de indicadores', 'Saúde, educação, social e gestão', 'opc', 'executivo', None),
+    ('diario', 'Diário Oficial eletrônico', 'Edições com assinatura ICP-Brasil (lei municipal ou resolução da Câmara de instituição)', 'opc', 'ambos', None),
+    ('bi', 'Painel de indicadores', 'Saúde, educação, social e gestão do município', 'opc', 'ambos', None),
     ('audiencias', 'Transmissão de audiências', 'Audiências públicas ao vivo e gravações', 'opc', 'executivo', None),
     ('integpref', 'Integração com a Prefeitura', 'Lê a execução orçamentária do Executivo', 'opc', 'legislativo', None),
     ('emend', 'Emendas impositivas', 'Emendas por vereador e execução', 'opc', 'legislativo', 'integpref'),
@@ -34,9 +34,9 @@ BLOCOS = {
     'defeso': ('Aviso do período eleitoral', ['avisos'], 'eleicao', True, 'ambos'),
     'hero': ('Destaque com busca', ['destaque'], None, False, 'ambos'),
     'atalhos': ('Acesso direto', ['destaque', 'principal'], None, False, 'ambos'),
-    'servicos': ('Serviços mais procurados', ['principal'], 'carta', False, 'executivo'),
+    'servicos': ('Serviços mais procurados', ['principal'], 'carta', False, 'ambos'),
     'noticias': ('Notícias', ['principal', 'lateral'], 'noticias', False, 'ambos'),
-    'diario': ('Atos oficiais e oportunidades (Diário Oficial)', ['principal', 'lateral'], 'diario', False, 'executivo'),
+    'diario': ('Atos oficiais e oportunidades (Diário Oficial)', ['principal', 'lateral'], 'diario', False, 'ambos'),
     'ver': ('Vereadores e Mesa Diretora', ['principal'], 'ver', False, 'legislativo'),
     'contas': ('Prestação de contas', ['principal', 'lateral'], 'transp', False, 'legislativo'),
     'emendas': ('Emendas impositivas', ['principal', 'lateral'], 'emend', False, 'legislativo'),
@@ -99,7 +99,8 @@ CLASSES = {
 VEDADAS = ('pub', 'agente', 'slogan')
 SITUACOES = {'rascunho': 'Rascunho', 'revisao': 'Em aprovação', 'devolvido': 'Devolvido', 'agendado': 'Agendado', 'publicado': 'Publicado', 'arquivado': 'Arquivado'}
 PERFIS = {'admin': 'Administrador do órgão', 'editor': 'Editor de conteúdo', 'publicador': 'Publicador (DTIC)', 'procuradoria': 'Procuradoria / Controle', 'remetente': 'Remetente do Diário',
-          'redator': 'Redator da Carta (secretaria)', 'validador': 'Responsável/validador da Carta (secretaria)'}
+          'redator': 'Redator da Carta (secretaria)', 'validador': 'Responsável/validador da Carta (secretaria)',
+          'ouvidor': 'Ouvidoria / SIC (atendimento)', 'autoridade': 'Autoridade de recurso (LAI)'}
 # Permissões por perfil
 PODE = {
     'editar': {'admin', 'editor', 'publicador'},
@@ -110,7 +111,12 @@ PODE = {
     'diario_enviar': {'admin', 'editor', 'remetente', 'publicador'},
     'diario_revisar': {'admin', 'publicador'},
     'diario_fechar': {'admin'},
-    'atendimento': {'admin', 'publicador', 'editor'},
+    'atendimento': {'admin', 'publicador', 'editor', 'ouvidor', 'autoridade'},
+    # e-SIC e Ouvidoria (23/11/2026): a identificação do solicitante só para a Ouvidoria/SIC e o administrador (com registro);
+    # recurso decidido por autoridade diferente de quem respondeu (LAI, art. 15, parágrafo único)
+    'atendimento_identidade': {'admin', 'ouvidor'},
+    'atendimento_recurso': {'admin', 'autoridade', 'procuradoria'},
+    'atendimento_config': {'admin', 'ouvidor'},
     # Carta de Serviços (Fase 10): redator e validador só na própria secretaria; DTIC (publicador) organiza e publica
     'carta_ver': {'admin', 'publicador', 'editor', 'redator', 'validador'},
     'carta_redigir': {'admin', 'publicador', 'editor', 'redator', 'validador'},
@@ -132,6 +138,11 @@ BASE_LEGAL = {
     'transmissoes': 'PNTP 2026, critério 20.9; Lei 13.146/2015, arts. 63 e 67 (legendas e Libras).',
     'participacao': 'Lei 13.460/2017; Regimento Interno (Tribuna Livre); LGPD, art. 7º (dados pessoais só para a Secretaria).',
     'acesso': 'LAI, arts. 9º a 11, 15 e 30; Lei 13.460/2017; LGPD, art. 41.',
+    'esic': 'LAI (Lei 12.527/2011), arts. 9º a 12 (pedido, prazo de 20 + 10 dias, gratuidade), 15 (recurso em 10 dias, decisão em 5) e 30; norma local que regulamenta a LAI; LGPD, art. 23.',
+    'ouvidoria': 'Lei 13.460/2017, arts. 9º a 16 (manifestação, identificação protegida, resposta em 30 + 30 dias) e 23; LAI, art. 31; LGPD, art. 23.',
+    'esic_estatisticas': 'LAI, art. 30, III (relatório estatístico com pedidos recebidos, atendidos e indeferidos e informações genéricas sobre os solicitantes); PNTP 2026, critério 12.7.',
+    'ouvidoria_relatorio': 'Lei 13.460/2017, arts. 14, II, e 15 (relatório anual de gestão: manifestações, motivos, pontos recorrentes e providências).',
+    'classificadas': 'LAI, arts. 23, 24 e 30, I e II (rol de informações classificadas e desclassificadas nos últimos 12 meses); PNTP 2026, critérios 12.8 e 12.9.',
     'diario': 'Lei municipal de instituição do Diário Oficial eletrônico; MP 2.200-2/2001 (ICP-Brasil); Lei 14.063/2020.',
     'noticias': 'Constituição, art. 37, § 1º (vedada promoção pessoal); Lei 9.504/1997, art. 73, VI, b.',
     'acessibilidade': 'Lei 13.146/2015 (Estatuto da Pessoa com Deficiência), art. 63; Lei 10.098/2000, art. 17; eMAG 3.1 (Portaria SLTI/MP nº 3/2007); WCAG 2.1, nível AA.',

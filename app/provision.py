@@ -79,14 +79,21 @@ FONTES_PAINEL = {'painel': True, 'ibge': True, 'cnes': True, 'inep': True, 'iegm
 # iegm: só coleta com IEGM_USUARIO/IEGM_SENHA no .env e o IEG-M em modo automático no painel administrativo
 
 def configurar_painel(o):
-    """Semeia o catálogo de indicadores e cadastra as fontes do painel (nunca sobrescreve o que já existe)."""
+    """Semeia o catálogo de indicadores e cadastra as fontes do painel (nunca sobrescreve o que já existe).
+    Desde 23/11/2026 vale também para a Câmara (módulo "bi" contratado): os indicadores são do MUNICÍPIO (IBGE, CNES,
+    INEP, IEG-M, Siconfi) e não saem do banco da Prefeitura. A série "financas" (Fiorilli) é só do Executivo.
+    Na Câmara, só semeia com o módulo contratado (o painel administrativo semeia na primeira abertura, se contratado depois)."""
     if o['tipo'] != 'executivo':
-        return 0, 0
+        from . import licenca
+        if 'bi' not in ((licenca.vigente(o) or {}).get('modulos') or []):
+            return 0, 0
     from . import painel
     novos = painel.semear(o['banco'])
     nf = 0
     for fonte, ativo in FONTES_PAINEL.items():
         params = {'ibge': o['ibge']}
+        if fonte == 'financas' and o['tipo'] != 'executivo':
+            continue
         if fonte == 'financas':  # usa a mesma API e entidade da fonte fiorilli do órgão
             fio = db.um(db.LOCAL, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='fiorilli'", (o['id'],))
             if not fio:

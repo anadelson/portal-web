@@ -1,0 +1,11 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import voltar with context %}{% block h1 %}Relatório de gestão da Ouvidoria{% endblock %}
+{% block conteudo %}{% set t = rel.total %}{{ voltar('/admin/atendimento') }}
+<form class="filtros" method="get"><label>Ano<select name="ano">{% for a in anos %}<option {{ 'selected' if a == ano }}>{{ a }}</option>{% endfor %}</select></label><button class="btn sec">Abrir</button> <a class="btn sec" href="/ouvidoria/relatorio?ano={{ ano }}">Ver no portal</a></form>
+<section class="cx"><h2>Números de {{ ano }} (gerados pelo sistema)</h2><p>{{ t.n }} manifestação(ões) · {{ t.concluidas }} concluída(s) · {{ t.no_prazo }} no prazo · tempo médio {{ t.media_dias if t.media_dias is not none else '—' }} dias · satisfação {{ t.satisfacao if t.satisfacao is not none else '—' }} ({{ t.avaliacoes }} avaliações)</p>
+<p>Motivos: {% for c in rel.categorias %}{{ c.categoria or 'não informado' }} {{ c.n }}{{ ' · ' if not loop.last }}{% else %}nenhum{% endfor %}</p></section>
+<section class="cx"><h2>Análise e providências</h2><p class="legal">Lei 13.460/2017, art. 15: o relatório indica os pontos recorrentes e as providências adotadas; vai para a autoridade máxima do órgão e é publicado no portal.</p>
+<form class="campos" method="post"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="ano" value="{{ ano }}">
+<label>Pontos recorrentes<textarea name="analise" rows="8">{{ rel.texto.analise if rel.texto else '' }}</textarea></label>
+<label>Providências adotadas pela administração<textarea name="providencias" rows="8">{{ rel.texto.providencias if rel.texto else '' }}</textarea></label>
+<div class="acoes"><button class="btn sec" name="acao" value="salvar">Salvar rascunho</button><button class="btn" name="acao" value="publicar">Publicar no portal</button></div>
+{% if rel.texto and rel.texto.publicado_em %}<p class="legal">Publicado em {{ rel.texto.publicado_em|br }} · última edição por {{ rel.texto.atualizado_por }}.</p>{% endif %}</form></section>{% endblock %}

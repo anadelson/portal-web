@@ -1,0 +1,12 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ titulo_pag }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/e-sic">Acesso à informação</a><span aria-hidden="true">›</span><span aria-current="page">Informações classificadas</span></nav>
+<h1>{{ titulo_pag }}</h1><p class="intro">Rol das informações classificadas em cada grau de sigilo e das desclassificadas nos últimos 12 meses.</p>{{ legal_topo(legal) }}
+<p><a class="btn sec" href="/e-sic/informacoes-classificadas.csv">Baixar CSV</a></p>
+<div class="tabela"><table><caption>Informações classificadas em vigor</caption><thead><tr><th scope="col">Assunto</th><th scope="col">Grau</th><th scope="col">Categoria</th><th scope="col">Fundamento legal</th><th scope="col">Classificada em</th><th scope="col">Sigilo até</th></tr></thead><tbody>
+{% for x in ativas %}<tr><td>{{ x.assunto }}</td><td>{{ x.grau|capitalize }}</td><td>{{ x.categoria }}</td><td>{{ x.fundamento }}</td><td>{{ x.classificada_em|br }}</td><td>{{ x.prazo_ate|br }}</td></tr>{% else %}<tr><td colspan="6">Não há informação classificada em sigilo neste órgão.</td></tr>{% endfor %}</tbody></table></div>
+<div class="tabela"><table><caption>Desclassificadas nos últimos 12 meses</caption><thead><tr><th scope="col">Assunto</th><th scope="col">Grau anterior</th><th scope="col">Fundamento</th><th scope="col">Desclassificada em</th></tr></thead><tbody>
+{% for x in descl %}<tr><td>{{ x.assunto }}</td><td>{{ x.grau|capitalize }}</td><td>{{ x.fundamento }}</td><td>{{ (x.desclassificada_em or x.prazo_ate)|br }}{% if not x.desclassificada_em %} (fim do prazo){% endif %}</td></tr>{% else %}<tr><td colspan="4">Nenhuma informação desclassificada nos últimos 12 meses.</td></tr>{% endfor %}</tbody></table></div>
+<p class="legal">Atualizado em {{ hoje|br }}.</p>
+{% endblock %}

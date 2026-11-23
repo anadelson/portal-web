@@ -1,0 +1,41 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ titulo_pag }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/fale-conosco">Atendimento</a><span aria-hidden="true">›</span><span aria-current="page">Acompanhar protocolo</span></nav>
+{% if not p %}
+<h1>Acompanhar protocolo</h1><p class="intro">Consulte a situação do seu pedido de informação ou manifestação.</p>{{ legal_topo('acesso') }}
+<p class="msg" style="background:#FBE4D8">Protocolo {{ protocolo }} não encontrado.</p>
+<section class="secao cartao">{% include 'portal/_consulta_protocolo.html' %}</section>
+{% else %}
+<h1>Protocolo {{ p.protocolo }}</h1>
+<p class="intro">{{ 'Pedido de acesso à informação (e-SIC)' if p.tipo == 'pedido' else 'Ouvidoria · ' ~ p.categoria }} · recebido em {{ p.recebido|br }}</p>{{ legal_topo(legal) }}
+{% if codigo_novo %}<section class="secao cartao destaque-codigo" aria-labelledby="h-cod"><h2 id="h-cod">Guarde estes dados</h2>
+<p>Protocolo: <strong>{{ p.protocolo }}</strong><br>Código de acesso: <strong><code>{{ codigo_novo }}</code></strong></p>
+<p>O código aparece só agora{% if p.email %} e no e-mail de confirmação{% endif %}. Com ele você vê a resposta, envia complemento, recorre e avalia o atendimento — de qualquer computador ou celular.</p></section>{% endif %}
+<section class="secao cartao"><h2>Situação</h2>
+<p><span class="chip {{ 'ok' if p.situacao == 'respondido' else 'alerta' if p.situacao in ('complementacao', 'recurso') else '' }}">{{ SIT_AT[p.situacao] }}</span>{% if prazo and p.situacao not in ('respondido', 'encaminhado', 'encerrado') %} · Prazo: {{ prazo[0] }}{% endif %}</p>
+{% if p.situacao == 'encaminhado' %}<p>Este atendimento é de responsabilidade de <strong>{{ p.encaminhado_nome }}</strong> e foi encaminhado para lá sob o protocolo <strong>{{ p.protocolo_destino }}</strong>{% if p.encaminhado_dominio %} — acompanhe em <a href="https://{{ p.encaminhado_dominio }}/acesso?protocolo={{ p.protocolo_destino }}">{{ p.encaminhado_dominio }}</a>{% endif %}.</p>{% endif %}
+{% if p.origem_nome %}<p>Recebido de {{ p.origem_nome }} (protocolo {{ p.protocolo_origem }}), por ser assunto deste órgão.</p>{% endif %}
+</section>
+{% if not completo %}
+<section class="secao cartao" aria-labelledby="h-cod2"><h2 id="h-cod2">Ver resposta e andamento</h2><p>Para ver o conteúdo, a resposta e as opções de recurso, informe o código de acesso que você recebeu no registro.</p>
+{% include 'portal/_consulta_protocolo.html' %}</section>
+{% else %}
+<section class="secao cartao"><h2>{{ p.assunto }}</h2><p style="white-space:pre-line">{{ p.texto }}</p></section>
+{% if p.situacao == 'complementacao' %}<section class="secao cartao" aria-labelledby="h-comp"><h2 id="h-comp">Precisamos de um complemento</h2><p style="white-space:pre-line">{{ p.complemento_pedido }}</p><p>Responda até <strong>{{ p.complemento_ate|br }}</strong>. O prazo fica suspenso até lá.</p>
+<form class="campos" method="post" action="/acesso/complemento"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="protocolo" value="{{ p.protocolo }}"><label>Complemento<textarea name="texto" rows="5" required></textarea></label><button class="btn">Enviar complemento</button></form></section>{% endif %}
+{% if p.resposta and p.situacao in ('respondido', 'recurso') %}<section class="secao cartao"><h2>Resposta</h2>{% if p.decisao and DECISOES[p.decisao] %}<p><strong>{{ DECISOES[p.decisao] }}</strong></p>{% endif %}<p style="white-space:pre-line">{{ p.resposta }}</p>{% if p.fundamento %}<p class="legal">Fundamento legal: {{ p.fundamento }}</p>{% endif %}<p class="legal">Respondido em {{ p.respondido|br }}.</p></section>{% endif %}
+{% for x in recursos %}<section class="secao cartao"><h2>Recurso de {{ x.instancia }}ª instância</h2><p style="white-space:pre-line">{{ x.texto }}</p><p class="legal">Apresentado em {{ x.recebido|br }} · decisão até {{ x.prazo|br }}</p>
+{% if x.decisao %}<h3>{{ DECISOES_RECURSO[x.decisao] }}</h3><p style="white-space:pre-line">{{ x.resposta }}</p><p class="legal">Decidido em {{ x.decidido|br }}{% if x.autoridade %} por {{ x.autoridade }}{% endif %}.</p>{% else %}<p><span class="chip alerta">Aguardando decisão</span></p>{% endif %}</section>{% endfor %}
+{% if pode_recorrer %}<section class="secao cartao" aria-labelledby="h-rec"><h2 id="h-rec">Não concorda com a resposta?</h2><p>Você pode apresentar recurso de {{ pode_recorrer[0] }}ª instância até <strong>{{ pode_recorrer[1]|br }}</strong>{% set aut = conf_at.autoridade_1 if pode_recorrer[0] == 1 else conf_at.autoridade_2 %}{% if aut %}, dirigido a {{ aut }}{% endif %}. A decisão sai em até {{ RECURSO_DECIDIR }} dias (Lei 12.527/2011, art. 15).</p>
+<form class="campos" method="post" action="/acesso/recurso"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="protocolo" value="{{ p.protocolo }}"><label>Por que você recorre?<textarea name="texto" rows="5" required minlength="10"></textarea></label><button class="btn">Apresentar recurso</button></form></section>{% endif %}
+{% if p.situacao == 'respondido' and not p.avaliacao %}<section class="secao cartao" aria-labelledby="h-av"><h2 id="h-av">Avalie o atendimento</h2>
+<form class="campos" method="post" action="/acesso/avaliar"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="protocolo" value="{{ p.protocolo }}">
+<fieldset><legend>Nota (1 = muito ruim, 5 = muito bom)</legend>{% for n in range(1, 6) %}<label class="check"><input type="radio" name="nota" value="{{ n }}" required> {{ n }}</label>{% endfor %}</fieldset>
+<fieldset><legend>A resposta resolveu?</legend><label class="check"><input type="radio" name="resolveu" value="sim"> Sim</label><label class="check"><input type="radio" name="resolveu" value="nao"> Não</label></fieldset>
+<button class="btn sec">Enviar avaliação</button></form></section>{% endif %}
+{% if hist %}<section class="secao" aria-labelledby="h-hist"><h2 id="h-hist">Andamento</h2><ol class="linha-tempo">{% for h in hist %}<li><time>{{ h.quando|br }}</time> <span style="white-space:pre-line">{{ h.texto }}</span></li>{% endfor %}</ol></section>{% endif %}
+{% endif %}
+<p><a href="/{{ 'e-sic' if p.tipo == 'pedido' else 'ouvidoria' }}">Fazer outro {{ 'pedido' if p.tipo == 'pedido' else 'registro' }}</a></p>
+{% endif %}
+{% endblock %}

@@ -1,28 +1,58 @@
 {% extends 'portal/base.html' %}
 {% block titulo %}{{ titulo_pag }} — {{ ident.nome }}{% endblock %}
-{% block conteudo %}
+{% block conteudo %}{% set c = conf_at %}{% set pedido = tipo_fixo == 'pedido' %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/fale-conosco">Atendimento</a><span aria-hidden="true">›</span><span aria-current="page">{{ titulo_pag }}</span></nav>
 <h1>{{ titulo_pag }}</h1><p class="intro">{{ intro_pag }}</p>{{ legal_topo(legal) }}
-{% if consulta %}<section class="secao cartao"><h2>Protocolo {{ consulta.protocolo }}</h2><p>{{ consulta.assunto }} · recebido em {{ consulta.recebido|br }}</p><p>Situação: <span class="chip">{{ {'recebido':'Recebido','analise':'Em análise','prorrogado':'Prorrogado','respondido':'Respondido','recurso':'Em recurso'}[consulta.situacao] }}</span></p>{% if consulta.resposta %}<h3>Resposta</h3><p style="white-space:pre-line">{{ consulta.resposta }}</p>{% endif %}</section>{% elif protocolo %}<p class="msg" style="background:#FBE4D8">Protocolo não encontrado.</p>{% endif %}
 <div class="atend">
 <div class="atend-principal">
-<nav class="pilulas-atend" aria-label="Tipo de atendimento"><a href="/ouvidoria"{% if tipo_fixo == 'manifestacao' %} aria-current="page"{% endif %}>Ouvidoria</a><a href="/e-sic"{% if tipo_fixo == 'pedido' %} aria-current="page"{% endif %}>Acesso à informação</a></nav>
-<p class="atend-info">{% if tipo_fixo == 'pedido' %}Pedido de informação (Lei 12.527/2011): resposta em até 20 dias, prorrogáveis por mais 10. Não é preciso dizer por que você quer a informação.{% elif tipo_fixo == 'manifestacao' %}Reclamação, sugestão, elogio, denúncia ou solicitação (Lei 13.460/2017): resposta em até 30 dias.{% else %}Pedido de informação: até 20 dias (+10). Ouvidoria: até 30 dias.{% endif %}</p>
-<h2 id="pedido">{{ 'Registrar uma manifestação' if tipo_fixo == 'manifestacao' else 'Fazer um pedido de informação' if tipo_fixo == 'pedido' else 'Fazer um pedido ou manifestação' }}</h2>
-<form class="campos" method="post" action="/acesso"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
-{% if tipo_fixo %}<input type="hidden" name="tipo" value="{{ tipo_fixo }}">{% else %}<label>Tipo<select name="tipo"><option value="pedido">Pedido de informação (e-SIC)</option><option value="manifestacao">Ouvidoria</option></select></label>{% endif %}
-{% if tipo_fixo != 'pedido' %}<label id="ouvidoria">Categoria (Ouvidoria)<select name="categoria"><option value="">—</option><option>Reclamação</option><option>Sugestão</option><option>Elogio</option><option>Denúncia</option><option>Solicitação</option></select></label>
+<nav class="pilulas-atend" aria-label="Tipo de atendimento"><a href="/ouvidoria"{% if not pedido %} aria-current="page"{% endif %}>Ouvidoria</a><a href="/e-sic"{% if pedido %} aria-current="page"{% endif %}>Acesso à informação</a></nav>
+{% if pedido %}
+<section class="secao" aria-labelledby="h-como"><h2 id="h-como">Como funciona</h2>
+<ol class="passos-atend">
+<li><strong>Peça</strong> pelo formulário abaixo. Basta nome e e-mail; você não precisa dizer por que quer a informação (Lei 12.527/2011, art. 10, § 3º). O serviço é gratuito.</li>
+<li><strong>Guarde o protocolo e o código de acesso</strong> que aparecem na tela e chegam por e-mail.</li>
+<li><strong>Resposta em até {{ PRAZO.pedido }} dias</strong>, prorrogáveis uma vez por mais {{ PRORROGA.pedido }}, com justificativa enviada a você (art. 11).</li>
+<li><strong>Recurso:</strong> se o acesso for negado ou a resposta não atender, você pode recorrer pelo portal em até {{ RECURSO_INTERPOR }} dias. A autoridade superior decide em até {{ RECURSO_DECIDIR }} dias (art. 15){% if c.instancias == 2 %}; ainda cabe uma 2ª instância, nos mesmos prazos{% endif %}.</li>
+</ol>
+<dl class="dados-atend">
+<dt>Unidade responsável</dt><dd>{{ c.unidade }}</dd>
+<dt>Quem decide o recurso (1ª instância)</dt><dd>{{ c.autoridade_1 or 'autoridade hierarquicamente superior a quem respondeu' }}</dd>
+{% if c.instancias == 2 %}<dt>Quem decide o recurso (2ª instância)</dt><dd>{{ c.autoridade_2 or 'autoridade máxima do órgão' }}</dd>{% endif %}
+<dt>Norma local da Lei de Acesso à Informação</dt><dd>{% if c.norma_lai_url %}<a href="{{ c.norma_lai_url }}">{{ c.norma_lai or 'Abrir a norma' }}</a>{% else %}{{ c.norma_lai or 'em cadastro pelo órgão' }}{% endif %}</dd>
+</dl>
+<p><a href="/e-sic/estatisticas">Relatório estatístico dos pedidos</a> · <a href="/e-sic/informacoes-classificadas">Informações classificadas e desclassificadas</a></p>
+</section>
+{% else %}
+<section class="secao" aria-labelledby="h-como"><h2 id="h-como">Como funciona</h2>
+<ol class="passos-atend">
+<li><strong>Escolha o tipo</strong>: reclamação, sugestão, elogio, denúncia ou solicitação de providência.</li>
+<li><strong>Guarde o protocolo e o código de acesso</strong> para acompanhar e avaliar a resposta.</li>
+<li><strong>Resposta em até {{ PRAZO.manifestacao }} dias</strong>, prorrogáveis uma vez por mais {{ PRORROGA.manifestacao }}, com justificativa (Lei 13.460/2017, art. 16). Se faltar alguma informação, pediremos um complemento uma única vez.</li>
+<li><strong>Sua identificação é protegida</strong> (art. 10, § 7º): ela não aparece no portal e só a equipe da Ouvidoria tem acesso. Em denúncias você pode pedir sigilo da identidade ou não se identificar.</li>
+</ol>
+<dl class="dados-atend"><dt>Unidade responsável</dt><dd>{{ c.unidade_ouvidoria }}</dd>{% if c.norma_ouvidoria %}<dt>Norma da Ouvidoria</dt><dd>{% if c.norma_ouvidoria_url %}<a href="{{ c.norma_ouvidoria_url }}">{{ c.norma_ouvidoria }}</a>{% else %}{{ c.norma_ouvidoria }}{% endif %}</dd>{% endif %}</dl>
+<p><a href="/ouvidoria/relatorio">Relatório de gestão da Ouvidoria</a></p>
+</section>
+{% endif %}
+<h2 id="pedido">{{ 'Registrar uma manifestação' if not pedido else 'Fazer um pedido de informação' }}</h2>
+<form class="campos" method="post" action="/acesso"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="tipo" value="{{ tipo_fixo }}">
+{% if not pedido %}<label id="ouvidoria">Tipo de manifestação<select name="categoria" required><option value="">— escolha —</option>{% for x in CATEGORIAS %}<option>{{ x }}</option>{% endfor %}</select></label>
 {% if servicos_carta %}<label>Sobre qual serviço? (opcional)<select name="servico_id"><option value="">— nenhum / não sei —</option>{% for x in servicos_carta %}<option value="{{ x.id }}" {{ 'selected' if servico_sel == x.slug }}>{{ x.nome }}</option>{% endfor %}</select></label>{% endif %}{% endif %}
 <label>Assunto<input name="assunto" maxlength="200" required></label>
-<label>Texto<textarea name="texto" rows="6" required></textarea></label>
-<label>Seu nome<input name="nome" maxlength="120" required autocomplete="name"></label>
-<label>E-mail para resposta<input name="email" type="email" maxlength="120" required autocomplete="email"></label>
-<p style="font-size:var(--fs-meta);color:#4B5563;margin:0">Seu nome e e-mail são usados só para responder e não aparecem no portal (LGPD).</p>
+<label>{{ 'Qual informação você quer?' if pedido else 'Descreva a situação' }}<textarea name="texto" rows="6" required></textarea></label>
+{% if pedido %}<label>Você é (opcional, só para estatística)<select name="tipo_pessoa"><option value="">Prefiro não informar</option><option value="fisica">Pessoa física</option><option value="juridica">Pessoa jurídica</option></select></label>{% endif %}
+<label>Seu nome<input name="nome" maxlength="120" autocomplete="name"{% if pedido %} required{% endif %}></label>
+<label>E-mail para resposta<input name="email" type="email" maxlength="120" autocomplete="email"{% if pedido %} required{% endif %}></label>
+{% if not pedido %}<label class="check"><input type="checkbox" name="preservar" value="1"> Peço que minha identidade seja preservada (só a Ouvidoria verá meu nome e e-mail; eles não são enviados a outros setores ou órgãos)</label>
+<label class="check"><input type="checkbox" name="anonimo" value="1"> Denúncia sem identificação: não quero informar nome nem e-mail <small>(vale só para denúncia; você acompanha apenas pelo protocolo e código, sem aviso por e-mail)</small></label>{% endif %}
+<p style="font-size:var(--fs-meta);color:#4B5563;margin:0">Seu nome e e-mail servem só para o atendimento e não aparecem no portal (LGPD). Não escreva CPF, endereço ou dados de saúde no texto, a menos que sejam necessários.</p>
 <button class="btn" type="submit">Enviar</button></form>
 </div>
 <aside class="atend-lado" aria-labelledby="h-canais"><h2 id="h-canais">Outros canais</h2>
 <ul>{% if ident.telefone %}<li>Telefone: {{ ident.telefone }}</li>{% endif %}{% if ident.whatsapp %}<li>WhatsApp: {{ ident.whatsapp }}</li>{% endif %}{% if ident.email %}<li>E-mail: <a href="mailto:{{ ident.email }}">{{ ident.email }}</a></li>{% endif %}{% if ident.endereco %}<li>Presencial: {{ ident.endereco }}{% if ident.horario %}, {{ ident.horario }}{% endif %}</li>{% endif %}</ul>
-<h3>Consultar protocolo</h3><form class="campos" action="/acesso"><label>Número do protocolo<input name="protocolo" value="{{ protocolo }}" placeholder="Ex.: OUV-2026-ABC123"></label><button class="btn sec" type="submit">Consultar</button></form>
-<p><a href="/transparencia">Estatísticas de pedidos e informações classificadas</a></p></aside>
+<p style="font-size:var(--fs-meta)">Pedidos feitos no balcão, por telefone ou carta também recebem protocolo e seguem os mesmos prazos.</p>
+<h3>Acompanhar protocolo</h3>{% include 'portal/_consulta_protocolo.html' %}
+{% if vizinhos %}<h3>Outros órgãos do município</h3><p style="font-size:var(--fs-meta)">Se o assunto for de outro órgão, você pode registrar aqui mesmo: nós encaminhamos e avisamos você.</p><ul>{% for v in vizinhos %}<li><a href="https://{{ v.dominio }}/{{ 'e-sic' if pedido else 'ouvidoria' }}">{{ v.nome }}</a></li>{% endfor %}</ul>{% endif %}
+</aside>
 </div>
 {% endblock %}

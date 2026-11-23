@@ -203,6 +203,11 @@ def orgao_por_dominio(host: str):
 
 def limpar_cache():
     _cache['t'] = 0
+    try:
+        from . import integracao
+        integracao.limpar_cache()
+    except Exception:
+        pass
 
 class RoteadorPorDominio:
     """Envia cada requisição para a área certa conforme o domínio:
@@ -320,9 +325,13 @@ def modulos_do_orgao(o) -> dict:
     return res
 
 def vizinhos(o):
-    """Outros órgãos ativos do mesmo município (ex.: a Câmara, vista pela Prefeitura)."""
-    orgao_por_dominio(o['dominio'])
-    return [x for x in _cache['orgaos'].values() if x['ibge'] == o['ibge'] and x['id'] != o['id']]
+    """Outros órgãos ativos do mesmo município (ex.: a Câmara, vista pela Prefeitura) — na mesma instalação ou em outra."""
+    from . import integracao
+    try:
+        return [x for x in integracao.parceiros(o, fresco=False)]
+    except Exception:  # diretório indisponível: só os órgãos daqui, como antes
+        orgao_por_dominio(o['dominio'])
+        return [x for x in _cache['orgaos'].values() if x['ibge'] == o['ibge'] and x['id'] != o['id']]
 
 LARGURAS = (1320, 1600, 1760, 'tela')  # largura máxima do conteúdo (Identidade > Tema); 'tela' = tela toda
 LARGURA_PADRAO = 1760

@@ -329,32 +329,7 @@ def acessibilidade(request: Request):
 def mapa(request: Request):
     return templates.TemplateResponse(request, 'portal/pagina.html', dict(ctx_orgao(request), pagina='mapa', titulo='Mapa do site'))
 
-# ---------- Acesso à informação ----------
-@r.get('/acesso')
-def acesso(request: Request, protocolo: str = ''):
-    if not protocolo:  # destinos próprios desde a Fase 8: /fale-conosco, /ouvidoria e /e-sic
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse('/fale-conosco', status_code=301)
-    ctx = ctx_orgao(request)
-    p = db.um(ctx['orgao']['banco'], 'SELECT protocolo, tipo, categoria, assunto, recebido, situacao, resposta, respondido FROM esic WHERE protocolo=%s', (protocolo.strip().upper(),)) if protocolo else None
-    return templates.TemplateResponse(request, 'portal/acesso.html', dict(ctx, consulta=p, protocolo=protocolo, legal='acesso', titulo_pag='Acompanhar protocolo', intro_pag='Consulte a situação do seu pedido de informação ou manifestação pelo número do protocolo.'))
-
-@r.post('/acesso')
-async def acesso_enviar(request: Request):
-    ctx = ctx_orgao(request)
-    f = await ler_form(request)
-    tipo = 'pedido' if f.get('tipo') == 'pedido' else 'manifestacao'
-    if not (f.get('assunto') and f.get('texto') and f.get('nome') and '@' in f.get('email', '')):
-        return ir('/e-sic' if tipo == 'pedido' else '/ouvidoria', 'Preencha assunto, texto, nome e e-mail.', request)
-    prefixo = 'SIC' if tipo == 'pedido' else 'OUV'
-    prot = f"{prefixo}-{config.hoje().year}-{secrets.token_hex(3).upper()}"
-    sid = None
-    if tipo == 'manifestacao' and str(f.get('servico_id', '')).isdigit():  # Fase 10: manifestação ligada a um serviço da Carta
-        r_ = db.um(ctx['orgao']['banco'], "SELECT id FROM servicos WHERE id=%s AND publicado_dados IS NOT NULL", (int(f['servico_id']),))
-        sid = r_['id'] if r_ else None
-    db.exe(ctx['orgao']['banco'], 'INSERT INTO esic (protocolo, tipo, categoria, assunto, texto, nome, email, servico_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
-           (prot, tipo, f.get('categoria', ''), f['assunto'][:200], f['texto'][:5000], f['nome'][:120], f['email'][:120], sid))
-    return ir(f'/acesso?protocolo={prot}', f'Recebido. Guarde o protocolo {prot}.', request)
+# ---------- Acesso à informação: /acesso, /e-sic e /ouvidoria estão em portal_atendimento.py (23/11/2026) ----------
 
 
 # Portal oculto enquanto é configurado: o filtro (web.PortalOculto) manda para cá quem não entrou no painel deste órgão

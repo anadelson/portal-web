@@ -140,7 +140,11 @@ def entregar(no, ip='', versao=''):
     # inventário ASSINADO (18/11/2026): a lista completa dos órgãos do nó. Com ele o nó esquece o órgão que mudou de nó
     # (sem isso, a licença antiga ficava no cache e o nó antigo seguia servindo o portal até ela vencer). Nó antigo ignora.
     inv = assinar({'tipo': 'inventario', 'no': no['nome'], 'orgaos': ids, 'emitido_em': agora.isoformat()})
-    return {'chave': chave_publica(), 'impressao': impressao(chave_publica()), 'licencas': out, 'inventario': inv, 'gerado_em': agora.isoformat()}
+    # diretório ASSINADO (23/11/2026): parceiros dos órgãos do nó que estão em outra instalação + tokens dos pares,
+    # para Câmara e Prefeitura conversarem mesmo em nós diferentes. Nó antigo ignora o campo.
+    from . import integracao
+    dire = integracao.diretorio_para(no, assinar)
+    return {'chave': chave_publica(), 'impressao': impressao(chave_publica()), 'licencas': out, 'inventario': inv, 'diretorio': dire, 'gerado_em': agora.isoformat()}
 
 # ---------- lado do nó ----------
 def guardar(pacotes, publica):
@@ -185,8 +189,13 @@ def puxar():
     d = buscar_na_gestao()
     ok, ruim = guardar(d.get('licencas', []), config.LICENCA_CHAVE_PUBLICA)
     saiu = esquecer(d.get('inventario'), config.LICENCA_CHAVE_PUBLICA)
+    from . import integracao
+    try:
+        dire = integracao.guardar_diretorio(d.get('diretorio'), config.LICENCA_CHAVE_PUBLICA)
+    except Exception as e:  # o diretório nunca impede as licenças
+        dire = f'diretório com erro ({type(e).__name__})'
     return (f'{ok} licença(s) aceitas' + (f', {ruim} RECUSADA(S) (assinatura não confere)' if ruim else '')
-            + (f'; {saiu} órgão(s) que saíram deste nó (licença removida)' if saiu else ''))
+            + (f'; {saiu} órgão(s) que saíram deste nó (licença removida)' if saiu else '') + (f'; {dire}' if dire else ''))
 
 def esquecer(inventario, publica, agora=None):
     """(nó) Remove do cache as licenças dos órgãos que não estão mais no inventário assinado da gestão. Só vale inventário

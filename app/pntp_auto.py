@@ -136,13 +136,21 @@ def medir(orgao, hoje, rotas=()):
         R['11.6'] = dica(f"O portal mostra dados do RREO lidos do Siconfi (último: {rreo % 10}º bimestre de {rreo // 10}); confira se o relatório completo está publicado." if rreo else 'Sem RREO no portal.')
 
     # 12. SIC
-    R['12.1'] = dica('A página do e-SIC não indica a unidade/setor responsável pelo SIC.')
+    from . import atendimento as AT
+    cat = AT.conf(b)
+    R['12.1'] = sim(f"O e-SIC indica a unidade responsável: {cat['unidade']}.", '/e-sic') if cat.get('unidade') else dica('Informe a unidade responsável pelo SIC em e-SIC e Ouvidoria → Configuração.')
     falta = [n for k, n in (('endereco', 'endereço'), ('telefone', 'telefone'), ('email', 'e-mail'), ('horario', 'horário')) if _vazio(ident.get(k))]
     R['12.2'] = nao('Falta no cadastro do órgão: ' + ', '.join(falta) + '.', '/e-sic') if falta else sim('Endereço, telefone, e-mail e horário na página do e-SIC.', '/e-sic')
-    R['12.3'] = sim('Formulário eletrônico de pedido de informação.', '/e-sic')
+    R['12.3'] = sim('Formulário eletrônico de pedido de informação, com protocolo, código de acesso e acompanhamento.', '/e-sic')
     R['12.4'] = sim('O pedido exige só nome e e-mail para a resposta, sem documentos.', '/e-sic')
-    R['12.6'] = dica('A página informa o prazo de 20 + 10 dias, mas não o prazo de recurso nem as autoridades competentes.')
-    R['12.7'] = dica('O portal não publica o relatório anual estatístico do e-SIC.')
+    if cat.get('norma_lai'):  # sem norma informada, o critério fica para a marcação do controle interno
+        R['12.5'] = sim(f"Norma local da LAI na página do e-SIC: {cat['norma_lai']}.", '/e-sic')
+    R['12.6'] = (sim('Prazos de resposta e de recurso, autoridades e procedimento na página do e-SIC.', '/e-sic') if cat.get('autoridade_1')
+                 else dica('A página traz prazos e procedimento; falta informar a autoridade que decide o recurso (e-SIC e Ouvidoria → Configuração).'))
+    R['12.7'] = sim('Relatório estatístico gerado pelo sistema, por ano, com CSV e JSON.', '/e-sic/estatisticas')
+    n_cl = um('SELECT count(*) n FROM informacoes_classificadas')['n']
+    R['12.8'] = sim(f'Rol de informações classificadas publicado ({n_cl} registro(s); sem registro, a página declara que não há).', '/e-sic/informacoes-classificadas')
+    R['12.9'] = sim('Lista das desclassificadas nos últimos 12 meses na mesma página.', '/e-sic/informacoes-classificadas')
 
     # 13. Acessibilidade (recursos do modelo do portal, em todas as páginas)
     R['13.1'] = sim('Símbolo e página de acessibilidade em destaque no topo.', '/acessibilidade')
