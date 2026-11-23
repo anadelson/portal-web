@@ -98,10 +98,9 @@ def _leg_prefeitura(o):
     pm = orgaos.executivo_do(o['ibge'])
     if not pm:
         return [], None
-    import httpx
-    try:
-        with httpx.Client(base_url=config.INTERNO_BASE, timeout=20) as c:
-            d = c.get('/legislacao.json', headers={'Host': pm['dominio'], 'X-Forwarded-Proto': 'https'}).json()
+    from . import integracao
+    try:  # mesma instalação: endereço interno; outra: domínio público da Prefeitura em HTTPS (23/11/2026)
+        d = integracao.publico(pm, '/legislacao.json')
         return d.get('registros', []), pm
     except Exception:
         return None, pm
