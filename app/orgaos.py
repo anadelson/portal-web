@@ -20,9 +20,9 @@ def por_slug(slug):
     return next((o for o in todos(ativos=False) if o['slug'] == slug), None)
 
 def executivo_do(ibge):
-    """A Prefeitura (ativa) do mesmo município: nesta instalação ou, no nó, a do diretório da gestão (outra instalação)."""
+    """A Prefeitura (ativa) do mesmo município: primeiro a desta instalação; senão a de outra (diretório no nó; nós, na gestão)."""
     o = next((o for o in todos(tipo='executivo') if o['ibge'] == ibge), None)
-    if o or config.PAPEL != 'no':
+    if o:
         return o
-    from . import integracao
-    return next((p for p in integracao.parceiros_no_no() if p['tipo'] == 'executivo' and p['ibge'] == ibge), None)
+    from . import integracao  # outra instalação: no nó, a do diretório; na gestão, a hospedada num nó (falar por HTTPS)
+    return next((p for p in integracao.de_fora() if p['tipo'] == 'executivo' and p['ibge'] == ibge), None)

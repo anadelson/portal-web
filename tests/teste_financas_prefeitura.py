@@ -30,6 +30,7 @@ def publico(destino, caminho):  # Prefeitura cliente na mesma instalação: a AP
     r = pm.get(caminho)
     r.raise_for_status()
     return r.json()
+PUBLICO_REAL = IG.publico
 IG.publico = publico
 
 def fonte_cm():
@@ -209,6 +210,40 @@ checa('RREO-Anexo 01' in r.text or 'Portal da Prefeitura — receitas' in r.text
 p2 = TestClient(app, base_url='http://pmbora.localhost')
 checa(entrar(p2, 'admin@pmbora.localhost', 'admin123', 'senhaforte123').status_code == 200, 'login da Prefeitura')
 checa('Finanças da Prefeitura no painel' not in p2.get('/admin/indicadores?area=geral').text, 'quadro da Câmara na Prefeitura')
+
+# ---------- endereço interno com reserva pelo domínio público (23/11/2026) ----------
+import httpx
+from app import orgaos as OR
+IG.publico = PUBLICO_REAL
+rota = []
+class _Cli:
+    def __init__(s, d): s.d = d
+    def __enter__(s): return s
+    def __exit__(s, *a): return False
+    def request(s, metodo, caminho, content=None, headers=None):
+        rota.append(('https' if s.d.get('parceiro') else 'interno', (headers or {}).get('Host')))
+        if not s.d.get('parceiro'):
+            raise httpx.ConnectError('interno fora (teste)')
+        return httpx.Response(200, json={'ok': 1}, request=httpx.Request(metodo, 'https://' + s.d['dominio'] + caminho))
+CLIENTE_REAL = IG._cliente
+IG._cliente = lambda d: _Cli(d)
+checa(IG.publico(o_pm, '/painel/api/financas.json') == {'ok': 1} and rota == [('interno', o_pm['dominio']), ('https', None)], f'reserva pelo domínio público: {rota}')
+rota.clear()
+checa(IG.publico(dict(o_pm, parceiro=True), '/x.json') == {'ok': 1} and rota == [('https', None)], f'outra instalação: direto por HTTPS: {rota}')
+IG._cliente = CLIENTE_REAL
+checa(str(IG._cliente(o_pm).base_url).rstrip('/') == config.INTERNO_BASE.rstrip('/') and str(IG._cliente(dict(o_pm, parceiro=True)).base_url).rstrip('/') == f"https://{o_pm['dominio']}", 'endereços do cliente')
+
+# ---------- na gestão: Prefeitura hospedada num nó é parceira de outra instalação ----------
+nid = db.um(db.PLATAFORMA, "INSERT INTO nos (nome, token_hash) VALUES ('no-teste-fin', 'x') RETURNING id")['id']
+db.exe(db.PLATAFORMA, """INSERT INTO orgaos (slug, nome, tipo, dominio, banco, ibge, plano, municipio, no_id) VALUES
+          ('pm-teste-no', 'Prefeitura de Teste no Nó', 'executivo', 'pm.teste-no.test', 'bd_pm_teste_no', '3500001', 'completo', 'Teste', %s),
+          ('cm-teste-no', 'Câmara de Teste no Nó', 'legislativo', 'cm.teste-no.test', 'bd_cm_teste_no', '3500002', 'completo', 'Teste', %s)""", (nid, nid))
+e = OR.executivo_do('3500001')
+checa(e and e['slug'] == 'pm-teste-no' and e.get('parceiro') and e.get('hospedagem') == 'no-teste-fin', f'executivo_do na gestão acha a Prefeitura do nó: {e and e.get("slug")}')
+checa(OR.executivo_do('3507209')['slug'] == 'pm-bora' and not OR.executivo_do('3507209').get('parceiro'), 'a Prefeitura da mesma instalação vem primeiro')
+checa((IG.orgao(slug='pm-teste-no') or {}).get('parceiro') and OR.por_slug('pm-teste-no') is None, 'órgão do nó: parceiro, não local')
+checa(not OR.executivo_do('3500002'), 'executivo_do não confunde município')
+db.exe(db.PLATAFORMA, "DELETE FROM orgaos WHERE no_id=%s", (nid,)); db.exe(db.PLATAFORMA, 'DELETE FROM nos WHERE id=%s', (nid,))
 
 print('FALHAS:' if erros else 'OK: finanças da Prefeitura no painel da Câmara (Siconfi, portal, Prefeitura cliente, falha, validação, administração)')
 for x in erros:

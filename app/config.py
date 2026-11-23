@@ -74,7 +74,7 @@ TOTP_CHAVE = env('TOTP_CHAVE')                                # chave Fernet que
 SESSAO_INATIVIDADE_MIN = int(env('SESSAO_INATIVIDADE_MIN', '30'))
 LOGIN_MAX_FALHAS = int(env('LOGIN_MAX_FALHAS', '5'))
 LOGIN_BLOQUEIO_MIN = int(env('LOGIN_BLOQUEIO_MIN', '15'))
-INTERNO_BASE = env('INTERNO_BASE', 'http://127.0.0.1:8000')   # endereço interno da API entre órgãos
+INTERNO_BASE = env('INTERNO_BASE', 'http://127.0.0.1:8000')   # endereço interno da API entre órgãos; o compose põe http://app:8000 (app e worker)
 
 # ---------- Fase 7 (fontes): IEG-M do TCESP e planilhas do INEP ----------
 # Acesso anônimo publicado pelo próprio TCESP (uso autorizado pelo órgão em 07/11/2026; ver Docs/PROGRESSO.md).
