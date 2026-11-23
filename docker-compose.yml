@@ -7,6 +7,8 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env
+    environment:  # endereço interno entre órgãos da mesma instalação: o serviço "app", que o app e o worker alcançam
+      INTERNO_BASE: ${INTERNO_BASE:-http://app:8000}
     volumes: ["dados:/srv/dados", "./segredos:/srv/segredos:ro"]
     depends_on:
       db: { condition: service_healthy }
@@ -29,6 +31,8 @@ services:
     restart: unless-stopped
     env_file: .env
     command: ["python", "-m", "app.worker"]
+    environment:
+      INTERNO_BASE: ${INTERNO_BASE:-http://app:8000}
     volumes: ["dados:/srv/dados", "./segredos:/srv/segredos:ro"]
     depends_on:
       db: { condition: service_healthy }

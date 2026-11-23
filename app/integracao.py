@@ -128,6 +128,20 @@ def tem_diretorio():
         return False
 
 
+def parceiros_em_nos():
+    """(gestão/tudo) Órgãos cadastrados aqui mas hospedados em nós: são de OUTRA instalação (falar por HTTPS)."""
+    if config.PAPEL == 'no':
+        return []
+    nos = {n['id']: n for n in db.todos(db.PLATAFORMA, 'SELECT id, nome FROM nos')}
+    return [dict(o, parceiro=True, modulos=_modulos(o['id']), hospedagem=_hospedagem(o, nos))
+            for o in db.todos(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE no_id IS NOT NULL AND ativo ORDER BY id')]
+
+
+def de_fora():
+    """Órgãos de outras instalações que esta conhece: no nó, os do diretório; na gestão, os hospedados em nós."""
+    return parceiros_no_no() if config.PAPEL == 'no' else parceiros_em_nos()
+
+
 def parceiros_no_no():
     if db.LOCAL == db.PLATAFORMA:
         return []
@@ -147,9 +161,9 @@ def orgao(slug=None, id_=None):
     """Órgão desta instalação ou parceiro de outra (só leitura). Parceiro vem marcado com parceiro=True."""
     from . import orgaos
     o = orgaos.por_slug(slug) if slug else orgaos.por_id(id_)
-    if o or config.PAPEL != 'no':
+    if o:
         return o
-    return next((p for p in parceiros_no_no() if (slug and p['slug'] == slug) or (id_ and p['id'] == id_)), None)
+    return next((p for p in de_fora() if (slug and p['slug'] == slug) or (id_ and p['id'] == id_)), None)
 
 
 def parceiros(o):
@@ -157,7 +171,7 @@ def parceiros(o):
     from . import orgaos
     aqui = [dict(x, mesma_instalacao=True) for x in orgaos.todos() if x['ibge'] == o['ibge'] and x['id'] != o['id']]
     ids = {x['id'] for x in aqui}
-    fora = [dict(p, mesma_instalacao=False) for p in parceiros_no_no() if p['ibge'] == o['ibge'] and p['id'] not in ids and p['id'] != o['id']] if config.PAPEL == 'no' else []
+    fora = [dict(p, mesma_instalacao=False) for p in de_fora() if p['ibge'] == o['ibge'] and p['id'] not in ids and p['id'] != o['id']]
     return aqui + fora
 
 
@@ -187,6 +201,21 @@ def _host(destino):
     return {} if destino.get('parceiro') else {'Host': destino['dominio'], 'X-Forwarded-Proto': 'https'}
 
 
+def _pedir(destino, metodo, caminho, content=None, headers=None):
+    """Uma requisição ao parceiro. Mesma instalação: endereço interno (INTERNO_BASE, o serviço "app" do compose, que o app
+    e o worker alcançam); se ele não responder (ex.: o órgão mudou de instalação e o diretório ainda não chegou), tenta o
+    domínio público em HTTPS, com certificado conferido. Outra instalação: direto pelo domínio público."""
+    h = dict(headers or {})
+    if not destino.get('parceiro'):
+        try:
+            with _cliente(destino) as c:
+                return c.request(metodo, caminho, content=content, headers=dict(h, **_host(destino)))
+        except (httpx.ConnectError, httpx.ConnectTimeout):
+            pass
+    with _cliente(dict(destino, parceiro=True)) as c:
+        return c.request(metodo, caminho, content=content, headers=h)
+
+
 def chamar(origem, destino, metodo, caminho, dados=None, acao=''):
     """Chamada assinada ao parceiro. Devolve o JSON da resposta ou levanta ValueError com a explicação."""
     p = par(origem, destino)
@@ -197,8 +226,7 @@ def chamar(origem, destino, metodo, caminho, dados=None, acao=''):
     h = {'Content-Type': 'application/json', 'X-Portal-Origem': origem['slug'], 'X-Portal-Momento': m,
          'X-Portal-Assinatura': assinatura(p['token'], m, metodo, caminho, corpo)}
     try:
-        with _cliente(destino) as c:
-            resp = c.request(metodo, caminho, content=corpo or None, headers=dict(h, **_host(destino)))
+        resp = _pedir(destino, metodo, caminho, content=corpo or None, headers=h)
         ok = resp.status_code < 400
         log(origem['slug'], destino['slug'], acao or f'{metodo} {caminho}', ok, '' if ok else resp.text[:200])
         if not ok:
@@ -212,8 +240,9 @@ def chamar(origem, destino, metodo, caminho, dados=None, acao=''):
 
 def publico(destino, caminho):
     """GET de uma API PÚBLICA do parceiro (ex.: /legislacao.json), interna ou por HTTPS conforme onde ele está."""
-    with _cliente(destino) as c:
-        return c.get(caminho, headers=_host(destino)).json()
+    resp = _pedir(destino, 'GET', caminho)
+    resp.raise_for_status()
+    return resp.json()
 
 
 async def autenticar(request):
