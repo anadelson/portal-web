@@ -23,28 +23,30 @@
 {% if d.selo %}<p class="pselo"><span class="pulso" aria-hidden="true"></span>Finanças lidas do sistema contábil em {{ d.selo|br }}</p>{% endif %}
 </div>
 
-{% if d.fin %}{% set f = d.fin %}
-<section class="psec" aria-labelledby="h-fin"><h2 id="h-fin">Dinheiro público</h2>
+{% if d.fin %}{% set f = d.fin %}{% set fx = f.externo %}
+<section class="psec" aria-labelledby="h-fin"><h2 id="h-fin">Dinheiro público{% if fx %} da Prefeitura{% endif %}</h2>
+{% if fx %}<p class="pfonte">Números da <strong>{{ fx.nome }}</strong>, não da Câmara, lidos de fonte pública: {{ fx.fonte }}{% if fx.link %} (<a href="{{ fx.link }}" rel="noopener">ver a fonte ↗</a>){% endif %}. Período: {{ fx.periodo }}.{% if fx.coletado %} Consulta em {{ fx.coletado|br }}.{% endif %}</p>
+{% if fx.aviso %}<p class="msg" role="status" style="background:#FBE4D8">{{ fx.aviso }}</p>{% endif %}{% endif %}
 {{ kpis(f.kpis, 'Números do dinheiro público em ' ~ f.ano) }}
 <div class="pgrade">
-{% if f.mensal %}<section class="pcard" aria-labelledby="h-mes"><h3 id="h-mes">Receita e despesa paga, mês a mês</h3><p class="sub">{{ f.mensal.frase }}</p>
+{% if f.mensal %}<section class="pcard" aria-labelledby="h-mes"><h3 id="h-mes">Receita e despesa paga, {{ 'bimestre a bimestre' if f.mensal.bimestre else 'mês a mês' }}</h3><p class="sub">{{ f.mensal.frase }}</p>
 <p class="pleg"><span><i style="background:var(--cor)"></i>Receita arrecadada</span><span><i style="background:#E8A33D"></i>Despesa paga</span></p>
-<div class="prola" tabindex="0" role="region" aria-label="Gráfico: receita e despesa paga, mês a mês (role para os lados)">{{ f.mensal.grafico }}</div>
-<details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Receita e despesa paga por mês, {{ f.ano }}</caption><thead><tr><th scope="col">Mês</th><th scope="col" class="num">Receita arrecadada</th><th scope="col" class="num">Despesa paga</th></tr></thead><tbody>
-{% for m in f.mensal.meses %}<tr><th scope="row">{{ ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][m.mes - 1] }}{% if m.parcial %} (em andamento){% endif %}</th><td class="num">{{ m.receita|moeda }}</td><td class="num">{{ m.despesa_paga|moeda }}</td></tr>{% endfor %}</tbody></table></div></details>
-{{ fonte('dados abertos do sistema contábil da Prefeitura (consulta mês a mês). Receita já descontado o FUNDEB.', f.mensal.coletado) }}</section>{% endif %}
+<div class="prola" tabindex="0" role="region" aria-label="Gráfico: receita e despesa paga, {{ 'bimestre a bimestre' if f.mensal.bimestre else 'mês a mês' }} (role para os lados)">{{ f.mensal.grafico }}</div>
+<details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Receita e despesa paga por mês, {{ f.ano }}</caption><thead><tr><th scope="col">{{ 'Bimestre' if f.mensal.bimestre else 'Mês' }}</th><th scope="col" class="num">Receita arrecadada</th><th scope="col" class="num">Despesa paga</th></tr></thead><tbody>
+{% for m in f.mensal.meses %}<tr><th scope="row">{{ m.rotulo or ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][m.mes - 1] }}{% if m.parcial %} (em andamento){% endif %}</th><td class="num">{{ m.receita|moeda }}</td><td class="num">{{ m.despesa_paga|moeda }}</td></tr>{% endfor %}</tbody></table></div></details>
+{{ fonte((fx.fonte ~ '. Despesa paga no bimestre = diferença entre os valores acumulados de dois bimestres seguidos.') if fx and f.mensal.bimestre else (fx.fonte ~ ' (consulta mês a mês).' if fx else 'dados abertos do sistema contábil da Prefeitura (consulta mês a mês). Receita já descontado o FUNDEB.'), f.mensal.coletado) }}</section>{% endif %}
 {% if f.para_onde %}<section class="pcard" aria-labelledby="h-area"><h3 id="h-area">Para onde vai o dinheiro</h3>{% if f.para_onde.frase %}<p class="sub">{{ f.para_onde.frase }}</p>{% endif %}
 {{ grafico_barras(f.para_onde.itens, 'Valor empenhado por área em ' ~ f.ano) }}
 <details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Empenhado por área</caption><thead><tr><th scope="col">Área</th><th scope="col" class="num">Empenhado</th><th scope="col" class="num">%</th></tr></thead><tbody>{% for x in f.para_onde.itens %}<tr><th scope="row">{{ x.area }}</th><td class="num">{{ x.v }}</td><td class="num">{{ x.p }}</td></tr>{% endfor %}</tbody></table></div></details>
-{{ fonte('dados abertos do sistema contábil. Valor empenhado em ' ~ f.ano ~ ' até ' ~ f.ate.strftime('%d/%m') ~ ', agrupando as ' ~ f.para_onde.n_unid ~ ' unidades orçamentárias por área (agrupamento definido pela Prefeitura).', d.selo) }}</section>{% endif %}
+{% if fx %}{{ fonte(fx.fonte ~ '. Valor empenhado pela Prefeitura, ' ~ fx.periodo ~ ', por ' ~ f.para_onde.tipo ~ '.', fx.coletado) }}{% else %}{{ fonte('dados abertos do sistema contábil. Valor empenhado em ' ~ f.ano ~ ' até ' ~ f.ate.strftime('%d/%m') ~ ', agrupando as ' ~ f.para_onde.n_unid ~ ' unidades orçamentárias por área (agrupamento definido pela Prefeitura).', d.selo) }}{% endif %}</section>{% endif %}
 {% if f.de_onde %}<section class="pcard" aria-labelledby="h-orig"><h3 id="h-orig">De onde vem o dinheiro</h3><p class="sub">{{ f.de_onde.frase }}</p>
 <div class="psplit" role="img" aria-label="Repasses da União e do Estado: {{ f.de_onde.rep }}; arrecadação própria: {{ f.de_onde.prop }}."><span style="width:{{ f.de_onde.w }}%">{{ f.de_onde.rep }}</span><span>{{ f.de_onde.prop }}</span></div>
 <p class="pleg"><span><i style="background:#E8A33D"></i>Repasses da União e do Estado</span><span><i style="background:var(--cor)"></i>Arrecadação própria (impostos, taxas e rendimentos)</span></p>
 <h4>Maiores origens</h4><ul class="plista">{% for x in f.de_onde.origens %}<li><span>{{ x.nome }}</span><strong>{{ x.v }}</strong><small>{{ x.p }}</small></li>{% endfor %}</ul>
-{{ fonte('dados abertos do sistema contábil. Receita bruta de ' ~ f.ano ~ ' até ' ~ f.ate.strftime('%d/%m') ~ ' (antes das deduções do FUNDEB).', d.selo) }}</section>{% endif %}
+{{ fonte((fx.fonte ~ '. Receita da Prefeitura, ' ~ fx.periodo ~ '.') if fx else ('dados abertos do sistema contábil. Receita bruta de ' ~ f.ano ~ ' até ' ~ f.ate.strftime('%d/%m') ~ ' (antes das deduções do FUNDEB).'), fx.coletado if fx else d.selo) }}</section>{% endif %}
 {% if f.execucao %}<section class="pcard" aria-labelledby="h-exe"><h3 id="h-exe">Execução do orçamento de {{ f.ano }}</h3><p class="sub">A linha tracejada marca quanto do ano já passou: {{ f.execucao.ritmo }}. Barras perto da linha indicam execução no ritmo esperado.</p>
 <div class="g-img" role="img" aria-label="{% for e in f.execucao.itens %}{{ e.l }}: {{ e.p }}{{ '; ' if not loop.last }}{% endfor %}. Parte do ano já passada: {{ f.execucao.ritmo }}."><ul class="pexe">{% for e in f.execucao.itens %}<li><span class="t">{{ e.l }}</span><span class="n">{{ e.p }}</span><span class="b" aria-hidden="true"><span style="width:{{ e.w }}%;background:{{ e.cor }}"></span><i style="left:{{ f.execucao.ritmo_w }}%"></i></span><span class="d">{{ e.d }}</span></li>{% endfor %}</ul></div>
-{{ fonte('dados abertos do sistema contábil (previsão e dotação atualizadas da LOA ' ~ f.ano ~ ').', d.selo) }}</section>{% endif %}
+{{ fonte((fx.fonte ~ ' (previsão e dotação atualizadas da LOA ' ~ f.ano ~ ' da Prefeitura).') if fx else ('dados abertos do sistema contábil (previsão e dotação atualizadas da LOA ' ~ f.ano ~ ').'), fx.coletado if fx else d.selo) }}</section>{% endif %}
 </div>{{ links(d.fin_links) }}</section>
 {% endif %}
 

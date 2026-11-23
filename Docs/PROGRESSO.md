@@ -2804,4 +2804,15 @@ Pedido do usuário: relatório colado "Prefeitura e Câmara em instalações ind
 - **Testes:** novo `tests/teste_atendimento.py`, só com dados fictícios, em duas partes:
   - fluxos do e-SIC e da Ouvidoria;
   - dois nós simulados com bancos locais separados: diretório, ping, legislação, remessa, encaminhamento, renovação de chaves, integração desligada, diretório adulterado, de outro nó ou antigo.
+- **Finanças da Prefeitura no painel da Câmara** (pedido do usuário: publicar os dados da Prefeitura mesmo com contrato só da Câmara, pelo Siconfi ou pelo portal de dados abertos dela):
+  - fonte nova `financas_prefeitura`, só da Câmara, cadastrada em modo automático (`app/coletores/financas_prefeitura.py`), de madrugada, uma vez por dia;
+  - modo automático: Prefeitura cliente → API pública nova `/painel/api/financas.json` do painel dela (mesma instalação ou outra); senão o portal de dados abertos (se informado); senão o Siconfi;
+  - Siconfi: RREO Anexo 1 (receita, previsão, dotação, empenhado, pago) e Anexo 2 (empenhado por função), série por bimestre; portal (Fiorilli VersaoJson): mês a mês e por unidade orçamentária;
+  - nunca lê o banco da Prefeitura e nada vai para as tabelas da transparência da Câmara; o resumo fica na configuração da Câmara (`financas_prefeitura`);
+  - o bloco aparece como "Dinheiro público da Prefeitura", com o nome da Prefeitura, "não da Câmara", a fonte, o link, o período e a data da consulta;
+  - se a fonte falha, o painel mantém o último dado válido e mostra o aviso da falha;
+  - configuração em `/admin/integracoes?fonte=financas_prefeitura` (modo, IBGE, API e entidade do portal, link, nome), com teste sem gravar; endereço só https e domínio público; quadro com a situação em `/admin/indicadores` (aba Coleta);
+  - a restrição da tabela `fontes` ganhou `financas_prefeitura` em todas as migrações que a refazem (009, 011, 014, 016, 024, 033 e a local 004);
+  - conferido sem gravar contra as fontes públicas reais de Borá: Siconfi (5º bimestre de 2026, 12 funções) e portal Fiorilli (totais iguais aos do banco da Prefeitura);
+  - teste novo `tests/teste_financas_prefeitura.py` (dados fictícios, sem internet).
 - **Não implantado:** aguarda aprovação do usuário ("Aprovo, há snapshot"). Migração 041.

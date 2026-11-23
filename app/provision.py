@@ -75,7 +75,7 @@ def configurar_fontes(oid, slug, fontes=None):
 
 # Fontes do painel de indicadores (Fase 7): genéricas para todo órgão do Executivo, pelo código IBGE do município.
 # MDS e vacinação (PNI) nascem desligados: fonte fora do ar / pendente de fonte estável.
-FONTES_PAINEL = {'painel': True, 'ibge': True, 'cnes': True, 'inep': True, 'iegm': True, 'financas': True, 'mds': False, 'pni': False}
+FONTES_PAINEL = {'painel': True, 'ibge': True, 'cnes': True, 'inep': True, 'iegm': True, 'financas': True, 'financas_prefeitura': True, 'mds': False, 'pni': False}
 # iegm: só coleta com IEGM_USUARIO/IEGM_SENHA no .env e o IEG-M em modo automático no painel administrativo
 
 def configurar_painel(o):
@@ -87,6 +87,10 @@ def configurar_painel(o):
         params = {'ibge': o['ibge']}
         if fonte == 'financas' and o['tipo'] != 'executivo':
             continue  # a série mensal de finanças é da Prefeitura (o Fiorilli da Câmara lê a entidade da Prefeitura)
+        if fonte == 'financas_prefeitura':  # 23/11/2026: na Câmara, as finanças da Prefeitura vêm de fonte pública
+            if o['tipo'] != 'legislativo':
+                continue
+            params = {'modo': 'auto', 'ibge': o['ibge']}
         if fonte == 'financas':  # usa a mesma API e entidade da fonte fiorilli do órgão
             fio = db.um(db.LOCAL, "SELECT params FROM fontes WHERE orgao_id=%s AND fonte='fiorilli'", (o['id'],))
             if not fio:

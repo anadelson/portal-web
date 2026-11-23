@@ -41,13 +41,21 @@ ESQUEMA = {
     'financas': [('base', 'Endereço da API de dados abertos', 'url', 'o mesmo da fonte Fiorilli do órgão'),
                  ('empresa', 'Código da entidade (Empresa)', 'int', 'o mesmo da fonte Fiorilli do órgão')],
     'pncp': [_IBGE, ('cnpj', 'CNPJ do órgão', 'texto', 'cadastro do órgão')],
+    # 23/11/2026: na Câmara, finanças da Prefeitura por fonte pública (Prefeitura cliente, portal de dados abertos dela ou Siconfi)
+    'financas_prefeitura': [('modo', 'De onde vêm as finanças da Prefeitura', 'escolha', 'automático = Prefeitura cliente do portal; senão o portal de dados abertos (se informado); senão o Siconfi'),
+                            _IBGE,
+                            ('base', 'API de dados abertos do portal da Prefeitura (opcional)', 'url_opc', 'portal da transparência da Prefeitura (Fiorilli: termina em /VersaoJson/)'),
+                            ('empresa', 'Código da entidade da Prefeitura nessa API (opcional)', 'texto', 'cadastro da entidade no sistema contábil da Prefeitura'),
+                            ('link', 'Página pública do portal da Prefeitura (opcional)', 'url_opc', 'mostrada como “ver a fonte” no painel'),
+                            ('nome', 'Nome da Prefeitura (opcional)', 'texto', 'como aparece no painel; o Siconfi já informa')],
     'siconfi': [_IBGE, ('rreo', 'Coletar o RREO (Anexo 14)', 'sn', 'só o Executivo publica o RREO'), ('rgf_poder', 'Poder do RGF (E ou L)', 'poder', 'E = Executivo, L = Legislativo')],
     'tcesp': [('municipio', 'Município no portal do TCESP', 'slug', 'nome do município no endereço do TCESP'), ('anos', 'Anos fechados a buscar', 'anos', 'anos anteriores sem dado no sistema contábil')],
     'ibge': [_IBGE], 'cnes': [_IBGE], 'inep': [_IBGE], 'iegm': [_IBGE], 'mds': [_IBGE], 'pni': [_IBGE], 'painel': [_IBGE],
     'youtube': [], 'redes': [],
     'tempo': [_IBGE, ('lat', 'Latitude (opcional)', 'texto', 'vazio = centro do município informado pelo IBGE'), ('lon', 'Longitude (opcional)', 'texto', 'vazio = centro do município informado pelo IBGE')],
 }
-NOMES = {'fiorilli': 'Sistema contábil (Fiorilli)', 'govbr': 'Portal da transparência (GOVBR — TransparênciaBR)', 'financas': 'Sistema contábil — série mensal (Fiorilli)', 'pncp': 'PNCP (contratações públicas)',
+ESCOLHAS = {'financas_prefeitura': {'modo': {'auto': 'Automático', 'siconfi': 'Siconfi (Tesouro Nacional), por bimestre', 'portal': 'Portal de dados abertos da Prefeitura, mês a mês'}}}
+NOMES = {'financas_prefeitura': 'Finanças da Prefeitura (fonte pública)', 'fiorilli': 'Sistema contábil (Fiorilli)', 'govbr': 'Portal da transparência (GOVBR — TransparênciaBR)', 'financas': 'Sistema contábil — série mensal (Fiorilli)', 'pncp': 'PNCP (contratações públicas)',
          'siconfi': 'Siconfi (Tesouro Nacional)', 'tcesp': 'TCESP — Transparência', 'ibge': 'IBGE', 'cnes': 'CNES (Ministério da Saúde)', 'inep': 'INEP',
          'iegm': 'TCESP — IEG-M', 'mds': 'MDS', 'pni': 'Ministério da Saúde (vacinação)', 'painel': 'Cálculo do painel (dados já coletados + Siconfi)',
          'youtube': 'YouTube (transmissões)', 'redes': 'Redes sociais (últimas publicações)', 'tempo': 'Previsão do tempo (Open-Meteo)', 'portal': 'Este portal (e-SIC e Ouvidoria)', 'manual': 'Lançamento manual'}
@@ -82,6 +90,15 @@ def endpoints(fonte, p):
     if fonte == 'financas':
         return [('Receitas do mês', 'GET', f'{base}/Receitas/', dict(per, Listagem='ReceitaOrcamentaria', MesFinalPeriodo='{cada mês}'), ''),
                 ('Despesas do mês', 'GET', f'{base}/Despesas/', dict(per, Listagem='DespesasPorUnidade', MesFinalPeriodo='{cada mês}'), '')]
+    if fonte == 'financas_prefeitura':
+        T = 'https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rreo'
+        out = [('Prefeitura cliente: resumo do painel dela', 'GET', 'https://{domínio da Prefeitura}/painel/api/financas.json', {}, '')] if (p.get('modo') or 'auto') == 'auto' else []
+        if p.get('modo') in ('portal', 'auto', None) and p.get('base'):
+            out += [('Portal da Prefeitura — receitas', 'GET', f'{base}/Receitas/', dict(per, Listagem='ReceitaOrcamentaria'), ''),
+                    ('Portal da Prefeitura — despesas por unidade', 'GET', f'{base}/Despesas/', dict(per, Listagem='DespesasPorUnidade'), '')]
+        if p.get('modo') in ('siconfi', 'auto', None):
+            out += [(f'Siconfi — RREO {a}', 'GET', T, {'an_exercicio': '{ano}', 'nr_periodo': '{bimestre}', 'co_tipo_demonstrativo': 'RREO', 'no_anexo': f'RREO-{a}', 'id_ente': ib}, '') for a in ('Anexo 01', 'Anexo 02')]
+        return out
     if fonte == 'pncp':
         return [('Editais publicados', 'GET', 'https://pncp.gov.br/api/search/', {'tipos_documento': 'edital', 'municipios': ib, 'status': 'todos', 'ordenacao': '-data', 'pagina': '{1, 2, …}', 'tam_pagina': 50}, '')]
     if fonte == 'siconfi':
@@ -130,6 +147,8 @@ MAPEAMENTO = {
                  ('Servidor, cargo, vínculo, remuneração', 'Pessoal'), ('Arrecadado e pago acumulados', 'Indicadores de Dinheiro público')],
     'govbr': [('cada base, coluna por coluna, em “Como cada tela do portal é montada”', 'telas da transparência')],
     'financas': [('ARRECADADO_TOTAL e PAGO por mês', 'Série mensal do painel (receita × despesa)')],
+    'financas_prefeitura': [('Siconfi RREO Anexo 1: receita realizada, previsão, dotação, empenhado e pago; Anexo 2: empenhado por função', 'Bloco “Dinheiro público da Prefeitura” do painel da Câmara'),
+                            ('ou portal da Prefeitura: ARRECADADO_TOTAL, EMPENHADO e PAGO (ano e cada mês)', 'Mesmo bloco, mês a mês; nada vai para a transparência da Câmara')],
     'pncp': [('título, modalidade, valor, data, situação, item_url', 'Contratações publicadas no PNCP (indicadores de Contratações)')],
     'siconfi': [('RREO Anexo 14 / RGF Anexo 01 (conta, coluna, valor)', 'Relatórios fiscais (transparência)')],
     'tcesp': [('receitas mensais (ano fechado)', 'Receitas de anos anteriores')],
@@ -220,10 +239,25 @@ def validar(fonte, form, atual):
             if not sel:
                 erros.append(f'{rot}: escolha ao menos uma.')
             novo[nome] = sel
+        elif tipo == 'escolha':
+            ops = ESCOLHAS.get(fonte, {}).get(nome, {})
+            if v not in ops:
+                erros.append(f'{rot}: escolha uma das opções.')
+            novo[nome] = v if v in ops else next(iter(ops), '')
         elif tipo == 'texto':
             if fonte == 'govbr' and nome == 'pessoal' and v and not all(re.fullmatch(r'[A-Za-z0-9_]{3,40}', x.strip()) for x in v.split(',') if x.strip()):
                 erros.append(f'{rot}: só códigos como DW_LC131_AP_3, separados por vírgula.')
             novo[nome] = v[:300] if fonte == 'govbr' else v[:120]
+    if fonte == 'financas_prefeitura':
+        from urllib.parse import urlsplit
+        for k in ('base', 'link'):
+            h = (urlsplit(novo.get(k) or '').hostname or '') if novo.get(k) else ''
+            if h and ('.' not in h or h.endswith(('.local', '.localhost', '.internal')) or re.fullmatch(r'[\d.]+', h)):
+                erros.append(f'{k}: use o domínio público do portal da Prefeitura (sem IP nem endereço interno).')
+        if novo.get('empresa') and not str(novo['empresa']).isdigit():
+            erros.append('Código da entidade: só números.')
+        if novo.get('modo') == 'portal' and not (novo.get('base') and novo.get('empresa')):
+            erros.append('Modo portal: informe a API de dados abertos e o código da entidade.')
     return novo, erros
 
 def hash_params(p):
@@ -288,6 +322,6 @@ def painel(o, fonte):
             'credencial': ('configurada no console' if CR.situacao(cred) else 'NÃO configurada no console') if cred else 'não usa',
             'amostras': amostras, 'coletas': coletas, 'teste': ultimo_teste(o, fonte),
             'historico': db.todos(db.LOCAL, 'SELECT * FROM fontes_historico WHERE orgao_id=%s AND fonte=%s ORDER BY id DESC LIMIT 10', (o['id'], fonte)),
-            'bases_opcoes': OPCOES_BASES.get(fonte, FIORILLI_BASES),
+            'bases_opcoes': OPCOES_BASES.get(fonte, FIORILLI_BASES), 'escolhas': ESCOLHAS.get(fonte, {}),
             'telas': _govbr().telas(p) if fonte == 'govbr' else [], 'fora': _govbr().FORA if fonte == 'govbr' else [],
             'modos_bases': {b: GOVBR_BASES[b] for b in _govbr().API} if fonte == 'govbr' else {}, 'modos_opcoes': _govbr().MODOS if fonte == 'govbr' else {}}

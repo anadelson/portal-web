@@ -2,7 +2,7 @@
 -- Novas fontes de coleta do painel de indicadores (módulo "bi").
 ALTER TABLE fontes DROP CONSTRAINT IF EXISTS fontes_fonte_check;
 -- (lista completa, igual à da 011: as migrações são reaplicadas em ordem a cada atualização e não podem estreitar a regra)
-ALTER TABLE fontes ADD CONSTRAINT fontes_fonte_check CHECK (fonte IN ('fiorilli','govbr','pncp','siconfi','tcesp','ibge','cnes','mds','pni','painel','inep','iegm','financas','youtube','redes','tempo'));
+ALTER TABLE fontes ADD CONSTRAINT fontes_fonte_check CHECK (fonte IN ('fiorilli','govbr','pncp','siconfi','tcesp','ibge','cnes','mds','pni','painel','inep','iegm','financas','youtube','redes','tempo','financas_prefeitura'));
 
 -- Indicadores de fontes públicas nacionais (IBGE, INEP via IBGE, CNES, MDS, Siconfi) gravados por código IBGE,
 -- para servir a qualquer município da plataforma. Só números agregados; nunca dados de pessoas.
