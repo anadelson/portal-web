@@ -2815,4 +2815,8 @@ Pedido do usuário: relatório colado "Prefeitura e Câmara em instalações ind
   - a restrição da tabela `fontes` ganhou `financas_prefeitura` em todas as migrações que a refazem (009, 011, 014, 016, 024, 033 e a local 004);
   - conferido sem gravar contra as fontes públicas reais de Borá: Siconfi (5º bimestre de 2026, 12 funções) e portal Fiorilli (totais iguais aos do banco da Prefeitura);
   - teste novo `tests/teste_financas_prefeitura.py` (dados fictícios, sem internet).
-- **Não implantado:** aguarda aprovação do usuário ("Aprovo, há snapshot"). Migração 041.
+- **Implantado em 23/11/2026, às 20h (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"):
+  - mescla `e0951e7` na main; backup dos três bancos ok; imagem nova; bateria completa sobre o código e sobre a imagem: 40 suítes sem falha;
+  - `atualizar`: migração 041 nos dois órgãos; a Câmara ganhou as 8 fontes do painel (com `financas_prefeitura` em modo automático) e o catálogo de indicadores; pares de integração criados;
+  - conferido: gestão 303; portais 200; `/e-sic`, `/ouvidoria`, `/e-sic/estatisticas`, `/e-sic/informacoes-classificadas`, `/ouvidoria/relatorio` e `/acesso?protocolo=` 200; `/painel/api/financas.json` da Prefeitura 200 (origem cliente, 11 meses); casemaster 200; sem erros nos logs;
+  - o painel da Câmara (`cmbora…/painel`) segue 404 porque o módulo "Painel de indicadores" não está contratado para a Câmara: o bloco das finanças da Prefeitura aparece quando o módulo for ligado.
