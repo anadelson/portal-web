@@ -112,8 +112,8 @@ post(adm, '/admin/usuarios', {'acao': 'novo', 'nome': 'Controle Interno Teste', 
 ed, ci = cli(), cli()
 entrar(ed, 'edp@teste.localhost', 'provisoria123', 'senhaforte123'); entrar(ci, 'ci@teste.localhost', 'provisoria123', 'senhaforte123')
 checa(ed.get('/admin/pntp').status_code == 403 and 'href="/admin/pntp"' not in ed.get('/admin/').text, 'editor: sem acesso e sem item no menu')
-r = post(ci, '/admin/pntp', {'criterio': '12.5', 'acao': 'marcar', 'link': '', 'obs': 'TESTE: não há regulamento'})
-m = db.um(PM, "SELECT * FROM pntp_marcacoes WHERE criterio='12.5'")
+r = post(ci, '/admin/pntp', {'criterio': '15.6', 'acao': 'marcar', 'link': '', 'obs': 'TESTE: sem pesquisa de satisfação'})
+m = db.um(PM, "SELECT * FROM pntp_marcacoes WHERE criterio='15.6'")
 checa(m and m['itens'] == {'disponibilidade': False} and m['por'] == 'Controle Interno Teste', 'controle interno marca “não atende” sem link')
 
 # 6) Câmara: mesma tela, 83 critérios, dimensão 20 da autoavaliação legislativa

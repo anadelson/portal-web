@@ -162,6 +162,21 @@ def mudancas_tick(estado):
     except Exception:
         traceback.print_exc()
 
+def atendimento_tick(agora):
+    """e-SIC/Ouvidoria (23/11/2026): a cada minuto, a fila de e-mails de cada órgão desta instalação; uma vez por dia (a partir
+    das 7h), encerra complementos vencidos e manda à equipe o resumo dos prazos que vencem em até 2 dias."""
+    from . import atendimento as A, orgaos
+    for o in orgaos.todos():
+        try:
+            if agora.hour >= 7:
+                r = A.rotina_diaria(o)
+                if r:
+                    comum.registrar(o['slug'], 'atendimento:rotina', True, r['encerrados'] + r['resumo'], f"{r['encerrados']} complemento(s) vencido(s) encerrado(s); {r['resumo']} prazo(s) no resumo")
+            A.enviar_fila(o)
+        except Exception as e:
+            comum.registrar(o['slug'], 'atendimento:rotina', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
+            traceback.print_exc()
+
 def main():
     ultimo = ultimas_execucoes()
     mud = {}
@@ -190,6 +205,7 @@ def main():
         except Exception:
             traceback.print_exc()
         diario_tick(datetime.now())
+        atendimento_tick(datetime.now())
         time.sleep(60)
 
 if __name__ == '__main__':

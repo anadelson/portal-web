@@ -1,0 +1,28 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela with context %}{% block h1 %}Configuração do atendimento{% endblock %}
+{% block conteudo %}{{ abas_tela('Atendimento', abas) }}{% set C = csrf_token(request) %}
+{{ cab('O que aparece nas páginas do e-SIC e da Ouvidoria (unidade, autoridades, norma local) e para onde vão os avisos. Estas informações também contam no PNTP (critérios 12.1, 12.5, 12.6, 12.8 e 12.9).') }}
+<section class="cx"><h2>Unidades, autoridades e norma</h2><form class="campos" method="post" action="/admin/atendimento/configuracao"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="salvar">
+<label>Unidade responsável pelo SIC<input name="unidade" value="{{ c.unidade }}" placeholder="Ex.: Serviço de Informação ao Cidadão — Secretaria de Administração"></label>
+<label>Unidade da Ouvidoria (se for outra)<input name="unidade_ouvidoria" value="{{ c.unidade_ouvidoria }}"></label>
+<label>Autoridade de recurso — 1ª instância (cargo, aparece no portal)<input name="autoridade1_cargo" value="{{ c.autoridade1_cargo }}" placeholder="Ex.: Secretário(a) de Administração"></label>
+<label>Quem decide a 1ª instância no painel<select name="autoridade1_id"><option value="">Qualquer autoridade de recurso</option>{% for a in autoridades %}<option value="{{ a.id }}" {{ 'selected' if c.autoridade1_id == a.id }}>{{ a.nome }}</option>{% endfor %}</select></label>
+<label>Autoridade de recurso — 2ª instância (cargo)<input name="autoridade2_cargo" value="{{ c.autoridade2_cargo }}" placeholder="Ex.: Prefeito(a) / Presidente da Câmara"></label>
+<label>Quem decide a 2ª instância no painel<select name="autoridade2_id"><option value="">Qualquer autoridade de recurso</option>{% for a in autoridades %}<option value="{{ a.id }}" {{ 'selected' if c.autoridade2_id == a.id }}>{{ a.nome }}</option>{% endfor %}</select></label>
+<label>Norma local que regulamenta a LAI (nome)<input name="norma_nome" value="{{ c.norma_nome }}" placeholder="Ex.: Decreto nº …/20…"></label>
+<label>Endereço da norma<input name="norma_url" value="{{ c.norma_url }}" placeholder="https://… ou /legislacao/…"></label>
+<label>E-mail da equipe (avisos sem dado pessoal e resumo diário de prazos)<input name="email_equipe" type="email" value="{{ c.email_equipe }}"></label>
+<label class="marca"><input type="checkbox" name="sem_classificadas" value="1" {{ 'checked' if c.sem_classificadas }}> Declaro que o órgão não tem informação classificada{% if c.sem_classificadas %} (desde {{ c.sem_classificadas|br }}){% endif %}</label>
+<div class="acoes-form"><button class="btn">Salvar</button></div></form></section>
+<section class="cx"><h2>E-mail de saída do órgão (opcional)</h2>
+<p>Sem SMTP próprio, os e-mails saem pelo e-mail da plataforma quando o órgão está na instalação principal; num nó, esperam na fila até o SMTP ser configurado.</p>
+{% if smtp %}<p>Configurado: {{ smtp.servidor }}:{{ smtp.porta }} ({{ smtp.seguranca }}) · remetente {{ smtp.remetente }} · senha {{ 'gravada (cifrada)' if smtp.tem_senha else 'não gravada' }} · por {{ smtp.atualizado_por }} em {{ smtp.atualizado_em|br }}{% if smtp.teste_em %} · último teste ({{ smtp.teste_em|br }}): {{ smtp.teste_resultado }}{% endif %}</p>{% endif %}
+{% if not chave_ok %}<p class="msg">A CHAVE_CREDENCIAIS desta instalação não está configurada: não dá para gravar a senha do SMTP.</p>{% endif %}
+<form class="campos" method="post" action="/admin/atendimento/configuracao" autocomplete="off"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="smtp">
+<label>Servidor<input name="servidor" value="{{ smtp.servidor if smtp }}" required></label><label>Porta<input name="porta" value="{{ smtp.porta if smtp else 465 }}" required></label>
+<label>Segurança<select name="seguranca">{% for k, n in [('ssl','SSL/TLS direto (porta 465)'), ('starttls','STARTTLS (porta 587)'), ('nenhuma','Sem criptografia (não recomendado)')] %}<option value="{{ k }}" {{ 'selected' if smtp and smtp.seguranca == k }}>{{ n }}</option>{% endfor %}</select></label>
+<label>Usuário<input name="usuario" value="{{ smtp.usuario if smtp }}"></label><label>Senha{% if smtp and smtp.tem_senha %} (deixe em branco para manter){% endif %}<input name="senha" type="password" autocomplete="new-password"></label>
+<label>Remetente<input name="remetente" type="email" value="{{ smtp.remetente if smtp }}" required></label><label>Nome do remetente<input name="remetente_nome" value="{{ smtp.remetente_nome if smtp }}"></label>
+<div class="acoes-form"><button class="btn">Gravar SMTP</button></div></form>
+{% if smtp %}<form class="campos" method="post" action="/admin/atendimento/configuracao"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="smtp_testar"><label>Enviar teste para<input name="para" type="email" required></label><div class="acoes-form"><button class="btn sec">Testar</button></div></form>
+<form class="inline" method="post" action="/admin/atendimento/configuracao"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="smtp_remover"><button class="btn sec">Remover o SMTP do órgão</button></form>{% endif %}</section>
+<p class="legal"><strong>Base legal:</strong> LAI, arts. 9º, 15 e 40 (SIC, recurso, autoridade de monitoramento); PNTP 2026, critérios 12.1, 12.5 e 12.6. A senha do SMTP fica cifrada e nunca é mostrada.</p>{% endblock %}

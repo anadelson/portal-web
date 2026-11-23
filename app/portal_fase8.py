@@ -159,24 +159,7 @@ def ato(request: Request, lid: int):
 def fale_conosco(request: Request):
     return templates.TemplateResponse(request, 'portal/fale_conosco.html', dict(ctx_orgao(request), legal='acesso'))
 
-def _acesso(request, tipo):
-    from .portal import acesso
-    ctx = ctx_orgao(request)
-    from . import carta as CT
-    try:
-        sc = CT.publicados(ctx['orgao']['banco']) if tipo == 'manifestacao' and ctx['mods'].get('carta') else []
-    except Exception:
-        sc = []
-    return templates.TemplateResponse(request, 'portal/acesso.html', dict(ctx, consulta=None, protocolo='', legal='acesso', tipo_fixo=tipo, servicos_carta=sc, titulo_pag='Ouvidoria' if tipo == 'manifestacao' else 'Acesso à informação (e-SIC)',
-        intro_pag='Reclamações, sugestões, elogios, denúncias e solicitações sobre os serviços públicos.' if tipo == 'manifestacao' else 'Peça qualquer informação pública. Você não precisa explicar o motivo do pedido.', servico_sel=request.query_params.get('servico', '')))
-
-@r.get('/ouvidoria')
-def ouvidoria(request: Request):
-    return _acesso(request, 'manifestacao')
-
-@r.get('/e-sic')
-def esic(request: Request):
-    return _acesso(request, 'pedido')
+# /ouvidoria e /e-sic: app/portal_atendimento.py (23/11/2026)
 
 # ---------- governo e links úteis (rodapé) ----------
 @r.get('/governo')

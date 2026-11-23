@@ -179,7 +179,12 @@ def _cliente(destino):
     Outra: o domínio público em HTTPS, com certificado conferido. Chamar fora do laço de eventos (pode ser o próprio processo)."""
     if destino.get('parceiro'):
         return httpx.Client(base_url=f"https://{destino['dominio']}", timeout=30, verify=True)
-    return httpx.Client(base_url=config.INTERNO_BASE, timeout=30, headers={'Host': destino['dominio'], 'X-Forwarded-Proto': 'https'})
+    return httpx.Client(base_url=config.INTERNO_BASE, timeout=30)
+
+
+def _host(destino):
+    """Cabeçalhos de cada requisição: na mesma instalação, o Host do parceiro (o endereço é o interno)."""
+    return {} if destino.get('parceiro') else {'Host': destino['dominio'], 'X-Forwarded-Proto': 'https'}
 
 
 def chamar(origem, destino, metodo, caminho, dados=None, acao=''):
@@ -193,7 +198,7 @@ def chamar(origem, destino, metodo, caminho, dados=None, acao=''):
          'X-Portal-Assinatura': assinatura(p['token'], m, metodo, caminho, corpo)}
     try:
         with _cliente(destino) as c:
-            resp = c.request(metodo, caminho, content=corpo or None, headers=h)
+            resp = c.request(metodo, caminho, content=corpo or None, headers=dict(h, **_host(destino)))
         ok = resp.status_code < 400
         log(origem['slug'], destino['slug'], acao or f'{metodo} {caminho}', ok, '' if ok else resp.text[:200])
         if not ok:
@@ -208,7 +213,7 @@ def chamar(origem, destino, metodo, caminho, dados=None, acao=''):
 def publico(destino, caminho):
     """GET de uma API PÚBLICA do parceiro (ex.: /legislacao.json), interna ou por HTTPS conforme onde ele está."""
     with _cliente(destino) as c:
-        return c.get(caminho).json()
+        return c.get(caminho, headers=_host(destino)).json()
 
 
 async def autenticar(request):

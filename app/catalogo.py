@@ -99,7 +99,8 @@ CLASSES = {
 VEDADAS = ('pub', 'agente', 'slogan')
 SITUACOES = {'rascunho': 'Rascunho', 'revisao': 'Em aprovação', 'devolvido': 'Devolvido', 'agendado': 'Agendado', 'publicado': 'Publicado', 'arquivado': 'Arquivado'}
 PERFIS = {'admin': 'Administrador do órgão', 'editor': 'Editor de conteúdo', 'publicador': 'Publicador (DTIC)', 'procuradoria': 'Procuradoria / Controle', 'remetente': 'Remetente do Diário',
-          'redator': 'Redator da Carta (secretaria)', 'validador': 'Responsável/validador da Carta (secretaria)'}
+          'redator': 'Redator da Carta (secretaria)', 'validador': 'Responsável/validador da Carta (secretaria)',
+          'ouvidoria': 'Ouvidoria / SIC (vê a identidade do solicitante)', 'autoridade_recurso': 'Autoridade de recurso (e-SIC)'}
 # Permissões por perfil
 PODE = {
     'editar': {'admin', 'editor', 'publicador'},
@@ -110,7 +111,12 @@ PODE = {
     'diario_enviar': {'admin', 'editor', 'remetente', 'publicador'},
     'diario_revisar': {'admin', 'publicador'},
     'diario_fechar': {'admin'},
-    'atendimento': {'admin', 'publicador', 'editor'},
+    # e-SIC e Ouvidoria (23/11/2026): só a Ouvidoria/SIC e o administrador veem quem pediu; a autoridade de recurso decide recursos
+    'atendimento': {'admin', 'publicador', 'editor', 'ouvidoria', 'autoridade_recurso'},
+    'atendimento_responder': {'admin', 'publicador', 'editor', 'ouvidoria'},
+    'atendimento_identidade': {'admin', 'ouvidoria'},
+    'atendimento_config': {'admin', 'ouvidoria'},
+    'recurso_decidir': {'admin', 'autoridade_recurso'},
     # Carta de Serviços (Fase 10): redator e validador só na própria secretaria; DTIC (publicador) organiza e publica
     'carta_ver': {'admin', 'publicador', 'editor', 'redator', 'validador'},
     'carta_redigir': {'admin', 'publicador', 'editor', 'redator', 'validador'},
@@ -132,6 +138,9 @@ BASE_LEGAL = {
     'transmissoes': 'PNTP 2026, critério 20.9; Lei 13.146/2015, arts. 63 e 67 (legendas e Libras).',
     'participacao': 'Lei 13.460/2017; Regimento Interno (Tribuna Livre); LGPD, art. 7º (dados pessoais só para a Secretaria).',
     'acesso': 'LAI, arts. 9º a 11, 15 e 30; Lei 13.460/2017; LGPD, art. 41.',
+    'esic_estatisticas': 'LAI (Lei 12.527/2011), art. 30, III (relatório estatístico anual de pedidos recebidos, atendidos e indeferidos, com informações genéricas sobre os solicitantes); PNTP 2026, critério 12.7.',
+    'esic_classificadas': 'LAI (Lei 12.527/2011), arts. 24, 30, I e II, e 31 (rol das informações classificadas em cada grau de sigilo e das desclassificadas nos últimos 12 meses); PNTP 2026, critérios 12.8 e 12.9.',
+    'ouvidoria_relatorio': 'Lei 13.460/2017, arts. 14, II, 15 e 23 (relatório de gestão da ouvidoria e avaliação dos serviços pelos usuários); PNTP 2026, critério 15.6.',
     'diario': 'Lei municipal de instituição do Diário Oficial eletrônico; MP 2.200-2/2001 (ICP-Brasil); Lei 14.063/2020.',
     'noticias': 'Constituição, art. 37, § 1º (vedada promoção pessoal); Lei 9.504/1997, art. 73, VI, b.',
     'acessibilidade': 'Lei 13.146/2015 (Estatuto da Pessoa com Deficiência), art. 63; Lei 10.098/2000, art. 17; eMAG 3.1 (Portaria SLTI/MP nº 3/2007); WCAG 2.1, nível AA.',

@@ -39,4 +39,4 @@ ALTER TABLE esic ADD COLUMN IF NOT EXISTS servico_id INT REFERENCES servicos(id)
 ALTER TABLE servicos ADD COLUMN IF NOT EXISTS publicado_dados JSONB;
 -- perfis novos da Carta (redator e validador por secretaria); lista completa (a migração roda de novo a cada atualização)
 ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_perfil_check;
-ALTER TABLE usuarios ADD CONSTRAINT usuarios_perfil_check CHECK (perfil IN ('admin','editor','publicador','procuradoria','remetente','redator','validador'));
+ALTER TABLE usuarios ADD CONSTRAINT usuarios_perfil_check CHECK (perfil IN ('admin','editor','publicador','procuradoria','remetente','redator','validador','ouvidoria','autoridade_recurso'));  -- lista completa (041, 23/11/2026): esta linha roda de novo em toda atualização

@@ -2767,3 +2767,41 @@ Pedido do usuário: "conseguimos replicar essa limpeza via gestão, se um dia pr
   - migração 040 aplicada (tabela `remocoes`, vazia);
   - conferido: gestão 303, portais 200, logins 200, `/remocoes` sem login redireciona para o login; a imagem leva `desinstalar.sh`; casemaster 200; sem erros nos logs.
   - Nenhum nó cadastrado no momento: o usuário vai recriar os nós com instância.
+
+## 23/11/2026 — Instalações independentes, paridade e e-SIC/Ouvidoria completos (branch integracao-esic-ouvidoria)
+Pedido do usuário: relatório colado "Prefeitura e Câmara em instalações independentes, paridade de serviços, e-SIC e Ouvidoria (23/11/2026)", usado como especificação.
+- **Integração entre instalações** (commit `cf4e2c8`):
+  - a gestão emite um diretório assinado com as licenças: parceiros do município e os tokens dos pares;
+  - o nó só aceita o diretório se for dele, recente e mais novo que o guardado;
+  - chamadas entre órgãos: endereço interno na mesma instalação, HTTPS com certificado conferido em outra;
+  - `GET /api/integracao/ping`;
+  - remessa ao Diário, Prefeitura da Câmara e legislação funcionam entre nós;
+  - console: renovar chaves e desligar a integração; painel "Órgãos parceiros" com teste de conversa.
+- **Paridade** (commit `3bea815`): Diário Oficial e painel de indicadores opcionais também para a Câmara; finanças (Fiorilli) só no Executivo.
+- **e-SIC e Ouvidoria**:
+  - migração `041_orgao_atendimento.sql`, idempotente; registros antigos ganham prazo calculado;
+  - a 019 passou a ter a lista completa de perfis, porque ela roda de novo a cada atualização;
+  - perfis novos: "Ouvidoria / SIC" (vê a identidade, junto com o administrador) e "Autoridade de recurso".
+- **Portal:**
+  - protocolo + código de acesso (só o hash fica no banco); sem o código, a consulta mostra só a situação;
+  - complemento, recurso em 1ª/2ª instância e avaliação;
+  - denúncia anônima só na Ouvidoria;
+  - páginas novas com "Base legal:": `/e-sic/estatisticas` (CSV/JSON), `/e-sic/informacoes-classificadas` (CSV) e `/ouvidoria/relatorio` (CSV/JSON);
+  - a página do e-SIC mostra unidade, autoridades, prazos (inclusive recursal), procedimento e norma local.
+- **Painel** (`app/admin_atendimento.py`):
+  - filtros, histórico com notas internas, setor;
+  - prorrogação única (LAI 20+10; Ouvidoria 30+30); complemento único (20 dias, prazo suspenso);
+  - resposta com resultado, fundamento obrigatório para negativa ou acesso parcial, CPF completo recusado;
+  - decisão de recurso: quem respondeu não decide; quem decidiu a 1ª não decide a 2ª; autoridade configurável;
+  - encaminhamento ao parceiro sem a identidade, com protocolo novo no destino e consulta da situação;
+  - registro presencial; configuração com SMTP próprio (senha cifrada) e teste; relatório; informações classificadas.
+- **E-mails:**
+  - ao cidadão em cada passo; à equipe sem dado pessoal, mais um resumo diário dos prazos;
+  - envio pelo SMTP do órgão, senão pelo e-mail da plataforma (só na instalação principal), senão esperam na fila;
+  - o texto é apagado da fila depois do envio.
+- **Worker:** fila a cada minuto; rotina diária a partir das 7h (encerra complementos vencidos e envia o resumo).
+- **PNTP automático:** 12.1, 12.3 e 12.5 a 12.9 medidos pela configuração.
+- **Testes:** novo `tests/teste_atendimento.py`, só com dados fictícios, em duas partes:
+  - fluxos do e-SIC e da Ouvidoria;
+  - dois nós simulados com bancos locais separados: diretório, ping, legislação, remessa, encaminhamento, renovação de chaves, integração desligada, diretório adulterado, de outro nó ou antigo.
+- **Não implantado:** aguarda aprovação do usuário ("Aprovo, há snapshot"). Migração 041.

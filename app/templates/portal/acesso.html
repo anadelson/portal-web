@@ -3,26 +3,47 @@
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/fale-conosco">Atendimento</a><span aria-hidden="true">›</span><span aria-current="page">{{ titulo_pag }}</span></nav>
 <h1>{{ titulo_pag }}</h1><p class="intro">{{ intro_pag }}</p>{{ legal_topo(legal) }}
-{% if consulta %}<section class="secao cartao"><h2>Protocolo {{ consulta.protocolo }}</h2><p>{{ consulta.assunto }} · recebido em {{ consulta.recebido|br }}</p><p>Situação: <span class="chip">{{ {'recebido':'Recebido','analise':'Em análise','prorrogado':'Prorrogado','respondido':'Respondido','recurso':'Em recurso'}[consulta.situacao] }}</span></p>{% if consulta.resposta %}<h3>Resposta</h3><p style="white-space:pre-line">{{ consulta.resposta }}</p>{% endif %}</section>{% elif protocolo %}<p class="msg" style="background:#FBE4D8">Protocolo não encontrado.</p>{% endif %}
+{% set unidade = (at.unidade if tipo_fixo == 'pedido' else (at.unidade_ouvidoria or at.unidade)) %}
 <div class="atend">
 <div class="atend-principal">
 <nav class="pilulas-atend" aria-label="Tipo de atendimento"><a href="/ouvidoria"{% if tipo_fixo == 'manifestacao' %} aria-current="page"{% endif %}>Ouvidoria</a><a href="/e-sic"{% if tipo_fixo == 'pedido' %} aria-current="page"{% endif %}>Acesso à informação</a></nav>
-<p class="atend-info">{% if tipo_fixo == 'pedido' %}Pedido de informação (Lei 12.527/2011): resposta em até 20 dias, prorrogáveis por mais 10. Não é preciso dizer por que você quer a informação.{% elif tipo_fixo == 'manifestacao' %}Reclamação, sugestão, elogio, denúncia ou solicitação (Lei 13.460/2017): resposta em até 30 dias.{% else %}Pedido de informação: até 20 dias (+10). Ouvidoria: até 30 dias.{% endif %}</p>
-<h2 id="pedido">{{ 'Registrar uma manifestação' if tipo_fixo == 'manifestacao' else 'Fazer um pedido de informação' if tipo_fixo == 'pedido' else 'Fazer um pedido ou manifestação' }}</h2>
+{% if tipo_fixo == 'pedido' %}
+<section class="secao cartao" aria-labelledby="h-como"><h2 id="h-como">Como funciona</h2>
+<ul>
+<li><strong>Unidade responsável pelo SIC:</strong> {{ unidade or 'não informada' }}.</li>
+<li><strong>Resposta:</strong> em até 20 dias, prorrogáveis uma vez por mais 10, com justificativa (LAI, art. 11). Se precisarmos de um complemento, você terá 20 dias para enviá-lo e o prazo fica suspenso.</li>
+<li><strong>Recurso:</strong> se o acesso for negado ou parcial, ou se você não concordar, recorra em até 10 dias depois da resposta; a decisão sai em até 5 dias (LAI, art. 15).
+ {% if at.autoridade1_cargo %}1ª instância: {{ at.autoridade1_cargo }}.{% endif %}{% if at.autoridade2_cargo %} 2ª instância: {{ at.autoridade2_cargo }}, também em 10 dias para recorrer e 5 para decidir.{% endif %}</li>
+<li><strong>Procedimento:</strong> preencha o formulário; você recebe um protocolo e um código de acesso (também por e-mail). Com eles, acompanhe, veja a resposta, envie complemento e apresente recurso nesta mesma página.</li>
+{% if at.norma_nome %}<li><strong>Regulamentação local da LAI:</strong> {% if at.norma_url %}<a href="{{ at.norma_url }}">{{ at.norma_nome }}</a>{% else %}{{ at.norma_nome }}{% endif %}.</li>{% endif %}
+</ul>
+<p><a href="/e-sic/estatisticas">Relatório estatístico de pedidos</a> · <a href="/e-sic/informacoes-classificadas">Informações classificadas e desclassificadas</a></p></section>
+{% else %}
+<section class="secao cartao" aria-labelledby="h-como"><h2 id="h-como">Como funciona</h2>
+<ul>{% if unidade %}<li><strong>Unidade responsável:</strong> {{ unidade }}.</li>{% endif %}
+<li><strong>Resposta:</strong> em até 30 dias, prorrogáveis uma vez por mais 30, com justificativa (Lei 13.460/2017, art. 16).</li>
+<li><strong>Denúncia anônima:</strong> só a denúncia pode ser feita sem identificação. Sem e-mail, acompanhe pelo protocolo e pelo código que aparecem na tela — anote os dois.</li>
+<li><strong>Sua identidade</strong> fica restrita à equipe da Ouvidoria (Lei 13.460/2017, art. 10, § 7º).</li></ul>
+<p><a href="/ouvidoria/relatorio">Relatório da Ouvidoria e resultado das avaliações</a></p></section>
+{% endif %}
+<h2 id="pedido">{{ 'Registrar uma manifestação' if tipo_fixo == 'manifestacao' else 'Fazer um pedido de informação' }}</h2>
 <form class="campos" method="post" action="/acesso"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
-{% if tipo_fixo %}<input type="hidden" name="tipo" value="{{ tipo_fixo }}">{% else %}<label>Tipo<select name="tipo"><option value="pedido">Pedido de informação (e-SIC)</option><option value="manifestacao">Ouvidoria</option></select></label>{% endif %}
-{% if tipo_fixo != 'pedido' %}<label id="ouvidoria">Categoria (Ouvidoria)<select name="categoria"><option value="">—</option><option>Reclamação</option><option>Sugestão</option><option>Elogio</option><option>Denúncia</option><option>Solicitação</option></select></label>
+<input type="hidden" name="tipo" value="{{ tipo_fixo }}">
+{% if tipo_fixo != 'pedido' %}<label id="ouvidoria">Categoria<select name="categoria" id="categoria"><option value="">—</option>{% for c in A.CATEGORIAS %}<option>{{ c }}</option>{% endfor %}</select></label>
 {% if servicos_carta %}<label>Sobre qual serviço? (opcional)<select name="servico_id"><option value="">— nenhum / não sei —</option>{% for x in servicos_carta %}<option value="{{ x.id }}" {{ 'selected' if servico_sel == x.slug }}>{{ x.nome }}</option>{% endfor %}</select></label>{% endif %}{% endif %}
 <label>Assunto<input name="assunto" maxlength="200" required></label>
 <label>Texto<textarea name="texto" rows="6" required></textarea></label>
-<label>Seu nome<input name="nome" maxlength="120" required autocomplete="name"></label>
-<label>E-mail para resposta<input name="email" type="email" maxlength="120" required autocomplete="email"></label>
-<p style="font-size:var(--fs-meta);color:#4B5563;margin:0">Seu nome e e-mail são usados só para responder e não aparecem no portal (LGPD).</p>
+{% if tipo_fixo != 'pedido' %}<label class="marca"><input type="checkbox" name="anonimo" value="1" id="anonimo"> Denúncia anônima (sem nome e e-mail)</label>{% endif %}
+<div id="identificacao"><label>Seu nome<input name="nome" maxlength="120" autocomplete="name"></label>
+<label>E-mail para resposta<input name="email" type="email" maxlength="120" autocomplete="email"></label>
+{% if tipo_fixo == 'pedido' %}<label>Você é (opcional, só para a estatística)<select name="perfil_solicitante"><option value="">Prefiro não informar</option><option value="pf">Pessoa física</option><option value="pj">Pessoa jurídica</option></select></label>{% endif %}</div>
+<p style="font-size:var(--fs-meta);color:#4B5563;margin:0">Seu nome e e-mail são usados só para responder e não aparecem no portal (LGPD). Não pedimos documento nem o motivo do pedido.</p>
 <button class="btn" type="submit">Enviar</button></form>
+{% if tipo_fixo != 'pedido' %}<script>(function(){var a=document.getElementById('anonimo'),c=document.getElementById('categoria'),i=document.getElementById('identificacao');function f(){if(a.checked){c.value='Denúncia';}i.hidden=a.checked;}a.addEventListener('change',f);c.addEventListener('change',function(){if(c.value!=='Denúncia'){a.checked=false;f();}});})();</script>{% endif %}
 </div>
 <aside class="atend-lado" aria-labelledby="h-canais"><h2 id="h-canais">Outros canais</h2>
-<ul>{% if ident.telefone %}<li>Telefone: {{ ident.telefone }}</li>{% endif %}{% if ident.whatsapp %}<li>WhatsApp: {{ ident.whatsapp }}</li>{% endif %}{% if ident.email %}<li>E-mail: <a href="mailto:{{ ident.email }}">{{ ident.email }}</a></li>{% endif %}{% if ident.endereco %}<li>Presencial: {{ ident.endereco }}{% if ident.horario %}, {{ ident.horario }}{% endif %}</li>{% endif %}</ul>
+<ul>{% if unidade %}<li>{{ unidade }}</li>{% endif %}{% if ident.telefone %}<li>Telefone: {{ ident.telefone }}</li>{% endif %}{% if ident.whatsapp %}<li>WhatsApp: {{ ident.whatsapp }}</li>{% endif %}{% if ident.email %}<li>E-mail: <a href="mailto:{{ ident.email }}">{{ ident.email }}</a></li>{% endif %}{% if ident.endereco %}<li>Presencial: {{ ident.endereco }}{% if ident.horario %}, {{ ident.horario }}{% endif %}</li>{% endif %}</ul>
 <h3>Consultar protocolo</h3><form class="campos" action="/acesso"><label>Número do protocolo<input name="protocolo" value="{{ protocolo }}" placeholder="Ex.: OUV-2026-ABC123"></label><button class="btn sec" type="submit">Consultar</button></form>
-<p><a href="/transparencia">Estatísticas de pedidos e informações classificadas</a></p></aside>
+</aside>
 </div>
 {% endblock %}

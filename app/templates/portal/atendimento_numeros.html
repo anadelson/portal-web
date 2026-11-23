@@ -1,0 +1,36 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ titulo_pag }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/fale-conosco">Atendimento</a><span aria-hidden="true">›</span>{% if pagina == 'ouvidoria' %}<a href="/ouvidoria">Ouvidoria</a>{% else %}<a href="/e-sic">Acesso à informação</a>{% endif %}<span aria-hidden="true">›</span><span aria-current="page">{{ titulo_pag }}</span></nav>
+<h1>{{ titulo_pag }}</h1>
+{% if pagina == 'estatisticas' %}<p class="intro">Pedidos de acesso à informação recebidos, atendidos e indeferidos, recursos e informações genéricas sobre os solicitantes. Números calculados na hora a partir dos registros do e-SIC, sem dado pessoal.</p>
+{% elif pagina == 'classificadas' %}<p class="intro">Informações classificadas em cada grau de sigilo e as desclassificadas nos últimos 12 meses.</p>
+{% else %}<p class="intro">Manifestações recebidas pela Ouvidoria, por categoria e serviço, prazos e o resultado das avaliações feitas pelos cidadãos. Números calculados na hora, sem dado pessoal.</p>{% endif %}
+{{ legal_topo(legal) }}
+{% if anos %}<form class="campos" style="flex-direction:row;align-items:end;gap:8px"><label>Ano<select name="ano">{% for a in anos %}<option {{ 'selected' if a == ano }}>{{ a }}</option>{% endfor %}</select></label><button class="btn sec">Ver</button></form>{% endif %}
+{% if pagina == 'estatisticas' %}
+<div class="tabela"><table><caption>Relatório estatístico de {{ ano }}</caption><thead><tr><th scope="col">Indicador</th><th scope="col">{{ ano }}</th></tr></thead><tbody>
+{% for k, n in A.ROTULOS_EST %}<tr><td>{{ n }}</td><td>{{ (e[k] if e[k] is not none else '—')|string|replace('.', ',') }}</td></tr>{% endfor %}</tbody></table></div>
+<p>Baixar: <a href="/e-sic/estatisticas?ano={{ ano }}&formato=csv">CSV</a> · <a href="/e-sic/estatisticas?ano={{ ano }}&formato=json">JSON</a></p>
+{% elif pagina == 'classificadas' %}
+<h2>Informações classificadas</h2>
+{% if ativas %}<div class="tabela"><table><caption class="sr">Classificadas</caption><thead><tr><th scope="col">Grau</th><th scope="col">Assunto</th><th scope="col">Categoria</th><th scope="col">Fundamento</th><th scope="col">Classificada em</th><th scope="col">Sigilo até</th><th scope="col">Autoridade</th><th scope="col">Referência</th></tr></thead><tbody>
+{% for x in ativas %}<tr><td>{{ A.GRAUS[x.grau][0] }}</td><td>{{ x.assunto }}</td><td>{{ x.categoria }}</td><td>{{ x.fundamento }}</td><td>{{ x.classificada_em|br }}</td><td>{{ x.prazo_ate|br }}</td><td>{{ x.autoridade }}</td><td>{{ x.referencia }}</td></tr>{% endfor %}</tbody></table></div>
+{% elif at.sem_classificadas %}<p>Declaração do órgão ({{ at.sem_classificadas|br }}): não há informação classificada em nenhum grau de sigilo.</p>
+{% else %}<p class="vazio">Nenhuma informação classificada cadastrada.</p>{% endif %}
+<h2>Desclassificadas nos últimos 12 meses</h2>
+{% if descl %}<div class="tabela"><table><caption class="sr">Desclassificadas</caption><thead><tr><th scope="col">Grau anterior</th><th scope="col">Assunto</th><th scope="col">Desclassificada em</th><th scope="col">Motivo</th><th scope="col">Referência</th></tr></thead><tbody>
+{% for x in descl %}<tr><td>{{ A.GRAUS[x.grau][0] }}</td><td>{{ x.assunto }}</td><td>{{ x.desclassificada_em|br }}</td><td>{{ x.motivo_desclassificacao }}</td><td>{{ x.referencia }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="vazio">Nenhuma informação desclassificada nos últimos 12 meses{% if at.sem_classificadas %} (declaração de {{ at.sem_classificadas|br }}){% endif %}.</p>{% endif %}
+<p>Baixar: <a href="/e-sic/informacoes-classificadas?formato=csv">CSV</a></p>
+{% else %}{% set t = rel.totais %}
+<div class="tabela"><table><caption>Manifestações de {{ ano }}</caption><tbody>
+<tr><th scope="row">Recebidas</th><td>{{ t.recebidas }}</td></tr><tr><th scope="row">Respondidas</th><td>{{ t.respondidas }}</td></tr><tr><th scope="row">Respondidas no prazo</th><td>{{ t.no_prazo }}</td></tr>
+<tr><th scope="row">Em aberto</th><td>{{ t.em_aberto }}</td></tr><tr><th scope="row">Com prazo prorrogado</th><td>{{ t.prorrogadas }}</td></tr><tr><th scope="row">Denúncias anônimas</th><td>{{ t.anonimas }}</td></tr>
+<tr><th scope="row">Tempo médio de resposta (dias)</th><td>{{ (t.dias_medios if t.dias_medios is not none else '—')|string|replace('.', ',') }}</td></tr></tbody></table></div>
+<h2>Por categoria</h2>{% if rel.categorias %}<ul>{% for c in rel.categorias %}<li>{{ c.categoria }}: {{ c.n }}</li>{% endfor %}</ul>{% else %}<p class="vazio">Nenhuma manifestação em {{ ano }}.</p>{% endif %}
+{% if rel.servicos %}<h2>Serviços mais citados</h2><ul>{% for s in rel.servicos %}<li>{{ s.nome }}: {{ s.n }}</li>{% endfor %}</ul>{% endif %}
+<h2>Avaliação dos cidadãos</h2>{% if t.avaliacoes %}<p>{{ t.avaliacoes }} avaliação(ões); nota média {{ t.nota_media|string|replace('.', ',') }} de 5; a resposta resolveu para {{ t.resolveu }} e não resolveu para {{ t.nao_resolveu }}.</p>{% else %}<p class="vazio">Nenhuma avaliação em {{ ano }}.</p>{% endif %}
+<p>Baixar: <a href="/ouvidoria/relatorio?ano={{ ano }}&formato=csv">CSV</a> · <a href="/ouvidoria/relatorio?ano={{ ano }}&formato=json">JSON</a></p>
+{% endif %}
+{% endblock %}

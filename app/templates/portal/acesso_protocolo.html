@@ -1,0 +1,45 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}{{ titulo_pag }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/fale-conosco">Atendimento</a><span aria-hidden="true">›</span><span aria-current="page">{{ titulo_pag }}</span></nav>
+<h1>{{ titulo_pag }}</h1>{{ legal_topo(legal) }}
+{% if modo == 'registrado' %}
+<section class="secao cartao" aria-labelledby="h-ok"><h2 id="h-ok">Protocolo {{ p.protocolo }}</h2>
+<p>Recebemos o seu {{ A.rotulo(p) }}. Prazo de resposta: <strong>{{ p.prazo|br }}</strong>.</p>
+<p>Código de acesso: <strong style="font-size:var(--fs-h3);letter-spacing:.08em"><code>{{ codigo }}</code></strong></p>
+<p><strong>Anote o protocolo e o código.</strong> O código aparece só agora{% if p.email %} e no e-mail que enviamos{% endif %}: sem ele, a consulta mostra só a situação. Com ele, você vê a resposta, envia complemento, recorre e avalia.</p>
+<form class="campos" method="post" action="/acesso/consulta"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="protocolo" value="{{ p.protocolo }}"><input type="hidden" name="codigo" value="{{ codigo }}"><button class="btn sec">Abrir o protocolo</button></form>
+</section>
+{% elif modo == 'situacao' %}
+{% if p %}<section class="secao cartao"><h2>Protocolo {{ p.protocolo }}</h2>
+<p>{{ 'Pedido de informação' if p.tipo == 'pedido' else 'Manifestação da Ouvidoria' }} · recebido em {{ p.recebido|br }}</p>
+<p>Situação: <span class="chip">{{ A.SITUACOES[p.situacao] }}</span>{% if p.situacao in ('recebido','analise') and p.prazo %} · prazo de resposta: {{ p.prazo|br }}{% endif %}</p>
+<p>Para ver o conteúdo e a resposta, informe o código de acesso.</p>
+<form class="campos" method="post" action="/acesso/consulta"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="protocolo" value="{{ p.protocolo }}">
+<label>Código de acesso<input name="codigo" required autocomplete="off" placeholder="XXXX-XXXX-XXXX"></label><button class="btn">Ver o protocolo completo</button></form></section>
+{% else %}<p class="msg" style="background:#FBE4D8">Protocolo não encontrado.</p>{% endif %}
+<form class="campos" action="/acesso"><label>Número do protocolo<input name="protocolo" value="{{ protocolo }}"></label><button class="btn sec" type="submit">Consultar</button></form>
+{% else %}
+{% if aviso %}<p class="msg" role="status"{% if aviso_erro %} style="background:#FBE4D8"{% endif %}>{{ aviso }}</p>{% endif %}
+{% macro acao_form(acao, botao) %}<form class="campos" method="post" action="/acesso/acao"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="protocolo" value="{{ p.protocolo }}"><input type="hidden" name="codigo" value="{{ codigo }}"><input type="hidden" name="acao" value="{{ acao }}">{{ caller() }}<button class="btn">{{ botao }}</button></form>{% endmacro %}
+<section class="secao cartao"><h2>{{ p.assunto }}</h2>
+<p>{{ 'Pedido de informação' if p.tipo == 'pedido' else 'Ouvidoria' ~ (' · ' ~ p.categoria if p.categoria else '') }} · recebido em {{ p.recebido|br }} · <span class="chip">{{ A.SITUACOES[p.situacao] }}</span>{% if p.situacao in ('recebido','analise') %} · prazo: {{ p.prazo|br }}{% if p.prorrogado %} (prorrogado){% endif %}{% endif %}</p>
+<h3>O que você escreveu</h3><p style="white-space:pre-line">{{ p.texto }}</p>
+{% if p.complemento_pedido %}<h3>Complemento pedido pela equipe</h3><p style="white-space:pre-line">{{ p.complemento_pedido }}</p>{% if p.complemento_resposta %}<h3>Seu complemento</h3><p style="white-space:pre-line">{{ p.complemento_resposta }}</p>{% endif %}{% endif %}
+{% if p.prorrogado and p.justificativa %}<p><strong>Prorrogação:</strong> {{ p.justificativa }}</p>{% endif %}
+{% if p.situacao == 'encaminhado' %}<h3>Encaminhado</h3><p>A informação é de <strong>{{ p.encaminhado_orgao }}</strong>, para onde o pedido foi encaminhado sem o seu nome e e-mail. Novo protocolo: <strong>{{ p.encaminhado_protocolo }}</strong>, código de acesso <code>{{ p.encaminhado_codigo }}</code>. <a href="https://{{ p.encaminhado_dominio }}/acesso?protocolo={{ p.encaminhado_protocolo }}">Acompanhar lá ↗</a></p>{% endif %}
+{% if p.resposta %}<h3>Resposta{% if p.resultado %} — {{ A.RESULTADOS[p.resultado] }}{% endif %}</h3><p style="white-space:pre-line">{{ p.resposta }}</p>{% if p.fundamento %}<p><strong>Fundamento:</strong> {{ p.fundamento }}</p>{% endif %}{% endif %}
+{% for r in recursos %}<h3>Recurso de {{ r.instancia }}ª instância ({{ r.criado_em|br }})</h3><p style="white-space:pre-line">{{ r.texto }}</p>
+{% if r.resultado %}<p><strong>{{ A.DECISOES[r.resultado] }}</strong> em {{ r.decidido_em|br }}</p><p style="white-space:pre-line">{{ r.decisao }}</p>{% else %}<p>Aguardando decisão até {{ r.prazo|br }}{% if at['autoridade' ~ r.instancia ~ '_cargo'] %} ({{ at['autoridade' ~ r.instancia ~ '_cargo'] }}){% endif %}.</p>{% endif %}{% endfor %}
+{% if p.encerrado_motivo %}<p><strong>Encerrado:</strong> {{ p.encerrado_motivo }}.</p>{% endif %}
+</section>
+{% if p.situacao == 'complemento' %}<section class="secao cartao"><h2>Enviar o complemento</h2><p>Até {{ p.complemento_prazo|br }}.</p>{% call acao_form('complementar', 'Enviar complemento') %}<label>Complemento<textarea name="texto" rows="5" required></textarea></label>{% endcall %}</section>{% endif %}
+{% if recurso_inst %}<section class="secao cartao"><h2>Recorrer ({{ recurso_inst }}ª instância)</h2><p>Até {{ recurso_lim|br }}. A decisão sai em até 5 dias{% if at['autoridade' ~ recurso_inst ~ '_cargo'] %}, por: {{ at['autoridade' ~ recurso_inst ~ '_cargo'] }}{% endif %}.</p>{% call acao_form('recorrer', 'Apresentar recurso') %}<label>Razões do recurso<textarea name="texto" rows="5" required></textarea></label>{% endcall %}</section>{% endif %}
+{% if p.situacao in ('respondido','encerrado') and not p.avaliado_em %}<section class="secao cartao"><h2>Avalie o atendimento</h2>{% call acao_form('avaliar', 'Enviar avaliação') %}
+<fieldset><legend>Nota (1 = muito ruim, 5 = muito bom)</legend>{% for n in range(1, 6) %}<label class="marca"><input type="radio" name="nota" value="{{ n }}" required> {{ n }}</label>{% endfor %}</fieldset>
+<fieldset><legend>A resposta resolveu?</legend><label class="marca"><input type="radio" name="resolveu" value="sim" required> Sim</label><label class="marca"><input type="radio" name="resolveu" value="nao"> Não</label></fieldset>
+<label>Comentário (opcional)<textarea name="comentario" rows="3" maxlength="1000"></textarea></label>{% endcall %}<p class="legal">Lei 13.460/2017, art. 23: o resultado das avaliações é publicado no relatório da Ouvidoria.</p></section>
+{% elif p.avaliado_em %}<p>Você avaliou este atendimento em {{ p.avaliado_em|br }}. Obrigado!</p>{% endif %}
+{% if historico %}<section class="secao"><h2>Andamento</h2><ol>{% for h in historico %}<li>{{ h.quando|br }} — {{ h.acao }}{% if h.texto %}: <span style="white-space:pre-line">{{ h.texto }}</span>{% endif %}</li>{% endfor %}</ol></section>{% endif %}
+{% endif %}
+{% endblock %}

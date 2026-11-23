@@ -136,13 +136,25 @@ def medir(orgao, hoje, rotas=()):
         R['11.6'] = dica(f"O portal mostra dados do RREO lidos do Siconfi (último: {rreo % 10}º bimestre de {rreo // 10}); confira se o relatório completo está publicado." if rreo else 'Sem RREO no portal.')
 
     # 12. SIC
-    R['12.1'] = dica('A página do e-SIC não indica a unidade/setor responsável pelo SIC.')
+    from . import atendimento as AT
+    at = AT.conf(b)
+    R['12.1'] = sim(f"Página do e-SIC com a unidade responsável: {at['unidade']}.", '/e-sic') if at['unidade'] else nao('Unidade responsável pelo SIC não informada (Painel → e-SIC e Ouvidoria → Configuração).', '/admin/atendimento/configuracao')
     falta = [n for k, n in (('endereco', 'endereço'), ('telefone', 'telefone'), ('email', 'e-mail'), ('horario', 'horário')) if _vazio(ident.get(k))]
     R['12.2'] = nao('Falta no cadastro do órgão: ' + ', '.join(falta) + '.', '/e-sic') if falta else sim('Endereço, telefone, e-mail e horário na página do e-SIC.', '/e-sic')
-    R['12.3'] = sim('Formulário eletrônico de pedido de informação.', '/e-sic')
-    R['12.4'] = sim('O pedido exige só nome e e-mail para a resposta, sem documentos.', '/e-sic')
-    R['12.6'] = dica('A página informa o prazo de 20 + 10 dias, mas não o prazo de recurso nem as autoridades competentes.')
-    R['12.7'] = dica('O portal não publica o relatório anual estatístico do e-SIC.')
+    R['12.3'] = sim('Formulário eletrônico de pedido de informação, com protocolo e código de acesso para acompanhar.', '/e-sic')
+    R['12.4'] = sim('O pedido exige só nome e e-mail para a resposta, sem documentos nem motivo.', '/e-sic')
+    R['12.5'] = sim(f"Norma local da LAI na página do e-SIC: {at['norma_nome']}.", '/e-sic') if at['norma_nome'] and at['norma_url'] else nao('Norma local que regulamenta a LAI não informada (nome e endereço) na Configuração do atendimento.', '/admin/atendimento/configuracao')
+    if at['autoridade1_cargo']:
+        R['12.6'] = sim(f"Prazos (20 + 10 dias; recurso em 10, decisão em 5), procedimento e autoridades ({at['autoridade1_cargo']}" + (f"; 2ª instância: {at['autoridade2_cargo']}" if at['autoridade2_cargo'] else '') + ') na página do e-SIC.', '/e-sic')
+    else:
+        R['12.6'] = nao('A página mostra prazos e procedimento, mas falta a autoridade de recurso (Configuração do atendimento).', '/admin/atendimento/configuracao')
+    R['12.7'] = sim('Relatório estatístico (recebidos, atendidos, indeferidos, recursos, perfil dos solicitantes) calculado dos registros, com CSV e JSON.', '/e-sic/estatisticas')
+    n_cl = um('SELECT count(*) FILTER (WHERE desclassificada_em IS NULL) a, count(*) FILTER (WHERE desclassificada_em >= %s) d FROM info_classificadas', hoje - timedelta(days=365))
+    declarou = bool(at['sem_classificadas'])
+    R['12.8'] = sim(f"{n_cl['a']} informação(ões) classificada(s) publicada(s) com grau, assunto, categoria, fundamento e prazo." if n_cl['a'] else 'Declaração de que o órgão não tem informação classificada.', '/e-sic/informacoes-classificadas') \
+        if (n_cl['a'] or declarou) else nao('Cadastre as informações classificadas ou declare que não há nenhuma (Configuração do atendimento).', '/admin/atendimento/classificadas')
+    R['12.9'] = sim(f"{n_cl['d']} desclassificada(s) nos últimos 12 meses." if n_cl['d'] else 'Lista de desclassificadas dos últimos 12 meses publicada (nenhuma no período).', '/e-sic/informacoes-classificadas') \
+        if (n_cl['a'] or n_cl['d'] or declarou) else nao('Lista de desclassificadas depende do cadastro das classificadas ou da declaração de inexistência.', '/admin/atendimento/classificadas')
 
     # 13. Acessibilidade (recursos do modelo do portal, em todas as páginas)
     R['13.1'] = sim('Símbolo e página de acessibilidade em destaque no topo.', '/acessibilidade')
@@ -167,7 +179,7 @@ def medir(orgao, hoje, rotas=()):
         R['15.1'] = sim(f"Encarregado: {ident['encarregado']}.", '/privacidade#encarregado')
     R['15.2'] = sim('Política de privacidade publicada.', '/privacidade')
     R['15.4'] = sim('Dados abertos em CSV e JSON, com API e regras de uso na página.', '/dados-abertos')
-    R['15.6'] = dica('O portal coleta “Avalie esta página”, mas não publica o resultado como pesquisa de satisfação.')
+    R['15.6'] = dica('A Ouvidoria publica o resultado das avaliações dos atendimentos em /ouvidoria/relatorio; confira se basta como pesquisa de satisfação do órgão.')
 
     if not exe:
         R.update(_dimensao20(ctx))
