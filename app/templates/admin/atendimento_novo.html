@@ -1,0 +1,15 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela with context %}{% block h1 %}Registro presencial{% endblock %}
+{% block conteudo %}{{ abas_tela('Atendimento', abas) }}
+{% if feito %}<section class="cx"><h2>Registrado: {{ feito.protocolo }}</h2><p>Entregue ao cidadão o protocolo e o código de acesso (o código aparece só agora{% if feito.email %} e vai também por e-mail{% endif %}):</p>
+<p style="font-size:var(--fs-kpi)">Protocolo <strong>{{ feito.protocolo }}</strong> · código <strong><code>{{ codigo }}</code></strong></p><p>Prazo de resposta: {{ feito.prazo|br }}.</p>
+<p><a class="btn" href="/admin/atendimento/{{ feito.id }}">Abrir a ficha</a> <a class="btn sec" href="/admin/atendimento/novo">Registrar outro</a></p></section>
+{% else %}{{ cab('Pedido ou manifestação feito no balcão, por telefone ou por carta: registre aqui para ter protocolo, prazo e estatística. Só a denúncia pode ser anônima.') }}
+<form class="campos" method="post" action="/admin/atendimento/novo"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<label>Tipo<select name="tipo"><option value="pedido">Pedido de informação (LAI)</option><option value="manifestacao">Ouvidoria</option></select></label>
+<label>Categoria (Ouvidoria)<select name="categoria"><option value="">—</option>{% for c in A.CATEGORIAS %}<option>{{ c }}</option>{% endfor %}</select></label>
+<label>Assunto<input name="assunto" maxlength="200" required></label><label>Texto<textarea name="texto" rows="6" required></textarea></label>
+<label class="marca"><input type="checkbox" name="anonimo" value="1"> Denúncia anônima</label>
+<label>Nome<input name="nome" maxlength="120"></label><label>E-mail (opcional; sem e-mail, o cidadão acompanha pelo protocolo e código)<input name="email" type="email" maxlength="120"></label>
+<label>Perfil (estatística)<select name="perfil_solicitante"><option value="">Não informado</option><option value="pf">Pessoa física</option><option value="pj">Pessoa jurídica</option></select></label>
+<div class="acoes-form"><button class="btn">Registrar</button></div></form>{% endif %}
+<p class="legal"><strong>Base legal:</strong> LAI, art. 10 (pedido por qualquer meio legítimo); Lei 13.460/2017, art. 10; LGPD.</p>{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab with context %}{% block h1 %}Órgãos parceiros{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+{{ cab('Os outros órgãos do município. Com eles, este portal troca informações (remessa ao Diário, legislação, encaminhamento de pedidos do e-SIC), estejam na mesma instalação ou em outra.') }}
+{% if not parceiros %}<section class="cx"><p>Nenhum órgão parceiro conhecido.{% if not diretorio %} Se o parceiro estiver em outra instalação, ele aparece aqui quando este portal receber o diretório da gestão (até 5 minutos depois de atualizado).{% endif %}</p></section>{% endif %}
+{% for p in parceiros %}<section class="cx"><h2>{{ p.nome }}</h2>
+<p><a href="https://{{ p.dominio }}">{{ p.dominio }} ↗</a> · {% if p.mesma_instalacao %}<span class="chip">mesma instalação</span>{% else %}<span class="chip azul">outra instalação{% if p.hospedagem %} ({{ 'gestão' if p.hospedagem == 'gestao' else 'nó ' ~ p.hospedagem }}){% endif %}</span>{% endif %}
+· integração {% if p.ida %}<span class="chip ok">ativa</span>{% else %}<span class="chip alerta">desligada ou sem chave</span>{% endif %}</p>
+<p><small>Serviços: {{ p.servicos|join(', ') if p.servicos else 'só os obrigatórios' }}</small></p>
+<form class="inline" method="post" action="/admin/parceiros"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ p.id }}"><button class="btn sec">Testar conversa</button></form>
+</section>{% endfor %}
+<section class="cx"><h2>Últimas mensagens trocadas</h2><div class="tabela"><table><caption class="sr">Mensagens</caption><thead><tr><th scope="col">Quando</th><th scope="col">De → para</th><th scope="col">O quê</th><th scope="col">Resultado</th></tr></thead><tbody>
+{% for l in log %}<tr><td>{{ l.quando|br }}</td><td>{{ l.origem }} → {{ l.destino }}</td><td>{{ l.acao }}</td><td>{% if l.ok %}<span class="chip ok">ok</span>{% else %}<span class="chip erro">falhou</span> <small>{{ l.detalhe }}</small>{% endif %}</td></tr>{% else %}<tr><td colspan="4">Nenhuma ainda.</td></tr>{% endfor %}
+</tbody></table></div></section>
+<p class="legal"><strong>Base legal:</strong> LAI (Lei 12.527/2011), art. 11, § 1º, III (remessa do pedido ao órgão que tem a informação); Lei Orgânica do Município (publicação dos atos). Cada mensagem é assinada (HMAC) com chave própria de cada sentido e vale por 5 minutos.</p>
+{% endblock %}

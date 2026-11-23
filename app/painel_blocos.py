@@ -130,13 +130,17 @@ def financas(o, hoje):
     return {'ano': ano, 'ate': ate, 'kpis': k, 'mensal': mensal, 'para_onde': para_onde, 'de_onde': de_onde,
             'execucao': {'itens': exe, 'ritmo_w': round(ritmo / dias * 100, 1), 'ritmo': f"{P._br(ritmo / dias * 100, 0)}% (até {dm(ate)})"} if exe else None}
 
+def _rot(m):
+    """Rótulo do período no gráfico: mês (fin_mensal e portal da Prefeitura) ou bimestre (Siconfi)."""
+    return m.get('rotulo') or P.MESES[m['mes'] - 1]
+
 def grafico_mensal(meses, ano):
     """Barras agrupadas receita × despesa paga, com valores escritos e descrição; a tabela equivalente fica em details."""
     W, H, ml, mb, mt = 720, 260, 8, 40, 26
     mx = max([float(m['receita'] or 0) for m in meses] + [float(m['despesa_paga'] or 0) for m in meses] + [1])
     n = len(meses); passo = (W - 2 * ml) / max(n, 1); lb = min(26, passo * 0.36); base = H - mb
     y = lambda v: base - float(v or 0) / mx * (H - mt - mb)
-    desc = '; '.join(f"{P.MESES[m['mes'] - 1]}: receita {mi(m['receita'] or 0)}, despesa paga {mi(m['despesa_paga'] or 0)}" for m in meses)
+    desc = '; '.join(f"{_rot(m)}: receita {mi(m['receita'] or 0)}, despesa paga {mi(m['despesa_paga'] or 0)}" for m in meses)
     p = [f'<svg class="grafico" viewBox="0 0 {W} {H}" role="img" aria-labelledby="gm-t gm-d" xmlns="http://www.w3.org/2000/svg"><title id="gm-t">Receita e despesa paga por mês, {ano}</title><desc id="gm-d">{P._esc(desc)}</desc>',
          f'<line x1="{ml}" y1="{base}" x2="{W - ml}" y2="{base}" stroke="#9AA5B1"/>']
     for i, m in enumerate(meses):
@@ -144,7 +148,7 @@ def grafico_mensal(meses, ano):
         for j, (v, cor) in enumerate(((m['receita'], 'var(--cor)'), (m['despesa_paga'], LARANJA))):
             x = cx - lb - 1 if j == 0 else cx + 1
             p.append(f'<rect x="{x:.1f}" y="{y(v):.1f}" width="{lb:.1f}" height="{max(base - y(v), 1):.1f}" rx="2" style="fill:{cor}"/>')
-        p.append(f'<text x="{cx:.1f}" y="{base + 16}" text-anchor="middle" font-size="12" fill="#17212B">{P.MESES[m["mes"] - 1]}</text>')
+        p.append(f'<text x="{cx:.1f}" y="{base + 16}" text-anchor="middle" font-size="12" fill="#17212B">{_rot(m)}</text>')
         if m['parcial']:
             p.append(f'<text x="{cx:.1f}" y="{base + 30}" text-anchor="middle" font-size="10" fill="#4B5563">parcial</text>')
     p.append('</svg>')
@@ -293,9 +297,13 @@ def cartoes(lista, fonte, atualizado):
 def montar(o, tema):
     hoje = config.hoje()
     b = o['banco']
-    d = {'selo': selo(o), 'tema': tema}
+    leg = o['tipo'] == 'legislativo'
+    d = {'selo': None if leg else selo(o), 'tema': tema}  # na Câmara, o Fiorilli dela não é a fonte dos blocos de finanças
     quer = lambda t: tema in ('tudo', t)
-    if quer('fin'):
+    if quer('fin') and leg:  # 23/11/2026: finanças da Prefeitura, de fonte pública, identificadas como dela
+        d['fin'] = financas_prefeitura(o, hoje)
+        d['fin_links'] = []
+    elif quer('fin'):
         d['fin'] = financas(o, hoje)
         if d['fin']:
             d['fin']['kpis'] = cartoes(d['fin']['kpis'], FONTE_FIN, d['selo'])
@@ -303,7 +311,7 @@ def montar(o, tema):
     if quer('cont'):
         d['cont'] = contratacoes(o)
     if quer('saude') or quer('edu') or quer('social'):
-        fin = d.get('fin') or financas(o, hoje)
+        fin = None if leg else (d.get('fin') or financas(o, hoje))
         pop = populacao(b)
         porarea = {a['area']: a for a in areas(b, hoje.year)} if fin else {}
     if quer('saude'):
@@ -355,3 +363,104 @@ def montar(o, tema):
     if tema == 'tudo':
         d['pendentes'] = pendentes(b)
     return d
+
+
+# ---------- 23/11/2026: finanças da Prefeitura no painel da Câmara (fonte pública) ----------
+def resumo_local(o, hoje):
+    """Resumo das finanças da Prefeitura a partir do próprio banco (API pública /painel/api/financas.json, lida pela Câmara).
+    Mesmo formato do coletor financas_prefeitura; só totais, sem dado pessoal."""
+    b, ano = o['banco'], hoje.year
+    rec = db.um(b, "SELECT sum(arrecadado) liq, sum(coalesce(atualizado, previsto)) prev, max(coletado_em) t FROM receitas WHERE fonte='fiorilli' AND ano=%s AND soma", (ano,))
+    if not rec or rec['liq'] is None:
+        return None
+    ate = rec['t'].astimezone().date() if rec['t'] else hoje
+    cod = {r['c']: float(r['v'] or 0) for r in db.todos(b, """SELECT left(codigo, 4) c, sum(arrecadado) v FROM receitas WHERE fonte='fiorilli' AND ano=%s
+                                                              AND fonte_recurso='' AND codigo ~ '^[0-9]{4}\\.00\\.0\\.0\\.00\\.00$' GROUP BY 1""", (ano,))}
+    top = db.todos(b, """SELECT nome, arrecadado v FROM receitas WHERE fonte='fiorilli' AND ano=%s AND fonte_recurso=''
+                         AND codigo ~ '^[12][0-9][1-9]0\\.00\\.0\\.0\\.00\\.00$' AND arrecadado > 0 ORDER BY arrecadado DESC LIMIT 5""", (ano,))
+    desp = db.um(b, 'SELECT sum(dotacao_atualizada) dot, sum(empenhado) emp, sum(pago) pago FROM despesas_unidade WHERE ano=%s', (ano,))
+    f = lambda v: None if v is None else round(float(v), 2)
+    meses = db.todos(b, 'SELECT mes, receita, despesa_paga, parcial FROM fin_mensal WHERE ano=%s ORDER BY mes', (ano,))
+    ident = db.cfg(b, 'identidade', {}) or {}
+    return {'origem': 'cliente', 'nome': ident.get('nome') or o['nome'], 'ano': ano, 'ate': ate.isoformat(), 'periodo': f"até {ate.strftime('%d/%m/%Y')}",
+            'fonte': f"portal da {ident.get('nome') or o['nome']} (sistema contábil, API pública do painel)", 'link': '',
+            'receita': {'arrecadada': f(rec['liq']), 'prevista': f(rec['prev']), 'repasses': cod.get('1700', 0) + cod.get('2400', 0), 'base_repasses': cod.get('1000', 0) + cod.get('2000', 0),
+                        'metodo_repasses': 'transferências correntes e de capital (naturezas 1.7 e 2.4) ÷ receita bruta (1 + 2), antes das deduções do FUNDEB',
+                        'origens': [{'nome': frase(t['nome']), 'v': f(t['v'])} for t in top]},
+            'despesa': {'dotacao': f(desp and desp['dot']), 'empenhada': f(desp and desp['emp']), 'paga': f(desp and desp['pago'])},
+            'areas': {'tipo': 'área', 'itens': [{'area': a['area'], 'emp': f(a['emp'])} for a in areas(b, ano) if a['emp']]},
+            'serie': {'tipo': 'mes', 'itens': [{'n': m['mes'], 'rotulo': '', 'receita': f(m['receita']), 'despesa_paga': f(m['despesa_paga']), 'parcial': m['parcial']} for m in meses]},
+            'coletado_em': (rec['t'] or config.agora()).isoformat()}
+
+def _data(s):
+    from datetime import datetime
+    try:
+        return datetime.fromisoformat(s) if s else None
+    except ValueError:
+        return None
+
+MESES_EXT = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+
+def financas_prefeitura(o, hoje):
+    """Blocos "Dinheiro público" da Câmara com os números da PREFEITURA (resumo do coletor financas_prefeitura)."""
+    from .coletores import financas_prefeitura as FP
+    g = FP.atual(o['banco'])
+    r = g.get('resumo')
+    if not r or not r.get('receita') or r['receita'].get('arrecadada') is None:
+        return None
+    rc, dp, ano = r['receita'], r['despesa'], r['ano']
+    ate = date.fromisoformat(r['ate'])
+    coletado = _data(r.get('coletado_em'))
+    falha = _data(g.get('falha_em'))
+    nome = r.get('nome') or 'Prefeitura'
+    info = {'fonte': r['fonte'], 'link': r.get('link', ''), 'periodo': r['periodo'], 'atualizado': coletado.astimezone().strftime('%d/%m/%Y, %Hh%M') if coletado else '',
+            'metodo': '', 'base': 'LRF, arts. 48 e 48-A; LAI, art. 8º — dado público da Prefeitura, lido de fonte pública'}
+    pop = populacao(o['banco'])
+    k = [{'l': f'Receita da Prefeitura, {ano}', 'v': mi(rc['arrecadada']), 'd': r['periodo'] + (f", {pct(rc['arrecadada'], rc['prevista'])} do previsto" if rc.get('prevista') else ''), 'cor': 'var(--cor)'}]
+    if dp.get('paga') is not None:
+        k.append({'l': f'Despesa paga da Prefeitura, {ano}', 'v': mi(dp['paga']), 'd': r['periodo'] + (f", {pct(dp['paga'], dp['dotacao'])} da dotação" if dp.get('dotacao') else ''), 'cor': VERDE})
+    if pop:
+        k.append({'l': 'Receita por habitante', 'v': reais(float(rc['arrecadada']) / pop['n']), 'd': f"{ano}, população IBGE {pop['ano']}", 'metodo': _calc(pop), 'cor': ESCURO})
+    if rc.get('base_repasses'):
+        k.append({'l': 'Receita vinda de repasses', 'v': pct(rc['repasses'], rc['base_repasses']), 'd': 'da União e do Estado', 'metodo': rc.get('metodo_repasses', ''), 'cor': LARANJA})
+    kpis = [dict(x, l=x['l'][:32], nome=x['l'], u='', info=dict(info, metodo=x.get('metodo', ''))) for x in k]
+    s = r['serie']['itens']
+    mensal = None
+    if s:
+        bim = r['serie']['tipo'] == 'bimestre'
+        meses = [dict(x, mes=x['n']) for x in s]
+        tr = sum(float(x['receita'] or 0) for x in s); tp = sum(float(x['despesa_paga'] or 0) for x in s)
+        sup = sum(1 for x in s if (x['receita'] or 0) >= (x['despesa_paga'] or 0))
+        ini = f"Do 1º ao {s[-1]['n']}º bimestre" if bim else f"De {MESES_EXT[s[0]['n'] - 1]} a {MESES_EXT[s[-1]['n'] - 1]}{' (mês em andamento)' if s[-1]['parcial'] else ''}"
+        mensal = {'meses': meses, 'grafico': grafico_mensal(meses, ano), 'bimestre': bim, 'coletado': coletado,
+                  'frase': f"{ini} de {ano} entraram {mi(tr)} e foram pagos {mi(tp)} pela Prefeitura. A receita superou a despesa paga em {sup} dos {len(s)} {'bimestres' if bim else 'meses'}."}
+    ar = [a for a in r['areas']['itens'] if a.get('emp')]
+    para_onde = None
+    if ar:
+        tot = sum(float(a['emp']) for a in ar); mx = max(float(a['emp']) for a in ar) or 1
+        por = {a['area']: float(a['emp']) for a in ar}
+        para_onde = {'itens': [{'area': a['area'], 'v': mi(a['emp']), 'p': pct(a['emp'], tot), 'w': round(float(a['emp']) / mx * 100, 1)} for a in ar[:12]],
+                     'frase': f"Saúde e educação somam {pct(por['Saúde'] + por['Educação'], tot)} do que a Prefeitura empenhou em {ano} ({r['periodo']})." if 'Saúde' in por and 'Educação' in por else '',
+                     'tipo': r['areas']['tipo'], 'n': len(ar)}
+    de_onde = None
+    if rc.get('base_repasses'):
+        rp = round(rc['repasses'] / rc['base_repasses'] * 100)
+        de_onde = {'rep': pct(rc['repasses'], rc['base_repasses']), 'prop': pct(rc['base_repasses'] - rc['repasses'], rc['base_repasses']), 'w': round(rc['repasses'] / rc['base_repasses'] * 100, 1),
+                   'frase': f'De cada R$ 100 que entram na Prefeitura, R$ {rp} vêm de repasses da União e do Estado.',
+                   'origens': [{'nome': x['nome'], 'v': mi(x['v']), 'p': pct(x['v'], rc['base_repasses'])} for x in rc.get('origens', []) if x.get('v')]}
+    dias = 366 if calendar.isleap(ano) else 365
+    ritmo = min((ate - date(ano, 1, 1)).days + 1, dias)
+    exe = []
+    if rc.get('prevista'):
+        exe.append({'l': 'Receita arrecadada / prevista', 'p': pct(rc['arrecadada'], rc['prevista'], 1), 'w': min(100, rc['arrecadada'] / rc['prevista'] * 100), 'd': f"{mi(rc['arrecadada'])} de {mi(rc['prevista'])}", 'cor': 'var(--cor)'})
+    if dp.get('dotacao'):
+        if dp.get('empenhada') is not None:
+            exe.append({'l': 'Despesa empenhada / dotação', 'p': pct(dp['empenhada'], dp['dotacao'], 1), 'w': min(100, dp['empenhada'] / dp['dotacao'] * 100), 'd': f"{mi(dp['empenhada'])} de {mi(dp['dotacao'])}", 'cor': ESCURO})
+        if dp.get('paga') is not None:
+            exe.append({'l': 'Despesa paga / dotação', 'p': pct(dp['paga'], dp['dotacao'], 1), 'w': min(100, dp['paga'] / dp['dotacao'] * 100), 'd': f"{mi(dp['paga'])} de {mi(dp['dotacao'])}", 'cor': VERDE})
+    aviso = ''
+    if falha:  # a coleta boa apaga a falha: se ela está guardada, é posterior ao último dado válido
+        aviso = f"A última consulta à fonte, em {falha.astimezone().strftime('%d/%m/%Y às %Hh%M')}, não deu certo. Mostramos o último dado válido, consultado em {info['atualizado']}."
+    return {'ano': ano, 'ate': ate, 'kpis': kpis, 'mensal': mensal, 'para_onde': para_onde, 'de_onde': de_onde,
+            'execucao': {'itens': exe, 'ritmo_w': round(ritmo / dias * 100, 1), 'ritmo': f"{P._br(ritmo / dias * 100, 0)}% (até {dm(ate)})"} if exe else None,
+            'externo': {'nome': nome, 'fonte': r['fonte'], 'link': r.get('link', ''), 'coletado': coletado, 'periodo': r['periodo'], 'aviso': aviso, 'origem': r['origem']}}

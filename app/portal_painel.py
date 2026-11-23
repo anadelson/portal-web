@@ -75,6 +75,16 @@ def api_lista(request: Request):
              'indicadores': [_resumo(o, m) for m in P.painel(o['banco'])]}
     return JSONResponse(corpo, headers={'Cache-Control': 'public, max-age=300', 'Access-Control-Allow-Origin': '*'})
 
+@r.get('/painel/api/financas.json')
+def api_financas(request: Request):
+    """Resumo das finanças da Prefeitura (só totais), lido pela Câmara do mesmo município (23/11/2026). Só no Executivo."""
+    ctx = _ctx(request); o = ctx['orgao']
+    from . import config, painel_blocos as PB
+    r = PB.resumo_local(o, config.hoje()) if o['tipo'] == 'executivo' else None
+    if not r:
+        raise HTTPException(404, 'Sem finanças do ano corrente neste portal.')
+    return JSONResponse(dict(r, base_legal=P.BASE_LEGAL), headers={'Cache-Control': 'public, max-age=300', 'Access-Control-Allow-Origin': '*'})
+
 @r.get('/painel/api/{chave}.json')
 def api_indicador(request: Request, chave: str):
     ctx = _ctx(request); o = ctx['orgao']

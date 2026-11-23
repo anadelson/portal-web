@@ -21,7 +21,7 @@ FREQ = {'fiorilli': (60, range(7, 20)), 'govbr': (180, range(6, 22)), 'pncp': (3
         # dados anuais/bienais: INEP (planilhas, só baixa se mudarem) e IEG-M do TCESP, verificados a cada 30 dias
         'inep': (30 * 24 * 60, range(2, 6)), 'iegm': (30 * 24 * 60, range(2, 6)),
         # série mensal das finanças (Fiorilli): uma vez por dia, de madrugada
-        'financas': (20 * 60, range(1, 5)),
+        'financas': (20 * 60, range(1, 5)), 'financas_prefeitura': (20 * 60, range(1, 5)),
         # YouTube: tique de 2 min; o coletor só consulta dentro das janelas da agenda (ou com transmissão ao vivo) e na varredura diária
         'youtube': (2, range(0, 24)),
         # redes sociais: últimas publicações (só com credencial e conta informada), a cada 6 h
@@ -87,7 +87,7 @@ def diario_tick(agora):
     from . import diario_servico as DS
     from .web import modulos_do_orgao
     from . import orgaos
-    for o in orgaos.todos(tipo='executivo'):
+    for o in orgaos.todos():  # qualquer órgão com o módulo (a Câmara pode ter Diário próprio, 23/11/2026)
         try:
             if not modulos_do_orgao(o).get('diario'):
                 continue
@@ -162,6 +162,21 @@ def mudancas_tick(estado):
     except Exception:
         traceback.print_exc()
 
+def atendimento_tick(agora):
+    """e-SIC/Ouvidoria (23/11/2026): a cada minuto, a fila de e-mails de cada órgão desta instalação; uma vez por dia (a partir
+    das 7h), encerra complementos vencidos e manda à equipe o resumo dos prazos que vencem em até 2 dias."""
+    from . import atendimento as A, orgaos
+    for o in orgaos.todos():
+        try:
+            if agora.hour >= 7:
+                r = A.rotina_diaria(o)
+                if r:
+                    comum.registrar(o['slug'], 'atendimento:rotina', True, r['encerrados'] + r['resumo'], f"{r['encerrados']} complemento(s) vencido(s) encerrado(s); {r['resumo']} prazo(s) no resumo")
+            A.enviar_fila(o)
+        except Exception as e:
+            comum.registrar(o['slug'], 'atendimento:rotina', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
+            traceback.print_exc()
+
 def main():
     ultimo = ultimas_execucoes()
     mud = {}
@@ -190,6 +205,7 @@ def main():
         except Exception:
             traceback.print_exc()
         diario_tick(datetime.now())
+        atendimento_tick(datetime.now())
         time.sleep(60)
 
 if __name__ == '__main__':

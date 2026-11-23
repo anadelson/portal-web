@@ -187,7 +187,9 @@ def orgao(request: Request, oid: int):
         lic['relatorio'] = ((n_ or {}).get('relatorio') or {}).get('orgaos', {}).get(o['slug'])
         lic['relatorio_em'] = (n_ or {}).get('relatorio_em')
     cad = _criacao_pendente(oid)
-    from . import mudancas as MU
+    from . import mudancas as MU, integracao as IG
+    IG.garantir_pares(o['ibge'])
+    integ = IG.parceiros_na_gestao(o)
     mud = MU.ativa(oid)
     mud_tarefas = db.todos(db.PLATAFORMA, 'SELECT t.*, n.nome no_nome FROM tarefas t JOIN nos n ON n.id=t.no_id WHERE t.mudanca_id=%s ORDER BY t.id', (mud['id'],)) if mud else []
     from . import remocoes as RM
@@ -195,7 +197,7 @@ def orgao(request: Request, oid: int):
     rem_tarefa = db.um(db.PLATAFORMA, 'SELECT * FROM tarefas WHERE remocao_id=%s ORDER BY id DESC LIMIT 1', (rem['id'],)) if rem else None
     return T('orgao', request, o=o, c=c, sit=sit, fase=fase, adit=adit, opc=opc, anos=anos, MOD=MOD, pub=pub, lic=lic, nos=nos_, validade=config.LICENCA_VALIDADE_DIAS,
              cad=(cad['payload'].get('identidade') or {}) if cad else None, mud=mud, mud_tarefas=mud_tarefas, mud_destinos=MU.destinos(o), MUD_NOMES=MU.NOMES,
-             mud_nos={n['id']: n['nome'] for n in db.todos(db.PLATAFORMA, 'SELECT id, nome FROM nos')}, rem=rem, rem_tarefa=rem_tarefa, REM_NOMES=RM.NOMES)
+             mud_nos={n['id']: n['nome'] for n in db.todos(db.PLATAFORMA, 'SELECT id, nome FROM nos')}, rem=rem, rem_tarefa=rem_tarefa, REM_NOMES=RM.NOMES, integ=integ)
 
 def _confirma_gestor(request, g, f, oque):
     """Senha + segundo fator do gestor (com bloqueio por tentativas). Devolve a mensagem de recusa ou None."""
@@ -273,6 +275,24 @@ async def remocoes_post(request: Request, rid: int):
     if ok:
         log(g, f'Remoção {rid}: {msg}')
     return ir('/remocoes', msg, request)
+
+@r.post('/orgao/{oid}/integracao')
+async def orgao_integracao(request: Request, oid: int):
+    """Integração com os órgãos do município: renovar as chaves (tokens dos pares) ou desligar/ligar. Os nós recebem em até 5 min."""
+    g = gestor(request); f = await ler_form(request)
+    from . import integracao as IG
+    o = db.um(db.PLATAFORMA, 'SELECT * FROM orgaos WHERE id=%s', (oid,))
+    if not o:
+        raise HTTPException(404)
+    acao = f.get('acao')
+    if acao == 'renovar':
+        n = IG.renovar(oid); msg = f'{n} chave(s) renovada(s). Os nós recebem as novas em até 5 minutos; até lá, a conversa com a chave antiga é recusada.'
+    elif acao in ('desligar', 'ligar'):
+        n = IG.ligar(oid, acao == 'ligar'); msg = f"Integração {'ligada' if acao == 'ligar' else 'desligada'} ({n} par(es)). Vale nos nós em até 5 minutos."
+    else:
+        raise HTTPException(400)
+    log(g, f"{o['nome']}: integração com os órgãos do município — {acao}")
+    return ir(f'/orgao/{oid}#integracao', msg, request)
 
 @r.post('/orgao/{oid}/mudanca')
 async def orgao_mudanca(request: Request, oid: int):

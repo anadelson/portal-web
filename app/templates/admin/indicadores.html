@@ -13,6 +13,13 @@
 {% for c in coletas %}<tr><td>{{ c.inicio|br }}</td><td>{{ c.fonte }}</td><td><span class="chip {{ 'ok' if c.ok else 'erro' }}">{{ 'ok' if c.ok else 'falhou' }}</span></td><td>{{ c.mensagem }}</td></tr>{% endfor %}
 </tbody></table></div>{% endif %}
 </section>
+{% if fin_pm %}<section class="cx" id="fin-prefeitura"><h2>Finanças da Prefeitura no painel</h2>
+<p>O bloco “Dinheiro público da Prefeitura” do painel da Câmara mostra a receita e a despesa da Prefeitura lidas de fonte pública (nunca do banco dela), sempre identificadas como números da Prefeitura, com a fonte, o link e a data. Esses números não entram na transparência da Câmara.</p>
+<p>No modo automático: se a Prefeitura for cliente do portal, os números vêm da API pública do painel dela; se não for, do portal de dados abertos da Prefeitura (quando informado) ou do Siconfi (RREO, por bimestre).</p>
+{% if fin_pm.tem %}<p><span class="chip ok">publicado</span> {{ fin_pm.origem }} · {{ fin_pm.periodo }}{% if fin_pm.coletado %} · consulta em {{ fin_pm.coletado|br }}{% endif %}</p>{% else %}<p><span class="chip alerta">ainda sem dados</span> o bloco aparece depois da primeira coleta com sucesso.</p>{% endif %}
+{% if fin_pm.falha %}<p class="chip erro" role="alert">Última consulta falhou em {{ fin_pm.falha|br }}: {{ fin_pm.falha_msg }}{% if fin_pm.tem %} — o painel segue com o último dado válido{% endif %}.</p>{% endif %}
+{% if fin_pm.cadastrada %}<p><a class="btn sec" href="/admin/integracoes?fonte=financas_prefeitura">Escolher a fonte, testar e salvar</a></p>{% else %}<p>A fonte <code>financas_prefeitura</code> é cadastrada na próxima atualização do sistema.</p>{% endif %}
+</section>{% endif %}
 
 <section class="cx" id="areas"><h2>Agrupamento das unidades por área</h2>
 <p>Usado nos blocos “Para onde vai o dinheiro” e “Orçamento da área” do painel. A sugestão automática é a função de governo com mais empenho em cada unidade; troque quando não representar a área. Para aparecer nas seções do painel, use exatamente {% for a in areas_tema %}“{{ a }}”{{ ', ' if not loop.last }}{% endfor %}.</p>

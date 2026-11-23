@@ -322,7 +322,12 @@ def modulos_do_orgao(o) -> dict:
 def vizinhos(o):
     """Outros órgãos ativos do mesmo município (ex.: a Câmara, vista pela Prefeitura)."""
     orgao_por_dominio(o['dominio'])
-    return [x for x in _cache['orgaos'].values() if x['ibge'] == o['ibge'] and x['id'] != o['id']]
+    aqui = [x for x in _cache['orgaos'].values() if x['ibge'] == o['ibge'] and x['id'] != o['id']]
+    if config.PAPEL != 'no':
+        return aqui
+    from . import integracao  # parceiro em outra instalação (diretório da gestão): o link aponta para o domínio dele
+    ids = {x['id'] for x in aqui}
+    return aqui + [p for p in integracao.parceiros_no_no() if p['ibge'] == o['ibge'] and p['id'] not in ids and p['id'] != o['id']]
 
 LARGURAS = (1320, 1600, 1760, 'tela')  # largura máxima do conteúdo (Identidade > Tema); 'tela' = tela toda
 LARGURA_PADRAO = 1760

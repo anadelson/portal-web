@@ -203,7 +203,8 @@ r = ok(pm.get('/diario'), txt='Comunicado de indisponibilidade', nome='comunicad
 if 'Prazos prorrogados' not in r.text: falha('prorrogação de prazos não exibida')
 
 # ---------- remessa Câmara → Prefeitura ----------
-RM._cliente = lambda: TestClient(app, base_url='http://interno')
+from app import integracao as IG
+IG._cliente = lambda d: TestClient(app, base_url=f"http://{d['dominio']}")   # chamada entre órgãos no mesmo processo (23/11/2026: via integracao)
 cm = TestClient(app, base_url='http://cmbora.localhost')
 entrar(cm, 'admin@cmbora.localhost', 'admin123', 'senhaforte123')
 os.environ['DATA_SIMULADA'] = '2026-11-13T09:00'

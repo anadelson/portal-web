@@ -202,7 +202,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'limpar-teste':
         if not A.modo_teste() or '--forcar' in sys.argv:
             from . import orgaos
-            for o in orgaos.todos(ativos=False, tipo='executivo'):
+            for o in orgaos.todos(ativos=False):
                 print(o['slug'], ':', limpar_teste(o), 'edição(ões) de teste apagada(s)')
         else:
             print('Ainda em DIARIO_MODO=teste: troque para oficial no .env (ou use --forcar) antes de limpar.')

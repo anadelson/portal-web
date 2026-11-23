@@ -140,7 +140,9 @@ def entregar(no, ip='', versao=''):
     # inventário ASSINADO (18/11/2026): a lista completa dos órgãos do nó. Com ele o nó esquece o órgão que mudou de nó
     # (sem isso, a licença antiga ficava no cache e o nó antigo seguia servindo o portal até ela vencer). Nó antigo ignora.
     inv = assinar({'tipo': 'inventario', 'no': no['nome'], 'orgaos': ids, 'emitido_em': agora.isoformat()})
-    return {'chave': chave_publica(), 'impressao': impressao(chave_publica()), 'licencas': out, 'inventario': inv, 'gerado_em': agora.isoformat()}
+    from . import integracao   # diretório dos órgãos parceiros do município e tokens dos pares (23/11/2026); nó antigo ignora
+    return {'chave': chave_publica(), 'impressao': impressao(chave_publica()), 'licencas': out, 'inventario': inv,
+            'diretorio': integracao.diretorio_para(no), 'gerado_em': agora.isoformat()}
 
 # ---------- lado do nó ----------
 def guardar(pacotes, publica):
@@ -185,8 +187,11 @@ def puxar():
     d = buscar_na_gestao()
     ok, ruim = guardar(d.get('licencas', []), config.LICENCA_CHAVE_PUBLICA)
     saiu = esquecer(d.get('inventario'), config.LICENCA_CHAVE_PUBLICA)
+    from . import integracao
+    nd = integracao.guardar_diretorio(d.get('diretorio'), config.LICENCA_CHAVE_PUBLICA) if d.get('diretorio') else None
     return (f'{ok} licença(s) aceitas' + (f', {ruim} RECUSADA(S) (assinatura não confere)' if ruim else '')
-            + (f'; {saiu} órgão(s) que saíram deste nó (licença removida)' if saiu else ''))
+            + (f'; {saiu} órgão(s) que saíram deste nó (licença removida)' if saiu else '')
+            + (f'; diretório com {nd} órgão(s) parceiro(s)' if nd is not None else ''))
 
 def esquecer(inventario, publica, agora=None):
     """(nó) Remove do cache as licenças dos órgãos que não estão mais no inventário assinado da gestão. Só vale inventário

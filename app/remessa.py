@@ -14,15 +14,22 @@ JANELA = 300
 TIPOS_REMESSA = ['Ato da Mesa', 'Resolução', 'Decreto Legislativo', 'Extrato de contrato', 'Portaria da Câmara', 'Aviso']
 
 def _orgao(slug=None, id_=None):
-    from . import orgaos
-    return orgaos.por_slug(slug) if slug else orgaos.por_id(id_)
+    from . import integracao
+    return integracao.orgao(slug=slug, id_=id_)   # desta instalação ou parceiro de outra (23/11/2026)
 
 def par(origem, destino):
-    return db.um(db.LOCAL, 'SELECT * FROM pares_orgaos WHERE origem_id=%s AND destino_id=%s AND ativo', (origem['id'], destino['id']))
+    from . import integracao
+    return integracao.par(origem, destino)
 
 def configurar_pares():
-    """Cria o par Legislativo → Executivo do mesmo município (Prefeitura com Diário contratado) se ainda não existir."""
-    from . import orgaos, licenca
+    """Cria o par Legislativo → Executivo do mesmo município (Prefeitura com Diário contratado) se ainda não existir.
+    Desde 23/11/2026 a gestão cria os pares de todos os órgãos do município (integracao.garantir_pares) e os nós recebem os
+    tokens no diretório: aqui só resta o caso do nó que ainda não recebeu diretório (gestão antiga)."""
+    from . import orgaos, licenca, integracao
+    if config.PAPEL != 'no':
+        return integracao.garantir_pares()
+    if integracao.tem_diretorio():
+        return 0
     n = 0
     for c in orgaos.todos(tipo='legislativo'):
         for p in [x for x in orgaos.todos(tipo='executivo') if x['ibge'] == c['ibge'] and 'diario' in ((licenca.vigente(x) or {}).get('modulos') or [])]:
@@ -32,45 +39,31 @@ def configurar_pares():
     return n
 
 def destino_do(origem):
-    from . import orgaos
-    for p in db.todos(db.LOCAL, 'SELECT destino_id FROM pares_orgaos WHERE origem_id=%s AND ativo ORDER BY destino_id', (origem['id'],)):
-        o = orgaos.por_id(p['destino_id'])
-        if o:
-            return o
+    """Diário de destino da Câmara: a Prefeitura do município que tem o módulo Diário (nesta instalação ou em outra)."""
+    from . import integracao, licenca
+    for o in integracao.parceiros(origem):
+        if o['tipo'] == 'executivo' and integracao.par(origem, o):
+            mods = o.get('modulos') if o.get('parceiro') else ((licenca.vigente(o) or {}).get('modulos') or [])
+            if 'diario' in (mods or []):
+                return o
     return None
 
 def _assinatura(token, momento, metodo, caminho, corpo: bytes):
-    msg = f'{momento}\n{metodo}\n{caminho}\n{hashlib.sha256(corpo).hexdigest()}'.encode()
-    return hmac.new(token.encode(), msg, hashlib.sha256).hexdigest()
+    from . import integracao
+    return integracao.assinatura(token, momento, metodo, caminho, corpo)
 
 def _log(origem, destino, acao, ok, detalhe=''):
-    db.exe(db.LOCAL, 'INSERT INTO remessas_log (origem, destino, acao, ok, detalhe) VALUES (%s,%s,%s,%s,%s)', (origem, destino, acao, ok, detalhe[:500]))
+    from . import integracao
+    integracao.log(origem, destino, acao, ok, detalhe)
 
 # ---------- cliente (órgão de origem) ----------
-def _cliente():
-    """Cliente HTTP da API interna (substituível nos testes). Chame sempre fora do laço de eventos (run_in_threadpool),
-    porque o destino pode ser o próprio processo."""
-    return httpx.Client(base_url=config.INTERNO_BASE, timeout=30)
-
 def chamar(origem, destino, metodo, caminho, dados=None):
-    p = par(origem, destino)
-    if not p:
-        raise ValueError('Não há integração ativa entre os órgãos (par sem token).')
-    corpo = json.dumps(dados or {}, ensure_ascii=False).encode() if metodo == 'POST' else b''
-    m = str(int(time.time()))
-    h = {'Host': destino['dominio'], 'Content-Type': 'application/json', 'X-Portal-Origem': origem['slug'], 'X-Portal-Momento': m,
-         'X-Portal-Assinatura': _assinatura(p['token'], m, metodo, caminho, corpo), 'X-Forwarded-Proto': 'https'}
+    """Chamada ao Diário de destino: interna (mesma instalação) ou HTTPS (outra), sempre assinada (integracao.chamar)."""
+    from . import integracao
     try:
-        with _cliente() as c:
-            resp = c.request(metodo, caminho, content=corpo or None, headers=h)
-        ok = resp.status_code < 400
-        _log(origem['slug'], destino['slug'], f'{metodo} {caminho}', ok, '' if ok else resp.text[:200])
-        if not ok:
-            raise ValueError(f'O Diário de destino recusou ({resp.status_code}): {resp.json().get("erro", "") if resp.headers.get("content-type", "").startswith("application/json") else ""}')
-        return resp.json()
-    except httpx.HTTPError as e:
-        _log(origem['slug'], destino['slug'], f'{metodo} {caminho}', False, type(e).__name__)
-        raise ValueError(f'Não foi possível falar com o Diário de destino ({type(e).__name__}).')
+        return integracao.chamar(origem, destino, metodo, caminho, dados)
+    except ValueError as e:
+        raise ValueError(str(e).replace('recusou', 'recusou a remessa', 1))
 
 def enviar(origem, quem, tipo, numero, ementa, texto):
     destino = destino_do(origem)
@@ -101,19 +94,8 @@ def atualizar(origem, rid):
 
 # ---------- servidor (Diário de destino) ----------
 async def _autenticar(request: Request):
-    destino = request.state.orgao
-    origem = _orgao(slug=request.headers.get('x-portal-origem', ''))
-    corpo = await request.body()
-    m = request.headers.get('x-portal-momento', '')
-    if not origem or not m.isdigit() or abs(time.time() - int(m)) > JANELA:
-        _log(request.headers.get('x-portal-origem', '?')[:40], destino['slug'], request.url.path, False, 'origem ou momento inválido')
-        raise HTTPException(401, 'Remessa recusada: origem ou horário inválido.')
-    p = par(origem, destino)
-    caminho = request.url.path.replace('/_p', '', 1)
-    if not p or not hmac.compare_digest(_assinatura(p['token'], m, request.method, caminho, corpo), request.headers.get('x-portal-assinatura', '')):
-        _log(origem['slug'], destino['slug'], caminho, False, 'assinatura inválida')
-        raise HTTPException(401, 'Remessa recusada: assinatura inválida.')
-    return origem, destino, corpo
+    from . import integracao
+    return await integracao.autenticar(request)
 
 def _situacao(b, a):
     if not a:
@@ -157,3 +139,12 @@ async def consultar(request: Request, aid: int):
     if not a:
         return JSONResponse({'erro': 'remessa não encontrada'}, status_code=404)
     return _situacao(destino['banco'], a)
+
+# ---------- teste de conversa entre os órgãos (23/11/2026) ----------
+@r.get('/api/integracao/ping')
+async def ping(request: Request):
+    """Responde a uma chamada ASSINADA do parceiro: prova que tokens, horário e caminho (interno ou HTTPS) funcionam."""
+    origem, destino, _ = await _autenticar(request)
+    from . import licenca
+    _log(origem['slug'], destino['slug'], 'ping', True)
+    return JSONResponse({'ok': True, 'orgao': destino['nome'], 'slug': destino['slug'], 'versao': licenca.VERSAO_APP(), 'papel': config.PAPEL})

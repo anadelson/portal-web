@@ -340,9 +340,9 @@ def coletar_painel(o, p, hoje=None):
     return res
 
 from .inep_iegm import coletar_inep, coletar_iegm
-from . import financas as _financas
+from . import financas as _financas, financas_prefeitura as _fin_pm
 COLETORES = {'ibge': coletar_ibge, 'cnes': coletar_cnes, 'mds': coletar_mds, 'pni': coletar_pni, 'painel': coletar_painel, 'inep': coletar_inep, 'iegm': coletar_iegm,
-             'financas': _financas.coletar}
+             'financas': _financas.coletar, 'financas_prefeitura': _fin_pm.coletar}
 
 class _Modulo:
     """Adaptador para o worker (MODULOS[fonte].coletar(o, p))."""

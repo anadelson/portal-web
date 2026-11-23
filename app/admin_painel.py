@@ -68,7 +68,15 @@ def lista(request: Request, area: str = 'fin', sub: str = ''):
         subs.append('manual')
     sub = sub if sub in subs else (subs[0] if subs else '')
     cp = painel_completo(request.state.orgao, sub) if sub in CS.ESQUEMA else None
-    return T('indicadores', request, u, itens=itens, fontes=fontes, coletas=coletas, hist=hist, max_dest=P.MAX_DESTAQUES, aviso_cert=aviso_cert, origem_iegm=_origem_iegm(),
+    fin_pm = None
+    if request.state.orgao['tipo'] == 'legislativo':  # 23/11/2026: finanças da Prefeitura por fonte pública
+        from .coletores import financas_prefeitura as FP
+        from .painel_blocos import _data
+        g = FP.atual(b); rs = g.get('resumo') or {}
+        fin_pm = {'tem': bool(rs), 'origem': {'cliente': 'Prefeitura cliente do portal (API pública do painel dela)'}.get(rs.get('origem'), FP.MODOS.get(rs.get('origem'), '')),
+                  'periodo': rs.get('periodo', ''), 'fonte': rs.get('fonte', ''), 'coletado': _data(rs.get('coletado_em')), 'falha': _data(g.get('falha_em')), 'falha_msg': g.get('falha_msg', ''),
+                  'cadastrada': any(f['fonte'] == 'financas_prefeitura' for f in fontes)}
+    return T('indicadores', request, u, itens=itens, fin_pm=fin_pm, fontes=fontes, coletas=coletas, hist=hist, max_dest=P.MAX_DESTAQUES, aviso_cert=aviso_cert, origem_iegm=_origem_iegm(),
              areas=areas, opcoes_area=opcoes, areas_tema=AREAS_TEMA, temas=P.TEMAS, area=area, subs=[(k, CS.NOMES.get(k, k)) for k in subs], sub=sub, cp=cp,
              da_aba=[i for i in itens if i['tema'] == area and (i['origem'] == sub or (sub == 'manual' and i['modo'] == 'manual'))])
 
@@ -76,7 +84,7 @@ def coleta_falhou(ind):
     """A última tentativa de coleta automática falhou (ou nunca deu certo): libera o lançamento manual de reserva."""
     return ind['modo'] == 'automatico' and bool(ind['ultima_tentativa']) and (not ind['ultima_ok'] or ind['ultima_ok'] < ind['ultima_tentativa'])
 
-FONTES_PAINEL = ('ibge', 'cnes', 'inep', 'iegm', 'mds', 'pni', 'painel', 'financas')
+FONTES_PAINEL = ('ibge', 'cnes', 'inep', 'iegm', 'mds', 'pni', 'painel', 'financas', 'financas_prefeitura')
 # nomes de área usados pelas seções temáticas do painel (nomes das funções de governo, Portaria MOG 42/1999)
 AREAS_TEMA = ('Saúde', 'Educação', 'Assistência Social')
 

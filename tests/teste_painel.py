@@ -57,7 +57,9 @@ def bi(lig):
 # ---------- provisionamento: catálogo e fontes ----------
 n = db.um(PM, 'SELECT count(*) n FROM indicadores')['n']
 if n != len(P.CATALOGO): falha(f'catálogo semeado com {n} de {len(P.CATALOGO)} indicadores')
-if db.um(CM, 'SELECT count(*) n FROM indicadores')['n']: falha('Câmara não deveria ter catálogo (não tem painel nesta fase)')
+# 23/11/2026 (paridade): a Câmara também recebe o catálogo (indicadores do município); o painel só aparece com o módulo "bi"
+if db.um(CM, 'SELECT count(*) n FROM indicadores')['n'] != len(P.CATALOGO): falha('Câmara deveria receber o catálogo de indicadores do município')
+if db.um(db.LOCAL, "SELECT 1 x FROM fontes f JOIN orgaos o ON o.id=f.orgao_id WHERE o.slug='cm-bora' AND f.fonte='financas'"): falha('série de finanças é só da Prefeitura')
 fts = {f['fonte']: f['ativo'] for f in db.todos(db.PLATAFORMA, 'SELECT fonte, ativo FROM fontes WHERE orgao_id=%s', (oid,))}
 if not (fts.get('ibge') and fts.get('cnes') and fts.get('painel') and fts.get('mds') is False and fts.get('pni') is False):
     falha(f'fontes do painel mal configuradas: {fts}')
