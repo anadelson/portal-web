@@ -45,6 +45,9 @@
 {% endfor %}
 </div>
 
+{% if participacao %}<section class="caixa" style="margin-bottom:20px" aria-labelledby="h-part"><h2 id="h-part">Participação nas sessões</h2><p class="sub">Uso da palavra, leitura de matérias e outros registros das sessões com a linha do tempo publicada pela Câmara</p>
+<ul class="itens">{% for e in participacao %}<li><a href="/sessoes/{{ e.sessao_id }}"><strong style="font-size:var(--fs-peq)">{{ e.sessao }}</strong></a> <small style="color:var(--sub)">{{ e.data|br }}{% if e.hora %} · {{ e.hora }}{% endif %}</small><span style="display:block">{{ tipos_ev[e.tipo] }}{% if e.pid %} · <a href="/proposicoes/{{ e.pid }}">{{ e.ptipo }} nº {{ e.pnumero }}/{{ e.pano }}</a>{% endif %}{% if e.descricao %}: {{ e.descricao[:200] }}{% endif %}</span></li>{% endfor %}</ul></section>{% endif %}
+
 <section class="caixa" aria-labelledby="h-hist"><h2 id="h-hist" style="margin-bottom:12px">Mandatos na Câmara</h2>
 <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px">
 {% for m in mandatos %}<li><a href="/vereador/{{ m.id }}"{% if m.id == v.id %} aria-current="page"{% endif %} style="display:block;padding:12px 14px;border-radius:14px;border:1px solid {{ 'var(--cor)' if m.id == v.id else 'var(--bd)' }};background:{{ 'var(--cor-clara)' if m.id == v.id else '#fff' }};color:var(--tx);text-decoration:none"><strong style="display:block">{{ m.legislatura }}ª Legislatura · {{ m.anos }}</strong><small style="color:var(--sub)">{{ m.partido }}{% if m.votos %} · {{ m.votos }} votos{% endif %}</small></a></li>{% endfor %}

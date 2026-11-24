@@ -1,11 +1,18 @@
-{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}{% if request.query_params.get('novo') %}Nova sessão{% else %}Sessões e votações{% endif %}{% endblock %}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}{% if request.query_params.get('novo') %}Agendar sessão{% else %}Sessões e votações{% endif %}{% endblock %}
 {% block conteudo %}
 {% if request.query_params.get('novo') %}
 {{ voltar('/admin/sessoes') }}
-<section class="cx form-tela"><form class="campos" method="post" action="/admin/sessoes/nova"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><label>Nome <input name="nome" required placeholder="19ª Sessão Ordinária de 2026"></label> <label>Data <input type="date" name="data" required></label> <label>Hora <input name="hora" value="19h" size="5"></label> <label>Tipo <select name="tipo"><option>Ordinária</option><option>Extraordinária</option><option>Solene</option><option>Especial</option></select></label> <button class="btn" name="acao" value="criar">Criar</button></form></section>
+<section class="cx form-tela"><form class="campos" method="post" action="/admin/sessoes/nova"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<div class="grade2"><label>Tipo <select name="tipo">{% for t in tipos_sessao %}<option>{{ t }}</option>{% endfor %}</select></label><label>Data <input type="date" name="data" required></label><label>Hora <input name="hora" value="19h" size="6"></label>
+<label>Número (vazio = o próximo do tipo no ano)<input name="numero" inputmode="numeric" size="4"></label></div>
+<label>Nome (vazio = automático, ex.: “16ª Sessão Ordinária de 2026”)<input name="nome" maxlength="160"></label>
+<button class="btn" name="acao" value="criar">Agendar</button></form>
+<p class="legal">Depois de agendada, a sessão abre em etapas: pauta, abertura e presença, acontecimentos, votações, encerramento, vídeos e ata. Todas são opcionais e podem ser registradas depois da sessão.</p></section>
 {% else %}
-<div class="tela-cab"><p>Sessões ordinárias, extraordinárias e solenes, com pauta, presença, votação e ata.</p><div class="tela-acoes"><a class="btn" href="/admin/sessoes?novo=1">+ Nova sessão</a></div></div>
-<div class="tabela"><table><thead><tr><th scope="col">Sessão</th><th scope="col">Data</th><th scope="col">Itens</th><th scope="col">Pauta</th><th scope="col">Presença</th><th scope="col">Votação</th><th scope="col">Ata</th></tr></thead><tbody>
-{% for s in itens %}<tr><td><a href="/admin/sessoes/{{ s.id }}">{{ s.nome }}</a>{% if s.origem == 'importacao' %} <span class="chip">importada</span>{% endif %}</td><td>{{ s.data|br }} · {{ s.hora }}</td><td>{{ s.n_itens }}</td>{% for c in (s.pauta_publicada, s.presenca_publicada, s.votacao_publicada, s.ata_publicada) %}<td><span class="chip {{ 'ok' if c else '' }}">{{ 'Publicada' if c else '—' }}</span></td>{% endfor %}</tr>{% endfor %}
+<div class="tela-cab"><p>Sessões ordinárias, extraordinárias, solenes e especiais: da agenda ao encerramento, em linha do tempo.</p><div class="tela-acoes"><a class="btn" href="/admin/sessoes?novo=1">+ Agendar sessão</a></div></div>
+<div class="tabela"><table><thead><tr><th scope="col">Sessão</th><th scope="col">Data</th><th scope="col">Situação</th><th scope="col">Itens</th><th scope="col">Pauta</th><th scope="col">Presença</th><th scope="col">Linha do tempo</th><th scope="col">Votação</th><th scope="col">Ata</th></tr></thead><tbody>
+{% for s in itens %}<tr><td><a href="/admin/sessoes/{{ s.id }}">{{ s.nome }}</a>{% if s.origem == 'importacao' %} <span class="chip">importada</span>{% endif %}<small style="display:block">{{ s.tipo }}</small></td><td>{{ s.data|br }} · {{ s.hora }}</td>
+<td><span class="chip {{ 'ok' if s.situacao == 'realizada' else 'erro' if s.situacao == 'cancelada' else 'alerta' if s.data < hoje else '' }}">{{ situacoes[s.situacao] }}{% if s.situacao == 'agendada' and s.data < hoje %} · sem registro{% endif %}</span></td><td>{{ s.n_itens }}</td>
+{% for c in (s.pauta_publicada, s.presenca_publicada, s.linha_publicada, s.votacao_publicada, s.ata_publicada) %}<td><span class="chip {{ 'ok' if c else '' }}">{{ 'Publicada' if c else '—' }}</span></td>{% endfor %}</tr>{% else %}<tr><td colspan="9">Nenhuma sessão ainda. Use “Agendar sessão”.</td></tr>{% endfor %}
 </tbody></table></div><p class="legal"><strong>Base legal:</strong> {{ BASE_LEGAL.sessoes }}</p>
 {% endif %}{% endblock %}

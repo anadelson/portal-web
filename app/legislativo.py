@@ -213,3 +213,97 @@ def vincular_autores_antigos(b):
             db.exe(b, 'INSERT INTO proposicao_autores (proposicao_id, vereador_id, nome) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING', (p['id'], v['id'] if v else None, nome))
         n += 1
     return n
+
+# ---------- sessão em linha do tempo (24/11/2026): nenhum passo é obrigatório; registro pode ser feito depois ----------
+TIPOS_SESSAO = ['Ordinária', 'Extraordinária', 'Solene', 'Especial']
+SITUACOES_SESSAO = {'agendada': 'Agendada', 'realizada': 'Realizada', 'cancelada': 'Cancelada'}
+EVENTOS = {'expediente': 'Expediente (leitura de correspondências e comunicações)', 'leitura': 'Leitura de matéria',
+           'orador': 'Uso da palavra por vereador(a)', 'tribuna': 'Tribuna livre (cidadão)', 'ordem_do_dia': 'Início da Ordem do Dia',
+           'suspensao': 'Suspensão da sessão', 'reabertura': 'Reabertura', 'explicacoes': 'Explicações pessoais',
+           'comunicacao': 'Comunicação da Presidência', 'outro': 'Outro registro'}
+PLATAFORMAS = {'youtube': 'YouTube', 'facebook': 'Facebook', 'instagram': 'Instagram', 'outro': 'Vídeo'}
+RESULTADOS_ITEM = {'aprovado': 'Aprovado', 'rejeitado': 'Rejeitado', 'retirado': 'Retirado de pauta', 'adiado': 'Adiado'}
+FEMININOS = ('Indicação', 'Moção', 'Emenda')
+
+def plataforma(url):
+    u = (url or '').lower()
+    if re.search(r'(youtube\.com|youtu\.be)', u):
+        return 'youtube'
+    if re.search(r'(facebook\.com|fb\.watch)', u):
+        return 'facebook'
+    if 'instagram.com' in u:
+        return 'instagram'
+    return 'outro'
+
+def hora(h):
+    """'19:05', '19h05', '19h', '19' → '19h05' / '19h'; vazio → ''. Levanta ValueError se não for hora."""
+    h = (h or '').strip().lower().replace(' ', '')
+    if not h:
+        return ''
+    m = re.fullmatch(r'(\d{1,2})(?:[:h](\d{2})?)?(?:min)?', h)
+    if not m or int(m.group(1)) > 23 or (m.group(2) and int(m.group(2)) > 59):
+        raise ValueError(f'Hora inválida: "{h}". Use, por exemplo, 19h05 ou 19:05.')
+    return f"{int(m.group(1))}h{m.group(2) if m.group(2) and m.group(2) != '00' else ''}"
+
+def proximo_numero_sessao(b, tipo, ano):
+    return db.um(b, 'SELECT coalesce(max(numero), 0) + 1 n FROM sessoes WHERE tipo=%s AND extract(year FROM data)=%s', (tipo, ano))['n']
+
+def nome_sessao(numero, tipo, ano):
+    return f'{numero}ª Sessão {tipo} de {ano}'
+
+def marcar_realizada(b, sid):
+    """Qualquer registro do que aconteceu (presença, votação, horário, acontecimento, ata) mostra que a sessão foi realizada."""
+    db.exe(b, "UPDATE sessoes SET situacao='realizada' WHERE id=%s AND situacao='agendada'", (sid,))
+
+def sincronizar_video(b, sid):
+    """sessoes.video_url = primeiro vídeo cadastrado (as telas antigas e a autoavaliação PNTP usam esse campo)."""
+    v = db.um(b, 'SELECT url FROM sessao_videos WHERE sessao_id=%s ORDER BY id LIMIT 1', (sid,))
+    db.exe(b, 'UPDATE sessoes SET video_url=%s WHERE id=%s', (v['url'] if v else '', sid))
+
+def situacao_apos_votacao(b, item, resultado, s, quem, detalhe=''):
+    """Tramitação e situação da proposição depois do resultado do item (nominal ou simbólico)."""
+    if not item['proposicao_id']:
+        return
+    pr = db.um(b, 'SELECT tipo FROM proposicoes WHERE id=%s', (item['proposicao_id'],))
+    if resultado in ('aprovado', 'rejeitado'):
+        fem = pr['tipo'] in FEMININOS or pr['tipo'].startswith('Proposta') or pr['tipo'] in PROJETOS
+        sit = ('Aprovada' if fem else 'Aprovado') if resultado == 'aprovado' else ('Rejeitada' if fem else 'Rejeitado')
+        tramitar(b, item['proposicao_id'], s['data'], f"Votação em Plenário — {item['fase']}",
+                 f"{'Aprovado' if resultado == 'aprovado' else 'Rejeitado'} na {s['nome']}{': ' + detalhe if detalhe else '.'}".strip(), sessao_id=s['id'], quem=quem, situacao=sit)
+    else:
+        tramitar(b, item['proposicao_id'], s['data'], RESULTADOS_ITEM[resultado], f"{s['nome']}{': ' + detalhe if detalhe else ''}", sessao_id=s['id'], quem=quem)
+
+def eventos(b, sid):
+    return db.todos(b, """SELECT e.*, v.nome vereador, p.tipo ptipo, p.numero pnumero, p.ano pano, p.ementa pementa FROM sessao_eventos e
+                          LEFT JOIN vereadores v ON v.id=e.vereador_id LEFT JOIN proposicoes p ON p.id=e.proposicao_id
+                          WHERE e.sessao_id=%s ORDER BY e.ordem, e.id""", (sid,))
+
+def videos(b, sid):
+    return db.todos(b, 'SELECT * FROM sessao_videos WHERE sessao_id=%s ORDER BY id', (sid,))
+
+def passos(b, s):
+    """O que já foi registrado e publicado em cada etapa. Só informa: nada bloqueia as demais etapas nem a publicação."""
+    sid = s['id']
+    n_itens = db.um(b, 'SELECT count(*) n FROM pauta_itens WHERE sessao_id=%s', (sid,))['n']
+    n_vot = db.um(b, 'SELECT count(*) n FROM pauta_itens WHERE sessao_id=%s AND resultado IS NOT NULL', (sid,))['n']
+    n_pres = db.um(b, 'SELECT count(*) n FROM presencas WHERE sessao_id=%s', (sid,))['n']
+    n_ev = db.um(b, 'SELECT count(*) n FROM sessao_eventos WHERE sessao_id=%s', (sid,))['n']
+    n_vid = db.um(b, 'SELECT count(*) n FROM sessao_videos WHERE sessao_id=%s', (sid,))['n']
+    tem_ata = len(s['ata'] or '') >= 20 or bool(db.um(b, "SELECT 1 FROM documentos WHERE sessao_id=%s AND tipo='ata'", (sid,)))
+    membros = len(vereadores_atuais(b))
+    P = lambda k, t, feito, resumo, pub=None: {'chave': k, 'titulo': t, 'feito': feito, 'resumo': resumo, 'publicado': pub}
+    return [P('agenda', 'Agendamento', True, f"{s['tipo']} · {s['data'].strftime('%d/%m/%Y')} às {s['hora']} · {SITUACOES_SESSAO[s['situacao']]}"),
+            P('pauta', 'Pauta (Ordem do Dia)', n_itens > 0 or bool(s['pauta']), f'{n_itens} item(ns)' if n_itens else 'nenhum item', s['pauta_publicada']),
+            P('abertura', 'Abertura e presença', bool(s['aberta_as']) or n_pres > 0,
+              ' · '.join(x for x in (f"aberta às {s['aberta_as']}" if s['aberta_as'] else '', f'presença de {n_pres} de {membros}' if n_pres else '') if x) or 'não registrada', s['presenca_publicada']),
+            P('acontecimentos', 'Acontecimentos', n_ev > 0, f'{n_ev} registro(s)' if n_ev else 'nenhum registro', s['linha_publicada']),
+            P('votacoes', 'Votações', n_vot > 0, f'{n_vot} de {n_itens} item(ns) com resultado' if n_itens else 'sem itens na pauta', s['votacao_publicada']),
+            P('encerramento', 'Encerramento', bool(s['encerrada_as']), f"encerrada às {s['encerrada_as']}" if s['encerrada_as'] else 'não registrado', s['linha_publicada']),
+            P('videos', 'Vídeos', n_vid > 0, f'{n_vid} vídeo(s)' if n_vid else 'nenhum vídeo', True if n_vid else None),
+            P('ata', 'Ata', tem_ata, 'registrada' if tem_ata else 'não registrada', s['ata_publicada'])]
+
+def participacao_vereador(b, vid):
+    """Acontecimentos em que o(a) vereador(a) aparece, só de sessões com a linha do tempo publicada."""
+    return db.todos(b, """SELECT e.tipo, e.hora, e.descricao, s.id sessao_id, s.nome sessao, s.data, p.id pid, p.tipo ptipo, p.numero pnumero, p.ano pano
+                          FROM sessao_eventos e JOIN sessoes s ON s.id=e.sessao_id LEFT JOIN proposicoes p ON p.id=e.proposicao_id
+                          WHERE s.linha_publicada AND e.vereador_id=%s ORDER BY s.data DESC, e.ordem, e.id LIMIT 200""", (vid,))

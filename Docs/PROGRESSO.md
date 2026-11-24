@@ -2833,3 +2833,18 @@ Pedido do usuário: corrigir o endereço interno de forma que os serviços se ac
 - **Testes:** `tests/teste_financas_prefeitura.py` ganhou a reserva pelo domínio público, a chamada direta por HTTPS e a Prefeitura num nó vista pela gestão; bateria completa sobre o código e sobre a imagem: 40 suítes sem falha.
 - **Implantado** com aprovação do usuário ("Aprovo, há snapshot"): mescla `858aa63`; backup dos três bancos ok; app e worker recriados (`INTERNO_BASE` = `http://app:8000` nos dois); `atualizar` ok.
 - **Conferido:** nova coleta de `financas_prefeitura` → "Prefeitura cliente: até 23/11/2026, 11 meses, 9 áreas"; o painel da Câmara mostra "Dinheiro público da Prefeitura" mês a mês, vindo da API do painel da Prefeitura; gestão 303, portais, `/painel` da Câmara, `/e-sic` e casemaster 200; sem erros nos logs.
+
+## 24/11/2026 — Sessão da Câmara em linha do tempo (branch sessao-linha-do-tempo, não implantada)
+Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do agendamento (ordinária ou extraordinária) ao encerramento, como uma linha do tempo: presença, ata, moções, requerimentos e demais atos com o vereador autor (aparecendo no perfil dele) e link do vídeo (YouTube/Facebook). Os registros costumam ser feitos **depois** da sessão e muitos passos podem ficar em branco: **nada é obrigatório** e nada pode atrapalhar o registro e a publicação do que existe.
+- **Migração `042_orgao_sessao_linha.sql`** (idempotente): número, situação (agendada, realizada, cancelada, com motivo), horários de abertura e encerramento (opcionais), `linha_publicada`; votação simbólica em `pauta_itens` (modo e observação); tabelas `sessao_eventos` (acontecimentos: hora, vereador e matéria opcionais) e `sessao_videos` (vários vídeos por sessão; o `video_url` antigo vira o primeiro e continua sincronizado).
+- **Admin** (`/admin/sessoes`): "Agendar sessão" com tipo (Ordinária, Extraordinária, Solene, Especial), número e nome automáticos ("1ª Sessão Extraordinária de 2029"); a página da sessão é uma linha do tempo com 9 etapas e um mapa do que já foi registrado:
+  - agendamento e situação (vira "Realizada" sozinha com o primeiro registro do que aconteceu);
+  - pauta, com **matéria nova criada dentro da sessão** (moção, requerimento, indicação, projeto…) com os vereadores autores, lida no expediente e/ou incluída na pauta; entra em Proposições e no perfil do autor;
+  - abertura e presença (com "marcar todos como presentes"; pode ficar parcial);
+  - acontecimentos (expediente, leitura, uso da palavra, tribuna livre, suspensão…), reordenáveis, sem dado pessoal;
+  - votações: nominal (a presença deixou de ser exigida antes) ou resultado simples (votação simbólica, retirada, adiamento);
+  - encerramento, vídeos (YouTube, Facebook, Instagram ou outro, só https), ata e publicação.
+- **Publicação**: cada parte separada ou "Publicar tudo o que já foi registrado"; o que não tem registro fica para depois e não trava as outras.
+- **Portal**: a sessão mostra tipo, situação (e motivo do cancelamento), "Como foi a sessão" (linha do tempo publicada), votação simbólica e os vídeos; o perfil do vereador ganhou "Participação nas sessões"; a proposição mostra a votação simbólica.
+- Horários e registros de presença/votação só no dia da sessão ou depois; nada é preenchido sozinho.
+- **Testes**: `tests/teste_legislativo.py` ganhou a parte 10 (agendamento, numeração por tipo, matéria nova com autores, votação simbólica sem presença, acontecimentos, LGPD, vídeos, publicação parcial, presença publicada depois, sessão futura e cancelada); o caso "votar sem presença" foi ajustado à regra nova.

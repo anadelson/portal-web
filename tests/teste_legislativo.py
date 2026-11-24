@@ -78,8 +78,9 @@ pl2 = db.um(CM, "SELECT * FROM proposicoes WHERE ano=2029 AND tipo='Projeto de L
 post(us, {'acao': 'item', 'proposicao': pl2['id'], 'quorum': 'simples'}, txt='Item incluído', nome='item 2')
 it1, it2 = [x['id'] for x in db.todos(CM, 'SELECT id FROM pauta_itens WHERE sessao_id=%s ORDER BY ordem', (sid,))]
 r = post(us, {'acao': 'votar', 'item': it1, **{f'voto_{V[n]}': 'sim' for n in NOMES}}, nome='votar sem presença')
-if 'presença' not in msg(r): falha('votação antes da presença deveria ser recusada')
-if db.um(CM, 'SELECT 1 FROM votos WHERE item_id=%s', (it1,)): falha('voto gravado sem presença')
+# 24/11/2026: a presença deixou de ser obrigatória antes da votação; aqui a recusa vem da regra do Presidente (voto fora do empate)
+if 'Presidente só vota em caso de empate' not in msg(r): falha(f'votação sem presença: {msg(r)}')
+if db.um(CM, 'SELECT 1 FROM votos WHERE item_id=%s', (it1,)): falha('voto gravado apesar da recusa')
 pres = {f'pres_{V[n]}': ('ausente' if n == 'Íris Teste' else 'presente') for n in NOMES}
 post(us, {'acao': 'presenca', **pres}, txt='Presença registrada', nome='presença')
 votos = {f'voto_{V[n]}': v for n, v in zip(NOMES, ['sim', 'sim', 'sim', 'sim', 'nao', 'nao', 'abstencao', 'sim', 'ausente'])}  # Ana (presidente) "sim" sem empate → recusado
@@ -217,6 +218,76 @@ if sit['20.7'] != 'parcial' or sit['20.6'] == 'pendente' or sit['20.5'] != 'aten
 if db.um(CM, "SELECT count(*) n FROM sessoes WHERE pauta_publicada AND pauta='' AND NOT EXISTS (SELECT 1 FROM pauta_itens i WHERE i.sessao_id=sessoes.id) AND data > '2028-03-10'")['n'] and sit['20.4'] == 'atendido':
     falha('20.4 atendido com pauta vazia')
 if not db.um(CM, "SELECT 1 FROM proposicao_autores a JOIN proposicoes p ON p.id=a.proposicao_id WHERE p.tipo='Indicação' AND a.vereador_id IS NOT NULL"): falha('autoria antiga não vinculada')
+# ---------- 10. sessão em linha do tempo (24/11/2026): agendar, registrar depois, nada obrigatório ----------
+r = ok(cm.get('/admin/sessoes?novo=1'), txt='Agendar', nome='tela de agendamento')
+r = post('/admin/sessoes/nova', {'acao': 'criar', 'data': '2029-03-08', 'hora': '19:00', 'tipo': 'Extraordinária'}, txt='Sessão criada', nome='agendar extraordinária')
+sx = db.um(CM, "SELECT * FROM sessoes WHERE tipo='Extraordinária' ORDER BY id DESC LIMIT 1")
+if not sx or sx['nome'] != '1ª Sessão Extraordinária de 2029' or sx['numero'] != 1 or sx['situacao'] != 'agendada' or sx['hora'] != '19h': falha(f'agendamento automático: {sx and (sx["nome"], sx["numero"], sx["situacao"], sx["hora"])}')
+post('/admin/sessoes/nova', {'acao': 'criar', 'data': '2029-03-09', 'tipo': 'Extraordinária'}, txt='2ª Sessão Extraordinária de 2029', nome='numeração por tipo')
+ux = f"/admin/sessoes/{sx['id']}"
+r = ok(cm.get(ux), txt='Nenhuma etapa é obrigatória', nome='tela da sessão')
+for t_ in ('Agendamento', 'Pauta (Ordem do Dia)', 'Abertura e presença', 'Acontecimentos', 'Votações', 'Encerramento', 'Vídeos', 'Ata', 'Publicação no portal', 'Matéria nova nesta sessão'):
+    if t_ not in r.text: falha(f'tela da sessão sem "{t_}"')
+# matéria nova dentro da sessão, com autores, lida e na pauta
+r = post(ux, {'acao': 'materia', 'tipo_materia': 'Moção', 'ementa': 'Moção de aplauso fictícia de teste.', 'autor': ['Carla Teste', 'Diego Teste'], 'lida': '1', 'na_pauta': '1', 'quorum': 'simples'},
+         txt='Moção nº', nome='matéria nova')
+mo = db.um(CM, "SELECT * FROM proposicoes WHERE tipo='Moção' AND ementa LIKE 'Moção de aplauso fictícia%%'")
+au = {a['nome']: a['vereador_id'] for a in db.todos(CM, 'SELECT * FROM proposicao_autores WHERE proposicao_id=%s', (mo['id'],))} if mo else {}
+if not mo or au.get('Carla Teste') != V['Carla Teste'] or au.get('Diego Teste') != V['Diego Teste']: falha(f'autoria da matéria nova: {au}')
+if not db.um(CM, "SELECT 1 FROM sessao_eventos WHERE sessao_id=%s AND tipo='leitura' AND proposicao_id=%s AND vereador_id=%s", (sx['id'], mo['id'], V['Carla Teste'])): falha('leitura da matéria na linha do tempo')
+itm = db.um(CM, 'SELECT * FROM pauta_itens WHERE sessao_id=%s AND proposicao_id=%s', (sx['id'], mo['id']))
+if not itm: falha('matéria nova não entrou na pauta')
+r = post(ux, {'acao': 'materia', 'tipo_materia': 'Requerimento', 'ementa': 'Sem autor.'}, nome='matéria sem autor')
+if 'autor' not in msg(r): falha(f'matéria sem autor deveria ser recusada: {msg(r)}')
+# votação simbólica sem presença nem horário registrados (registro depois da sessão, passos em branco)
+r = post(ux, {'acao': 'simbolica', 'item': itm['id'], 'resultado': 'aprovado', 'observacao': 'por unanimidade dos presentes'}, txt='Resultado registrado: Aprovado', nome='votação simbólica')
+if db.um(CM, 'SELECT situacao FROM proposicoes WHERE id=%s', (mo['id'],))['situacao'] != 'Aprovada': falha('moção aprovada em votação simbólica')
+if db.um(CM, 'SELECT situacao FROM sessoes WHERE id=%s', (sx['id'],))['situacao'] != 'realizada': falha('sessão deveria virar realizada com o primeiro registro')
+if db.um(CM, 'SELECT 1 FROM presencas WHERE sessao_id=%s', (sx['id'],)): falha('presença inventada')
+# acontecimentos: hora opcional, vereador, ordem, LGPD
+post(ux, {'acao': 'evento', 'tipo': 'orador', 'hora': '19:20', 'vereador': V['Elisa Teste'], 'descricao': 'Falou sobre a iluminação pública (teste).'}, txt='Acontecimento registrado', nome='orador')
+post(ux, {'acao': 'evento', 'tipo': 'comunicacao', 'descricao': 'Comunicado de teste da Presidência.'}, txt='Acontecimento registrado', nome='evento sem hora')
+r = post(ux, {'acao': 'evento', 'tipo': 'tribuna', 'descricao': 'Cidadão, telefone (14) 99999-1234'}, nome='tribuna com telefone')
+if 'dado pessoal' not in msg(r): falha('acontecimento com telefone deveria ser recusado')
+r = post(ux, {'acao': 'evento', 'tipo': 'outro', 'hora': '25h'}, nome='hora inválida')
+if 'Hora inválida' not in msg(r) and 'Descreva' not in msg(r): falha(f'hora inválida: {msg(r)}')
+evs = db.todos(CM, 'SELECT * FROM sessao_eventos WHERE sessao_id=%s ORDER BY ordem, id', (sx['id'],))
+post(ux, {'acao': 'subir_evento', 'evento': evs[-1]['id']}, txt='Ordem ajustada', nome='subir')
+if [e['id'] for e in db.todos(CM, 'SELECT id FROM sessao_eventos WHERE sessao_id=%s ORDER BY ordem, id', (sx['id'],))][-2] != evs[-1]['id']: falha('reordenar acontecimento')
+post(ux, {'acao': 'encerramento', 'hora': '21h10'}, txt='Encerramento registrado às 21h10', nome='encerramento')
+# vídeos
+r = post(ux, {'acao': 'video', 'url': 'http://inseguro.test/v'}, nome='vídeo http')
+if 'https://' not in msg(r): falha('vídeo sem https deveria ser recusado')
+post(ux, {'acao': 'video', 'url': 'https://www.youtube.com/watch?v=TESTE123', 'rotulo': 'Transmissão ao vivo'}, txt='YouTube', nome='vídeo YouTube')
+post(ux, {'acao': 'video', 'url': 'https://www.facebook.com/camara.teste/videos/123'}, txt='Facebook', nome='vídeo Facebook')
+if db.um(CM, 'SELECT video_url FROM sessoes WHERE id=%s', (sx['id'],))['video_url'] != 'https://www.youtube.com/watch?v=TESTE123': falha('vídeo principal sincronizado')
+# antes de publicar: nada no portal
+r = ok(cm.get(f"/sessoes/{sx['id']}"), nome='portal antes de publicar', sem='Como foi a sessão')
+# publicar tudo o que existe: presença e ata não existem e não travam o resto
+r = post(ux, {'acao': 'pub_tudo'}, txt='Publicado:', nome='publicar tudo')
+if 'presença' not in msg(r) or 'ata' not in msg(r): falha(f'publicar tudo deveria listar o que ficou sem registro: {msg(r)}')
+sx2 = db.um(CM, 'SELECT * FROM sessoes WHERE id=%s', (sx['id'],))
+if not (sx2['pauta_publicada'] and sx2['linha_publicada'] and sx2['votacao_publicada']) or sx2['presenca_publicada'] or sx2['ata_publicada']: falha('publicação parcial')
+r = ok(cm.get(f"/sessoes/{sx['id']}"), txt='Como foi a sessão', nome='portal publicado')
+for t_ in ('Sessão Extraordinária', 'Realizada', 'Elisa Teste', '19h20', 'Encerramento da sessão', '21h10', 'votação simbólica', 'por unanimidade', 'Assistir no YouTube', 'Assistir no Facebook', 'Leitura de matéria', 'Presença ainda não publicada'):
+    if t_ not in r.text: falha(f'portal da sessão sem "{t_}"')
+r = ok(cm.get(f"/vereador/{V['Elisa Teste']}"), txt='Participação nas sessões', nome='perfil com participação')
+if 'iluminação pública' not in r.text: falha('participação do vereador no perfil')
+r = ok(cm.get(f"/vereador/{V['Carla Teste']}"), txt='Moção de aplauso fictícia', nome='perfil com a moção')
+# depois: a presença pode ser registrada e publicada mais tarde
+post(ux, {'acao': 'presenca', f"pres_{V['Ana Teste']}": 'presente'}, txt='Presença registrada (1', nome='presença parcial depois')
+post(ux, {'acao': 'pub_presenca'}, txt='Publicado no portal', nome='publicar presença depois')
+# sessão futura: horário, presença e votação esperam o dia
+post('/admin/sessoes/nova', {'acao': 'criar', 'data': '2029-04-20', 'tipo': 'Ordinária'}, txt='Sessão criada', nome='sessão futura')
+sf = db.um(CM, "SELECT id FROM sessoes WHERE data='2029-04-20'")['id']
+r = post(f'/admin/sessoes/{sf}', {'acao': 'abertura', 'hora': '19h'}, nome='abertura futura')
+if 'dia da sessão' not in msg(r): falha('horário de sessão futura deveria esperar o dia')
+r = post(f'/admin/sessoes/{sf}', {'acao': 'situacao', 'situacao': 'cancelada', 'motivo': ''}, nome='cancelar sem motivo')
+if 'motivo' not in msg(r): falha('cancelamento exige motivo')
+post(f'/admin/sessoes/{sf}', {'acao': 'situacao', 'situacao': 'cancelada', 'motivo': 'Ponto facultativo (teste)'}, txt='cancelada', nome='cancelar')
+ok(cm.get(f'/sessoes/{sf}'), txt='Ponto facultativo (teste)', nome='portal sessão cancelada')
+ok(cm.get('/admin/sessoes'), txt='Cancelada', nome='lista com situação')
+
 # LGPD geral: nenhuma página pública com CPF
 for pg in ('/', '/proposicoes', f"/proposicoes/{pl['id']}", '/sessoes', f'/sessoes/{sid}', '/comissoes', '/contas', '/transmissoes', '/transparencia/diarias-camara', f"/vereador/{V['Ana Teste']}"):
     if re.search(r'\b\d{3}\.\d{3}\.\d{3}-\d{2}\b', cm.get(pg).text): falha(f'CPF em {pg}')
