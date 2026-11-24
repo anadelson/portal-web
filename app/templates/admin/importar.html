@@ -1,6 +1,7 @@
-{% extends 'admin/base.html' %}{% block h1 %}Importar dados antigos (CSV){% endblock %}
+{% extends 'admin/base.html' %}{% block h1 %}Dados antigos (importar){% endblock %}{% from 'admin/_tela.html' import abas_tela with context %}
 {% block conteudo %}{% set C = csrf_token(request) %}
-<p>Use arquivos exportados pelo sistema {{ 'legislativo ' if orgao.tipo == 'legislativo' }}do fornecedor ou digitados — <strong>nunca raspagem do portal antigo</strong>. CSV em UTF-8, separador ponto e vírgula, datas dd/mm/aaaa. Primeiro <strong>simule</strong>: nada é gravado e você recebe o relatório de erros. A gravação é tudo ou nada.</p>
+{{ abas_tela('Dados antigos', [('/admin/importar', 'Planilha (CSV)', true), ('/admin/importar/portal', 'Portal antigo (buscar e migrar)', false)]) }}
+<p>Use arquivos exportados pelo sistema {{ 'legislativo ' if orgao.tipo == 'legislativo' }}do fornecedor ou digitados. Para trazer textos, fotos e arquivos do site antigo, use a aba <a href="/admin/importar/portal">Portal antigo</a>. CSV em UTF-8, separador ponto e vírgula, datas dd/mm/aaaa. Primeiro <strong>simule</strong>: nada é gravado e você recebe o relatório de erros. A gravação é tudo ou nada.</p>
 <section class="cx"><form class="campos" method="post" action="/admin/importar" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}"><div class="grade2">
 <label>Modelo<select name="modelo">{% for k, cols in modelos.items() %}<option value="{{ k }}">{{ k }}.csv — {{ cols|join(';') }}</option>{% endfor %}</select></label><label>Arquivo CSV (até 5 MB)<input type="file" name="arquivo" accept=".csv,text/csv" required></label></div>
 <div class="acoes"><button class="btn sec" name="acao" value="simular">Simular (não grava)</button>{% if pode('config') %}<button class="btn" name="acao" value="gravar">Importar e gravar</button>{% endif %}</div></form>

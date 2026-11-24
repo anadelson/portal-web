@@ -1,0 +1,25 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import abas_tela with context %}{% block h1 %}Dados antigos (importar){% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+{{ abas_tela('Dados antigos', ([('/admin/importar', 'Planilha (CSV)', false)] if (orgao.tipo == 'legislativo' or mods.diario) else []) + [('/admin/importar/portal', 'Portal antigo (buscar e migrar)', true)]) }}
+<div class="pa-intro"><p><strong>Traga textos, fotos e arquivos do site antigo deste órgão.</strong> Informe o endereço e o assunto: a busca percorre o site devagar (1 página por segundo), guarda o que encontrar numa <strong>área de revisão</strong> e sugere onde cada item entra no portal novo. <strong>Nada é publicado sozinho</strong>: o que você migrar vira rascunho (ou álbum fora do ar) e segue a revisão de sempre.</p>
+<ul class="pa-regras"><li>Fica só no domínio informado e nos subdomínios dele.</li><li>Respeita o <code>robots.txt</code> do site; não entra com senha, não envia formulários e não contorna captcha nem bloqueio.</li><li>CPF encontrado no texto é mascarado; e-mail e telefone ficam sinalizados para você conferir (LGPD).</li><li>Fotos com pessoas só vão ao ar com a autorização de uso de imagem registrada.</li></ul></div>
+
+{% if pode_criar %}<section class="cx" aria-labelledby="h-nova"><h2 id="h-nova">Nova busca</h2>
+<form class="campos" method="post" action="/admin/importar/portal"><input type="hidden" name="csrf" value="{{ C }}">
+<label>Endereço do portal antigo<input name="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="www.exemplo.sp.gov.br" required maxlength="300"></label>
+<div class="grade2"><label>Assunto<select name="assunto">{% for k, t in assuntos.items() if orgao.tipo == 'legislativo' or k not in ('sessoes', 'proposicoes') %}<option value="{{ k }}">{{ t }}</option>{% endfor %}</select></label>
+<label>Máximo de páginas a ler<input name="limite" inputmode="numeric" value="300" size="6"><small>até {{ cfg.paginas_max }}; sites grandes: faça várias buscas por assunto</small></label></div>
+<label>Palavras-chave (opcional, separadas por vírgula)<input name="palavras" maxlength="300" placeholder="ex.: festa do peão, merenda, sessão solene"></label>
+<div class="grade2"><label>A partir de (opcional)<input type="date" name="desde"></label><label>Até (opcional)<input type="date" name="ate"></label></div>
+<label class="opc"><input type="checkbox" name="declaro" value="1" required> Confirmo que o portal antigo é deste órgão e que o conteúdo dele pode ser migrado para o portal novo.</label>
+<button class="btn" name="acao" value="nova">Começar a busca</button>
+<p class="legal">O endereço fica registrado só no painel deste órgão. Uma busca por vez; você pode pausar, retomar ou apagar. Espaço reservado para a área de revisão: {{ cfg.cota_mb }} MB.</p></form></section>
+{% else %}<p class="legal">Só o administrador do órgão cadastra uma busca. Você pode revisar e migrar o que já foi encontrado.</p>{% endif %}
+
+<section class="cx" aria-labelledby="h-buscas"><h2 id="h-buscas">Buscas</h2>
+{% if buscas %}<div class="tabela"><table><thead><tr><th scope="col">Busca</th><th scope="col">Assunto</th><th scope="col">Situação</th><th scope="col">Páginas lidas</th><th scope="col">Para revisar</th><th scope="col">Migrados</th></tr></thead><tbody>
+{% for v in buscas %}<tr><td><a href="/admin/importar/portal/{{ v.id }}">nº {{ v.id }} · {{ v.dominio }}</a><small style="display:block">{{ v.criado_em|br }} · {{ v.criado_por }}</small></td><td>{{ assuntos[v.assunto] }}{% if v.palavras %}<small style="display:block">“{{ v.palavras }}”</small>{% endif %}</td>
+<td><span class="chip {{ 'ok' if v.situacao == 'concluida' else 'erro' if v.situacao == 'erro' else 'alerta' if v.situacao == 'pausada' else '' }}">{{ sit[v.situacao] }}</span></td><td>{{ v.paginas_lidas }} / {{ v.limite_paginas }}</td><td>{{ v.a_revisar }}</td><td>{{ v.migrados }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="vg-vazio">Nenhuma busca ainda.</p>{% endif %}</section>
+<p class="legal"><strong>Base legal:</strong> Lei nº 13.709/2018 (LGPD), art. 6º e 7º; Lei nº 12.527/2011 (LAI), art. 8º — continuidade das informações públicas já divulgadas.</p>
+{% endblock %}
