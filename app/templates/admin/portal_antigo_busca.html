@@ -1,0 +1,45 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import voltar with context %}{% block h1 %}Busca nº {{ v.id }} no portal antigo{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+{{ voltar('/admin/importar/portal', 'Voltar às buscas') }}
+<section class="cx pa-status" aria-labelledby="h-st"><div class="vg-card-cab"><h2 id="h-st">{{ v.dominio }} · {{ assuntos[v.assunto] }}</h2>
+<span class="chip {{ 'ok' if v.situacao == 'concluida' else 'erro' if v.situacao == 'erro' else 'alerta' if v.situacao == 'pausada' else '' }}">{{ sit[v.situacao] }}</span></div>
+{% set pct = (100 * v.paginas_lidas / v.limite_paginas)|round|int if v.limite_paginas else 0 %}
+<div class="pa-barra" role="progressbar" aria-valuemin="0" aria-valuemax="{{ v.limite_paginas }}" aria-valuenow="{{ v.paginas_lidas }}" aria-label="Páginas lidas"><span style="width:{{ [pct, 100]|min }}%"></span></div>
+<div class="vg-mini pa-num"><p><b>{{ v.paginas_lidas }}</b>páginas lidas de {{ v.limite_paginas }}</p><p><b>{{ fila.pendente }}</b>endereços na fila</p><p class="{{ 'tom-alerta' if contas.novo }}"><b>{{ contas.novo }}</b>para revisar</p><p class="{{ 'tom-ok' if contas.migrado }}"><b>{{ contas.migrado }}</b>migrados</p><p><b>{{ (v.bytes / 1048576)|round(1) }}</b>MB lidos</p></div>
+{% if v.msg %}<p class="msg-busca" role="status">{{ v.msg }}</p>{% endif %}
+{% if v.situacao in ('aguardando', 'rodando') %}<p class="legal">A busca anda sozinha, aos poucos. Recarregue a página para ver o progresso; você já pode revisar o que apareceu.</p>{% endif %}
+{% if pode_config %}<form class="acoes" method="post" action="/admin/importar/portal"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="busca" value="{{ v.id }}">
+{% if v.situacao in ('aguardando', 'rodando') %}<button class="btn sec" name="acao" value="pausar">Pausar</button>{% elif v.situacao in ('pausada', 'erro') %}<button class="btn sec" name="acao" value="retomar">Retomar</button>{% endif %}
+<button class="btn perigo" name="acao" value="apagar">Apagar a busca e os arquivos em revisão</button></form>{% endif %}
+{% if motivos %}<details><summary>Endereços que ficaram de fora ({{ fila.ignorada + fila.erro }})</summary><ul>{% for m in motivos %}<li>{{ m.motivo or 'sem motivo' }}: {{ m.n }}</li>{% endfor %}</ul></details>{% endif %}
+<p class="legal">Início: {{ v.url_inicial }}{% if v.palavras %} · palavras: “{{ v.palavras }}”{% endif %}{% if v.desde or v.ate %} · período: {{ v.desde|br or '…' }} a {{ v.ate|br or '…' }}{% endif %} · cadastrada por {{ v.criado_por }} em {{ v.criado_em|br }}</p></section>
+
+<nav class="subabas" aria-label="Situação dos itens">{% for k, t in [('novo', 'Para revisar'), ('migrado', 'Migrados'), ('descartado', 'Descartados')] %}<a href="?sit={{ k }}&tipo={{ tipo_f }}"{% if sit_f == k %} aria-current="page"{% endif %}>{{ t }} ({{ contas[k] }})</a>{% endfor %}
+<span class="pa-sep" aria-hidden="true"></span>{% for k, t in [('', 'Tudo'), ('pagina', 'Páginas'), ('arquivo', 'Arquivos')] %}<a href="?sit={{ sit_f }}&tipo={{ k }}"{% if tipo_f == k %} aria-current="page"{% endif %}>{{ t }}</a>{% endfor %}</nav>
+
+{% if itens %}
+{% if sit_f == 'novo' %}<form id="f-lote" method="post" action="/admin/importar/portal/{{ v.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="sit_f" value="{{ sit_f }}"><input type="hidden" name="tipo_f" value="{{ tipo_f }}"><input type="hidden" name="p" value="{{ p }}"></form>
+<div class="pa-lote"><label class="opc"><input type="checkbox" onclick="document.querySelectorAll('input[form=f-lote][name=sel]').forEach(function(x){x.checked=this.checked}.bind(this))"> Marcar todos desta página</label>
+<button class="btn" form="f-lote" name="acao" value="migrar_sugeridos">Migrar marcados para o destino sugerido</button><button class="btn sec" form="f-lote" name="acao" value="descartar_marcados">Descartar marcados</button></div>{% endif %}
+<ol class="pa-itens">{% for it in itens %}{% set s = it.sugestao or {} %}<li class="pa-item" id="item-{{ it.id }}">
+<div class="pa-topo">{% if sit_f == 'novo' %}<input type="checkbox" name="sel" value="{{ it.id }}" form="f-lote" aria-label="Marcar {{ it.titulo }}">{% endif %}
+<span class="chip">{{ 'Página' if it.tipo == 'pagina' else 'Arquivo ' ~ (it.arq.ext|upper if it.arq else '') }}</span>{% if it.data_original %}<span class="chip">{{ it.data_original|br }}</span>{% endif %}
+{% if s.destino %}<span class="chip ok">Sugestão: {{ destinos.get(s.destino, s.destino) }}{% if s.rotulo %} — {{ s.rotulo }}{% endif %}</span>{% endif %}</div>
+<h3>{{ it.titulo or 'Sem título' }}</h3>
+<p class="pa-url"><a href="{{ it.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ it.url[:110] }}{{ '…' if it.url|length > 110 }}</a>{% if it.origem %} · encontrado em <a href="{{ it.origem }}" target="_blank" rel="noopener noreferrer nofollow">página de origem</a>{% endif %}</p>
+{% if it.avisos %}<ul class="pa-avisos">{% for a in it.avisos %}<li>{{ a }}</li>{% endfor %}</ul>{% endif %}
+{% if it.fotos %}<div class="pa-fotos">{% for a in it.fotos[:8] %}<img src="/admin/importar/portal/{{ v.id }}/arquivo/{{ a.id }}" alt="" loading="lazy" width="120" height="90">{% endfor %}{% if it.fotos|length > 8 %}<span>+{{ it.fotos|length - 8 }}</span>{% endif %}</div>{% endif %}
+{% if it.trecho %}<p class="pa-trecho">{{ it.trecho }}{{ '…' if it.texto|length > 420 }}</p>{% endif %}
+{% if it.arq and it.arq.arquivo %}<p><a class="btn sec mini" href="/admin/importar/portal/{{ v.id }}/arquivo/{{ it.arq.id }}" target="_blank" rel="noopener">Abrir o arquivo ({{ (it.arq.bytes / 1024)|round|int }} KB)</a></p>{% endif %}
+{% if it.situacao == 'novo' %}<form class="pa-migrar" method="post" action="/admin/importar/portal/{{ v.id }}#item-{{ it.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="item" value="{{ it.id }}"><input type="hidden" name="sit_f" value="{{ sit_f }}"><input type="hidden" name="tipo_f" value="{{ tipo_f }}"><input type="hidden" name="p" value="{{ p }}">
+<label>Migrar para<select name="destino_{{ it.id }}">{% for d in (dest_pagina if it.tipo == 'pagina' else dest_arquivo) %}<option value="{{ d }}" {{ 'selected' if s.destino == d }}>{{ destinos[d] }}</option>{% endfor %}</select></label>
+{% if it.tipo == 'arquivo' and sessoes %}<label>Sessão (se for para uma sessão)<select name="alvo_sessao_{{ it.id }}"><option value="">—</option>{% for x in sessoes %}<option value="{{ x.id }}" {{ 'selected' if s.destino == 'sessao' and s.alvo == x.id }}>{{ x.data|br }} · {{ x.nome[:60] }}</option>{% endfor %}</select></label>
+<label>Proposição (se for para uma proposição)<select name="alvo_proposicao_{{ it.id }}"><option value="">—</option>{% for x in props %}<option value="{{ x.id }}" {{ 'selected' if s.destino == 'proposicao' and s.alvo == x.id }}>{{ x.tipo }} nº {{ x.numero }}/{{ x.ano }} — {{ x.ementa[:50] }}</option>{% endfor %}</select></label>{% endif %}
+<div class="acoes-item"><button class="btn" name="acao" value="migrar">Migrar</button><button class="btn sec" name="acao" value="descartar">Descartar</button></div></form>
+{% elif it.situacao == 'migrado' %}<p class="legal">Migrado para {{ destinos.get(it.destino, it.destino) }} por {{ it.migrado_por }} em {{ it.migrado_em|br }}.{% if it.destino in ('noticia', 'pagina') %} <a href="/admin/conteudos/{{ it.destino_id }}">Abrir o rascunho</a>{% elif it.destino == 'album' %} <a href="/admin/identidade?aba=fotos">Abrir Fotos e álbuns</a>{% elif it.destino == 'comunicado' %} <a href="/admin/comunicados?id={{ it.destino_id }}">Abrir o comunicado</a>{% endif %}</p>
+{% else %}<form method="post" action="/admin/importar/portal/{{ v.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="item" value="{{ it.id }}"><input type="hidden" name="sit_f" value="{{ sit_f }}"><input type="hidden" name="tipo_f" value="{{ tipo_f }}"><button class="btn sec mini" name="acao" value="restaurar">Voltar para a revisão</button></form>{% endif %}
+</li>{% endfor %}</ol>
+{% if paginas > 1 %}<nav class="subabas" aria-label="Páginas">{% for n in range(1, paginas + 1) %}<a href="?sit={{ sit_f }}&tipo={{ tipo_f }}&p={{ n }}"{% if n == p %} aria-current="page"{% endif %}>{{ n }}</a>{% endfor %}</nav>{% endif %}
+{% else %}<p class="vg-vazio">{{ 'Nada para revisar ainda.' if sit_f == 'novo' else 'Nenhum item aqui.' }}{% if v.situacao in ('aguardando', 'rodando') and sit_f == 'novo' %} A busca está em andamento: recarregue em alguns minutos.{% endif %}</p>{% endif %}
+<p class="legal">Migrar cria rascunho (notícia, página, comunicado) ou álbum fora do ar, com a nota “migrado do portal anterior”; o PDF vinculado a uma sessão ou proposição aparece no portal como os anexados à mão (a ata, só depois de publicada). <strong>Base legal:</strong> Lei nº 13.709/2018 (LGPD); Lei nº 12.527/2011 (LAI), art. 8º.</p>
+{% endblock %}

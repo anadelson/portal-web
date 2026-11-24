@@ -177,6 +177,14 @@ def atendimento_tick(agora):
             comum.registrar(o['slug'], 'atendimento:rotina', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
             traceback.print_exc()
 
+def portal_antigo_tick():
+    """Busca no portal antigo (24/11/2026): avança as buscas em andamento por até 45 s a cada minuto, 1 pedido por segundo."""
+    try:
+        from . import portal_antigo
+        portal_antigo.tick(45)
+    except Exception:
+        traceback.print_exc()
+
 def main():
     ultimo = ultimas_execucoes()
     mud = {}
@@ -206,6 +214,7 @@ def main():
             traceback.print_exc()
         diario_tick(datetime.now())
         atendimento_tick(datetime.now())
+        portal_antigo_tick()
         time.sleep(60)
 
 if __name__ == '__main__':
