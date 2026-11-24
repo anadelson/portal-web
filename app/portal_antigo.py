@@ -24,10 +24,12 @@ from . import config, db
 ASSUNTOS = {'tudo': 'Tudo o que for encontrado', 'noticias': 'Notícias', 'paginas': 'Páginas institucionais', 'sessoes': 'Sessões, pautas e atas',
             'proposicoes': 'Proposições, leis e atos', 'documentos': 'Documentos e arquivos (PDF, DOCX…)', 'fotos': 'Fotos e álbuns'}
 DESTINOS = {'noticia': 'Notícia (rascunho)', 'pagina': 'Página (rascunho)', 'album': 'Álbum de fotos (não publicado)', 'comunicado': 'Comunicado com anexo (rascunho)',
-            'sessao': 'Documento de uma sessão', 'proposicao': 'Documento de uma proposição'}
-DESTINOS_PAGINA = ('noticia', 'pagina', 'album', 'comunicado')
-DESTINOS_ARQUIVO = ('comunicado', 'sessao', 'proposicao')
-SO_LEGISLATIVO = ('sessao', 'proposicao')
+            'sessao': 'Documento de uma sessão', 'proposicao': 'Documento de uma proposição',
+            'nova_proposicao': 'Criar a proposição (conferir os dados)', 'nova_sessao': 'Criar a sessão (conferir os dados)'}
+DESTINOS_PAGINA = ('noticia', 'pagina', 'album', 'comunicado', 'nova_proposicao', 'nova_sessao')
+DESTINOS_ARQUIVO = ('comunicado', 'sessao', 'proposicao', 'nova_proposicao', 'nova_sessao')
+SO_LEGISLATIVO = ('sessao', 'proposicao', 'nova_proposicao', 'nova_sessao')
+CRIAR = ('nova_proposicao', 'nova_sessao')   # só pelo formulário de conferência (criar_proposicao / criar_sessao)
 
 PADRAO = {'paginas_max': 2000, 'cota_mb': 2048}   # por órgão, em config 'portal_antigo' (pode ser mudado sem código)
 DISCO_MIN = 3 * 1024 ** 3                          # com menos de 3 GB livres a busca pausa sozinha
@@ -355,19 +357,135 @@ PROP = re.compile(r'(projeto de lei complementar|projeto de lei|projeto de resol
 PROP_TIPO = {'projeto de lei complementar': 'Projeto de Lei Complementar', 'projeto de lei': 'Projeto de Lei', 'projeto de resolucao': 'Projeto de Resolução',
              'projeto de decreto legislativo': 'Projeto de Decreto Legislativo', 'mocao': 'Moção', 'requerimento': 'Requerimento', 'indicacao': 'Indicação', 'emenda': 'Emenda'}
 
+# ---------- dados de proposição e de sessão (Legislativo) ----------
+# Só o que está ESCRITO no título, no endereço ou no texto; o que não aparece fica em branco para quem confere preencher.
+PROP_CAB = re.compile(r'(projeto de lei complementar|projeto de lei|projeto de resolucao|projeto de decreto legislativo|mocao|requerimento|indicacao|emenda)'
+                      r'\D{0,25}?(\d{1,3}(?:\.\d{3})?|\d{1,4})\s*(?:/|-|_|\s+de\s+|\s+)\s*((?:19|20)\d{2})\b')
+SESSAO_A = re.compile(r'\b(\d{1,3})\s*[aoªº°]?\.?\s*sessao\s+(ordinaria|extraordinaria|solene|especial)')
+SESSAO_B = re.compile(r'\bsessao\s+(ordinaria|extraordinaria|solene|especial)\s*(?:n\s*[o.]?\s*)?(\d{1,3})\b')
+TIPO_SESSAO_TXT = {'ordinaria': 'Ordinária', 'extraordinaria': 'Extraordinária', 'solene': 'Solene', 'especial': 'Especial'}
+HORA = re.compile(r'\b(?:as|a partir das|horario:?|inicio:?)\s*(\d{1,2})\s*(?:h|:|horas)\s*(\d{2})?')
+ROT_EMENTA = re.compile(r'\bementa\s*[:–-]\s*(.{10,2000}?)(?:\n|$)', re.I)
+ROT_AUTOR = re.compile(r'\baut(?:or|ora|ores|oria)(?:\s*\((?:a|es)\))?\s*[:–-]\s*([^\n]{3,300}?)(?:\s+(?:data|ementa|situa[cç][aã]o|apresenta)\b|\n|$)', re.I)
+ROT_APRES = re.compile(r'(?:data\s+de\s+apresenta[cç][aã]o|apresentad[oa]\s+em|protocolad[oa]\s+em|data\s+do\s+protocolo)\s*:?\s*([^\n]{6,40})', re.I)
+EMENTA_INICIO = re.compile(r'^(Disp[õo]e sobre|Institui|Autoriza|Denomina|D[áa] denomina|Altera|Declara|Concede|Cria|Revoga|Fixa|Estabelece|Aprova|Requer|Indica|Mo[çc][ãa]o de)\b')
+
+def _sessao_txt(s):
+    m = SESSAO_A.search(s)
+    if m:
+        return TIPO_SESSAO_TXT[m.group(2)], int(m.group(1))
+    m = SESSAO_B.search(s)
+    if m:
+        return TIPO_SESSAO_TXT[m.group(1)], int(m.group(2))
+    return None
+
+def _hora_txt(s):
+    m = HORA.search(sem_acento(s))
+    if not m or int(m.group(1)) > 23 or (m.group(2) and int(m.group(2)) > 59):
+        return ''
+    return f"{int(m.group(1))}h{m.group(2) if m.group(2) and m.group(2) != '00' else ''}"
+
+def _autor_limpo(a):
+    a = re.sub(r'^(?:o |a )?(?:vereador(?:a|es)?|ver\.|vereadora?\(a\))\s+', '', a.strip(), flags=re.I)
+    return mascarar(a.strip(' .;,'))[:300]
+
+def _prop_txt(texto, prop):
+    """Completa ementa, autor e data de apresentação a partir de um texto (página da proposição)."""
+    if not texto:
+        return
+    if not prop['ementa']:
+        m = ROT_EMENTA.search(texto)
+        if m:
+            prop['ementa'] = m.group(1).strip()[:2000]
+        else:
+            for par in texto.split('\n\n')[:8]:
+                par = par.strip()
+                if EMENTA_INICIO.match(par) and 10 <= len(par) <= 2000:
+                    prop['ementa'] = par; break
+    if not prop['autor']:
+        m = ROT_AUTOR.search(texto)
+        if m:
+            prop['autor'] = _autor_limpo(m.group(1))
+    if not prop['apresentada']:
+        m = ROT_APRES.search(texto)
+        if m:
+            prop['apresentada'] = achar_data(m.group(1))
+
+def campos_leg(b, it):
+    """{'proposicao': {...} | None, 'sessao': {...} | None} lidos no título e no endereço do item (e no texto dele, ou da página onde o
+    arquivo estava, se ela for da mesma proposição). Nada é deduzido: o que não aparece fica vazio."""
+    from urllib.parse import unquote
+    titulo = it.get('titulo') or ''
+    caminho = re.sub(r'[-_+]+', ' ', unquote(urlsplit(it['url']).path))
+    cab = sem_acento(f'{titulo} {caminho}')
+    texto = it.get('texto') or ''
+    origem = None
+    if it['tipo'] == 'arquivo' and it.get('origem') and it.get('varredura_id'):
+        origem = db.um(b, "SELECT titulo, texto FROM migracao_itens WHERE varredura_id=%s AND url=%s AND tipo='pagina'", (it['varredura_id'], it['origem']))
+    prop = None
+    m = PROP_CAB.search(cab)
+    if m and 1900 <= int(m.group(3)) <= config.hoje().year:
+        prop = {'tipo': PROP_TIPO[m.group(1)], 'numero': int(m.group(2).replace('.', '')), 'ano': int(m.group(3)), 'ementa': '', 'autor': '', 'apresentada': None}
+        _prop_txt(texto, prop)
+        if origem:
+            mo = PROP_CAB.search(sem_acento(origem['titulo'] or ''))
+            if mo and PROP_TIPO[mo.group(1)] == prop['tipo'] and int(mo.group(2).replace('.', '')) == prop['numero'] and int(mo.group(3)) == prop['ano']:
+                _prop_txt(origem['texto'], prop)
+    ses = None
+    st = _sessao_txt(cab)
+    if st:
+        ses = {'tipo': st[0], 'numero': st[1], 'data': achar_data(titulo, caminho), 'hora': _hora_txt(f"{titulo}\n{texto[:1500]}")}
+    return {'proposicao': prop, 'sessao': ses}
+
+FALTA_PROP = {'tipo': 'tipo', 'numero': 'número', 'ano': 'ano', 'ementa': 'ementa', 'autor': 'autor'}
+FALTA_SESSAO = {'tipo': 'tipo', 'numero': 'número', 'data': 'data', 'hora': 'hora'}
+
+def faltando(destino, c):
+    """Campos obrigatórios que a leitura não encontrou (a situação é sempre escolhida por quem confere)."""
+    d = (c or {}).get('proposicao' if destino == 'nova_proposicao' else 'sessao')
+    regras = FALTA_PROP if destino == 'nova_proposicao' else FALTA_SESSAO
+    if not d:
+        return list(regras.values())
+    return [t for k, t in regras.items() if not d.get(k)]
+
+def _prop_existente(b, p):
+    return db.um(b, 'SELECT id, tipo, numero, ano FROM proposicoes WHERE tipo=%s AND numero=%s AND ano=%s', (p['tipo'], p['numero'], p['ano']))
+
+def _sessao_existente(b, s):
+    return db.um(b, 'SELECT id, nome FROM sessoes WHERE data=%s AND tipo=%s ORDER BY id LIMIT 1', (s['data'], s['tipo'])) if s.get('data') else None
+
+def _sugerir_leg(b, it, alvo_txt):
+    c = campos_leg(b, it)
+    p, s = c['proposicao'], c['sessao']
+    if p:
+        ja = _prop_existente(b, p)
+        if ja:
+            if it['tipo'] == 'arquivo':
+                return {'destino': 'proposicao', 'alvo': ja['id'], 'rotulo': f"{ja['tipo']} nº {ja['numero']}/{ja['ano']}"}
+        else:
+            return {'destino': 'nova_proposicao', 'rotulo': f"{p['tipo']} nº {p['numero']}/{p['ano']}"}
+    if it['tipo'] == 'arquivo':
+        m = PROP.search(sem_acento(alvo_txt))
+        if m:
+            ja = db.um(b, 'SELECT id, tipo, numero, ano FROM proposicoes WHERE tipo=%s AND numero=%s AND ano=%s', (PROP_TIPO[m.group(1)], int(m.group(2)), int(m.group(3))))
+            if ja:
+                return {'destino': 'proposicao', 'alvo': ja['id'], 'rotulo': f"{ja['tipo']} nº {ja['numero']}/{ja['ano']}"}
+        ja = _sessao_existente(b, s) if s else None
+        if not ja and it.get('data_original') and casa('sessoes', alvo_txt):
+            ja = db.um(b, 'SELECT id, nome FROM sessoes WHERE data=%s ORDER BY id LIMIT 1', (it['data_original'],))
+        if ja:
+            return {'destino': 'sessao', 'alvo': ja['id'], 'rotulo': ja['nome']}
+    if s and s['data'] and not _sessao_existente(b, s):
+        return {'destino': 'nova_sessao', 'rotulo': f"{s['numero']}ª Sessão {s['tipo']} de {s['data'].strftime('%d/%m/%Y')}"}
+    return None
+
 def sugerir(b, tipo_orgao, it):
     alvo_txt = f"{it['titulo']} {it.get('origem_txt', '')} {it['url']}"
+    if tipo_orgao == 'legislativo':
+        s = _sugerir_leg(b, it, alvo_txt)
+        if s:
+            return s
     if it['tipo'] == 'arquivo':
-        if tipo_orgao == 'legislativo':
-            m = PROP.search(sem_acento(alvo_txt))
-            if m:
-                p = db.um(b, 'SELECT id, tipo, numero, ano FROM proposicoes WHERE tipo=%s AND numero=%s AND ano=%s', (PROP_TIPO[m.group(1)], int(m.group(2)), int(m.group(3))))
-                if p:
-                    return {'destino': 'proposicao', 'alvo': p['id'], 'rotulo': f"{p['tipo']} nº {p['numero']}/{p['ano']}"}
-            if it.get('data_original') and casa('sessoes', alvo_txt):
-                s = db.um(b, 'SELECT id, nome FROM sessoes WHERE data=%s ORDER BY id LIMIT 1', (it['data_original'],))
-                if s:
-                    return {'destino': 'sessao', 'alvo': s['id'], 'rotulo': s['nome']}
         return {'destino': 'comunicado'}
     n_fotos = len(it.get('imagens') or [])
     if n_fotos >= 3 and len(it.get('texto') or '') < 600:
@@ -551,6 +669,7 @@ def _espera(b, v):
 
 def _item(o, v, d):
     b = o['banco']
+    d['varredura_id'] = v['id']
     d['sugestao'] = sugerir(b, o['tipo'], d)
     r = db.exe(b, '''INSERT INTO migracao_itens (varredura_id, url, tipo, titulo, data_original, texto, imagens, arquivo_id, origem, avisos, sugestao)
                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (varredura_id, url) DO NOTHING RETURNING id''',
@@ -722,6 +841,8 @@ def migrar(o, it_id, destino, alvo, quem):
         raise ValueError('Escolha para onde o item vai.')
     if (it['tipo'] == 'pagina' and destino not in DESTINOS_PAGINA) or (it['tipo'] == 'arquivo' and destino not in DESTINOS_ARQUIVO):
         raise ValueError('Esse destino não serve para esse tipo de item.')
+    if destino in CRIAR:
+        raise ValueError('Para criar a sessão ou a proposição, confira os dados no formulário do item.')
     titulo = (it['titulo'] or 'Sem título')[:300]
     arq = db.um(b, 'SELECT * FROM migracao_arquivos WHERE id=%s', (it['arquivo_id'],)) if it['arquivo_id'] else None
     nota = 'Migrado do portal anterior: confira texto, data, fotos e a classificação eleitoral antes de enviar para revisão.'
@@ -771,19 +892,129 @@ def migrar(o, it_id, destino, alvo, quem):
         tab = 'sessoes' if destino == 'sessao' else 'proposicoes'
         if not db.um(b, f'SELECT 1 FROM {tab} WHERE id=%s', (alvo,)):
             raise ValueError('Sessão ou proposição não encontrada.')
-        import secrets
-        d_pasta = Path(config.DADOS_DIR) / o['slug'] / 'docs'
-        d_pasta.mkdir(parents=True, exist_ok=True)
-        nome = f'{secrets.token_hex(16)}.pdf'
-        shutil.copyfile(pasta(o, it['varredura_id']) / arq['arquivo'], d_pasta / nome)
-        st = sem_acento(titulo)
-        tipo = ('ata' if re.search(r'\bata\b', st) else 'outro') if destino == 'sessao' else ('parecer' if 'parecer' in st else 'texto')
-        desc = f'{titulo} — documento migrado do portal anterior.'
-        did = db.exe(b, f"INSERT INTO documentos (arquivo, tipo, titulo, descricao, bytes, enviado_por, {'sessao_id' if destino == 'sessao' else 'proposicao_id'}) VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id",
-                     (nome, tipo, titulo[:200], desc[:1000], arq['bytes'], quem, alvo))['id']
+        did, tipo = _vincular_pdf(o, it, arq, destino, alvo, quem)
         msg = 'PDF vinculado à ' + ('sessão' if destino == 'sessao' else 'proposição') + (' como ata (aparece no portal quando a ata for publicada).' if tipo == 'ata' else '.')
     db.exe(b, "UPDATE migracao_itens SET situacao='migrado', destino=%s, destino_id=%s, migrado_por=%s, migrado_em=now() WHERE id=%s", (destino, did, quem, it_id))
     return msg
+
+def _vincular_pdf(o, it, arq, destino, alvo, quem):
+    """Copia o PDF da área de revisão para os documentos do órgão, ligado à sessão ou à proposição. Devolve (id, tipo)."""
+    import secrets
+    b = o['banco']; titulo = (it['titulo'] or 'Documento')[:300]
+    d_pasta = Path(config.DADOS_DIR) / o['slug'] / 'docs'
+    d_pasta.mkdir(parents=True, exist_ok=True)
+    nome = f'{secrets.token_hex(16)}.pdf'
+    shutil.copyfile(pasta(o, it['varredura_id']) / arq['arquivo'], d_pasta / nome)
+    st = sem_acento(titulo)
+    tipo = ('ata' if re.search(r'\bata\b', st) else 'outro') if destino == 'sessao' else ('parecer' if 'parecer' in st else 'texto')
+    desc = f'{titulo} — documento migrado do portal anterior.'
+    did = db.exe(b, f"INSERT INTO documentos (arquivo, tipo, titulo, descricao, bytes, enviado_por, {'sessao_id' if destino == 'sessao' else 'proposicao_id'}) VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+                 (nome, tipo, titulo[:200], desc[:1000], arq['bytes'], quem, alvo))['id']
+    return did, tipo
+
+def _item_para_criar(o, it_id):
+    b = o['banco']
+    if o['tipo'] != 'legislativo':
+        raise ValueError('Só a Câmara cria sessões e proposições.')
+    it = db.um(b, 'SELECT * FROM migracao_itens WHERE id=%s', (it_id,))
+    if not it or it['situacao'] != 'novo':
+        raise ValueError('Item não encontrado ou já tratado.')
+    arq = db.um(b, 'SELECT * FROM migracao_arquivos WHERE id=%s', (it['arquivo_id'],)) if it['arquivo_id'] else None
+    return it, (arq if arq and arq['ext'] == 'pdf' and arq['arquivo'] else None)
+
+def _data_form(x, nome):
+    if isinstance(x, date):
+        return x
+    try:
+        return date.fromisoformat(x) if x else None
+    except ValueError:
+        raise ValueError(f'{nome}: data inválida.')
+
+def _concluir(b, it, destino, did, quem):
+    db.exe(b, "UPDATE migracao_itens SET situacao='migrado', destino=%s, destino_id=%s, migrado_por=%s, migrado_em=now() WHERE id=%s AND situacao='novo'", (destino, did, quem, it['id']))
+
+def criar_proposicao(o, it_id, d, quem):
+    """Cria a proposição com os dados CONFERIDOS por quem revisa (d = formulário) e liga o PDF do item, se houver.
+    Sem votos, presenças nem tramitação deduzida: só a apresentação, quando a data foi informada."""
+    from . import legislativo as L
+    import psycopg
+    b = o['banco']; it, arq = _item_para_criar(o, it_id)
+    tipo = d.get('tipo') or ''
+    if tipo not in L.TIPO_SIGLA:
+        raise ValueError('Escolha o tipo da proposição.')
+    num, ano = str(d.get('numero') or '').replace('.', ''), str(d.get('ano') or '')
+    if not num.isdigit() or not int(num) or not ano.isdigit() or not 1900 <= int(ano) <= config.hoje().year:
+        raise ValueError('Informe o número e o ano da proposição.')
+    num, ano = int(num), int(ano)
+    ementa = re.sub(r'[ \t]+', ' ', mascarar(d.get('ementa') or '')).strip()
+    if len(ementa) < 10:
+        raise ValueError('Escreva a ementa (pelo menos 10 caracteres), como está no documento original.')
+    autores = [_autor_limpo(x) for x in (d.get('autor') or '').split(';') if x.strip()]
+    if not autores:
+        raise ValueError('Informe o autor (vereador, Poder Executivo, Mesa Diretora ou Comissão); separe vários com ponto e vírgula.')
+    situacao = d.get('situacao') or ''
+    if situacao not in L.SITUACOES_PROP:
+        raise ValueError('Escolha a situação da proposição, conforme o documento original.')
+    apres = _data_form(d.get('apresentada'), 'Apresentação')
+    if apres and apres > config.hoje():
+        raise ValueError('A data de apresentação não pode ser futura.')
+    rot = f'{tipo} nº {num}/{ano}'
+    if db.um(b, 'SELECT 1 FROM proposicoes WHERE tipo=%s AND numero=%s AND ano=%s', (tipo, num, ano)):
+        raise ValueError(f'{rot} já existe no portal: escolha “Documento de uma proposição” para ligar o arquivo a ela.')
+    try:
+        pid = db.exe(b, "INSERT INTO proposicoes (tipo, numero, ano, autor, ementa, situacao, apresentada, origem) VALUES (%s,%s,%s,'',%s,%s,%s,'portal_antigo') RETURNING id",
+                     (tipo, num, ano, ementa[:2000], situacao, apres))['id']
+    except psycopg.errors.UniqueViolation:
+        raise ValueError(f'{rot} já existe no portal.')
+    L.definir_autores(b, pid, autores)
+    if apres:
+        L.tramitar(b, pid, apres, 'Apresentação', f'{rot}. Registro migrado do portal anterior.', quem=quem, origem='portal_antigo')
+    extra = ''
+    if arq:
+        _vincular_pdf(o, it, arq, 'proposicao', pid, quem); extra = ', com o PDF anexado'
+    _concluir(b, it, 'nova_proposicao', pid, quem)
+    return f'{rot} criada{extra}. Ela já aparece no portal com os dados conferidos.'
+
+def criar_sessao(o, it_id, d, quem):
+    """Cria a sessão com os dados CONFERIDOS; pauta, ata, presença e votação ficam sem publicar. Liga o PDF do item, se houver."""
+    from . import legislativo as L
+    b = o['banco']; it, arq = _item_para_criar(o, it_id)
+    tipo = d.get('tipo') or ''
+    if tipo not in L.TIPOS_SESSAO:
+        raise ValueError('Escolha o tipo da sessão.')
+    data = _data_form(d.get('data'), 'Data da sessão')
+    if not data:
+        raise ValueError('Informe a data da sessão.')
+    hora = L.hora(d.get('hora'))
+    if not hora:
+        raise ValueError('Informe o horário da sessão, como está no documento original (ex.: 19h).')
+    num = str(d.get('numero') or '')
+    num = int(num) if num.isdigit() and int(num) else None
+    nome = re.sub(r'\s+', ' ', d.get('nome') or '').strip()[:160] or (L.nome_sessao(num, tipo, data.year) if num else '')
+    if not nome:
+        raise ValueError('Informe o número ou o nome da sessão.')
+    realizada = str(d.get('realizada') or '') == '1'
+    if realizada and data > config.hoje():
+        raise ValueError('Uma sessão com data futura não pode ser marcada como realizada.')
+    ja = db.um(b, 'SELECT id, nome FROM sessoes WHERE data=%s AND tipo=%s', (data, tipo))
+    if ja:
+        raise ValueError(f'Já existe a sessão “{ja["nome"]}” nessa data: escolha “Documento de uma sessão” para ligar o arquivo a ela.')
+    sid = db.exe(b, "INSERT INTO sessoes (nome, data, hora, tipo, numero, situacao, origem) VALUES (%s,%s,%s,%s,%s,%s,'portal_antigo') RETURNING id",
+                 (nome, data, hora, tipo, num, 'realizada' if realizada else 'agendada'))['id']
+    extra = ''
+    if arq:
+        _, t = _vincular_pdf(o, it, arq, 'sessao', sid, quem)
+        extra = ', com a ata anexada (aparece no portal quando a ata for publicada)' if t == 'ata' else ', com o PDF anexado'
+    _concluir(b, it, 'nova_sessao', sid, quem)
+    return f'Sessão criada: {nome}{extra}. Pauta, ata, presença e votação continuam sem publicar.'
+
+def dados_iniciais(b, it, destino):
+    """Valores para o formulário de conferência (o que a leitura encontrou; o resto em branco)."""
+    c = campos_leg(b, it)
+    if destino == 'nova_proposicao':
+        return dict(c['proposicao'] or {'tipo': '', 'numero': '', 'ano': '', 'ementa': '', 'autor': '', 'apresentada': None}, situacao='')
+    s = c['sessao'] or {'tipo': '', 'numero': '', 'data': None, 'hora': ''}
+    return dict(s, nome='', realizada='')
 
 def apagar(o, vid):
     """Apaga a busca, a fila e os arquivos da área de revisão (o que já foi migrado continua nas seções)."""

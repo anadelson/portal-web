@@ -1,0 +1,35 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import voltar with context %}{% block h1 %}{{ 'Criar a proposição' if destino == 'nova_proposicao' else 'Criar a sessão' }} a partir do portal antigo{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}{% macro lido(k) %}{% if k in achados %}<small class="pa-lido">lido no portal antigo: confira</small>{% else %}<small class="pa-falta">não encontrado: preencha conforme o documento original</small>{% endif %}{% endmacro %}
+{{ voltar(volta ~ '#item-' ~ it.id, 'Voltar à revisão') }}
+{% if erro %}<p class="msg pa-erro" role="alert">{{ erro }}</p>{% endif %}
+<div class="pa-criar">
+<section class="cx pa-original" aria-labelledby="h-orig"><h2 id="h-orig">No portal antigo</h2>
+<h3>{{ it.titulo or 'Sem título' }}</h3>
+<p class="pa-url"><a href="{{ it.url }}" target="_blank" rel="noopener noreferrer nofollow">Abrir o endereço original</a>{% if it.origem %} · <a href="{{ it.origem }}" target="_blank" rel="noopener noreferrer nofollow">página onde estava</a>{% endif %}</p>
+{% if arq and arq.arquivo %}<p><a class="btn sec mini" href="/admin/importar/portal/{{ vid }}/arquivo/{{ arq.id }}" target="_blank" rel="noopener">Abrir o arquivo guardado</a></p>{% endif %}
+{% if trecho %}<p class="pa-trecho pa-trecho-longo">{{ trecho }}{{ '…' if it.texto|length > 1500 }}</p>{% endif %}
+{% if it.avisos %}<ul class="pa-avisos">{% for a in it.avisos %}<li>{{ a }}</li>{% endfor %}</ul>{% endif %}</section>
+
+<section class="cx" aria-labelledby="h-dados"><h2 id="h-dados">Dados para o portal novo</h2>
+<p class="legal">Preencha só com o que está no documento original. Nada é completado sozinho.{% if arq and arq.ext == 'pdf' %} O PDF deste item será anexado.{% endif %}</p>
+<form class="campos" method="post" action="/admin/importar/portal/{{ vid }}/criar/{{ it.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="destino" value="{{ destino }}"><input type="hidden" name="volta" value="{{ volta }}">
+{% if destino == 'nova_proposicao' %}
+<div class="grade2"><label>Tipo<select name="tipo" required><option value="">—</option>{% for t in tipos_prop %}<option {{ 'selected' if d.tipo == t }}>{{ t }}</option>{% endfor %}</select>{{ lido('tipo') }}</label>
+<div class="grade2"><label>Número<input name="numero" inputmode="numeric" value="{{ d.numero or '' }}" required size="6">{{ lido('numero') }}</label><label>Ano<input name="ano" inputmode="numeric" value="{{ d.ano or '' }}" required size="6">{{ lido('ano') }}</label></div></div>
+<label>Ementa<textarea name="ementa" rows="4" required minlength="10" maxlength="2000">{{ d.ementa or '' }}</textarea>{{ lido('ementa') }}</label>
+<label>Autor(es)<input name="autor" value="{{ d.autor or '' }}" required maxlength="600"><small>Vereador(a), Poder Executivo, Mesa Diretora ou Comissão; separe vários com ponto e vírgula.</small>{{ lido('autor') }}</label>
+<div class="grade2"><label>Situação<select name="situacao" required><option value="">— escolha conforme o original —</option>{% for t in situacoes %}<option {{ 'selected' if d.situacao == t }}>{{ t }}</option>{% endfor %}</select><small>Sempre escolhida por quem confere.</small></label>
+<label>Data de apresentação (opcional)<input type="date" name="apresentada" value="{{ d.apresentada or '' }}" max="{{ hoje.isoformat() }}">{{ lido('apresentada') }}</label></div>
+<p class="legal">A proposição aparece no portal assim que for criada. Votos, presenças e a tramitação não são migrados: registre-os pelas telas de sempre, com base nos documentos oficiais.</p>
+<button class="btn">Criar a proposição</button>
+{% else %}
+<div class="grade2"><label>Tipo<select name="tipo" required><option value="">—</option>{% for t in tipos_sessao %}<option {{ 'selected' if d.tipo == t }}>{{ t }}</option>{% endfor %}</select>{{ lido('tipo') }}</label>
+<label>Número<input name="numero" inputmode="numeric" value="{{ d.numero or '' }}" size="6">{{ lido('numero') }}</label></div>
+<div class="grade2"><label>Data<input type="date" name="data" value="{{ d.data or '' }}" required>{{ lido('data') }}</label><label>Horário<input name="hora" value="{{ d.hora or '' }}" required placeholder="ex.: 19h" size="8">{{ lido('hora') }}</label></div>
+<label>Nome (opcional)<input name="nome" value="{{ d.nome or '' }}" maxlength="160"><small>Em branco: “Nª Sessão Tipo de Ano”, pelo número.</small></label>
+<label class="opc"><input type="checkbox" name="realizada" value="1" {{ 'checked' if d.realizada == '1' }}> A sessão foi realizada (conforme o documento original)</label>
+<p class="legal">Pauta, ata, presença e votação ficam sem publicar; registre e publique pelas telas da sessão, com base nos documentos oficiais.</p>
+<button class="btn">Criar a sessão</button>
+{% endif %}</form></section></div>
+<p class="legal"><strong>Base legal:</strong> Lei nº 12.527/2011 (LAI), art. 8º; Lei nº 13.709/2018 (LGPD).</p>
+{% endblock %}

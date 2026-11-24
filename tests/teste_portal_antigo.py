@@ -38,11 +38,18 @@ PAGINAS = {
     '/noticias/obra.html': MOLDE.format(t='Obra fictícia', meta='<meta property="article:published_time" content="2024-05-02T10:00:00">', c=f'<article><h1>Obra fictícia</h1><p>{TXT}</p></article>'),
     '/galeria/album1.html': MOLDE.format(t='Galeria: desfile fictício', meta='', c='<div class="conteudo"><h1>Galeria: desfile fictício</h1>' + ''.join(f'<img src="/img/desfile{i}.jpg" alt="Desfile fictício {i}">' for i in range(4)) + '</div>'),
     '/sessoes/': MOLDE.format(t='Sessões', meta='', c='<h1>Sessões</h1><ul><li><a href="/arquivos/ata-5-sessao.pdf">Ata da 5ª Sessão Ordinária de 10/03/2025</a></li>'
-                 '<li><a href="/arquivos/pl-1-2025.pdf">Projeto de Lei nº 1/2025 — texto</a></li><li><a href="/arquivos/velho.doc">Documento antigo</a></li></ul>'),
+                 '<li><a href="/arquivos/pl-1-2025.pdf">Projeto de Lei nº 1/2025 — texto</a></li><li><a href="/arquivos/velho.doc">Documento antigo</a></li>'
+                 '<li><a href="/arquivos/ata-2-sessao-2024.pdf">Ata da 2ª Sessão Ordinária de 20/02/2024, às 19h30</a></li>'
+                 '<li><a href="/proposicoes/pl-7-2024.html">PL 7</a></li><li><a href="/proposicoes/req-3-2024.html">Requerimento 3</a></li></ul>'),
+    # proposições FICTÍCIAS (só para o teste): uma com ementa, autor e data escritos; outra sem esses dados
+    '/proposicoes/pl-7-2024.html': MOLDE.format(t='Projeto de Lei nº 7/2024 (fictício)', meta='', c='<article><h1>Projeto de Lei nº 7/2024 (fictício)</h1>'
+                 '<p>Ementa: Dispõe sobre um assunto fictício usado só no teste da migração.</p><p>Autor: Vereador Fictício da Silva</p><p>Apresentado em 05/02/2024</p>'
+                 f'<p>{TXT}</p><p><a href="/arquivos/projeto-de-lei-7-2024.pdf">Baixar</a></p></article>'),
+    '/proposicoes/req-3-2024.html': MOLDE.format(t='Requerimento nº 3/2024 (fictício)', meta='', c=f'<article><h1>Requerimento nº 3/2024 (fictício)</h1><p>{TXT}</p></article>'),
     '/privado/segredo.html': MOLDE.format(t='Segredo', meta='', c='<p>NÃO DEVERIA SER LIDA</p>'),
 }
 ARQS = {'/img/festa1.jpg': foto(1), '/img/logo.png': foto(9, 300, 200), **{f'/img/desfile{i}.jpg': foto(10 + i) for i in range(4)},
-        '/arquivos/ata-5-sessao.pdf': PDF + b'ata', '/arquivos/pl-1-2025.pdf': PDF + b'pl', '/arquivos/velho.doc': b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1' + b'x' * 100}
+        '/arquivos/ata-5-sessao.pdf': PDF + b'ata', '/arquivos/pl-1-2025.pdf': PDF + b'pl', '/arquivos/projeto-de-lei-7-2024.pdf': PDF + b'pl7', '/arquivos/ata-2-sessao-2024.pdf': PDF + b'ata2', '/arquivos/velho.doc': b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1' + b'x' * 100}
 pedidos = []
 def site(req: httpx.Request):
     pedidos.append(str(req.url))
@@ -173,6 +180,67 @@ checa(db.um(CM, 'SELECT situacao FROM migracao_itens WHERE id=%s', (ob['id'],))[
 r = acao({'acao': 'migrar', 'item': ob['id'], f"destino_{ob['id']}": 'sessao'})
 checa('não serve' in r.text, 'destino de arquivo recusado para página')
 
+# ---------- 4b. Câmara: criar proposição e sessão a partir do portal antigo (dados conferidos; nada inventado) ----------
+from datetime import date
+itens = {i['url'].replace(f'https://{H}', ''): i for i in db.todos(CM, 'SELECT * FROM migracao_itens WHERE varredura_id=%s', (v['id'],))}
+p7 = itens.get('/proposicoes/pl-7-2024.html'); p7pdf = itens.get('/arquivos/projeto-de-lei-7-2024.pdf')
+r3 = itens.get('/proposicoes/req-3-2024.html'); a2 = itens.get('/arquivos/ata-2-sessao-2024.pdf')
+checa(p7 and p7['sugestao'] == {'destino': 'nova_proposicao', 'rotulo': 'Projeto de Lei nº 7/2024'}, f"página da proposição: sugestão de criar ({p7 and p7['sugestao']})")
+checa(p7pdf and p7pdf['sugestao'].get('destino') == 'nova_proposicao', f"PDF da proposição ainda inexistente: criar ({p7pdf and p7pdf['sugestao']})")
+checa(a2 and a2['sugestao'].get('destino') == 'nova_sessao', f"ata de sessão inexistente: criar ({a2 and a2['sugestao']})")
+c7 = PA.campos_leg(CM, p7)['proposicao']
+checa(c7 == {'tipo': 'Projeto de Lei', 'numero': 7, 'ano': 2024, 'ementa': 'Dispõe sobre um assunto fictício usado só no teste da migração.', 'autor': 'Fictício da Silva',
+             'apresentada': date(2024, 2, 5)}, f'campos lidos da página: {c7}')
+c7pdf = PA.campos_leg(CM, p7pdf)['proposicao']
+checa(c7pdf and c7pdf['ementa'].startswith('Dispõe sobre') and c7pdf['autor'] == 'Fictício da Silva', f'PDF usa a página de origem da mesma proposição: {c7pdf}')
+c3 = PA.campos_leg(CM, r3)['proposicao']
+checa(c3 and c3['tipo'] == 'Requerimento' and c3['ementa'] == '' and c3['autor'] == '' and PA.faltando('nova_proposicao', PA.campos_leg(CM, r3)) == ['ementa', 'autor'], f'sem dado escrito, fica em branco: {c3}')
+s2 = PA.campos_leg(CM, a2)['sessao']
+checa(s2 == {'tipo': 'Ordinária', 'numero': 2, 'data': date(2024, 2, 20), 'hora': '19h30'}, f'campos da sessão: {s2}')
+checa(PA.campos_leg(CM, fe) == {'proposicao': None, 'sessao': None}, 'notícia comum não vira proposição nem sessão')
+r = cm.get(uv)
+checa('Criar a proposição (conferir os dados)' in r.text and 'abre um formulário para conferir' in r.text, 'destino de criar na revisão')
+try:
+    PA.migrar(ocm, p7['id'], 'nova_proposicao', None, 'teste'); checa(False, 'criar não passa pelo migrar direto')
+except ValueError as e:
+    checa('formulário' in str(e), 'criar só pelo formulário')
+r = acao({'acao': 'migrar', 'item': p7['id'], f"destino_{p7['id']}": 'nova_proposicao'})
+checa('Dispõe sobre um assunto fictício' in r.text and 'Fictício da Silva' in r.text and '2024-02-05' in r.text and 'lido no portal antigo' in r.text, 'formulário pré-preenchido')
+checa('escolha conforme o original' in r.text, 'situação sem valor padrão')
+uc = f"{uv}/criar/{p7['id']}"
+dados7 = {'destino': 'nova_proposicao', 'tipo': 'Projeto de Lei', 'numero': '7', 'ano': '2024', 'ementa': c7['ementa'], 'autor': 'Fictício da Silva', 'apresentada': '2024-02-05', 'volta': uv}
+r = cm.post(uc, data=dict(dados7, csrf=tok(cm, uv)))
+checa('Escolha a situação' in r.text and 'Fictício da Silva' in r.text, 'sem situação: recusa e mantém o que foi digitado')
+checa(not db.um(CM, "SELECT 1 FROM proposicoes WHERE tipo='Projeto de Lei' AND numero=7 AND ano=2024"), 'nada gravado sem a situação')
+r = cm.post(uc, data=dict(dados7, situacao='Em tramitação', volta='https://fora.test/', csrf=tok(cm, uv)), follow_redirects=False)
+checa(r.status_code == 303 and r.headers['location'].startswith(uv), f"volta só para a própria busca ({r.headers.get('location')})")
+np7 = db.um(CM, "SELECT * FROM proposicoes WHERE tipo='Projeto de Lei' AND numero=7 AND ano=2024")
+checa(np7 and np7['origem'] == 'portal_antigo' and np7['autor'] == 'Fictício da Silva' and np7['situacao'] == 'Em tramitação' and np7['apresentada'] == date(2024, 2, 5), f'proposição criada: {np7}')
+tr = db.todos(CM, 'SELECT * FROM tramitacao WHERE proposicao_id=%s', (np7['id'],)) if np7 else []
+checa(len(tr) == 1 and tr[0]['fase'] == 'Apresentação' and tr[0]['origem'] == 'portal_antigo', 'só a apresentação na tramitação')
+checa(db.um(CM, 'SELECT situacao, destino, destino_id FROM migracao_itens WHERE id=%s', (p7['id'],)) == {'situacao': 'migrado', 'destino': 'nova_proposicao', 'destino_id': np7['id']}, 'item marcado como migrado')
+cm.get(uv)   # a revisão recalcula: o PDF passa a ir para a proposição criada
+s7 = db.um(CM, 'SELECT sugestao FROM migracao_itens WHERE id=%s', (p7pdf['id'],))['sugestao']
+checa(s7 == {'destino': 'proposicao', 'alvo': np7['id'], 'rotulo': 'Projeto de Lei nº 7/2024'}, f'PDF encadeado à proposição criada: {s7}')
+try:
+    PA.criar_proposicao(ocm, p7pdf['id'], dict(dados7, situacao='Em tramitação'), 'teste'); checa(False, 'duplicata deveria ser recusada')
+except ValueError as e:
+    checa('já existe' in str(e), 'proposição duplicada recusada')
+# lote: a ata (completa) e o requerimento (incompleto)
+r = acao({'acao': 'migrar_sugeridos'}, sel=[str(a2['id']), str(r3['id'])])
+checa('Conferir antes de criar' in r.text and '2ª Sessão Ordinária' in r.text and 'Falta: ementa, autor' in r.text and '19h30' in r.text, 'tabela de conferência do lote')
+checa(not db.um(CM, "SELECT 1 FROM sessoes WHERE data='2024-02-20'"), 'nada criado antes de confirmar')
+r = acao({'acao': 'migrar_sugeridos', 'confirmado': '1', f"realizada_{a2['id']}": '1'}, sel=[str(a2['id']), str(r3['id'])])
+checa('1 item(ns) migrado(s)' in r.text and 'faltam ementa, autor' in r.text, f'lote confirmado: {re.findall(r"class=.msg.[^>]*>([^<]+)", r.text)}')
+ns = db.um(CM, "SELECT * FROM sessoes WHERE data='2024-02-20'")
+checa(ns and ns['origem'] == 'portal_antigo' and ns['situacao'] == 'realizada' and ns['hora'] == '19h30' and ns['nome'] == '2ª Sessão Ordinária de 2024' and ns['numero'] == 2, f'sessão criada: {ns}')
+checa(ns and not (ns['pauta_publicada'] or ns['ata_publicada'] or ns['presenca_publicada'] or ns['votacao_publicada']), 'sessão sem nada publicado')
+checa(ns and not db.um(CM, 'SELECT 1 FROM presencas WHERE sessao_id=%s', (ns['id'],)) and not db.um(CM, 'SELECT 1 FROM pauta_itens WHERE sessao_id=%s', (ns['id'],)), 'nenhuma presença nem pauta inventada')
+dn = db.um(CM, 'SELECT * FROM documentos WHERE sessao_id=%s', (ns['id'],)) if ns else None
+checa(dn and dn['tipo'] == 'ata' and anon.get(f"/documento/{dn['arquivo']}").status_code == 404, 'ata anexada, fora do ar até ser publicada')
+checa(db.um(CM, 'SELECT situacao FROM migracao_itens WHERE id=%s', (r3['id'],))['situacao'] == 'novo', 'incompleto continua para revisar')
+checa(not db.um(CM, "SELECT 1 FROM proposicoes WHERE tipo='Requerimento' AND numero=3 AND ano=2024"), 'requerimento sem ementa/autor não foi criado')
+
 # ---------- 5. Prefeitura: mesmo código, destinos próprios ----------
 pm = TestClient(app, base_url='http://pmbora.localhost'); entrar(pm, 'admin@pmbora.localhost', 'admin123', 'senhaforte123')
 PM = 'bd_pm_bora'; opm = next(o for o in orgaos.todos() if o['banco'] == PM)
@@ -192,6 +260,12 @@ try:
 except ValueError:
     pass
 checa('Migrar para' in pm.get(f"/admin/importar/portal/{vp['id']}").text, 'Prefeitura: tela de revisão')
+checa('Criar a proposição' not in pm.get(f"/admin/importar/portal/{vp['id']}").text, 'Prefeitura: sem criar proposição/sessão')
+checa(pm.get(f"/admin/importar/portal/{vp['id']}/criar/{ip[0]['id']}?destino=nova_sessao").status_code == 404, 'Prefeitura: formulário de criar não existe')
+try:
+    PA.criar_sessao(opm, ip[0]['id'], {'tipo': 'Ordinária', 'data': '2024-01-01', 'hora': '19h', 'numero': '1'}, 'teste'); checa(False, 'Prefeitura não cria sessão')
+except ValueError:
+    pass
 
 # ---------- 6. pausar, retomar, apagar ----------
 def post_lista(c, dados):

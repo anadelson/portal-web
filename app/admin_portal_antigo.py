@@ -5,10 +5,11 @@ from datetime import date
 from pathlib import Path
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import FileResponse
-from . import config, db, orgaos, portal_antigo as PA
+from urllib.parse import quote
+from . import config, db, orgaos, portal_antigo as PA, legislativo as L
 from .admin import T
 from .catalogo import PODE
-from .web import ler_form, ir, exige, auditar
+from .web import ler_form, ir, exige, auditar, volta_segura
 
 r = APIRouter(prefix='/_a')
 POR_PAGINA = 40
@@ -93,7 +94,13 @@ def busca(request: Request, vid: int, sit: str = 'novo', tipo: str = '', p: int 
     n = db.um(b, f'SELECT count(*) n FROM migracao_itens WHERE {filtro}', par)['n']
     p = max(1, min(p, (n + POR_PAGINA - 1) // POR_PAGINA or 1))
     itens = db.todos(b, f'SELECT * FROM migracao_itens WHERE {filtro} ORDER BY data_original DESC NULLS LAST, id LIMIT %s OFFSET %s', par + [POR_PAGINA, (p - 1) * POR_PAGINA])
+    leg = o['tipo'] == 'legislativo'
     for it in itens:
+        if leg and it['situacao'] == 'novo':
+            # a sugestão acompanha o que já foi criado (ex.: o PDF passa a ir para a proposição criada a partir da página dela)
+            nova = PA.sugerir(b, o['tipo'], it)
+            if nova != (it['sugestao'] or {}):
+                db.exe(b, 'UPDATE migracao_itens SET sugestao=%s WHERE id=%s', (PA.Jsonb(nova), it['id'])); it['sugestao'] = nova
         it['fotos'] = [a for a, _ in PA._fotos_validas(b, it)]
         it['arq'] = db.um(b, 'SELECT * FROM migracao_arquivos WHERE id=%s', (it['arquivo_id'],)) if it['arquivo_id'] else None
         it['trecho'] = (it['texto'] or '')[:420]
@@ -103,7 +110,6 @@ def busca(request: Request, vid: int, sit: str = 'novo', tipo: str = '', p: int 
     fila = db.um(b, """SELECT count(*) FILTER (WHERE situacao='pendente') pendente, count(*) FILTER (WHERE situacao='lida') lida, count(*) FILTER (WHERE situacao='ignorada') ignorada,
                               count(*) FILTER (WHERE situacao='erro') erro FROM migracao_fila WHERE varredura_id=%s""", (vid,))
     motivos = db.todos(b, "SELECT motivo, count(*) n FROM migracao_fila WHERE varredura_id=%s AND situacao IN ('ignorada','erro') GROUP BY motivo ORDER BY n DESC LIMIT 8", (vid,))
-    leg = o['tipo'] == 'legislativo'
     return T('portal_antigo_busca', request, u, v=v, itens=itens, n=n, p=p, paginas=(n + POR_PAGINA - 1) // POR_PAGINA, sit_f=sit, tipo_f=tipo, contas=contas, fila=fila, motivos=motivos,
              sit=SIT, assuntos=PA.ASSUNTOS, destinos={k: t for k, t in PA.DESTINOS.items() if leg or k not in PA.SO_LEGISLATIVO},
              dest_pagina=PA.DESTINOS_PAGINA, dest_arquivo=[d for d in PA.DESTINOS_ARQUIVO if leg or d not in PA.SO_LEGISLATIVO],
@@ -126,6 +132,10 @@ async def busca_post(request: Request, vid: int):
         if acao == 'migrar':
             it = do_item(int(f['item']))
             destino = f.get(f"destino_{it['id']}") or f.get('destino')
+            if destino in PA.CRIAR:
+                if o['tipo'] != 'legislativo':
+                    raise ValueError('Escolha para onde o item vai.')
+                return ir(f"/admin/importar/portal/{vid}/criar/{it['id']}?destino={destino}&volta={quote(volta)}")
             alvo_txt = f.get(f"alvo_{destino}_{it['id']}") or ''
             msg = PA.migrar(o, it['id'], destino, int(alvo_txt) if alvo_txt.isdigit() else None, u['nome'])
             auditar(request, f"Portal antigo: item {it['id']} migrado para {PA.DESTINOS[destino]}")
@@ -139,8 +149,16 @@ async def busca_post(request: Request, vid: int):
             ids = [int(x) for x in (await request.form()).getlist('sel') if str(x).isdigit()]
             if not ids:
                 raise ValueError('Marque pelo menos um item.')
+            ids = ids[:POR_PAGINA]
+            if acao == 'migrar_sugeridos' and f.get('confirmado') != '1':
+                lote = _lote(o, vid, ids)
+                if lote['criar']:   # criar sessões/proposições: antes, a tabela de conferência
+                    return T('portal_antigo_lote', request, u, v=db.um(b, 'SELECT * FROM migracao_varreduras WHERE id=%s', (vid,)), lote=lote, volta=volta,
+                             situacoes=L.SITUACOES_PROP, destinos=PA.DESTINOS, hoje=config.hoje(),
+                             filtros={k: f.get(k, '') for k in ('sit_f', 'tipo_f', 'p')})
             ok, falhas = 0, []
-            for i in ids[:POR_PAGINA]:
+            form = await request.form()
+            for i in ids:
                 it = do_item(i)
                 if it['situacao'] != 'novo':
                     continue
@@ -148,7 +166,20 @@ async def busca_post(request: Request, vid: int):
                     db.exe(b, "UPDATE migracao_itens SET situacao='descartado', migrado_por=%s, migrado_em=now() WHERE id=%s", (u['nome'], i)); ok += 1; continue
                 s = it['sugestao'] or {}
                 try:
-                    PA.migrar(o, i, s.get('destino'), s.get('alvo'), u['nome']); ok += 1
+                    if s.get('destino') in PA.CRIAR:
+                        falta = PA.faltando(s['destino'], PA.campos_leg(b, it))
+                        if falta:
+                            raise ValueError('faltam ' + ', '.join(falta) + ' (abra o item e preencha)')
+                        d = PA.dados_iniciais(b, it, s['destino'])
+                        if s['destino'] == 'nova_proposicao':
+                            d['situacao'] = form.get(f'situacao_{i}') or ''
+                            PA.criar_proposicao(o, i, d, u['nome'])
+                        else:
+                            d['realizada'] = form.get(f'realizada_{i}') or ''
+                            PA.criar_sessao(o, i, d, u['nome'])
+                    else:
+                        PA.migrar(o, i, s.get('destino'), s.get('alvo'), u['nome'])
+                    ok += 1
                 except ValueError as e:
                     falhas.append(f"“{it['titulo'][:50]}”: {e}")
             auditar(request, f"Portal antigo: {ok} item(ns) {'descartado(s)' if acao == 'descartar_marcados' else 'migrado(s) com o destino sugerido'}")
@@ -158,6 +189,62 @@ async def busca_post(request: Request, vid: int):
     except ValueError as e:
         return ir(volta, str(e), request)
     return ir(volta, msg, request)
+
+def _lote(o, vid, ids):
+    """Separa os marcados: os que criam sessão/proposição (com os dados lidos e o que falta) e os demais."""
+    b = o['banco']; criar, outros = [], []
+    for i in ids:
+        it = db.um(b, "SELECT * FROM migracao_itens WHERE id=%s AND varredura_id=%s AND situacao='novo'", (i, vid))
+        if not it:
+            continue
+        s = it['sugestao'] or {}
+        if s.get('destino') in PA.CRIAR and o['tipo'] == 'legislativo':
+            c = PA.campos_leg(b, it)
+            criar.append({'it': it, 'destino': s['destino'], 'dados': PA.dados_iniciais(b, it, s['destino']), 'falta': PA.faltando(s['destino'], c)})
+        else:
+            outros.append({'it': it, 'destino': s.get('destino'), 'rotulo': s.get('rotulo', '')})
+    return {'criar': criar, 'outros': outros}
+
+def _volta(vid, txt):
+    padrao = f'/admin/importar/portal/{vid}'
+    v = volta_segura({'volta': txt or ''}, padrao)
+    return v if v == padrao or v.startswith(padrao + '?') else padrao
+
+@r.get('/importar/portal/{vid}/criar/{iid}')
+def criar(request: Request, vid: int, iid: int, destino: str = 'nova_proposicao', volta: str = ''):
+    u = exige(request, 'editar'); o = request.state.orgao; b = o['banco']
+    if o['tipo'] != 'legislativo' or destino not in PA.CRIAR:
+        raise HTTPException(404)
+    it = db.um(b, 'SELECT * FROM migracao_itens WHERE id=%s AND varredura_id=%s', (iid, vid))
+    if not it:
+        raise HTTPException(404)
+    return _tela_criar(request, u, o, vid, it, destino, PA.dados_iniciais(b, it, destino), _volta(vid, volta), '')
+
+def _tela_criar(request, u, o, vid, it, destino, d, volta, erro):
+    b = o['banco']
+    arq = db.um(b, 'SELECT * FROM migracao_arquivos WHERE id=%s', (it['arquivo_id'],)) if it['arquivo_id'] else None
+    lidos = PA.dados_iniciais(b, it, destino)
+    d = {k: (x.isoformat() if isinstance(x, date) else x) for k, x in d.items()}
+    return T('portal_antigo_criar', request, u, vid=vid, it=it, destino=destino, d=d, volta=volta, erro=erro, arq=arq,
+             achados={k for k, x in lidos.items() if x}, tipos_prop=[t for t, _ in L.TIPOS], situacoes=L.SITUACOES_PROP, tipos_sessao=L.TIPOS_SESSAO,
+             destinos=PA.DESTINOS, hoje=config.hoje(), trecho=(it['texto'] or '')[:1500])
+
+@r.post('/importar/portal/{vid}/criar/{iid}')
+async def criar_post(request: Request, vid: int, iid: int):
+    u = exige(request, 'editar'); o = request.state.orgao; b = o['banco']; f = await ler_form(request)
+    destino = f.get('destino')
+    if o['tipo'] != 'legislativo' or destino not in PA.CRIAR:
+        raise HTTPException(404)
+    it = db.um(b, 'SELECT * FROM migracao_itens WHERE id=%s AND varredura_id=%s', (iid, vid))
+    if not it:
+        raise HTTPException(404)
+    volta = _volta(vid, f.get('volta'))
+    try:
+        msg = (PA.criar_proposicao if destino == 'nova_proposicao' else PA.criar_sessao)(o, iid, f, u['nome'])
+    except ValueError as e:
+        return _tela_criar(request, u, o, vid, it, destino, dict(f), volta, str(e))
+    auditar(request, f"Portal antigo: item {iid} → {PA.DESTINOS[destino]}")
+    return ir(volta + f'#item-{iid}', msg, request)
 
 @r.get('/importar/portal/{vid}/arquivo/{aid}')
 def arquivo(request: Request, vid: int, aid: int):
