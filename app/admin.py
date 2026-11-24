@@ -176,7 +176,15 @@ def painel(request: Request):
     sic = db.um(b, "SELECT count(*) FILTER (WHERE situacao IN ('recebido','analise','complemento','recurso')) abertos FROM esic")
     log = db.todos(b, 'SELECT * FROM auditoria ORDER BY id DESC LIMIT 8')
     from . import avisos
-    return T('painel', request, u, k=k, sic=sic, log=log, aviso_tv=avisos.transmissoes(request.state.orgao, modulos_do_orgao(request.state.orgao)))
+    ses = None
+    if request.state.orgao['tipo'] == 'legislativo':  # 24/11/2026: atalho para agendar e registrar sessões
+        hoje = config.hoje()
+        ses = {'proximas': db.todos(b, "SELECT id, nome, data, hora FROM sessoes WHERE situacao='agendada' AND data >= %s ORDER BY data, id LIMIT 3", (hoje,)),
+               'sem_registro': db.todos(b, "SELECT id, nome, data FROM sessoes WHERE situacao='agendada' AND data < %s ORDER BY data DESC, id DESC LIMIT 5", (hoje,)),
+               'n_sem_registro': db.um(b, "SELECT count(*) n FROM sessoes WHERE situacao='agendada' AND data < %s", (hoje,))['n'],
+               'a_publicar': db.todos(b, """SELECT id, nome, data FROM sessoes WHERE situacao='realizada' AND NOT (pauta_publicada AND presenca_publicada AND votacao_publicada AND ata_publicada AND linha_publicada)
+                                        ORDER BY data DESC, id DESC LIMIT 3""")}
+    return T('painel', request, u, k=k, sic=sic, log=log, ses=ses, aviso_tv=avisos.transmissoes(request.state.orgao, modulos_do_orgao(request.state.orgao)))
 
 # ---------- conteúdos ----------
 @r.get('/conteudos')

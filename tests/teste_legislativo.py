@@ -277,6 +277,10 @@ r = ok(cm.get(f"/vereador/{V['Carla Teste']}"), txt='Moção de aplauso fictíci
 # depois: a presença pode ser registrada e publicada mais tarde
 post(ux, {'acao': 'presenca', f"pres_{V['Ana Teste']}": 'presente'}, txt='Presença registrada (1', nome='presença parcial depois')
 post(ux, {'acao': 'pub_presenca'}, txt='Publicado no portal', nome='publicar presença depois')
+# Visão geral: atalho de sessões e menu com o nome novo
+r = ok(cm.get('/admin/'), txt='Sessões da Câmara', nome='quadro de sessões na visão geral')
+for t_ in ('Sessões (agendar e registrar)', '+ Agendar sessão', 'Já aconteceram, sem registro', '2ª Sessão Extraordinária de 2029', 'Registrar'):
+    if t_ not in r.text: falha(f'visão geral sem "{t_}"')
 # sessão passada sem nenhum registro: o portal não afirma "Agendada" (nem "Realizada")
 s2x = db.um(CM, "SELECT id FROM sessoes WHERE nome='2ª Sessão Extraordinária de 2029'")['id']
 r = ok(cm.get(f'/sessoes/{s2x}'), nome='sessão passada sem registro')
