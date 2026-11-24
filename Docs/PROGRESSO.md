@@ -2893,3 +2893,26 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
   - bateria sobre o código e sobre a imagem: 41 suítes sem falha;
   - app e worker recriados; `atualizar` concluiu com "pronto.".
 - **Conferido**: gestão 303; portais, `/sessoes`, logins dos admins e casemaster 200; a rota nova sem login redireciona; CSS novo servido; sem erros nos logs.
+
+## 24/11/2026 — Base zerada: página de vereadores vazia e textos do piloto na configuração (tag `vereadores-vazio`)
+- **Pergunta do usuário:** se Prefeitura e Câmara estão prontas para uma implantação nova, com base zerada e cadastro manual.
+- **Verificação no banco de TESTE descartável** (script só no rascunho da sessão, fora do repositório):
+  - criados dois órgãos fictícios, sem dados do piloto e com todos os módulos;
+  - login com 2º fator e troca de senha funcionaram; sessão e proposição foram cadastradas à mão;
+  - todas as telas alcançáveis foram abertas: 182 (PM) e 196 (CM) no painel, 53 e 48 no portal;
+  - único erro: `/vereadores` dava 404 antes da primeira legislatura, e o link está no menu.
+- **Achado na correção:** 5 textos do piloto de Borá estavam fixos nos templates, nas páginas de vereadores, do perfil do vereador e de proposições. Exemplos: "consulta de 06/11/2026", "desde 1965", "importados do portal da Câmara".
+- **Correções:**
+  - `/vereadores` sem legislatura mostra "Composição ainda não cadastrada"; a Prefeitura continua com 404.
+  - Os textos foram para a config `notas_fonte` do órgão. O seed `piloto_bora.json` a grava só quando ela ainda não existe (`provision.completar_notas`, chamada no `preparar_orgao` e no `atualizar`).
+  - Borá mantém os mesmos dizeres; órgão novo mostra texto neutro ou nenhum.
+- **Testes:** `teste_fluxos` cria uma Câmara fictícia sem seed e confere a página vazia e a ausência de textos do piloto; confere também que Borá mantém as notas.
+- **Implantado em 24/11/2026, ~14h55 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"):
+  - mescla `71b344a`; backup ok;
+  - bateria sobre o código e sobre a imagem: 41 suítes sem falha;
+  - app e worker recriados; `atualizar` concluiu com "pronto.".
+- **Conferido:**
+  - gestão 303; portais, `/vereadores` e `/proposicoes` da Câmara, logins e casemaster 200; `/vereadores` da Prefeitura 404, como antes;
+  - as três notas de Borá aparecem como antes;
+  - sem erros nos logs.
+- **Para uma implantação nova, continua fora do código:** domínio e `.env`; identidade; legislatura e vereadores antes das sessões; Diário em modo teste até A1, ICP e ACT; e-mail de saída; código IBGE das fontes; cron do backup; gov.br opcional.
