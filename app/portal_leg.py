@@ -29,7 +29,7 @@ def proposicoes(request: Request):
     ctx = ctx_orgao(request); b = leg(ctx)
     q = {k: request.query_params.get(k, '').strip() for k in ('tipo', 'ano', 'situacao', 'autor', 'q')}
     anos = [x['ano'] for x in db.todos(b, 'SELECT DISTINCT ano FROM proposicoes ORDER BY ano DESC')]
-    return templates.TemplateResponse(request, 'portal/proposicoes.html', dict(ctx, props=_proposicoes(b, q), f=q, tipos=L.TIPOS, anos=anos,
+    return templates.TemplateResponse(request, 'portal/proposicoes.html', dict(ctx, notas=db.cfg(b, 'notas_fonte', {}) or {}, props=_proposicoes(b, q), f=q, tipos=L.TIPOS, anos=anos,
         situacoes=[x['situacao'] for x in db.todos(b, 'SELECT DISTINCT situacao FROM proposicoes ORDER BY 1')], legal='proposicoes'))
 
 @r.get('/proposicoes/{pid}')

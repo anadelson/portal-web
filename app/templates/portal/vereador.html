@@ -52,6 +52,6 @@
 <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px">
 {% for m in mandatos %}<li><a href="/vereador/{{ m.id }}"{% if m.id == v.id %} aria-current="page"{% endif %} style="display:block;padding:12px 14px;border-radius:14px;border:1px solid {{ 'var(--cor)' if m.id == v.id else 'var(--bd)' }};background:{{ 'var(--cor-clara)' if m.id == v.id else '#fff' }};color:var(--tx);text-decoration:none"><strong style="display:block">{{ m.legislatura }}ª Legislatura · {{ m.anos }}</strong><small style="color:var(--sub)">{{ m.partido }}{% if m.votos %} · {{ m.votos }} votos{% endif %}</small></a></li>{% endfor %}
 </ol>
-<p class="legal" style="margin:10px 0 0">Registros consultados: legislaturas importadas do portal da Câmara. Mandatos anteriores entram com a importação do acervo.</p>
+<p class="legal" style="margin:10px 0 0">{{ notas.vereador or 'Mandatos anteriores aparecem quando as legislaturas anteriores forem cadastradas.' }}</p>
 </section>
 {% endblock %}
