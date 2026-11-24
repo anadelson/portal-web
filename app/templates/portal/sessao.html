@@ -2,7 +2,7 @@
 {% block titulo %}{{ s.nome }} — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/sessoes">Sessões</a><span aria-hidden="true">›</span><span aria-current="page">{{ s.nome }}</span></nav>
-<h1>{{ s.nome }}</h1><p class="intro">Sessão {{ s.tipo }} · {{ s.data|br }} às {{ s.hora }} · <span class="chip {{ 'ok' if s.situacao == 'realizada' else 'erro' if s.situacao == 'cancelada' else '' }}">{{ situacoes[s.situacao] }}</span></p>{{ legal_topo(legal) }}
+<h1>{{ s.nome }}</h1><p class="intro">Sessão {{ s.tipo }} · {{ s.data|br }} às {{ s.hora }}{% if s.situacao != 'agendada' or s.data >= hoje %} · <span class="chip {{ 'ok' if s.situacao == 'realizada' else 'erro' if s.situacao == 'cancelada' else '' }}">{{ situacoes[s.situacao] }}</span>{% endif %}</p>{{ legal_topo(legal) }}
 {% if s.situacao == 'cancelada' %}<p class="msg" role="status" style="background:#FBE4D8">Sessão cancelada{% if s.motivo_cancelamento %}: {{ s.motivo_cancelamento }}{% endif %}.</p>{% endif %}
 {% if s.linha_publicada and (eventos or s.aberta_as or s.encerrada_as) %}<section class="caixa" style="margin-bottom:16px" aria-labelledby="h-linha"><h2 id="h-linha">Como foi a sessão</h2>
 <ol class="itens">{% if s.aberta_as %}<li><strong>{{ s.aberta_as }}</strong> — Abertura da sessão</li>{% endif %}
