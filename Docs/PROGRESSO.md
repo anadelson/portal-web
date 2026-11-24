@@ -2875,3 +2875,21 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - Testes: `tests/teste_portal_antigo.py` (site FICTÍCIO em `httpx.MockTransport`, sem internet), incluído nas baterias.
 - **Implantado em 24/11/2026, ~08h40 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `69b4509`; backup dos três bancos ok; bateria sobre o código e sobre a imagem: 41 suítes sem falha; app e worker recriados; `atualizar` aplicou a 044 nos dois bancos ("pronto.").
 - **Conferido**: gestão 303; portais, `/sessoes`, logins dos admins e casemaster 200; `/admin/importar/portal` sem login redireciona; nenhuma busca cadastrada; worker iniciado; sem erros nos logs.
+
+## 24/11/2026 — Portal antigo: criar sessões e proposições (tag `portal-antigo-legislativo`)
+- Pedido do usuário, depois de perguntar se o sistema serve para começar de uma base nova: "Sim, planejar isso" e "Sim, implementar". Antes disso, a busca só ligava PDFs a sessões e proposições que já existiam; numa base vazia, esses PDFs não tinham onde entrar.
+- **Leitura** (só na Câmara; o mesmo código serve todos os órgãos): o sistema só aproveita o que está **escrito** no título, no endereço e no texto. Também usa a página onde o PDF estava, se ela for da mesma proposição. O que não aparece fica em branco.
+  - Proposição: tipo, número, ano, ementa, autor e apresentação.
+  - Sessão: tipo, número, data e hora.
+- **Destinos novos** "Criar a proposição" e "Criar a sessão":
+  - Formulário de conferência, com o original ao lado e cada campo marcado como lido ou não encontrado. A situação da proposição é sempre escolhida por quem confere, e a sessão só fica "realizada" se a pessoa marcar.
+  - "Migrar marcados" mostra antes uma tabela de conferência; os itens incompletos não são criados e continuam esperando revisão.
+  - Duplicatas são recusadas, e o PDF do item é anexado. As sugestões são recalculadas na revisão, então os PDFs passam a apontar para a proposição ou sessão criada.
+  - Os registros ficam com `origem='portal_antigo'`. Não são criados votos, presenças, pauta nem tramitação deduzidos; a única exceção é a "Apresentação", quando a data foi informada. A sessão nasce sem nada publicado.
+  - A proposição aparece no portal assim que é criada, porque o sistema não tem rascunho para proposições.
+- Sem migração de banco. `admin.css?v=26`. Testes: `teste_portal_antigo` parte 4b, com proposições e sessões FICTÍCIAS no site de teste.
+- **Implantado em 24/11/2026, ~14h05 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"):
+  - mescla `b1aa55a`; backup dos três bancos ok;
+  - bateria sobre o código e sobre a imagem: 41 suítes sem falha;
+  - app e worker recriados; `atualizar` concluiu com "pronto.".
+- **Conferido**: gestão 303; portais, `/sessoes`, logins dos admins e casemaster 200; a rota nova sem login redireciona; CSS novo servido; sem erros nos logs.
