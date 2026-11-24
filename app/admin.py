@@ -166,6 +166,10 @@ async def senha_post(request: Request):
     return ir('/admin/', 'Senha alterada.', request)
 
 # ---------- visão geral ----------
+DIAS_SEMANA = ('Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo')
+MESES_NOME = ('', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro')
+MESES_CURTO = ('', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez')
+
 @r.get('/')
 def painel(request: Request):
     u = exige(request)
@@ -184,7 +188,21 @@ def painel(request: Request):
                'n_sem_registro': db.um(b, "SELECT count(*) n FROM sessoes WHERE situacao='agendada' AND data < %s", (hoje,))['n'],
                'a_publicar': db.todos(b, """SELECT id, nome, data FROM sessoes WHERE situacao='realizada' AND NOT (pauta_publicada AND presenca_publicada AND votacao_publicada AND ata_publicada AND linha_publicada)
                                         ORDER BY data DESC, id DESC LIMIT 3""")}
-    return T('painel', request, u, k=k, sic=sic, log=log, ses=ses, aviso_tv=avisos.transmissoes(request.state.orgao, modulos_do_orgao(request.state.orgao)))
+    # 24/11/2026: Visão geral redesenhada — saudação, data por extenso, Diário Oficial e números do Legislativo
+    o = request.state.orgao; mods = modulos_do_orgao(o); hoje = config.hoje(); h = config.agora().hour
+    vg = {'saudacao': 'Bom dia' if 5 <= h < 12 else 'Boa tarde' if 12 <= h < 18 else 'Boa noite',
+          'dia': f"{DIAS_SEMANA[hoje.weekday()]}, {hoje.day} de {MESES_NOME[hoje.month]} de {hoje.year}", 'mes_c': MESES_CURTO}
+    dio = None
+    if mods.get('diario'):
+        dio = db.um(b, """SELECT (SELECT count(*) FROM diario_atos WHERE situacao='revisao') revisao,
+                                  (SELECT count(*) FROM diario_atos WHERE situacao='aprovado' AND edicao_id IS NULL) aprovados,
+                                  (SELECT count(*) FROM diario_atos WHERE situacao='devolvido') devolvidos""")
+        dio['ultima'] = db.um(b, "SELECT numero, letra, data FROM diario_edicoes WHERE situacao='publicada' AND NOT modo_teste ORDER BY data DESC, id DESC LIMIT 1")
+    leg = None
+    if o['tipo'] == 'legislativo':
+        leg = db.um(b, """SELECT (SELECT count(*) FROM proposicoes WHERE situacao NOT IN ('Aprovada','Aprovado','Rejeitada','Rejeitado','Arquivada','Retirada')) tramitando,
+                                  (SELECT count(*) FROM sessoes WHERE situacao='realizada' AND extract(year FROM data)=%s) realizadas""", (hoje.year,))
+    return T('painel', request, u, k=k, sic=sic, log=log, ses=ses, vg=vg, dio=dio, leg=leg, aviso_tv=avisos.transmissoes(o, mods))
 
 # ---------- conteúdos ----------
 @r.get('/conteudos')

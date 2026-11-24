@@ -96,6 +96,17 @@ checa('Acesso direto' in t and 'Itens da barra' not in t, 'Menus: uma seção po
 r = pm.post('/admin/menus', data={'csrf': tok(pm, '/admin/menus'), 'acao': 'aviso', 'texto': '', 'link': '', 'ate': ''}, follow_redirects=False)
 checa('aba=' in r.headers.get('location', '') or r.status_code == 303, 'Menus: salvar volta para a aba')
 
+# ---------- Visão geral redesenhada (24/11/2026): mesmo modelo nos dois órgãos ----------
+for nome, c, proprios, alheios in (('Prefeitura', pm, ('Diário Oficial', 'Abrir o Diário', 'Conheça'), ('Sessões da Câmara', 'Proposições em tramitação')),
+                                   ('Câmara', cm, ('Sessões da Câmara', 'Agendar sessão', 'Proposições em tramitação', 'Sessões realizadas no ano'), ('Abrir o Diário',))):
+    h = c.get('/admin/').text; m = h[h.find('<main'):]
+    checa('class="vg-hero"' in m and re.search(r'(Bom dia|Boa tarde|Boa noite), \w+!', m), f'{nome}: faixa de boas-vindas com saudação')
+    for t_ in ('Conteúdos e atendimento', 'Aguardando revisão', 'e-SIC/Ouvidoria em aberto', 'Atalhos', 'Nova notícia ou página', 'Últimas ações', 'Ver o portal') + proprios:
+        checa(t_ in m, f'{nome}: visão geral sem "{t_}"')
+    for t_ in alheios:
+        checa(t_ not in m, f'{nome}: visão geral não deveria ter "{t_}"')
+    sem_aninhado(h, f'{nome}: visão geral')
+
 if erros:
     print('ERROS:', len(erros)); [print(e) for e in erros]; sys.exit(1)
 print('painel admin: tudo ok')

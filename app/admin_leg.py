@@ -237,6 +237,7 @@ def _dados_sessao(b, s):
     for it in itens:
         it['votos'] = {v['vereador_id']: v['voto'] for v in db.todos(b, 'SELECT * FROM votos WHERE item_id=%s', (it['id'],))}
         it['cont'] = L.contagem(b, it['id'])
+        it['docs'] = L.docs_item(b, it)
     return membros, pres, itens
 
 @r.get('/sessoes/{sid}')
@@ -251,9 +252,9 @@ def sessao(request: Request, sid: str):
     p = L.presidente_em(b, s['data'])
     return T('sessao', request, u, s=s, membros=membros, pres=pres, itens=itens, quoruns=L.QUORUNS, votos=L.VOTOS, pres_id=p['id'] if p else None,
              props=db.todos(b, "SELECT id, tipo, numero, ano, ementa FROM proposicoes WHERE situacao NOT IN ('Aprovada','Aprovado','Rejeitada','Rejeitado','Arquivada','Retirada') ORDER BY ano DESC, tipo, numero DESC LIMIT 300"),
-             docs=db.todos(b, 'SELECT * FROM documentos WHERE sessao_id=%s ORDER BY id', (s['id'],)), passos=(ps := L.passos(b, s)), passos_d={p['chave']: p for p in ps}, eventos=L.eventos(b, s['id']), videos=L.videos(b, s['id']),
+             docs=db.todos(b, 'SELECT * FROM documentos WHERE sessao_id=%s AND pauta_item_id IS NULL ORDER BY id', (s['id'],)), passos=(ps := L.passos(b, s)), passos_d={p['chave']: p for p in ps}, eventos=L.eventos(b, s['id']), videos=L.videos(b, s['id']),
              tipos_ev=L.EVENTOS, tipos_sessao=L.TIPOS_SESSAO, situacoes=L.SITUACOES_SESSAO, plataformas=L.PLATAFORMAS, resultados=L.RESULTADOS_ITEM,
-             tipos_prop=[t for t, _ in L.TIPOS], hoje=config.hoje())
+             tipos_prop=[t for t, _ in L.TIPOS], hoje=config.hoje(), pdf_tipos={k: L.DOC_TIPOS[k] for k in PDF_ITEM})
 
 def _https(url):
     import re as _re
@@ -307,16 +308,40 @@ async def sessao_post(request: Request, sid: str):
             if s['votacao_publicada']:
                 raise ValueError('A votação já foi publicada: a pauta não pode mais mudar.')
             pid = int(f['proposicao']) if f.get('proposicao') else None
-            if not pid and not f.get('descricao'):
+            if not pid and not (f.get('descricao') or '').strip():
                 raise ValueError('Escolha uma proposição ou descreva o item.')
-            _incluir_item(b, s, pid, f.get('descricao') or '', f.get('fase'), f.get('quorum'), u)
+            it_id = _incluir_item(b, s, pid, (f.get('descricao') or '').strip(), f.get('quorum'), u)
             msg = 'Item incluído na pauta.'
+            if _arq(f, 'arquivo'):
+                try:
+                    await _pdf_item(request, b, it_id, f, u)
+                    msg = 'Item incluído na pauta, com o PDF.'
+                except ValueError as e:
+                    msg = f'Item incluído na pauta, mas o PDF não foi salvo: {e} Anexe de novo no item.'
+        elif acao == 'pdf_item':
+            if not _arq(f, 'arquivo'):
+                raise ValueError('Escolha o arquivo PDF.')
+            await _pdf_item(request, b, int(f['item']), f, u, sessao_id=i)
+            msg = 'PDF vinculado ao item da pauta.'
+        elif acao == 'tirar_pdf':
+            d = db.um(b, 'SELECT * FROM documentos WHERE id=%s AND sessao_id=%s AND pauta_item_id IS NOT NULL', (int(f['doc']), i))
+            if not d:
+                raise ValueError('PDF não encontrado.')
+            _apagar_doc(request, b, d)
+            msg = 'PDF removido do item.'
+        elif acao in ('subir_item', 'descer_item'):
+            if s['votacao_publicada']:
+                raise ValueError('A votação já foi publicada: a pauta não pode mais mudar.')
+            _mover(b, 'pauta_itens', i, int(f['item']), acao == 'subir_item')
+            msg = 'Ordem da pauta atualizada.'
         elif acao == 'materia':
-            msg = _materia_nova(request, b, s, f, u, (await request.form()).getlist('autor'))
+            msg = await _materia_nova(request, b, s, f, u, (await request.form()).getlist('autor'))
         elif acao == 'tirar_item':
             it = db.um(b, 'SELECT * FROM pauta_itens WHERE id=%s AND sessao_id=%s', (int(f['item']), i))
             if it and it['resultado'] in ('aprovado', 'rejeitado'):
                 raise ValueError('Item já votado não pode sair da pauta.')
+            for d in db.todos(b, 'SELECT * FROM documentos WHERE pauta_item_id=%s AND proposicao_id IS NULL', (int(f['item']),)):
+                _apagar_doc(request, b, d)  # PDF só do item sai junto; o da proposição fica na proposição
             db.exe(b, 'DELETE FROM pauta_itens WHERE id=%s AND sessao_id=%s', (int(f['item']), i)); msg = 'Item retirado da pauta.'
         elif acao == 'presenca':
             if not depois:
@@ -470,16 +495,48 @@ def _publicavel(b, s, acao):
         return False, 'Não há horário nem acontecimento registrado.'
     return True, ''
 
-def _incluir_item(b, s, pid, desc, fase, quorum, u):
+def _incluir_item(b, s, pid, desc, quorum, u):
+    """Item da Ordem do Dia: proposição (ou item avulso) e quórum. A fase da votação saiu do cadastro em 24/11/2026."""
     if pid and not desc:
         p = db.um(b, 'SELECT * FROM proposicoes WHERE id=%s', (pid,)); desc = f"{L.rotulo(p)} — {p['ementa'][:200]}"
     ordem = db.um(b, 'SELECT coalesce(max(ordem),0)+1 n FROM pauta_itens WHERE sessao_id=%s', (s['id'],))['n']
-    db.exe(b, 'INSERT INTO pauta_itens (sessao_id, ordem, proposicao_id, descricao, fase, quorum) VALUES (%s,%s,%s,%s,%s,%s)',
-           (s['id'], ordem, pid, desc[:600], fase or 'Discussão e votação única', quorum if quorum in L.QUORUNS else 'simples'))
+    it = db.exe(b, "INSERT INTO pauta_itens (sessao_id, ordem, proposicao_id, descricao, fase, quorum) VALUES (%s,%s,%s,%s,'',%s) RETURNING id",
+                (s['id'], ordem, pid, desc[:600], quorum if quorum in L.QUORUNS else 'simples'))['id']
     if pid:
         L.tramitar(b, pid, s['data'], 'Incluída na pauta', f"{s['nome']}, {s['data'].strftime('%d/%m/%Y')}", sessao_id=s['id'], quem=u['nome'], situacao='Pronta para a pauta')
+    return it
 
-def _materia_nova(request, b, s, f, u, marcados):
+PDF_ITEM = ('texto', 'parecer', 'outro')  # tipos oferecidos no item da pauta
+
+async def _pdf_item(request, b, item_id, f, u, sessao_id=None):
+    """PDF vinculado ao item da pauta; se o item é uma proposição, o PDF também aparece na página dela."""
+    it = db.um(b, 'SELECT * FROM pauta_itens WHERE id=%s' + (' AND sessao_id=%s' if sessao_id else ''), (item_id, sessao_id) if sessao_id else (item_id,))
+    if not it:
+        raise ValueError('Item da pauta não encontrado.')
+    tipo = f.get('tipo_doc') if f.get('tipo_doc') in PDF_ITEM else 'texto'
+    titulo = (f.get('titulo') or '').strip() or L.DOC_TIPOS[tipo]
+    desc = (f.get('descricao_doc') or '').strip() or f"{L.DOC_TIPOS[tipo]} do item da pauta: {it['descricao']}"
+    await L.salvar_pdf(request, _arq(f, 'arquivo'), tipo, titulo, desc, u['nome'], sessao_id=it['sessao_id'], pauta_item_id=it['id'], proposicao_id=it['proposicao_id'])
+
+def _apagar_doc(request, b, d):
+    from pathlib import Path
+    db.exe(b, 'DELETE FROM documentos WHERE id=%s', (d['id'],))
+    arq = Path(config.DADOS_DIR) / request.state.orgao['slug'] / 'docs' / d['arquivo']
+    if arq.is_file():
+        arq.unlink()
+
+def _mover(b, tabela, sid, item, subir):
+    """Troca a posição do item com o vizinho (acima ou abaixo), renumerando a ordem da sessão."""
+    ids = [r['id'] for r in db.todos(b, f'SELECT id FROM {tabela} WHERE sessao_id=%s ORDER BY ordem, id', (sid,))]
+    if item not in ids:
+        return
+    k = ids.index(item); j = k - 1 if subir else k + 1
+    if 0 <= j < len(ids):
+        ids[k], ids[j] = ids[j], ids[k]
+    for n, x in enumerate(ids, 1):
+        db.exe(b, f'UPDATE {tabela} SET ordem=%s WHERE id=%s', (n, x))
+
+async def _materia_nova(request, b, s, f, u, marcados):
     """Moção, requerimento, indicação, projeto… criado dentro da sessão, com o(s) autor(es); entra em Proposições e no perfil do autor."""
     tipo = f.get('tipo_materia')
     if tipo not in L.TIPO_SIGLA or not (f.get('ementa') or '').strip():
@@ -504,9 +561,18 @@ def _materia_nova(request, b, s, f, u, marcados):
     if f.get('na_pauta') == '1':
         if s['votacao_publicada']:
             raise ValueError('A votação desta sessão já foi publicada: a matéria foi criada, mas não entra mais na pauta.')
-        _incluir_item(b, s, pid, '', f.get('fase'), f.get('quorum'), u)
+        it_id = _incluir_item(b, s, pid, '', f.get('quorum'), u)
         partes.append('incluída na pauta para votação')
-    return ', '.join(partes).capitalize() + '. Ela aparece em Proposições e no perfil do autor.'
+    else:
+        it_id = None
+    if _arq(f, 'arquivo'):
+        try:
+            await L.salvar_pdf(request, _arq(f, 'arquivo'), 'texto', f"Texto — {tipo} nº {num}/{ano}", f"Texto da {tipo} nº {num}/{ano}: {f['ementa'].strip()[:300]}",
+                               u['nome'], proposicao_id=pid, sessao_id=s['id'] if it_id else None, pauta_item_id=it_id)
+            partes.append('com o PDF')
+        except ValueError as e:
+            partes.append(f'mas o PDF não foi salvo ({e})')
+    m = ', '.join(partes); return m[:1].upper() + m[1:] + '. Ela aparece em Proposições e no perfil do autor.'
 
 # ---------- julgamento das contas do Prefeito ----------
 @r.get('/contas')
