@@ -268,10 +268,15 @@ def situacao_apos_votacao(b, item, resultado, s, quem, detalhe=''):
     if resultado in ('aprovado', 'rejeitado'):
         fem = pr['tipo'] in FEMININOS or pr['tipo'].startswith('Proposta') or pr['tipo'] in PROJETOS
         sit = ('Aprovada' if fem else 'Aprovado') if resultado == 'aprovado' else ('Rejeitada' if fem else 'Rejeitado')
-        tramitar(b, item['proposicao_id'], s['data'], f"Votação em Plenário — {item['fase']}",
+        tramitar(b, item['proposicao_id'], s['data'], f"Votação em Plenário — {item['fase']}" if item.get('fase') else 'Votação em Plenário',
                  f"{'Aprovado' if resultado == 'aprovado' else 'Rejeitado'} na {s['nome']}{': ' + detalhe if detalhe else '.'}".strip(), sessao_id=s['id'], quem=quem, situacao=sit)
     else:
         tramitar(b, item['proposicao_id'], s['data'], RESULTADOS_ITEM[resultado], f"{s['nome']}{': ' + detalhe if detalhe else ''}", sessao_id=s['id'], quem=quem)
+
+def docs_item(b, it):
+    """PDFs do item da pauta: os anexados ao item e os da proposição (texto, parecer…), sem repetir."""
+    return db.todos(b, """SELECT * FROM documentos WHERE pauta_item_id=%s OR (%s::int IS NOT NULL AND proposicao_id=%s AND tipo<>'ata')
+                          ORDER BY (pauta_item_id IS DISTINCT FROM %s), id""", (it['id'], it['proposicao_id'], it['proposicao_id'], it['id']))
 
 def eventos(b, sid):
     return db.todos(b, """SELECT e.*, v.nome vereador, p.tipo ptipo, p.numero pnumero, p.ano pano, p.ementa pementa FROM sessao_eventos e

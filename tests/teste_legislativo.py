@@ -299,6 +299,46 @@ sf2 = db.um(CM, "SELECT id FROM sessoes WHERE data='2029-05-04'")['id']
 ok(cm.get(f'/sessoes/{sf2}'), txt='>Agendada<', nome='sessão futura com selo Agendada')
 ok(cm.get('/admin/sessoes'), txt='Cancelada', nome='lista com situação')
 
+# ---------- 11. pauta simplificada (sem fase) e PDFs vinculados aos itens (24/11/2026) ----------
+up = f'/admin/sessoes/{sf2}'
+r = ok(cm.get(up), txt='Incluir na pauta', nome='tela da pauta')
+if 'name="fase"' in r.text or 'Fase de votação' in r.text: falha('a pauta não deveria pedir a fase da votação')
+post(up, {'acao': 'item', 'descricao': 'Item avulso de teste com PDF', 'quorum': 'simples'}, files={'arquivo': ('i.pdf', PDF, 'application/pdf')}, txt='com o PDF', nome='item avulso com PDF')
+post(up, {'acao': 'item', 'descricao': 'Segundo item avulso de teste', 'quorum': 'absoluta'}, txt='Item incluído', nome='item avulso 2')
+r = post(up, {'acao': 'item', 'descricao': 'Item com arquivo falso', 'quorum': 'simples'}, files={'arquivo': ('f.pdf', b'GIF89a', 'application/pdf')}, nome='item com PDF falso')
+if 'não foi salvo' not in msg(r): falha(f'PDF falso no item: {msg(r)}')
+ia, ib, ic = [x['id'] for x in db.todos(CM, 'SELECT id FROM pauta_itens WHERE sessao_id=%s ORDER BY ordem, id', (sf2,))]
+if db.um(CM, 'SELECT fase FROM pauta_itens WHERE id=%s', (ia,))['fase'] != '': falha('item novo deveria ficar sem fase')
+post(up, {'acao': 'pdf_item', 'item': ib, 'tipo_doc': 'parecer', 'titulo': 'Parecer de teste do item 2'}, files={'arquivo': ('p.pdf', PDF, 'application/pdf')}, txt='PDF vinculado', nome='PDF no item 2')
+post(up, {'acao': 'subir_item', 'item': ib}, txt='Ordem da pauta', nome='subir item')
+if [x['id'] for x in db.todos(CM, 'SELECT id FROM pauta_itens WHERE sessao_id=%s ORDER BY ordem, id', (sf2,))][:2] != [ib, ia]: falha('subir item na pauta')
+r = ok(cm.get(up), txt='Parecer de teste do item 2', nome='PDF listado no item')
+da = db.um(CM, 'SELECT * FROM documentos WHERE pauta_item_id=%s', (ia,)); db_ = db.um(CM, 'SELECT * FROM documentos WHERE pauta_item_id=%s', (ib,))
+if not da or not db_ or db_['tipo'] != 'parecer' or da['sessao_id'] != sf2: falha('PDFs dos itens no banco')
+# portal: o PDF só do item aparece com a pauta publicada
+anon = TestClient(app, base_url='http://cmbora.localhost')
+if anon.get(f"/documento/{db_['arquivo']}").status_code != 404: falha('PDF do item visível antes de publicar a pauta')
+if 'Parecer de teste do item 2' in anon.get(f'/sessoes/{sf2}').text: falha('PDF do item listado antes de publicar a pauta')
+post(up, {'acao': 'pub_pauta'}, txt='Publicado no portal', nome='publicar pauta com PDFs')
+r = ok(anon.get(f'/sessoes/{sf2}'), txt='Parecer de teste do item 2', nome='portal: PDF no item da pauta')
+if 'Segundo item avulso de teste' not in r.text or r.text.find('Segundo item avulso') > r.text.find('Item avulso de teste com PDF'): falha('portal: ordem da pauta')
+if anon.get(f"/documento/{db_['arquivo']}").status_code != 200: falha('PDF do item depois de publicar a pauta')
+# remover o PDF e retirar o item (o PDF do item sai junto)
+post(up, {'acao': 'tirar_pdf', 'doc': db_['id']}, txt='PDF removido', nome='remover PDF')
+if db.um(CM, 'SELECT 1 FROM documentos WHERE id=%s', (db_['id'],)): falha('PDF removido continua no banco')
+post(up, {'acao': 'tirar_item', 'item': ia}, txt='Item retirado', nome='retirar item com PDF')
+if db.um(CM, 'SELECT 1 FROM documentos WHERE id=%s', (da['id'],)): falha('PDF do item retirado continua no banco')
+# matéria nova com o texto em PDF: fica na proposição e no item da pauta
+post(up, {'acao': 'materia', 'tipo_materia': 'Indicação', 'ementa': 'Indicação fictícia de teste com texto em PDF.', 'autor': 'Gina Teste', 'na_pauta': '1', 'quorum': 'simples'},
+     files={'arquivo': ('m.pdf', PDF, 'application/pdf')}, txt='com o PDF', nome='matéria nova com PDF')
+dm = db.um(CM, "SELECT d.* FROM documentos d JOIN proposicoes p ON p.id=d.proposicao_id WHERE p.ementa='Indicação fictícia de teste com texto em PDF.'")
+if not dm or not dm['pauta_item_id']: falha('PDF da matéria nova na proposição e no item')
+ok(cm.get(f"/proposicoes/{dm['proposicao_id']}"), txt=dm['titulo'], nome='PDF da matéria na página da proposição')
+# Visão geral da Câmara redesenhada
+r = ok(cm.get('/admin/'), txt='Atalhos', nome='visão geral nova')
+for t_ in ('class="vg-hero"', 'Proposições em tramitação', 'Últimas ações', 'class="vg-data'):
+    if t_ not in r.text: falha(f'visão geral sem "{t_}"')
+
 # LGPD geral: nenhuma página pública com CPF
 for pg in ('/', '/proposicoes', f"/proposicoes/{pl['id']}", '/sessoes', f'/sessoes/{sid}', '/comissoes', '/contas', '/transmissoes', '/transparencia/diarias-camara', f"/vereador/{V['Ana Teste']}"):
     if re.search(r'\b\d{3}\.\d{3}\.\d{3}-\d{2}\b', cm.get(pg).text): falha(f'CPF em {pg}')

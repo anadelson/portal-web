@@ -80,12 +80,13 @@ def sessao(request: Request, sid: int):
     itens = db.todos(b, 'SELECT i.*, p.tipo, p.numero, p.ano FROM pauta_itens i LEFT JOIN proposicoes p ON p.id=i.proposicao_id WHERE sessao_id=%s ORDER BY ordem, id', (sid,)) if s['pauta_publicada'] or s['votacao_publicada'] else []
     for it in itens:
         it['cont'] = L.contagem(b, it['id'])
+        it['docs'] = L.docs_item(b, it)
         it['votos'] = db.todos(b, 'SELECT vo.voto, ve.nome, ve.id FROM votos vo JOIN vereadores ve ON ve.id=vo.vereador_id WHERE item_id=%s ORDER BY ve.nome', (it['id'],)) if s['votacao_publicada'] else []
     pres = db.todos(b, 'SELECT p.situacao, v.nome, v.id FROM presencas p JOIN vereadores v ON v.id=p.vereador_id WHERE sessao_id=%s ORDER BY v.nome', (sid,)) if s['presenca_publicada'] else []
     t = db.um(b, "SELECT * FROM transmissoes WHERE sessao_id=%s AND video<>'' ORDER BY id DESC LIMIT 1", (sid,))
     return templates.TemplateResponse(request, 'portal/sessao.html', dict(ctx, s=s, itens=itens, pres=pres, transm=t, votos_nome=L.VOTOS, resultados=L.RESULTADOS_ITEM,
         eventos=L.eventos(b, sid) if s['linha_publicada'] else [], videos=L.videos(b, sid), plataformas=L.PLATAFORMAS, tipos_ev=L.EVENTOS, situacoes=L.SITUACOES_SESSAO,
-        docs=db.todos(b, "SELECT * FROM documentos WHERE sessao_id=%s AND (tipo<>'ata' OR %s)", (sid, s['ata_publicada'])),
+        docs=db.todos(b, "SELECT * FROM documentos WHERE sessao_id=%s AND pauta_item_id IS NULL AND (tipo<>'ata' OR %s)", (sid, s['ata_publicada'])),
         tribuna=s['data'] >= config.hoje() and ctx['mods'].get('sess'), legal='sessoes'))
 
 @r.post('/sessoes/{sid}/tribuna')
@@ -145,6 +146,10 @@ def documento(request: Request, arquivo: str):
         raise HTTPException(404)
     if d['sessao_id'] and d['tipo'] == 'ata' and not db.um(o['banco'], 'SELECT ata_publicada FROM sessoes WHERE id=%s', (d['sessao_id'],))['ata_publicada'] and not request.session.get('u'):
         raise HTTPException(404)
+    if d.get('pauta_item_id') and not d['proposicao_id'] and not request.session.get('u'):  # PDF só do item: aparece com a pauta publicada
+        s = db.um(o['banco'], 'SELECT s.pauta_publicada, s.votacao_publicada FROM pauta_itens i JOIN sessoes s ON s.id=i.sessao_id WHERE i.id=%s', (d['pauta_item_id'],))
+        if not s or not (s['pauta_publicada'] or s['votacao_publicada']):
+            raise HTTPException(404)
     nome = re.sub(r'[^\w.-]+', '-', d['titulo'])[:80] + '.pdf'
     return FileResponse(f, media_type='application/pdf', filename=nome, headers={'X-Content-Type-Options': 'nosniff'})
 

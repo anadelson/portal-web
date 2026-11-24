@@ -673,3 +673,7 @@ nav.menu a{font-size:var(--fs-menu)}
 .tp-dias p{margin:0}.tp-dia span{display:block;color:var(--sub);font-size:var(--fs-meta)}.tp-d-ico{color:var(--cor);display:flex}.tp-cond{font-size:var(--fs-desc)}
 .tp-mm{font-size:var(--fs-h3)}.tp-min{color:var(--sub)}.tp-chuva{font-size:var(--fs-meta);color:var(--sub);display:flex;align-items:center;gap:4px}
 .lat-caixa.tempo-l .btn{margin-top:2px}
+
+/* PDFs do item da pauta (24/11/2026) */
+.pdfs-item{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.pdfs-item a{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 12px;border:1px solid var(--bd,#DCE1E6);border-radius:999px;text-decoration:none;font-size:var(--fs-peq,14px);font-weight:600}
+.pdfs-item a>span{background:#B42318;color:#fff;font-size:.75em;font-weight:800;padding:1px 5px;border-radius:4px}

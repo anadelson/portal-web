@@ -1,10 +1,52 @@
 {% extends 'admin/base.html' %}{% block h1 %}Visão geral{% endblock %}
-{% block conteudo %}<div class="kpis">
-<a class="kpi" href="/admin/conteudos?sit=revisao">Aguardando revisão<b>{{ k.revisao }}</b></a><a class="kpi" href="/admin/conteudos?sit=devolvido">Devolvidos<b>{{ k.devolvido }}</b></a><a class="kpi" href="/admin/conteudos?sit=agendado">Agendados<b>{{ k.agendado }}</b></a><a class="kpi" href="/admin/conteudos?sit=publicado">Publicados<b>{{ k.publicado }}</b></a><a class="kpi" href="/admin/eleicao">Sairão no defeso<b>{{ k.vedados }}</b></a><a class="kpi" href="/admin/atendimento">e-SIC/Ouvidoria em aberto<b>{{ sic.abertos }}</b></a></div>
-{% if ses is not none %}<section class="cx" aria-labelledby="h-ses"><div class="cab-etapa" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center"><h2 id="h-ses" style="margin:0">Sessões da Câmara</h2><a class="btn" href="/admin/sessoes?novo=1">+ Agendar sessão</a></div>
-<div class="grade2"><div><h3>Próximas</h3>{% if ses.proximas %}<ul>{% for s in ses.proximas %}<li><a href="/admin/sessoes/{{ s.id }}">{{ s.nome }}</a> · {{ s.data|br }} às {{ s.hora }}</li>{% endfor %}</ul>{% else %}<p>Nenhuma sessão agendada.</p>{% endif %}</div>
-<div><h3>Já aconteceram, sem registro{% if ses.n_sem_registro %} ({{ ses.n_sem_registro }}){% endif %}</h3>{% if ses.sem_registro %}<ul>{% for s in ses.sem_registro %}<li><a href="/admin/sessoes/{{ s.id }}">{{ s.nome }}</a> · {{ s.data|br }} · <a class="btn sec" href="/admin/sessoes/{{ s.id }}#abertura">Registrar</a></li>{% endfor %}</ul>{% else %}<p>Nenhuma pendente.</p>{% endif %}</div></div>
-{% if ses.a_publicar %}<h3>Registradas, com partes ainda não publicadas</h3><ul>{% for s in ses.a_publicar %}<li><a href="/admin/sessoes/{{ s.id }}#publicacao">{{ s.nome }}</a> · {{ s.data|br }}</li>{% endfor %}</ul>{% endif %}
+{% block conteudo %}{% set exe, legis = orgao.tipo == 'executivo', orgao.tipo == 'legislativo' %}
+{# Visão geral redesenhada em 24/11/2026: mesmo modelo para Prefeitura e Câmara; os blocos dependem do tipo de órgão, dos módulos e do perfil. #}
+{% macro kpi(href, ic, rotulo, n, tom='') %}<a class="vg-kpi{{ ' tom-' ~ tom if n and tom }}" href="{{ href }}"><span class="ic" aria-hidden="true">{{ icone(ic, 22) }}</span><span class="r">{{ rotulo }}</span><b>{{ n }}</b></a>{% endmacro %}
+{% macro atalho(href, ic, rotulo, dica) %}<a class="vg-atalho" href="{{ href }}"><span class="ic" aria-hidden="true">{{ icone(ic, 22) }}</span><span><strong>{{ rotulo }}</strong><small>{{ dica }}</small></span></a>{% endmacro %}
+
+<section class="vg-hero" aria-labelledby="vg-ola">
+<div class="vg-hero-txt"><p class="vg-dia">{{ vg.dia }}</p><h2 id="vg-ola">{{ vg.saudacao }}, {{ (u.nome or '').split()[0] }}!</h2>
+<p>{{ ident.nome }} · {{ 'Poder Legislativo' if legis else 'Poder Executivo' }}</p></div>
+<div class="vg-hero-acoes">{% if pend.revisao or sic.abertos %}<p class="vg-pend">{% if pend.revisao %}<span><b>{{ pend.revisao }}</b> para revisar</span>{% endif %}{% if sic.abertos %}<span><b>{{ sic.abertos }}</b> {{ 'pedido' if sic.abertos == 1 else 'pedidos' }} em aberto</span>{% endif %}</p>{% else %}<p class="vg-pend"><span>Nada pendente por aqui.</span></p>{% endif %}
+<a class="btn vg-claro" href="/" target="_blank" rel="noopener">Ver o portal <span aria-hidden="true">↗</span><span class="sr"> (abre em nova aba)</span></a></div>
+</section>
+
+<h2 class="vg-tit">Conteúdos e atendimento</h2>
+<div class="vg-kpis">
+{{ kpi('/admin/conteudos?sit=revisao', 'lista', 'Aguardando revisão', k.revisao, 'alerta') }}
+{{ kpi('/admin/conteudos?sit=devolvido', 'lista', 'Devolvidos', k.devolvido, 'erro') }}
+{{ kpi('/admin/conteudos?sit=agendado', 'lista', 'Agendados', k.agendado, 'info') }}
+{{ kpi('/admin/conteudos?sit=publicado', 'lista', 'Publicados', k.publicado, 'ok') }}
+{{ kpi('/admin/atendimento', 'esic', 'e-SIC/Ouvidoria em aberto', sic.abertos, 'alerta') }}
+{% if mods.eleicao or k.vedados %}{{ kpi('/admin/eleicao', 'eleicao', 'Sairão no defeso', k.vedados, 'info') }}{% endif %}
+{% if leg %}{{ kpi('/admin/proposicoes', 'proposicoes', 'Proposições em tramitação', leg.tramitando, 'info') }}{{ kpi('/admin/sessoes', 'sessoes', 'Sessões realizadas no ano', leg.realizadas, 'ok') }}{% endif %}
+</div>
+
+<h2 class="vg-tit">Atalhos</h2>
+<nav class="vg-atalhos" aria-label="Atalhos">
+{% if pode('editar') %}{{ atalho('/admin/conteudos/novo', 'lista', 'Nova notícia ou página', 'Escrever e enviar para revisão') }}{{ atalho('/admin/comunicados', 'ouvidoria', 'Comunicados', 'Avisos rápidos no portal') }}{% endif %}
+{% if legis %}{{ atalho('/admin/sessoes?novo=1', 'sessoes', 'Agendar sessão', 'Ordinária, extraordinária, solene…') }}{{ atalho('/admin/proposicoes', 'proposicoes', 'Proposições', 'Projetos, moções, requerimentos') }}{% endif %}
+{% if mods.diario and pode('diario_enviar') %}{{ atalho('/admin/diario', 'diario', 'Diário Oficial', 'Atos, edições e assinatura') }}{% elif legis and pode('diario_enviar') %}{{ atalho('/admin/remessas', 'diario', 'Enviar ao Diário', 'Atos da Câmara para a Prefeitura') }}{% endif %}
+{% if pode('atendimento') %}{{ atalho('/admin/atendimento', 'esic', 'e-SIC e Ouvidoria', 'Pedidos e manifestações') }}{% endif %}
+{% if exe and pode('editar') %}{{ atalho('/admin/conheca', 'cidade', 'Conheça ' ~ (ident.nome_curto or 'a cidade'), 'Turismo, história e lugares') }}{% endif %}
+{% if mods.bi %}{{ atalho('/admin/indicadores', 'indicadores', 'Painel de indicadores', 'Fontes e números públicos') }}{% endif %}
+{% if pode('editar') %}{{ atalho('/admin/pagina-inicial', 'home', 'Página inicial', 'Blocos e destaques do portal') }}{% endif %}
+</nav>
+
+{% if aviso_tv %}<section class="cx vg-aviso" role="status"><h2>Transmissões: o que falta para aparecer no portal</h2><ul>{% for a in aviso_tv %}<li>{{ a }}</li>{% endfor %}</ul></section>{% endif %}
+
+<div class="vg-grade">
+{% if ses is not none %}<section class="cx vg-card" aria-labelledby="h-ses"><div class="vg-card-cab"><h2 id="h-ses"><span class="ic" aria-hidden="true">{{ icone('sessoes', 20) }}</span>Sessões da Câmara</h2><a class="btn" href="/admin/sessoes?novo=1">+ Agendar sessão</a></div>
+<h3>Próximas</h3>{% if ses.proximas %}<ul class="vg-agenda">{% for s in ses.proximas %}<li><span class="vg-data" aria-hidden="true"><b>{{ s.data.day }}</b>{{ vg.mes_c[s.data.month] }}</span><span class="t"><a href="/admin/sessoes/{{ s.id }}">{{ s.nome }}</a><small>{{ s.data|br }} às {{ s.hora }}</small></span></li>{% endfor %}</ul>{% else %}<p class="vg-vazio">Nenhuma sessão agendada.</p>{% endif %}
+<h3>Já aconteceram, sem registro{% if ses.n_sem_registro %} <span class="chip alerta">{{ ses.n_sem_registro }}</span>{% endif %}</h3>{% if ses.sem_registro %}<ul class="vg-agenda">{% for s in ses.sem_registro %}<li><span class="vg-data passada" aria-hidden="true"><b>{{ s.data.day }}</b>{{ vg.mes_c[s.data.month] }}</span><span class="t"><a href="/admin/sessoes/{{ s.id }}">{{ s.nome }}</a><small>{{ s.data|br }}</small></span><a class="btn sec" href="/admin/sessoes/{{ s.id }}#abertura">Registrar</a></li>{% endfor %}</ul>{% else %}<p class="vg-vazio">Nenhuma pendente.</p>{% endif %}
+{% if ses.a_publicar %}<h3>Registradas, com partes ainda não publicadas</h3><ul class="vg-agenda">{% for s in ses.a_publicar %}<li><span class="vg-data feita" aria-hidden="true"><b>{{ s.data.day }}</b>{{ vg.mes_c[s.data.month] }}</span><span class="t"><a href="/admin/sessoes/{{ s.id }}#publicacao">{{ s.nome }}</a><small>{{ s.data|br }}</small></span></li>{% endfor %}</ul>{% endif %}
 <p class="legal">Registre cada sessão quando puder, durante ou depois dela; nenhuma etapa é obrigatória. <a href="/admin/sessoes">Ver todas as sessões</a>.</p></section>{% endif %}
-{% if aviso_tv %}<section class="cx" role="status"><h2>Transmissões: o que falta para aparecer no portal</h2><ul>{% for a in aviso_tv %}<li>{{ a }}</li>{% endfor %}</ul></section>{% endif %}
-<section class="cx"><h2>Últimas ações</h2><ul>{% for l in log %}<li>{{ l.quando|br }} · <strong>{{ l.usuario }}</strong> · {{ l.acao }}</li>{% endfor %}</ul></section><p class="legal dados-tec">Endereço do portal: {{ orgao.dominio }} · banco de dados: {{ orgao.banco }}</p>{% endblock %}
+
+{% if dio %}<section class="cx vg-card" aria-labelledby="h-dio"><div class="vg-card-cab"><h2 id="h-dio"><span class="ic" aria-hidden="true">{{ icone('diario', 20) }}</span>Diário Oficial</h2>{% if pode('diario_enviar') %}<a class="btn" href="/admin/diario">Abrir o Diário</a>{% endif %}</div>
+<div class="vg-mini">{% for n, rot, tom in [(dio.revisao, 'atos em revisão', 'alerta'), (dio.aprovados, 'aprovados para a próxima edição', 'ok'), (dio.devolvidos, 'devolvidos para ajuste', 'erro')] %}<p class="{{ 'tom-' ~ tom if n }}"><b>{{ n }}</b>{{ rot }}</p>{% endfor %}</div>
+<p class="vg-ultima">{% if dio.ultima %}Última edição publicada: <strong>nº {{ dio.ultima.numero }}{{ dio.ultima.letra }}</strong>, de {{ dio.ultima.data|br }}. <a href="/diario">ver no portal</a>{% else %}Nenhuma edição publicada ainda.{% endif %}</p></section>{% endif %}
+
+<section class="cx vg-card" aria-labelledby="h-log"><div class="vg-card-cab"><h2 id="h-log"><span class="ic" aria-hidden="true">{{ icone('aud', 20) }}</span>Últimas ações</h2><a class="btn sec" href="/admin/auditoria">Ver todas</a></div>
+{% if log %}<ol class="vg-log">{% for l in log %}<li><span class="ini" aria-hidden="true">{{ l.usuario|iniciais }}</span><span class="t"><strong>{{ l.usuario }}</strong> {{ l.acao }}<small>{{ l.quando|br }}</small></span></li>{% endfor %}</ol>{% else %}<p class="vg-vazio">Nenhuma ação registrada ainda.</p>{% endif %}</section>
+</div>
+<p class="legal dados-tec">Endereço do portal: {{ orgao.dominio }} · banco de dados: {{ orgao.banco }}</p>{% endblock %}
