@@ -218,6 +218,7 @@ def vereador(request: Request, vid: int):
               ('Requerimentos e moções', 'Pedidos de informação, homenagens e manifestações', [p for p in props if p['tipo'] in ('Requerimento', 'Moção')]),
               ('Projetos, emendas e vetos', 'Proposições normativas com autoria ou coautoria', [p for p in props if p['tipo'] not in ('Indicação', 'Requerimento', 'Moção')])]
     return templates.TemplateResponse(request, 'portal/vereador.html', dict(ctx, v=v, props=props, emendas=emendas, mandatos=mandatos, cargos=cargos, pres=pres, grupos=grupos, votos=votos, resumo_votos=resumo_votos, votos_nome=L.VOTOS,
+        participacao=L.participacao_vereador(b, vid), tipos_ev=L.EVENTOS,
         leg=db.um(b, 'SELECT * FROM legislaturas WHERE numero=%s', (v['legislatura'],)), legal='vereadores'))
 
 @r.get('/emendas')

@@ -315,3 +315,21 @@ label.celula-opcao{justify-content:center;align-items:center!important;min-width
 .passos-diario .n{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#EEF0F3;color:var(--tx);font-weight:700}
 .passos-diario li.atual{border-color:var(--cor);color:var(--tx);font-weight:700}.passos-diario li.atual .n{background:var(--cor);color:#fff}
 .passos-diario li.feito .n{background:#E3F2E9;color:#146C43}
+/* sessão em linha do tempo (24/11/2026): etapas opcionais, nenhuma bloqueia as outras */
+.sessao-mapa{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0;margin:0 0 14px}
+.sessao-mapa a{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--bd,#D9DEE5);border-radius:999px;color:var(--tx);text-decoration:none;font-size:var(--fs-meta);background:#fff}
+.sessao-mapa a .n{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#EEF0F3;font-weight:700}
+.sessao-mapa a.feito .n{background:#E3F2E9;color:#146C43}.sessao-mapa a.feito{border-color:#B9DCC7}
+.linha{position:relative;list-style:none;margin:0;padding:0 0 0 30px}
+.linha:before{content:"";position:absolute;left:11px;top:6px;bottom:6px;width:2px;background:#D9DEE5}
+.linha>li.etapa{position:relative;margin:0 0 16px}
+.linha>li.etapa>.marca{position:absolute;left:-30px;top:14px;width:24px;height:24px;border-radius:50%;background:#EEF0F3;border:2px solid #fff;box-shadow:0 0 0 1px #D9DEE5;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:var(--fs-etq)}
+.linha>li.etapa.feito>.marca{background:#E3F2E9;color:#146C43;box-shadow:0 0 0 1px #B9DCC7}
+.linha>li.etapa>.cx{margin:0}
+.linha .cab-etapa{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.linha .cab-etapa h2{margin:0}
+.eventos{list-style:none;margin:8px 0;padding:0}
+.eventos li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #EEF0F3}
+.eventos .h{min-width:52px;font-weight:700;color:var(--cor)}
+.eventos .t{flex:1 1 260px}
+.eventos form{display:inline}

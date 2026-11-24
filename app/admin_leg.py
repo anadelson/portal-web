@@ -227,7 +227,8 @@ async def comissao_post(request: Request, cid: str):
 @r.get('/sessoes')
 def sessoes(request: Request):
     u = exige(request); b = leg_only(request)
-    return T('sessoes', request, u, itens=db.todos(b, 'SELECT s.*, (SELECT count(*) FROM pauta_itens i WHERE i.sessao_id=s.id) n_itens FROM sessoes s ORDER BY data DESC, id DESC'))
+    return T('sessoes', request, u, tipos_sessao=L.TIPOS_SESSAO, situacoes=L.SITUACOES_SESSAO, hoje=config.hoje(),
+             itens=db.todos(b, 'SELECT s.*, (SELECT count(*) FROM pauta_itens i WHERE i.sessao_id=s.id) n_itens FROM sessoes s ORDER BY data DESC, id DESC'))
 
 def _dados_sessao(b, s):
     membros = L.vereadores_atuais(b)
@@ -242,7 +243,7 @@ def _dados_sessao(b, s):
 def sessao(request: Request, sid: str):
     u = exige(request); b = leg_only(request)
     if sid == 'nova':
-        return T('sessao', request, u, s=None, membros=[], pres={}, itens=[], props=[], docs=[], pres_id=None, quoruns=L.QUORUNS, votos=L.VOTOS)
+        return ir('/admin/sessoes?novo=1', '', request)
     s = db.um(b, 'SELECT * FROM sessoes WHERE id=%s', (int(sid),))
     if not s:
         raise HTTPException(404)
@@ -250,110 +251,262 @@ def sessao(request: Request, sid: str):
     p = L.presidente_em(b, s['data'])
     return T('sessao', request, u, s=s, membros=membros, pres=pres, itens=itens, quoruns=L.QUORUNS, votos=L.VOTOS, pres_id=p['id'] if p else None,
              props=db.todos(b, "SELECT id, tipo, numero, ano, ementa FROM proposicoes WHERE situacao NOT IN ('Aprovada','Aprovado','Rejeitada','Rejeitado','Arquivada','Retirada') ORDER BY ano DESC, tipo, numero DESC LIMIT 300"),
-             docs=db.todos(b, 'SELECT * FROM documentos WHERE sessao_id=%s ORDER BY id', (s['id'],)))
+             docs=db.todos(b, 'SELECT * FROM documentos WHERE sessao_id=%s ORDER BY id', (s['id'],)), passos=(ps := L.passos(b, s)), passos_d={p['chave']: p for p in ps}, eventos=L.eventos(b, s['id']), videos=L.videos(b, s['id']),
+             tipos_ev=L.EVENTOS, tipos_sessao=L.TIPOS_SESSAO, situacoes=L.SITUACOES_SESSAO, plataformas=L.PLATAFORMAS, resultados=L.RESULTADOS_ITEM,
+             tipos_prop=[t for t, _ in L.TIPOS], hoje=config.hoje())
+
+def _https(url):
+    import re as _re
+    url = (url or '').strip()
+    if not _re.fullmatch(r'https://[\w.-]+\.[a-z]{2,}(:\d+)?(/\S*)?', url, _re.I):
+        raise ValueError('Informe o endereço completo do vídeo, começando com https:// (YouTube, Facebook ou outro).')
+    return url[:400]
 
 @r.post('/sessoes/{sid}')
 async def sessao_post(request: Request, sid: str):
     u = exige(request, 'editar'); b = leg_only(request); f = await ler_form(request)
-    acao = f.get('acao'); pub = AP.pode_publicar(b, 'legislativo', u)
+    acao = f.get('acao'); pub = AP.pode_publicar(b, 'legislativo', u); hoje = config.hoje()
     try:
         if acao == 'criar':
-            if not f.get('nome') or not f.get('data'):
-                raise ValueError('Informe o nome e a data da sessão.')
-            i = db.exe(b, 'INSERT INTO sessoes (nome, data, hora, tipo) VALUES (%s,%s,%s,%s) RETURNING id', (f['nome'][:160], _d(f['data']), f.get('hora') or '19h', f.get('tipo') or 'Ordinária'))['id']
-            auditar(request, f"Criou a sessão {f['nome']}")
-            return ir(f'/admin/sessoes/{i}', 'Sessão criada. Monte a pauta.', request)
+            if not f.get('data'):
+                raise ValueError('Informe a data da sessão.')
+            d = _d(f['data']); tipo = f.get('tipo') if f.get('tipo') in L.TIPOS_SESSAO else 'Ordinária'
+            num = int(f['numero']) if (f.get('numero') or '').isdigit() else L.proximo_numero_sessao(b, tipo, d.year)
+            nome = (f.get('nome') or '').strip()[:160] or L.nome_sessao(num, tipo, d.year)
+            i = db.exe(b, 'INSERT INTO sessoes (nome, data, hora, tipo, numero) VALUES (%s,%s,%s,%s,%s) RETURNING id', (nome, d, L.hora(f.get('hora')) or '19h', tipo, num))['id']
+            auditar(request, f'Criou a sessão {nome}')
+            return ir(f'/admin/sessoes/{i}', f'Sessão criada: {nome}. Os próximos passos são opcionais e podem ser registrados depois da sessão.', request)
         i = int(sid); s = db.um(b, 'SELECT * FROM sessoes WHERE id=%s', (i,))
         if not s:
             raise HTTPException(404)
+        depois = s['data'] <= hoje
         if acao == 'dados':
-            db.exe(b, 'UPDATE sessoes SET nome=%s, data=%s, hora=%s, tipo=%s, video_url=%s WHERE id=%s', (f.get('nome', s['nome'])[:160], _d(f.get('data')) or s['data'], f.get('hora', s['hora'])[:10], f.get('tipo', s['tipo'])[:40], f.get('video_url', '')[:300], i))
+            tipo = f.get('tipo') if f.get('tipo') in L.TIPOS_SESSAO else s['tipo']
+            num = int(f['numero']) if (f.get('numero') or '').isdigit() else s['numero']
+            db.exe(b, 'UPDATE sessoes SET nome=%s, data=%s, hora=%s, tipo=%s, numero=%s WHERE id=%s',
+                   ((f.get('nome') or s['nome'])[:160], _d(f.get('data')) or s['data'], L.hora(f.get('hora')) or s['hora'], tipo, num, i))
             msg = 'Dados da sessão salvos.'
+        elif acao == 'situacao':
+            sit = f.get('situacao')
+            if sit not in L.SITUACOES_SESSAO:
+                raise ValueError('Situação inválida.')
+            if sit == 'cancelada' and len((f.get('motivo') or '').strip()) < 5:
+                raise ValueError('Informe o motivo do cancelamento (aparece no portal).')
+            db.exe(b, 'UPDATE sessoes SET situacao=%s, motivo_cancelamento=%s WHERE id=%s', (sit, (f.get('motivo') or '').strip()[:300] if sit == 'cancelada' else '', i))
+            msg = f'Sessão marcada como {L.SITUACOES_SESSAO[sit].lower()}.'
+        elif acao in ('abertura', 'encerramento'):
+            col = 'aberta_as' if acao == 'abertura' else 'encerrada_as'
+            h = L.hora(f.get('hora'))
+            if h and not depois:
+                raise ValueError('O horário só pode ser registrado no dia da sessão ou depois.')
+            db.exe(b, f'UPDATE sessoes SET {col}=%s WHERE id=%s', (h, i))
+            if h:
+                L.marcar_realizada(b, i)
+            msg = (f"{'Abertura' if acao == 'abertura' else 'Encerramento'} registrado às {h}." if h else 'Horário apagado.')
         elif acao == 'item':
             if s['votacao_publicada']:
                 raise ValueError('A votação já foi publicada: a pauta não pode mais mudar.')
             pid = int(f['proposicao']) if f.get('proposicao') else None
             if not pid and not f.get('descricao'):
                 raise ValueError('Escolha uma proposição ou descreva o item.')
-            desc = f.get('descricao') or ''
-            if pid and not desc:
-                p = db.um(b, 'SELECT * FROM proposicoes WHERE id=%s', (pid,)); desc = f"{L.rotulo(p)} — {p['ementa'][:200]}"
-            ordem = db.um(b, 'SELECT coalesce(max(ordem),0)+1 n FROM pauta_itens WHERE sessao_id=%s', (i,))['n']
-            db.exe(b, 'INSERT INTO pauta_itens (sessao_id, ordem, proposicao_id, descricao, fase, quorum) VALUES (%s,%s,%s,%s,%s,%s)',
-                   (i, ordem, pid, desc[:600], f.get('fase') or 'Discussão e votação única', f.get('quorum') if f.get('quorum') in L.QUORUNS else 'simples'))
-            if pid:
-                L.tramitar(b, pid, s['data'], 'Incluída na pauta', f"{s['nome']}, {s['data'].strftime('%d/%m/%Y')}", sessao_id=i, quem=u['nome'], situacao='Pronta para a pauta')
+            _incluir_item(b, s, pid, f.get('descricao') or '', f.get('fase'), f.get('quorum'), u)
             msg = 'Item incluído na pauta.'
+        elif acao == 'materia':
+            msg = _materia_nova(request, b, s, f, u, (await request.form()).getlist('autor'))
         elif acao == 'tirar_item':
             it = db.um(b, 'SELECT * FROM pauta_itens WHERE id=%s AND sessao_id=%s', (int(f['item']), i))
             if it and it['resultado'] in ('aprovado', 'rejeitado'):
                 raise ValueError('Item já votado não pode sair da pauta.')
             db.exe(b, 'DELETE FROM pauta_itens WHERE id=%s AND sessao_id=%s', (int(f['item']), i)); msg = 'Item retirado da pauta.'
         elif acao == 'presenca':
-            if s['data'] > config.hoje():
+            if not depois:
                 raise ValueError('A presença só pode ser registrada no dia da sessão ou depois.')
-            membros = L.vereadores_atuais(b)
-            for m in membros:
+            n = 0
+            for m in L.vereadores_atuais(b):
                 v = f.get(f"pres_{m['id']}")
                 if v in ('presente', 'ausente', 'justificada'):
                     db.exe(b, 'INSERT INTO presencas (sessao_id, vereador_id, situacao) VALUES (%s,%s,%s) ON CONFLICT (sessao_id, vereador_id) DO UPDATE SET situacao=EXCLUDED.situacao', (i, m['id'], v))
-            msg = 'Presença registrada.'
+                    n += 1
+            if n:
+                L.marcar_realizada(b, i)
+            msg = f'Presença registrada ({n} vereador(es)).' if n else 'Nenhuma presença marcada.'
         elif acao == 'votar':
-            if s['data'] > config.hoje():
+            if not depois:
                 raise ValueError('A votação só pode ser registrada no dia da sessão ou depois.')
             if s['votacao_publicada']:
                 raise ValueError('Votação já publicada.')
             it = db.um(b, 'SELECT * FROM pauta_itens WHERE id=%s AND sessao_id=%s', (int(f['item']), i))
             membros = L.vereadores_atuais(b)
             pres = {p['vereador_id']: p['situacao'] for p in db.todos(b, 'SELECT * FROM presencas WHERE sessao_id=%s', (i,))}
-            if len(pres) < len(membros):
-                raise ValueError('Registre a presença de todos os vereadores antes da votação.')
             votos = {}
-            for m in membros:
+            for m in membros:  # a presença não é obrigatória; quem está registrado como ausente ou justificado não vota
                 v = f.get(f"voto_{m['id']}")
-                if v and pres.get(m['id']) != 'presente' and v != 'ausente':
+                if v and pres.get(m['id']) in ('ausente', 'justificada') and v != 'ausente':
                     raise ValueError(f"{m['nome']} não está presente: o voto só pode ser \"Ausente\".")
                 if v:
                     votos[m['id']] = v
             p = L.presidente_em(b, s['data'])
             resultado, cont, aviso = L.apurar(b, it, votos, membros, p['id'] if p else None)
+            db.exe(b, 'DELETE FROM votos WHERE item_id=%s', (it['id'],))
             for vid, v in votos.items():
-                db.exe(b, 'INSERT INTO votos (item_id, vereador_id, voto) VALUES (%s,%s,%s) ON CONFLICT (item_id, vereador_id) DO UPDATE SET voto=EXCLUDED.voto', (it['id'], vid, v))
-            db.exe(b, 'UPDATE pauta_itens SET resultado=%s, votado_em=now() WHERE id=%s', (resultado, it['id']))
-            if it['proposicao_id']:
-                pr = db.um(b, 'SELECT tipo FROM proposicoes WHERE id=%s', (it['proposicao_id'],))
-                fem = pr['tipo'] in ('Indicação', 'Moção', 'Emenda') or pr['tipo'].startswith('Proposta')
-                sit = ('Aprovada' if fem else 'Aprovado') if resultado == 'aprovado' else ('Rejeitada' if fem else 'Rejeitado')
-                if pr['tipo'] in L.PROJETOS:
-                    sit = 'Aprovada' if resultado == 'aprovado' else 'Rejeitada'
-                L.tramitar(b, it['proposicao_id'], s['data'], f"Votação em Plenário — {it['fase']}",
-                           f"{'Aprovado' if resultado == 'aprovado' else 'Rejeitado'} na {s['nome']}: {cont['sim']} sim, {cont['nao']} não, {cont['abstencao']} abstenções, {cont['ausente']} ausentes. {aviso}".strip(),
-                           sessao_id=i, quem=u['nome'], situacao=sit)
+                db.exe(b, 'INSERT INTO votos (item_id, vereador_id, voto) VALUES (%s,%s,%s)', (it['id'], vid, v))
+            db.exe(b, "UPDATE pauta_itens SET resultado=%s, votado_em=now(), modo_votacao='nominal', observacao='' WHERE id=%s", (resultado, it['id']))
+            L.situacao_apos_votacao(b, it, resultado, s, u['nome'], f"{cont['sim']} sim, {cont['nao']} não, {cont['abstencao']} abstenções, {cont['ausente']} ausentes. {aviso}".strip())
             if it['contas_id']:
                 db.exe(b, 'UPDATE contas_julgamento SET resultado=%s WHERE id=%s', ('Contas aprovadas (parecer prévio mantido)' if resultado == 'aprovado' else 'Parecer prévio rejeitado', it['contas_id']))
-            msg = f"Votação registrada: {'APROVADO' if resultado == 'aprovado' else 'REJEITADO'} ({cont['sim']} sim × {cont['nao']} não). {aviso}"
+            L.marcar_realizada(b, i)
+            sem_pres = [m['nome'] for m in membros if m['id'] not in pres]
+            msg = f"Votação registrada: {'APROVADO' if resultado == 'aprovado' else 'REJEITADO'} ({cont['sim']} sim × {cont['nao']} não). {aviso}" + \
+                  (f" Presença ainda não registrada para {len(sem_pres)} vereador(es) — pode ser feita depois." if sem_pres else '')
+        elif acao == 'simbolica':
+            if not depois:
+                raise ValueError('O resultado só pode ser registrado no dia da sessão ou depois.')
+            if s['votacao_publicada']:
+                raise ValueError('Votação já publicada.')
+            it = db.um(b, 'SELECT * FROM pauta_itens WHERE id=%s AND sessao_id=%s', (int(f['item']), i))
+            res = f.get('resultado')
+            if not it or res not in L.RESULTADOS_ITEM:
+                raise ValueError('Escolha o resultado do item.')
+            obs = (f.get('observacao') or '').strip()[:300]
+            if L.problemas_texto(obs) and 'contém dado pessoal (CPF, e-mail, telefone ou RG)' in L.problemas_texto(obs):
+                raise ValueError('A observação não pode ter dado pessoal (CPF, e-mail, telefone ou RG).')
+            db.exe(b, 'DELETE FROM votos WHERE item_id=%s', (it['id'],))
+            db.exe(b, "UPDATE pauta_itens SET resultado=%s, votado_em=now(), modo_votacao='simbolica', observacao=%s WHERE id=%s", (res, obs, it['id']))
+            L.situacao_apos_votacao(b, it, res, s, u['nome'], ('votação simbólica' if res in ('aprovado', 'rejeitado') else '') + (f' ({obs})' if obs else ''))
+            if it['contas_id'] and res in ('aprovado', 'rejeitado'):
+                db.exe(b, 'UPDATE contas_julgamento SET resultado=%s WHERE id=%s', ('Contas aprovadas (parecer prévio mantido)' if res == 'aprovado' else 'Parecer prévio rejeitado', it['contas_id']))
+            L.marcar_realizada(b, i)
+            msg = f'Resultado registrado: {L.RESULTADOS_ITEM[res]}.'
+        elif acao == 'evento':
+            tipo = f.get('tipo')
+            if tipo not in L.EVENTOS:
+                raise ValueError('Escolha o tipo do acontecimento.')
+            desc = (f.get('descricao') or '').strip()[:2000]
+            vid = int(f['vereador']) if (f.get('vereador') or '').isdigit() else None
+            pid = int(f['proposicao']) if (f.get('proposicao') or '').isdigit() else None
+            if not (desc or vid or pid):
+                raise ValueError('Descreva o acontecimento ou escolha o(a) vereador(a) ou a matéria.')
+            if 'contém dado pessoal (CPF, e-mail, telefone ou RG)' in L.problemas_texto(desc):
+                raise ValueError('O texto não pode ter dado pessoal (CPF, e-mail, telefone ou RG). Na tribuna livre, basta o tema da fala.')
+            ordem = db.um(b, 'SELECT coalesce(max(ordem), 0) + 1 n FROM sessao_eventos WHERE sessao_id=%s', (i,))['n']
+            db.exe(b, 'INSERT INTO sessao_eventos (sessao_id, ordem, hora, tipo, descricao, vereador_id, proposicao_id, registrado_por) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
+                   (i, ordem, L.hora(f.get('hora')), tipo, desc, vid, pid, u['nome']))
+            if depois:
+                L.marcar_realizada(b, i)
+            msg = 'Acontecimento registrado na linha do tempo.'
+        elif acao in ('tirar_evento', 'subir_evento', 'descer_evento'):
+            e = db.um(b, 'SELECT * FROM sessao_eventos WHERE id=%s AND sessao_id=%s', (int(f['evento']), i))
+            if not e:
+                raise ValueError('Registro não encontrado.')
+            if acao == 'tirar_evento':
+                db.exe(b, 'DELETE FROM sessao_eventos WHERE id=%s', (e['id'],)); msg = 'Registro apagado.'
+            else:
+                lst = db.todos(b, 'SELECT id FROM sessao_eventos WHERE sessao_id=%s ORDER BY ordem, id', (i,))
+                ids = [x['id'] for x in lst]; k = ids.index(e['id']); j = k - 1 if acao == 'subir_evento' else k + 1
+                if 0 <= j < len(ids):
+                    ids[k], ids[j] = ids[j], ids[k]
+                for n, x in enumerate(ids, 1):
+                    db.exe(b, 'UPDATE sessao_eventos SET ordem=%s WHERE id=%s', (n, x))
+                msg = 'Ordem ajustada.'
+        elif acao == 'video':
+            url = _https(f.get('url'))
+            db.exe(b, 'INSERT INTO sessao_videos (sessao_id, plataforma, url, rotulo) VALUES (%s,%s,%s,%s) ON CONFLICT (sessao_id, url) DO UPDATE SET rotulo=EXCLUDED.rotulo',
+                   (i, L.plataforma(url), url, (f.get('rotulo') or '').strip()[:120]))
+            L.sincronizar_video(b, i)
+            msg = f"Vídeo do {L.PLATAFORMAS[L.plataforma(url)]} vinculado à sessão." if L.plataforma(url) != 'outro' else 'Vídeo vinculado à sessão.'
+        elif acao == 'tirar_video':
+            db.exe(b, 'DELETE FROM sessao_videos WHERE id=%s AND sessao_id=%s', (int(f['video']), i))
+            L.sincronizar_video(b, i)
+            msg = 'Vídeo desvinculado.'
         elif acao == 'ata':
             db.exe(b, 'UPDATE sessoes SET ata=%s WHERE id=%s', (f.get('ata', '')[:100000], i))
             if _arq(f, 'arquivo'):
                 await L.salvar_pdf(request, _arq(f, 'arquivo'), 'ata', f"Ata — {s['nome']}", f.get('descricao', '') or f"Ata da {s['nome']} de {s['data'].strftime('%d/%m/%Y')}.", u['nome'], sessao_id=i)
+            if len(f.get('ata', '')) >= 20 or _arq(f, 'arquivo'):
+                L.marcar_realizada(b, i)
             msg = 'Ata salva.'
-        elif acao in ('pub_pauta', 'pub_presenca', 'pub_votacao', 'pub_ata'):
+        elif acao in ('pub_pauta', 'pub_presenca', 'pub_votacao', 'pub_ata', 'pub_linha'):
             if not pub:
                 raise HTTPException(403)
-            if acao == 'pub_presenca' and not db.um(b, 'SELECT 1 FROM presencas WHERE sessao_id=%s', (i,)):
-                raise ValueError('Não há presença registrada.')
-            if acao == 'pub_votacao' and not db.um(b, "SELECT 1 FROM pauta_itens WHERE sessao_id=%s AND resultado IS NOT NULL", (i,)):
-                raise ValueError('Não há votação registrada.')
-            if acao == 'pub_ata' and len(s['ata'] or '') < 20 and not db.um(b, "SELECT 1 FROM documentos WHERE sessao_id=%s AND tipo='ata'", (i,)):
-                raise ValueError('Escreva a ata ou anexe o PDF antes de publicar.')
-            col = {'pub_pauta': 'pauta_publicada', 'pub_presenca': 'presenca_publicada', 'pub_votacao': 'votacao_publicada', 'pub_ata': 'ata_publicada'}[acao]
-            db.exe(b, f'UPDATE sessoes SET {col}=TRUE WHERE id=%s', (i,)); msg = 'Publicado no portal.'
+            ok_, motivo = _publicavel(b, s, acao)
+            if not ok_:
+                raise ValueError(motivo)
+            db.exe(b, f'UPDATE sessoes SET {PUB[acao][0]}=TRUE WHERE id=%s', (i,)); msg = 'Publicado no portal.'
+        elif acao == 'pub_tudo':
+            if not pub:
+                raise HTTPException(403)
+            feitos, faltam = [], []
+            for a, (col, nome) in PUB.items():
+                if s[col]:
+                    continue
+                ok_, _ = _publicavel(b, s, a)
+                if ok_:
+                    db.exe(b, f'UPDATE sessoes SET {col}=TRUE WHERE id=%s', (i,)); feitos.append(nome)
+                else:
+                    faltam.append(nome)
+            msg = (f"Publicado: {', '.join(feitos)}." if feitos else 'Nada novo para publicar.') + (f" Sem registro (fica para depois, se houver): {', '.join(faltam)}." if faltam else '')
         else:
             raise HTTPException(400)
     except ValueError as e:
         return ir(f'/admin/sessoes/{sid}', str(e), request)
     auditar(request, f'Sessão {i}: {acao}')
     return ir(f'/admin/sessoes/{i}', msg, request)
+
+PUB = {'pub_pauta': ('pauta_publicada', 'pauta'), 'pub_presenca': ('presenca_publicada', 'presença'), 'pub_linha': ('linha_publicada', 'linha do tempo'),
+       'pub_votacao': ('votacao_publicada', 'votações'), 'pub_ata': ('ata_publicada', 'ata')}
+
+def _publicavel(b, s, acao):
+    """Cada parte é publicada só com o que existe; a falta de uma não impede as outras."""
+    i = s['id']
+    if acao == 'pub_pauta' and not (s['pauta'] or db.um(b, 'SELECT 1 FROM pauta_itens WHERE sessao_id=%s', (i,))):
+        return False, 'A pauta está vazia.'
+    if acao == 'pub_presenca' and not db.um(b, 'SELECT 1 FROM presencas WHERE sessao_id=%s', (i,)):
+        return False, 'Não há presença registrada.'
+    if acao == 'pub_votacao' and not db.um(b, "SELECT 1 FROM pauta_itens WHERE sessao_id=%s AND resultado IS NOT NULL", (i,)):
+        return False, 'Não há votação registrada.'
+    if acao == 'pub_ata' and len(s['ata'] or '') < 20 and not db.um(b, "SELECT 1 FROM documentos WHERE sessao_id=%s AND tipo='ata'", (i,)):
+        return False, 'Escreva a ata ou anexe o PDF antes de publicar.'
+    if acao == 'pub_linha' and not (s['aberta_as'] or s['encerrada_as'] or db.um(b, 'SELECT 1 FROM sessao_eventos WHERE sessao_id=%s', (i,))):
+        return False, 'Não há horário nem acontecimento registrado.'
+    return True, ''
+
+def _incluir_item(b, s, pid, desc, fase, quorum, u):
+    if pid and not desc:
+        p = db.um(b, 'SELECT * FROM proposicoes WHERE id=%s', (pid,)); desc = f"{L.rotulo(p)} — {p['ementa'][:200]}"
+    ordem = db.um(b, 'SELECT coalesce(max(ordem),0)+1 n FROM pauta_itens WHERE sessao_id=%s', (s['id'],))['n']
+    db.exe(b, 'INSERT INTO pauta_itens (sessao_id, ordem, proposicao_id, descricao, fase, quorum) VALUES (%s,%s,%s,%s,%s,%s)',
+           (s['id'], ordem, pid, desc[:600], fase or 'Discussão e votação única', quorum if quorum in L.QUORUNS else 'simples'))
+    if pid:
+        L.tramitar(b, pid, s['data'], 'Incluída na pauta', f"{s['nome']}, {s['data'].strftime('%d/%m/%Y')}", sessao_id=s['id'], quem=u['nome'], situacao='Pronta para a pauta')
+
+def _materia_nova(request, b, s, f, u, marcados):
+    """Moção, requerimento, indicação, projeto… criado dentro da sessão, com o(s) autor(es); entra em Proposições e no perfil do autor."""
+    tipo = f.get('tipo_materia')
+    if tipo not in L.TIPO_SIGLA or not (f.get('ementa') or '').strip():
+        raise ValueError('Escolha o tipo da matéria e escreva a ementa.')
+    autores = list(marcados) + [x.strip() for x in (f.get('autor_outro') or '').split(';') if x.strip()]
+    if not autores:
+        raise ValueError('Escolha o(a) vereador(a) autor(a) (ou informe Mesa Diretora, Comissão ou Poder Executivo).')
+    ano = s['data'].year
+    num = L.proximo_numero(b, tipo, ano)
+    pid = db.exe(b, "INSERT INTO proposicoes (tipo, numero, ano, autor, ementa, situacao, apresentada) VALUES (%s,%s,%s,'',%s,'Em tramitação',%s) RETURNING id",
+                 (tipo, num, ano, f['ementa'].strip()[:2000], s['data']))['id']
+    L.definir_autores(b, pid, autores)
+    L.tramitar(b, pid, s['data'], 'Apresentação', f'Protocolada como {tipo} nº {num}/{ano} na {s["nome"]}.', sessao_id=s['id'], quem=u['nome'])
+    partes = [f'{tipo} nº {num}/{ano} criada']
+    if f.get('lida') == '1':
+        ordem = db.um(b, 'SELECT coalesce(max(ordem), 0) + 1 n FROM sessao_eventos WHERE sessao_id=%s', (s['id'],))['n']
+        vid = next((r['vereador_id'] for r in db.todos(b, 'SELECT vereador_id FROM proposicao_autores WHERE proposicao_id=%s AND vereador_id IS NOT NULL ORDER BY id', (pid,))), None)
+        db.exe(b, "INSERT INTO sessao_eventos (sessao_id, ordem, hora, tipo, descricao, vereador_id, proposicao_id, registrado_por) VALUES (%s,%s,'','leitura','',%s,%s,%s)",
+               (s['id'], ordem, vid, pid, u['nome']))
+        L.tramitar(b, pid, s['data'], 'Leitura em Plenário', f"Lida no expediente da {s['nome']}.", sessao_id=s['id'], quem=u['nome'])
+        partes.append('lida no expediente')
+    if f.get('na_pauta') == '1':
+        if s['votacao_publicada']:
+            raise ValueError('A votação desta sessão já foi publicada: a matéria foi criada, mas não entra mais na pauta.')
+        _incluir_item(b, s, pid, '', f.get('fase'), f.get('quorum'), u)
+        partes.append('incluída na pauta para votação')
+    return ', '.join(partes).capitalize() + '. Ela aparece em Proposições e no perfil do autor.'
 
 # ---------- julgamento das contas do Prefeito ----------
 @r.get('/contas')

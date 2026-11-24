@@ -64,7 +64,7 @@ for u, novo in (('/admin/comunicados', 'Novo comunicado'), ('/admin/conheca', 'N
         t2 = pm.get(alvo.group(1).replace('&amp;', '&')).text
         checa('class="voltar"' in t2 and 'method="post"' in t2, f'{u}: tela de criação com "Voltar" e formulário')
         sem_aninhado(t2, alvo.group(1))
-for u, novo in (('/admin/sessoes', 'Nova sessão'), ('/admin/remessas', 'Nova remessa'), ('/admin/diarias', 'Novo lançamento'), ('/admin/contas', 'Novo exercício'), ('/admin/transmissoes', 'Agendar transmissão')):
+for u, novo in (('/admin/sessoes', 'Agendar sessão'), ('/admin/remessas', 'Nova remessa'), ('/admin/diarias', 'Novo lançamento'), ('/admin/contas', 'Novo exercício'), ('/admin/transmissoes', 'Agendar transmissão')):
     t = cm.get(u).text; m = t[t.find('<main'):]
     checa(f'+ {novo}' in m, f'Câmara {u}: botão "+ {novo}"')
     sem_aninhado(cm.get(u + '?novo=1').text, f'Câmara {u}?novo=1')

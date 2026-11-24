@@ -83,7 +83,8 @@ def sessao(request: Request, sid: int):
         it['votos'] = db.todos(b, 'SELECT vo.voto, ve.nome, ve.id FROM votos vo JOIN vereadores ve ON ve.id=vo.vereador_id WHERE item_id=%s ORDER BY ve.nome', (it['id'],)) if s['votacao_publicada'] else []
     pres = db.todos(b, 'SELECT p.situacao, v.nome, v.id FROM presencas p JOIN vereadores v ON v.id=p.vereador_id WHERE sessao_id=%s ORDER BY v.nome', (sid,)) if s['presenca_publicada'] else []
     t = db.um(b, "SELECT * FROM transmissoes WHERE sessao_id=%s AND video<>'' ORDER BY id DESC LIMIT 1", (sid,))
-    return templates.TemplateResponse(request, 'portal/sessao.html', dict(ctx, s=s, itens=itens, pres=pres, transm=t, votos_nome=L.VOTOS,
+    return templates.TemplateResponse(request, 'portal/sessao.html', dict(ctx, s=s, itens=itens, pres=pres, transm=t, votos_nome=L.VOTOS, resultados=L.RESULTADOS_ITEM,
+        eventos=L.eventos(b, sid) if s['linha_publicada'] else [], videos=L.videos(b, sid), plataformas=L.PLATAFORMAS, tipos_ev=L.EVENTOS, situacoes=L.SITUACOES_SESSAO,
         docs=db.todos(b, "SELECT * FROM documentos WHERE sessao_id=%s AND (tipo<>'ata' OR %s)", (sid, s['ata_publicada'])),
         tribuna=s['data'] >= config.hoje() and ctx['mods'].get('sess'), legal='sessoes'))
 
