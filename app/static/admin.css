@@ -405,3 +405,7 @@ details.anexar summary{cursor:pointer;color:var(--cor);font-weight:700;font-size
 .pa-trecho{margin:6px 0;font-size:var(--fs-meta);color:#374151;white-space:pre-line;max-height:9em;overflow:hidden}
 .pa-migrar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:10px;padding-top:10px;border-top:1px dashed #E5E9EE}.pa-migrar label{display:flex;flex-direction:column;gap:3px;font-weight:600;font-size:var(--fs-rotulo);max-width:100%}
 .pa-migrar select{max-width:340px;font:inherit;font-weight:400;padding:7px 9px;border:1px solid #6B7684;border-radius:8px}
+.pa-criar{display:grid;gap:16px;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);align-items:start}@media(max-width:900px){.pa-criar{grid-template-columns:1fr}}
+.pa-original h3{margin:0 0 4px;font-size:var(--fs-sub)}.pa-trecho-longo{max-height:none}
+.pa-lido,.pa-falta{display:block;font-weight:400;font-size:var(--fs-nota)}.pa-lido{color:#1F6F43}.pa-falta{color:#8A4B00}
+.pa-erro{border-left:4px solid #B42318}.pa-dica{margin:0;flex-basis:100%}

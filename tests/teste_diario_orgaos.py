@@ -123,7 +123,7 @@ checa('.campos-m :is(input:not([type=checkbox],[type=radio]),select,textarea){wi
 checa('.grade2>label:not(:has(>input[type=checkbox],>input[type=radio],' in css and 'justify-content:flex-end' in css, 'campos lado a lado na mesma altura')
 cf = pm.get('/admin/diario/config').text
 checa('<form class="inline" method="post" action="/admin/diario/config"><input type="hidden" name="csrf" value="' not in cf.split('Calendário')[1].split('</section>')[0], 'cadastro de feriado em grade (sem rolagem no celular)')
-checa('admin.css?v=25' in cf and 'admin.js?v=9' in cf, 'versões novas do CSS e do JS do painel')
+checa('admin.css?v=26' in cf and 'admin.js?v=9' in cf, 'versões novas do CSS e do JS do painel')
 
 print('ERROS:', len(erros))
 for e in erros:

@@ -1,0 +1,20 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import voltar with context %}{% block h1 %}Conferir antes de criar{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+{{ voltar(volta, 'Voltar à revisão sem criar nada') }}
+<form method="post" action="/admin/importar/portal/{{ v.id }}"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="migrar_sugeridos"><input type="hidden" name="confirmado" value="1">
+{% for x in lote.criar + lote.outros %}<input type="hidden" name="sel" value="{{ x.it.id }}">{% endfor %}
+{% for k, x in filtros.items() %}<input type="hidden" name="{{ k }}" value="{{ x }}">{% endfor %}
+<section class="cx" aria-labelledby="h-criar"><h2 id="h-criar">Sessões e proposições que serão criadas</h2>
+<p class="legal">Os dados abaixo foram lidos no portal antigo. Confira com o original; para mudar algum, volte e use “Migrar” no item. Itens com dado faltando não são criados aqui.</p>
+<div class="tabela"><table><thead><tr><th scope="col">Item</th><th scope="col">Dados lidos</th><th scope="col">Situação</th></tr></thead><tbody>
+{% for x in lote.criar %}{% set d = x.dados %}<tr><td><a href="{{ x.it.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ x.it.titulo[:80] }}</a><small style="display:block">{{ destinos[x.destino] }}</small></td>
+<td>{% if x.destino == 'nova_proposicao' %}<b>{{ d.tipo }} nº {{ d.numero }}/{{ d.ano }}</b><br>{{ d.ementa[:200] }}<br><small>Autor: {{ d.autor or '—' }}{% if d.apresentada %} · apresentada em {{ d.apresentada|br }}{% endif %}</small>
+{% else %}<b>{{ d.numero }}ª Sessão {{ d.tipo }}</b><br>{{ d.data|br if d.data else '—' }} · {{ d.hora or '—' }}{% endif %}
+{% if x.falta %}<p class="pa-falta">Falta: {{ x.falta|join(', ') }}. Não será criada; abra o item para preencher.</p>{% endif %}</td>
+<td>{% if not x.falta %}{% if x.destino == 'nova_proposicao' %}<select aria-label="Situação de {{ d.tipo }} nº {{ d.numero }}/{{ d.ano }}" name="situacao_{{ x.it.id }}" required><option value="">— escolha —</option>{% for t in situacoes %}<option>{{ t }}</option>{% endfor %}</select>
+{% else %}<label class="opc"><input type="checkbox" name="realizada_{{ x.it.id }}" value="1"{% if d.data and d.data > hoje %} disabled{% endif %}> realizada</label>{% endif %}{% endif %}</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% if lote.outros %}<section class="cx" aria-labelledby="h-outros"><h2 id="h-outros">Também marcados ({{ lote.outros|length }})</h2><ul>{% for x in lote.outros %}<li>{{ x.it.titulo[:80] }} → {{ destinos.get(x.destino, 'sem sugestão') }}{% if x.rotulo %} — {{ x.rotulo }}{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+<div class="acoes-form"><button class="btn">Confirmar e criar</button><a class="btn sec" href="{{ volta }}">Cancelar</a></div></form>
+<p class="legal">Votos, presenças e tramitação não são migrados. <strong>Base legal:</strong> Lei nº 12.527/2011 (LAI), art. 8º.</p>
+{% endblock %}
