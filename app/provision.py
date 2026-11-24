@@ -53,6 +53,12 @@ IDENT = {o['slug']: o['identidade'] for o in PILOTO}
 IDENT_VISUAL = {o['slug']: o['identidade_visual'] for o in PILOTO}
 FONTES_PADRAO = {o['slug']: o['fontes'] for o in PILOTO}
 DIARIO_PADRAO = {o['slug']: o['diario'] for o in PILOTO if o.get('diario')}
+NOTAS_FONTE = {o['slug']: o['notas_fonte'] for o in PILOTO if o.get('notas_fonte')}
+
+def completar_notas(banco, slug):
+    """Notas de procedência das páginas públicas (ex.: de onde vieram os dados do piloto). Órgão novo: nenhuma (texto neutro)."""
+    if slug in NOTAS_FONTE and db.cfg(banco, 'notas_fonte') is None:
+        db.set_cfg(banco, 'notas_fonte', NOTAS_FONTE[slug])
 
 def completar_diario(banco, slug):
     """Lei de instituição e base legal do Diário do piloto (arquivo de dados), sem sobrescrever o que o órgão salvou."""
@@ -191,6 +197,7 @@ def preparar_orgao(o, identidade=None, fontes=None, email_admin=None, senha_hash
         db.set_cfg(banco, 'identidade', IDENT.get(slug) or identidade or {'nome': nome, 'cor': cor})
     completar_identidade(banco, slug, tipo)
     completar_diario(banco, slug)
+    completar_notas(banco, slug)
     configurar_fontes(oid, slug, fontes)
     configurar_painel(o)
     configurar_youtube(o)
@@ -301,6 +308,7 @@ def atualizar():
         aplicar(o['banco'], MIG_ORGAO)
         ident = 'identidade completada' if completar_identidade(o['banco'], o['slug'], o['tipo']) else 'identidade sem mudança'
         completar_diario(o['banco'], o['slug'])
+        completar_notas(o['banco'], o['slug'])
         nf = configurar_fontes(o['id'], o['slug'])
         from . import menus as MN, fase8 as F8
         nm = MN.semear(o['banco'], o['tipo'], (db.cfg(o['banco'], 'identidade', {}) or {}).get('nome_curto', ''))

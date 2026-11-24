@@ -160,6 +160,19 @@ db.exe('bd_pm_bora', "DELETE FROM blocos WHERE chave='conheca'")
 provision.atualizar()
 if not db.um('bd_pm_bora', "SELECT 1 FROM blocos WHERE chave='conheca'"): erros.append('atualizar não acrescentou bloco faltante')
 ok(cm.get('/'), txt='Projetos e proposições', nome='cm home depois de atualizar')
+# órgão NOVO (fictício, sem seed): páginas da Câmara existem vazias e sem textos do piloto
+provision.registrar_orgao('cm-zerada', 'Câmara Municipal de Município Fictício', 'legislativo', 'cmzerada.localhost', 'bd_cm_zerada', 'Legislativo', '#2F5233', {}, 'Município Fictício (SP)', '3599999', senha_admin='admin123')
+from app.web import limpar_cache; limpar_cache()   # o console faz isso ao criar o órgão
+cz = cli('cmzerada.localhost')
+rz = ok(cz.get('/vereadores'), txt='Composição ainda não cadastrada', nome='câmara nova: vereadores sem legislatura')
+for pz in ['/', '/vereadores', '/proposicoes', '/sessoes']:
+    tz = cz.get(pz).text
+    if any(x in tz for x in ('1965', '06/11/2026', 'importados do portal da Câmara', 'Borá')):
+        erros.append(f'câmara nova {pz}: texto do piloto apareceu')
+ok(cm.get('/vereadores'), txt='consulta de 06/11/2026', nome='piloto mantém a nota de procedência (configuração)')
+ok(cm.get('/vereadores?leg=acervo'), txt='desde 1965', nome='piloto: nota do acervo')
+ok(cm.get('/proposicoes'), txt='importados do portal da Câmara (06/11/2026)', nome='piloto: nota das proposições')
+
 # contraste AA dos pares de cor do tema
 def lum(h):
     c = [int(h[i:i+2], 16) / 255 for i in (1, 3, 5)]

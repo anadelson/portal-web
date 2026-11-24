@@ -239,7 +239,14 @@
      "rgf_poder": "L"
     }
    },
-   "dados_camara": "camara_bora.json"
+   "dados_camara": "camara_bora.json",
+   "notas_fonte": {
+    "vereadores": "Nomes, partidos, votos, prefeito, vice e Mesas: dados reais do portal da Câmara (consulta de 06/11/2026). Sem foto oficial, o cartão mostra as iniciais.",
+    "vereadores_atuacao": "Proposições: registros importados do portal da Câmara. Presença por vereador aparece quando as atas e listas de presença forem publicadas.",
+    "acervo": "O portal atual da Câmara lista as legislaturas desde 1965, mas a composição de cada uma ainda não foi importada. Quando o acervo for carregado, cada legislatura ganha a mesma página com vereadores, partidos, votos e Mesas.",
+    "vereador": "Registros consultados: legislaturas importadas do portal da Câmara. Mandatos anteriores entram com a importação do acervo.",
+    "proposicoes": "Registros anteriores ao portal: importados do portal da Câmara (06/11/2026) ou de arquivos exportados pelo sistema legislativo."
+   }
   }
  ]
 }

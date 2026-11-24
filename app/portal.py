@@ -184,11 +184,12 @@ def proposicoes_de(b, nome):
 def vereadores(request: Request, leg: str = ''):
     ctx = ctx_orgao(request); precisa(ctx, 'ver')
     b = ctx['orgao']['banco']
+    if ctx['orgao']['tipo'] != 'legislativo':
+        raise HTTPException(404, 'Página da Câmara.')
     legs = db.todos(b, 'SELECT * FROM legislaturas ORDER BY numero DESC')
-    if not legs:
-        raise HTTPException(404, 'Composição ainda não cadastrada.')
-    if leg == 'acervo':
-        return templates.TemplateResponse(request, 'portal/vereadores.html', dict(ctx, legs=legs, leg=None, ver=[], mesas=[], legal='vereadores'))
+    notas = db.cfg(b, 'notas_fonte', {}) or {}
+    if not legs or leg == 'acervo':   # sem legislatura cadastrada: a página existe e diz isso (o link está no menu)
+        return templates.TemplateResponse(request, 'portal/vereadores.html', dict(ctx, legs=legs, leg=None, ver=[], mesas=[], legal='vereadores', notas=notas))
     num = int(leg) if leg.isdigit() else legs[0]['numero']
     lg = db.um(b, 'SELECT * FROM legislaturas WHERE numero=%s', (num,))
     if not lg:
@@ -198,7 +199,7 @@ def vereadores(request: Request, leg: str = ''):
     from . import legislativo as L
     props = {v['id']: len(L.proposicoes_do_vereador(b, v)) for v in ver} if atual else {}
     return templates.TemplateResponse(request, 'portal/vereadores.html', dict(ctx, legs=legs, leg=lg, ver=ver, loop_atual=atual, props=props,
-        mesas=db.todos(b, 'SELECT * FROM mesas WHERE legislatura=%s ORDER BY bienio, id', (num,)), legal='vereadores'))
+        mesas=db.todos(b, 'SELECT * FROM mesas WHERE legislatura=%s ORDER BY bienio, id', (num,)), legal='vereadores', notas=notas))
 
 @r.get('/vereador/{vid}')
 def vereador(request: Request, vid: int):
@@ -217,7 +218,7 @@ def vereador(request: Request, vid: int):
     grupos = [('Indicações', 'Pedidos ao Poder Executivo', [p for p in props if p['tipo'] == 'Indicação']),
               ('Requerimentos e moções', 'Pedidos de informação, homenagens e manifestações', [p for p in props if p['tipo'] in ('Requerimento', 'Moção')]),
               ('Projetos, emendas e vetos', 'Proposições normativas com autoria ou coautoria', [p for p in props if p['tipo'] not in ('Indicação', 'Requerimento', 'Moção')])]
-    return templates.TemplateResponse(request, 'portal/vereador.html', dict(ctx, v=v, props=props, emendas=emendas, mandatos=mandatos, cargos=cargos, pres=pres, grupos=grupos, votos=votos, resumo_votos=resumo_votos, votos_nome=L.VOTOS,
+    return templates.TemplateResponse(request, 'portal/vereador.html', dict(ctx, notas=db.cfg(b, 'notas_fonte', {}) or {}, v=v, props=props, emendas=emendas, mandatos=mandatos, cargos=cargos, pres=pres, grupos=grupos, votos=votos, resumo_votos=resumo_votos, votos_nome=L.VOTOS,
         participacao=L.participacao_vereador(b, vid), tipos_ev=L.EVENTOS,
         leg=db.um(b, 'SELECT * FROM legislaturas WHERE numero=%s', (v['legislatura'],)), legal='vereadores'))
 

@@ -15,4 +15,4 @@
 <div class="tabela"><table><caption class="sr">Proposições</caption><thead><tr><th scope="col">Proposição</th><th scope="col">Ementa</th><th scope="col">Autoria</th><th scope="col">Situação</th></tr></thead><tbody>
 {% for p in props %}<tr><td style="white-space:nowrap"><a href="/proposicoes/{{ p.id }}">{{ p.tipo }} nº {{ p.numero }}/{{ p.ano }}</a></td><td>{{ p.ementa }}</td><td>{{ p.autor }}</td><td><span class="chip">{{ p.situacao }}</span></td></tr>{% else %}<tr><td colspan="4">Nenhuma proposição com esses filtros.</td></tr>{% endfor %}
 </tbody></table></div>
-<p class="legal" style="margin-top:10px">Registros anteriores ao portal: importados do portal da Câmara (06/11/2026) ou de arquivos exportados pelo sistema legislativo.</p>{% endblock %}
+{% if notas.proposicoes %}<p class="legal" style="margin-top:10px">{{ notas.proposicoes }}</p>{% endif %}{% endblock %}
