@@ -676,4 +676,4 @@ nav.menu a{font-size:var(--fs-menu)}
 
 /* PDFs do item da pauta (24/11/2026) */
 .pdfs-item{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.pdfs-item a{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 12px;border:1px solid var(--bd,#DCE1E6);border-radius:999px;text-decoration:none;font-size:var(--fs-peq,14px);font-weight:600}
-.pdfs-item a>span{background:#B42318;color:#fff;font-size:11px;font-weight:800;padding:1px 5px;border-radius:4px}
+.pdfs-item a>span{background:#B42318;color:#fff;font-size:.75em;font-weight:800;padding:1px 5px;border-radius:4px}

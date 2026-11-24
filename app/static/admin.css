@@ -336,7 +336,7 @@ label.celula-opcao{justify-content:center;align-items:center!important;min-width
 /* ---------- Visão geral (24/11/2026): faixa de boas-vindas, números com ícone, atalhos e cartões ---------- */
 .vg-hero{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:flex-end;padding:22px 24px;margin-bottom:22px;border-radius:18px;color:#fff;
   background:radial-gradient(120% 140% at 100% 0%,rgba(255,255,255,.16) 0,rgba(255,255,255,0) 55%),linear-gradient(135deg,var(--cor),var(--cor-escura,#0F2E52));box-shadow:0 10px 28px -14px rgba(16,32,56,.55)}
-.vg-hero h2{margin:2px 0 4px;font-size:28px;line-height:1.2;color:#fff}.vg-hero p{margin:0;color:rgba(255,255,255,.9)}
+.vg-hero h2{margin:2px 0 4px;font-size:var(--fs-num);line-height:1.2;color:#fff}.vg-hero p{margin:0;color:rgba(255,255,255,.9)}
 .vg-dia{font-size:var(--fs-meta);font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.9}
 .vg-hero-acoes{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
 .vg-pend{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.vg-pend span{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);padding:4px 12px;border-radius:999px;font-size:var(--fs-meta)}
@@ -364,15 +364,15 @@ label.celula-opcao{justify-content:center;align-items:center!important;min-width
 .vg-agenda{list-style:none;margin:0;padding:0}.vg-agenda li{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px dashed #E5E9EE}.vg-agenda li:last-child{border-bottom:0}
 .vg-agenda .t{flex:1;min-width:0}.vg-agenda .t a{font-weight:700;text-decoration:none}.vg-agenda .t a:hover{text-decoration:underline}.vg-agenda small{display:block;color:var(--sub);font-size:var(--fs-nota)}
 .vg-data{flex:0 0 52px;height:52px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--cor);color:#fff;font-size:var(--fs-nota);text-transform:uppercase;font-weight:700;line-height:1.1}
-.vg-data b{font-size:20px}.vg-data.passada{background:#FFF4D6;color:#8A5A00}.vg-data.feita{background:#E3F5EC;color:#1B6B45}
+.vg-data b{font-size:1.6em}.vg-data.passada{background:#FFF4D6;color:#8A5A00}.vg-data.feita{background:#E3F5EC;color:#1B6B45}
 .vg-vazio{color:var(--sub);font-style:italic;margin:4px 0}
 .vg-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.vg-mini p{margin:0;padding:10px;border-radius:12px;background:#F5F7FA;font-size:var(--fs-nota);color:var(--sub);text-align:center}
-.vg-mini b{display:block;font-size:24px;color:var(--tx)}.vg-mini .tom-alerta{background:#FFF4D6}.vg-mini .tom-ok{background:#E3F5EC}.vg-mini .tom-erro{background:#FDE8E8}
+.vg-mini b{display:block;font-size:var(--fs-kpi);color:var(--tx)}.vg-mini .tom-alerta{background:#FFF4D6}.vg-mini .tom-ok{background:#E3F5EC}.vg-mini .tom-erro{background:#FDE8E8}
 .vg-ultima{margin:0;font-size:var(--fs-meta)}
 .vg-log{list-style:none;margin:6px 0 0;padding:0}.vg-log li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #F0F2F5}.vg-log li:last-child{border-bottom:0}
 .vg-log .ini{flex:0 0 32px;height:32px;border-radius:50%;background:#E7EEF7;color:var(--cor);font-size:var(--fs-etq);font-weight:800;display:flex;align-items:center;justify-content:center}
 .vg-log .t{font-size:var(--fs-tab);line-height:1.4}.vg-log small{display:block;color:var(--sub);font-size:var(--fs-nota)}
-@media (max-width:640px){.vg-hero{padding:18px}.vg-hero h2{font-size:23px}.vg-hero-acoes{align-items:flex-start}.vg-pend{justify-content:flex-start}.vg-grade{grid-template-columns:1fr}.vg-mini{grid-template-columns:1fr}}
+@media (max-width:640px){.vg-hero{padding:18px}.vg-hero h2{font-size:var(--fs-tela)}.vg-hero-acoes{align-items:flex-start}.vg-pend{justify-content:flex-start}.vg-grade{grid-template-columns:1fr}.vg-mini{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.vg-kpi,.vg-atalho{transition:none}.vg-kpi:hover{transform:none}}
 /* ---------- Pauta da sessão (24/11/2026): itens numerados, PDFs vinculados ---------- */
 .pauta-lista{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:10px}
@@ -381,7 +381,7 @@ label.celula-opcao{justify-content:center;align-items:center!important;min-width
 .pauta-item .corpo{flex:1;min-width:0}.pauta-item .tit{margin:0 0 4px}.pauta-item .meta{margin:0 0 6px;font-size:var(--fs-meta);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .pdfs{list-style:none;margin:6px 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}.pdfs li{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--bd);border-radius:999px;padding:3px 6px 3px 10px;font-size:var(--fs-meta)}
 .pdfs form{display:inline;margin:0}.pdfs a{text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px}
-.pdf{background:#B42318;color:#fff;font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;letter-spacing:.03em}
+.pdf{background:#B42318;color:#fff;font-size:.8em;font-weight:800;padding:1px 5px;border-radius:4px;letter-spacing:.03em}
 .btn-link{background:none;border:0;padding:2px 4px;font:inherit;font-size:var(--fs-nota);color:var(--cor);text-decoration:underline;cursor:pointer}.btn-link.perigo{color:#9B1C1C}
 .acoes-item{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;justify-content:space-between}.acoes-item>form{display:flex;gap:6px;margin:0}
 .btn.mini{min-height:32px;padding:0 10px;font-size:var(--fs-meta)}
