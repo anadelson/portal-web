@@ -2824,3 +2824,12 @@ Pedido do usuário: relatório colado "Prefeitura e Câmara em instalações ind
   - `orgao_modulos` (cm-bora, bi) contratado, com registro em `log_console`; coleta imediata só da fonte `financas_prefeitura` (`worker uma-vez financas_prefeitura`);
   - resultado: o painel da Câmara mostra "Dinheiro público da Prefeitura" com os dados do **Siconfi** (5º bimestre de 2026, 12 funções), e não da API da Prefeitura cliente;
   - **falha encontrada (não corrigida, aguardando o usuário):** no worker, a chamada interna à Prefeitura usa `INTERNO_BASE` = `http://127.0.0.1:8000`, que só existe dentro do contêiner do app → conexão recusada; o modo automático caiu para o Siconfi, como previsto. De dentro do worker, `http://app:8000` responde 200. Afeta toda chamada entre órgãos feita pelo worker na mesma instalação.
+
+## 23/11/2026, 21h — Integração entre órgãos independente de onde estão (branch endereco-interno, implantada)
+Pedido do usuário: corrigir o endereço interno de forma que os serviços se acertem sozinhos, porque Câmara e Prefeitura podem não ficar na mesma VPS.
+- **Endereço interno:** `docker-compose.yml` põe `INTERNO_BASE=http://app:8000` no app e no worker (o serviço "app", alcançável pelos dois em qualquer instalação ou instância); pode ser trocado por variável; o `.env` não foi tocado.
+- **Reserva automática:** na mesma instalação, se o endereço interno não responder, a chamada repete pelo domínio público em HTTPS, com certificado conferido (`integracao._pedir`); em outra instalação, direto por HTTPS, como antes.
+- **Gestão enxerga órgãos dos nós:** `orgaos.executivo_do`, `integracao.orgao()` e `integracao.parceiros()` passam a reconhecer, na gestão, os órgãos hospedados em nós como parceiros de outra instalação; a Prefeitura da mesma instalação tem prioridade.
+- **Testes:** `tests/teste_financas_prefeitura.py` ganhou a reserva pelo domínio público, a chamada direta por HTTPS e a Prefeitura num nó vista pela gestão; bateria completa sobre o código e sobre a imagem: 40 suítes sem falha.
+- **Implantado** com aprovação do usuário ("Aprovo, há snapshot"): mescla `858aa63`; backup dos três bancos ok; app e worker recriados (`INTERNO_BASE` = `http://app:8000` nos dois); `atualizar` ok.
+- **Conferido:** nova coleta de `financas_prefeitura` → "Prefeitura cliente: até 23/11/2026, 11 meses, 9 áreas"; o painel da Câmara mostra "Dinheiro público da Prefeitura" mês a mês, vindo da API do painel da Prefeitura; gestão 303, portais, `/painel` da Câmara, `/e-sic` e casemaster 200; sem erros nos logs.
