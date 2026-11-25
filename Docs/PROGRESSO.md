@@ -2971,3 +2971,11 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Testes:** `teste_fase8` (cabeçalho sem busca, formulários para `/busca`, atalho [3], acentos, vários termos, termo curto, sem resultado, termo escapado); no banco de TESTE, a busca levanta o erro de qualquer seção, e todas foram exercitadas com dados fictícios (inclusive Carta, indicadores e transparência).
 - **Implantado em 25/11/2026, ~10h45 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `0953a57`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto.".
 - **Conferido:** portais, páginas internas, logins e casemaster 200; gestão 303; sem busca no topo nos dois portais; banner aponta para `/busca`; buscas reais respondem em 0,03 a 0,12 s; sem erros nos logs.
+
+## 25/11/2026 — Mesa Diretora em 3 colunas de mesmo tamanho (tag `mesa-3-colunas`)
+- **Pedido do usuário:** cartões da Mesa Diretora com a mesma altura e largura, em 3 colunas, um abaixo do outro quando houver mais de 3.
+- **Feito:** membros de cada biênio em grade de 3 colunas iguais com linhas de mesma altura; o 4º membro em diante desce para a linha de baixo; em caixa estreita (celular), 1 por linha; nomes longos quebram dentro do cartão; `portal.css?v=37`.
+- **Testes:** prévia no portal da Câmara (4 cartões de 173×98 px, 3 + 1); `teste_escala` e `teste_legislativo` ok.
+- **Implantado em 25/11/2026, ~14h50 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `5ba03ae`; backup ok; 41 suítes sem falha sobre a imagem; app e worker recriados; `atualizar` "pronto.".
+- **Conferido:** pmbora e cmbora 200; gestão 303; CSS v=37 no ar com a grade de 3 colunas; sem erros nos logs.
+- **Pronto, aguardando aprovação:** branch `vereadores-2colunas` (`1b04d6d`): vereadores da página inicial com o Presidente em destaque e os demais em cartões compactos em 2 colunas; e-mail do perfil do vereador quebrando dentro da coluna (`portal.css?v=38`).
