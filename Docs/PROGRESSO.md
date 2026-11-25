@@ -2959,3 +2959,15 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Testes:** `teste_fase8` confere a opção gravada, o `target` no e-SIC em nova aba, a ouvidoria na mesma aba e o rádio marcado no admin; prévia com o hover forçado sem textos apagados.
 - **Implantado em 25/11/2026, ~9h50 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `3247ad1`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto.".
 - **Conferido:** portais, painéis, transparência, e-SIC, logins e casemaster 200; gestão 303; CSS v=35 com a correção; o endereço de transparência já cadastrado na Prefeitura continua (abre na mesma aba até escolherem outra opção); sem erros nos logs.
+
+## 25/11/2026 — Busca única no banner principal e busca geral `/busca` (tag `busca-unica`)
+- **Pedido do usuário:** tirar a barra de pesquisa do cabeçalho (altura do brasão, junto aos menus) na Prefeitura e na Câmara, e deixar só a do banner principal ("O que você precisa hoje?"), consultando qualquer coisa no portal.
+- **Feito:**
+  - saíram a busca do cabeçalho e a do menu do celular; a do banner e os "Mais buscados" vão para `/busca` (antes: `/servicos` na Prefeitura, `/proposicoes` na Câmara);
+  - `/busca` nova (`app/busca.py`): sem acentos e sem diferença de maiúsculas, vários termos; procura em páginas do portal (menus e atalhos, inclusive sistemas de terceiros), Carta de Serviços, notícias e páginas, comunicados, legislação, atos publicados do Diário (só tipo, número e ementa), Conheça, proposições, sessões e vereadores (Câmara), indicadores do painel e bases da transparência (contagem com link para a consulta filtrada; ali a comparação ainda distingue acentos); só o que já é público, com as regras do período eleitoral; itens de exemplo marcados;
+  - atalho de teclado [3]: na página inicial vai à busca do banner; nas demais, a `/busca`;
+  - "Acompanhe seu pedido" (consulta de protocolo) continua;
+  - `portal.css?v=36`; "Base legal:" na página (LAI, art. 8º, § 3º, I).
+- **Testes:** `teste_fase8` (cabeçalho sem busca, formulários para `/busca`, atalho [3], acentos, vários termos, termo curto, sem resultado, termo escapado); no banco de TESTE, a busca levanta o erro de qualquer seção, e todas foram exercitadas com dados fictícios (inclusive Carta, indicadores e transparência).
+- **Implantado em 25/11/2026, ~10h45 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `0953a57`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto.".
+- **Conferido:** portais, páginas internas, logins e casemaster 200; gestão 303; sem busca no topo nos dois portais; banner aponta para `/busca`; buscas reais respondem em 0,03 a 0,12 s; sem erros nos logs.
