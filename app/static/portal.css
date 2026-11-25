@@ -686,6 +686,10 @@ nav.menu a{font-size:var(--fs-menu)}
 .banner-transp strong{font-size:var(--fs-h2-bloco);line-height:1.2}
 .banner-transp .bt-d{font-size:var(--fs-desc);opacity:.92}
 .banner-transp .bt-ir{flex:none;position:relative;z-index:1;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 20px;border-radius:999px;background:var(--destaque);color:var(--tx);font-weight:700}
-.banner-transp:hover .bt-ir,.banner-transp:focus-visible .bt-ir{background:#fff}
+/* a regra geral a:hover (cor escura) vencia o branco da faixa e apagava textos e ícones: a cor fica fixa em todos os estados */
+.banner-transp:link,.banner-transp:visited,.banner-transp:hover,.banner-transp:focus,.banner-transp:active{color:#fff;text-decoration:none}
+.banner-transp{transition:transform .15s ease,box-shadow .15s ease}.banner-transp:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(16,24,40,.22)}
+.banner-transp:hover .bt-ir,.banner-transp:focus-visible .bt-ir{background:#fff;color:var(--tx)}
+@media (prefers-reduced-motion:reduce){.banner-transp,.banner-transp:hover{transition:none;transform:none}}
 .banner-transp:focus-visible{outline:3px solid var(--destaque);outline-offset:3px}
 @media (max-width:640px){.banner-transp{flex-wrap:wrap;padding:18px}.banner-transp .bt-ico{width:44px;height:44px}.banner-transp .bt-ir{width:100%;justify-content:center}}
