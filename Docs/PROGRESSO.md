@@ -2916,3 +2916,26 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
   - as três notas de Borá aparecem como antes;
   - sem erros nos logs.
 - **Para uma implantação nova, continua fora do código:** domínio e `.env`; identidade; legislatura e vereadores antes das sessões; Diário em modo teste até A1, ICP e ACT; e-mail de saída; código IBGE das fontes; cron do backup; gov.br opcional.
+
+## 25/11/2026 — Sistemas de terceiros e "Transparência em detalhes" (tag `sistemas-terceiros`)
+- **Pedido do usuário:**
+  - botão "Transparência em detalhes" no bloco "Acompanhe a gestão" da página inicial;
+  - faixa no painel de indicadores, logo abaixo das áreas (Tudo, Dinheiro público, Contratações…);
+  - ambos levando ao portal da transparência da empresa contratada (na Prefeitura, o da Fiorilli), também na Câmara;
+  - local no admin para os endereços de Diário Oficial, e-SIC e Ouvidoria de terceiros;
+  - painel de indicadores também na Câmara.
+- **Feito:**
+  - tela nova `/admin/sistemas-terceiros` (perfil de configuração), com endereço e empresa de 4 sistemas (transparência, Diário, e-SIC, Ouvidoria); config `sistemas_terceiros` no banco de cada órgão; endereço só http(s); alteração na auditoria (`app/sistemas.py`);
+  - transparência: botão na home (blocos "Acompanhe a gestão", "números" e "Quanto custa a Câmara") e faixa no `/painel` e no `/transparencia`;
+  - Diário, e-SIC e Ouvidoria com endereço: menus e atalhos levam direto ao externo (marcado "site externo" para leitor de tela); `/diario`, `/e-sic` e `/ouvidoria` explicam onde o serviço funciona, com o botão e a base legal; o formulário próprio deixa de ser oferecido; sem endereço, nada muda;
+  - menu padrão da Câmara ganhou "Diário Oficial", visível só com o módulo ou com o Diário externo (ex.: o da Prefeitura);
+  - painel da Câmara: os indicadores de finanças deixam de aparecer em "Ainda não disponíveis" (o bloco "Dinheiro público da Prefeitura" já os mostra, de fonte pública);
+  - CSS `portal.css?v=34`.
+- **Testes:** `teste_fase8` cobre recusa de endereço inválido, gravação, auditoria, menus, páginas externas, faixa por órgão e volta ao formulário próprio.
+- **Implantado em 25/11/2026, ~11h (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"):
+  - mescla `59e5704`; backup ok;
+  - bateria sobre o código e sobre a imagem: 41 suítes sem falha;
+  - app e worker recriados; `atualizar` concluiu com "pronto.".
+- **Conferido:** gestão 303; portais, painéis, transparência, e-SIC, ouvidoria, diário, logins e casemaster 200; tela nova sem login redireciona; CSS v=34 servido; e-SIC próprio da Câmara continua (nenhum endereço cadastrado ainda); sem erros nos logs.
+- **Falta (usuário):** cadastrar os endereços em cada admin.
+- **Próximo (pedido do usuário):** painel da Câmara com contratações só da Câmara (PNCP pelo CNPJ dela) e gastos de saúde, educação e assistência social da Prefeitura por área.
