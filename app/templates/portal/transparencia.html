@@ -1,10 +1,12 @@
 {% extends 'portal/base.html' %}
 {% from 'partials/fileira.html' import fileira_cartoes %}
+{% from 'partials/externo.html' import banner_transp with context %}
 {% block titulo %}Transparência — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Transparência</span></nav>
 <h1>Portal da Transparência</h1>
 <p class="intro">Receitas, despesas, contratações, pessoal e relatórios fiscais de {{ ident.nome or orgao.nome }}, com filtros e download em CSV e JSON.</p>{{ legal_topo(legal) }}
+{% if externos.transparencia %}{{ banner_transp(externos.transparencia) }}{% endif %}
 <div style="margin-bottom:28px">{% call fileira_cartoes((1 if mods.bi else 0) + cards|length + (1 if leg and mods.emend else 0) + 1, 'Áreas da transparência', 'fil-transp', classe='servicos') %}
 {% if mods.bi %}<a class="serv sem-foto" href="/painel"><span class="tema"><span class="ico">{{ icone('indicadores', 26) }}</span>Gráficos e séries</span><span class="t">Painel de indicadores</span><span class="d">Os principais números do município em gráficos, com a fonte de cada um.</span></a>{% endif %}
 {% for c in cards %}<a class="serv sem-foto" href="/transparencia/{{ c.chave }}">

@@ -367,9 +367,10 @@ def ctx_orgao(request: Request, **extra):
     tokens['largura_css'] = largura_css(tokens['largura'])
     ao_vivo = db.um(o['banco'], 'SELECT id, titulo, tipo, iniciada_em FROM transmissoes WHERE ao_vivo ORDER BY iniciada_em DESC LIMIT 1') if (mods.get('transm') or mods.get('audiencias')) else None
     defeso = mods.get('eleicao') and eleicao.em_defeso(o['banco'])
-    from . import menus
+    from . import menus, sistemas as SIS
+    externos = SIS.conf(o['banco'])  # 25/11/2026: sistemas de terceiros (transparência da contratada, Diário, e-SIC, Ouvidoria)
     try:
-        barras = menus.barras(o['banco'], mods, defeso, bool(ao_vivo))
+        barras = menus.barras(o['banco'], mods, defeso, bool(ao_vivo), externos)
     except Exception:  # banco ainda sem a migração da Fase 8
         barras = {'institucional': [], 'portal': []}
     acess = db.cfg(o['banco'], 'acessibilidade', {}) or {}
@@ -378,7 +379,7 @@ def ctx_orgao(request: Request, **extra):
     d = dict(request=request, orgao=o, ident=ident, mods=mods, cor=cor, tokens=tokens, vizinhos=vizinhos(o), leg=o['tipo'] == 'legislativo', atual=request.url.path[3:] or '/', ao_vivo=ao_vivo,
              defeso=defeso, eleicao=eleicao.conf(o['banco']), hoje=config.hoje(), barras=barras, vlibras=acess.get('vlibras', True),
              aviso_faixa=db.cfg(o['banco'], 'aviso_faixa', {}) or {},
-             rod=rod, rod_style=ROD.css_vars(ident, o['tipo']), masc_rodape=ROD.mascote_visivel(ident, rod, defeso))
+             rod=rod, rod_style=ROD.css_vars(ident, o['tipo']), masc_rodape=ROD.mascote_visivel(ident, rod, defeso), externos=externos)
     d.update(extra)
     return d
 

@@ -80,7 +80,7 @@ def home(request: Request):
         dados['indicadores'] = [P.cartao(m, o) for m in P.destaques(b)]
         dados['ind_atualizado'] = max((m['ult']['coletado_em'] for m in P.destaques(b)), default=None)
     from . import fase8 as F8, menus as MN
-    dados['atalhos'] = MN.atalhos(b)
+    dados['atalhos'] = MN.atalhos(b, ctx['externos'])
     dados['comunicados'] = F8.comunicados(b, 5)
     from . import carta as CT
     dados['servicos_top'] = CT.mais_acessados(b, 6) if ctx['mods'].get('carta') else []
@@ -265,6 +265,10 @@ def diario_teste(b):
 
 @r.get('/diario')
 def diario(request: Request):
+    from . import sistemas as SIS  # 25/11/2026: Diário em sistema de terceiros (na Câmara, pode ser o da Prefeitura)
+    ext = SIS.pagina(request, 'diario')
+    if ext:
+        return ext
     ctx = ctx_orgao(request); precisa(ctx, 'diario')
     b = ctx['orgao']['banco']
     eds = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao IN ('publicada','invalidada') AND (NOT modo_teste OR %s) ORDER BY data DESC, numero DESC, letra DESC LIMIT 100", (diario_teste(b),))

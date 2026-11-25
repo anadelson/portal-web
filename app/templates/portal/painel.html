@@ -2,6 +2,7 @@
 {% from 'partials/fileira.html' import fileira_cartoes %}
 {% block titulo %}Painel de indicadores — {{ ident.nome }}{% endblock %}
 {% from 'partials/cartoes.html' import cartao %}
+{% from 'partials/externo.html' import banner_transp with context %}
 {% macro kpis(lista, rotulo) %}{% if lista %}{% set fid = 'fil-' ~ rotulo|lower|replace(' ', '-') %}{% call fileira_cartoes(lista|length, rotulo, fid, classe='ics') %}{% for k in lista %}{{ cartao(k, rotulo|replace(' ', '-')|lower ~ '-' ~ loop.index) }}{% endfor %}{% endcall %}{% endif %}{% endmacro %}
 {% macro fonte(txt, quando) %}<p class="pfonte">Fonte: {{ txt }}{% if quando %} Consulta em {{ quando|br }}.{% endif %}</p>{% endmacro %}
 {% macro grafico_barras(itens, rotulo, val='v', pct='p') %}<div class="pbarras-g" role="img" aria-label="{{ rotulo }}: {% for x in itens %}{{ x.area or x.l or x.nome }} {{ x[val] }} ({{ x[pct] }}){{ '; ' if not loop.last }}{% endfor %}."><ul class="pbarras">{% for x in itens %}<li><span class="t">{{ x.area or x.l or x.nome }}</span><span class="n">{{ x[pct] }} · {{ x[val] }}</span><span class="b" aria-hidden="true"><span style="width:{{ x.w }}%"></span></span></li>{% endfor %}</ul></div>{% endmacro %}
@@ -22,6 +23,7 @@
 <nav class="ppilulas" aria-label="Áreas do painel">{% for k, nome in abas %}<a href="/painel{{ '' if k == 'tudo' else '?tema=' ~ k }}"{% if aba == k %} aria-current="page"{% endif %}>{{ nome }}</a>{% endfor %}</nav>
 {% if d.selo %}<p class="pselo"><span class="pulso" aria-hidden="true"></span>Finanças lidas do sistema contábil em {{ d.selo|br }}</p>{% endif %}
 </div>
+{% if externos.transparencia %}{{ banner_transp(externos.transparencia) }}{% endif %}
 
 {% if d.fin %}{% set f = d.fin %}{% set fx = f.externo %}
 <section class="psec" aria-labelledby="h-fin"><h2 id="h-fin">Dinheiro público{% if fx %} da Prefeitura{% endif %}</h2>
