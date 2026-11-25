@@ -5,21 +5,20 @@
 <title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/portal.css?v=35">
+<link rel="stylesheet" href="/static/portal.css?v=36">
 {% if ident.favicon %}{% if ident.favicon.svg %}<link rel="icon" type="image/svg+xml" href="{{ ident.favicon.svg }}">{% endif %}<link rel="icon" type="image/png" sizes="32x32" href="{{ ident.favicon['32'] }}"><link rel="icon" type="image/png" sizes="16x16" href="{{ ident.favicon['16'] }}"><link rel="apple-touch-icon" sizes="180x180" href="{{ ident.favicon['180'] }}"><link rel="icon" type="image/png" sizes="512x512" href="{{ ident.favicon['512'] }}">{% else %}<link rel="icon" type="image/svg+xml" href="/static/favicon-padrao.svg">{% endif %}
 <style>:root{--largura-max:{{ tokens.largura_css }};--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
 <script>document.documentElement.classList.add('js');try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
 </head>
 <body class="{{ orgao.tipo }}">{% if request.state.portal_oculto %}<div class="faixa-oculto" role="status"><strong>Portal oculto:</strong> só a equipe do órgão, com o painel aberto, vê esta página. Para publicar: Painel → Funcionalidades → Visibilidade do portal.</div>{% endif %}
-{% set busca_url = '/proposicoes' if leg else '/servicos' %}
 <a class="pular" href="#conteudo" accesskey="1">Ir para o conteúdo [1]</a>
 <a class="pular" href="#menu" accesskey="2">Ir para o menu [2]</a>
-<a class="pular" href="#busca-topo" accesskey="3">Ir para a busca [3]</a>
+<a class="pular" href="{{ ancora_busca or '/busca#q-busca' }}" accesskey="3">Ir para a busca [3]</a>
 <a class="pular" href="#rodape" accesskey="4">Ir para o rodapé [4]</a>
 
 {% from 'partials/externo.html' import abre as ext_abre, aviso as ext_aviso %}{% macro aponta(href) %}{% if atual == href or (href != '/' and atual.startswith(href)) %} aria-current="page"{% endif %}{% endmacro %}
 <div class="barra-acess"><div class="int">
-<span class="atalhos-tec" aria-label="Atalhos de teclado"><a href="#conteudo">Conteúdo [1]</a><a href="#menu">Menu [2]</a><a href="#busca-topo">Busca [3]</a><a href="#rodape">Rodapé [4]</a>
+<span class="atalhos-tec" aria-label="Atalhos de teclado"><a href="#conteudo">Conteúdo [1]</a><a href="#menu">Menu [2]</a><a href="{{ ancora_busca or '/busca#q-busca' }}">Busca [3]</a><a href="#rodape">Rodapé [4]</a>
 <span class="sep" aria-hidden="true"></span>{% for v in vizinhos %}<a class="vizinho" href="https://{{ v.dominio }}/"><strong>{{ v.nome.replace(' Municipal de ' ~ v.municipio.split(' (')[0], ' Municipal') if v.municipio else v.nome }}</strong></a>{% endfor %}<a href="/admin">Área restrita</a></span>
 <span class="ferramentas" role="group" aria-label="Ferramentas de acessibilidade">
 <button type="button" data-fonte="-10" aria-label="Diminuir o texto">A−</button>
@@ -44,13 +43,11 @@
 <nav class="menu" id="menu" tabindex="-1" aria-label="Portal"><ul>
 {% for m in barras.portal %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}{% if m.vivo %} class="vivo"{% endif %}{% if m.externo %}{{ ext_abre(m.nova_aba) }}{% endif %}>{% if m.vivo %}<span class="ponto" aria-hidden="true"></span>{% endif %}{{ m.rotulo }}{% if m.vivo %}<span class="sr"> (transmissão ao vivo agora)</span>{% endif %}{% if m.externo %}{{ ext_aviso(m.nova_aba) }}{% endif %}</a></li>{% endfor %}
 </ul></nav>
-<form class="busca-topo" action="{{ busca_url }}" role="search" id="form-busca"><label class="sr" for="busca-topo">Buscar no portal</label><input id="busca-topo" name="q" type="search" placeholder="Buscar"><button type="submit" aria-label="Buscar">{{ icone('busca', 18) }}<span class="txt">Buscar</span></button></form>
 <button type="button" class="btn-menu" aria-expanded="false" aria-controls="menu-cel" hidden>{{ icone('mods', 20) }}<span>Menu</span></button>
 </div></header>
 
 <div class="menu-cel" id="menu-cel" role="dialog" aria-modal="true" aria-labelledby="h-menu-cel" hidden>
 <div class="cab-menu"><h2 id="h-menu-cel">Menu</h2><button type="button" class="btn sec" data-fechar-menu>Fechar <span aria-hidden="true">✕</span></button></div>
-<form action="{{ busca_url }}" role="search" class="busca-cel"><label class="sr" for="busca-cel">Buscar no portal</label><input id="busca-cel" name="q" type="search" placeholder="Buscar no portal"><button class="btn" type="submit">Buscar</button></form>
 <h3>Portal</h3><ul>{% for m in barras.portal %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}{% if m.externo %}{{ ext_abre(m.nova_aba) }}{% endif %}>{{ m.rotulo }}{% if m.externo %}{{ ext_aviso(m.nova_aba) }}{% endif %}</a></li>{% endfor %}</ul>
 <h3>Transparência e governo</h3><ul>{% for m in barras.institucional %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}{% if m.externo %}{{ ext_abre(m.nova_aba) }}{% endif %}>{{ m.rotulo }}{% if m.externo %}{{ ext_aviso(m.nova_aba) }}{% endif %}</a></li>{% endfor %}</ul>
 </div>

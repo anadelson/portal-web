@@ -332,6 +332,26 @@ db.set_cfg(PM, SIS.CHAVE, {}); db.set_cfg(CM, SIS.CHAVE, {})
 ok(pm.get('/e-sic'), txt='name="tipo" value="pedido"', nome='/e-sic próprio volta sem endereço externo')
 checa(not SIS.url_valida('https://sem ponto') and not SIS.url_valida('ftp://x.test') and SIS.url_valida('http://transparencia.exemplo.test/'), 'validação de endereço')
 
+# ---------- 25/11/2026: busca única no banner principal + busca geral /busca ----------
+for nome, c in (('pm', pm), ('cm', cm)):
+    h = c.get('/').text
+    checa('busca-topo' not in h and 'busca-cel' not in h, f'{nome}: busca do cabeçalho removida')
+    forms = [f for f in re.findall(r'<form[^>]*role="search"[^>]*>', h) if 'action="/acesso"' not in f]  # consulta de protocolo não é busca do portal
+    checa(all('action="/busca"' in f for f in forms), f'{nome}: buscas da página inicial vão para /busca: {forms}')
+    if 'id="q-home"' in h:
+        checa('href="#q-home" accesskey="3"' in h, f'{nome}: atalho [3] leva à busca do banner')
+    n = c.get('/comunicados').text
+    checa('role="search"' not in n.split('<main')[0] and 'href="/busca#q-busca" accesskey="3"' in n, f'{nome}: página interna sem busca no topo, atalho [3] para /busca')
+    r = ok(c.get('/busca?q=ouvidoria'), txt='Páginas do portal', nome=f'{nome}: /busca acha páginas do portal')
+    checa('Base legal:' in r.text, f'{nome}: /busca com base legal')
+ok(pm.get('/busca?q=praca'), txt='Praça de teste', nome='busca sem acento acha o Conheça')
+ok(pm.get('/busca?q=ALTERA lei'), txt='Altera a lei de teste', nome='busca com dois termos, maiúsculas, acha a legislação')
+ok(pm.get('/busca?q=x'), txt='Digite pelo menos 2 letras', nome='busca curta')
+ok(pm.get('/busca?q=zzqqxxyy'), txt='Nenhum resultado', nome='busca sem resultado')
+r = pm.get('/busca?q=%3Cscript%3Ealert(1)%3C/script%3E')
+checa(r.status_code == 200 and '<script>alert(1)' not in r.text, 'busca escapa o termo')
+ok(pm.get('/busca'), txt='id="q-busca"', nome='/busca sem termo mostra o campo')
+
 if erros:
     print('ERROS:', len(erros)); [print(e) for e in erros]; sys.exit(1)
 print('fase 8: tudo ok')
