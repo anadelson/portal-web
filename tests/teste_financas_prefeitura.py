@@ -105,6 +105,11 @@ for x in ('Dinheiro público da Prefeitura', f'Números da <strong>{INST}</stron
           'De cada R$ 100 que entram na Prefeitura, R$ 85', 'Execução do orçamento de 2026', 'Base legal:'):
     checa(x in t, f'painel Siconfi: falta "{x}"')
 checa('Atenção Básica' not in t and 'Finanças lidas do sistema contábil' not in t, 'subfunção ou selo do sistema contábil no painel da Câmara')
+# 25/11/2026: saúde e educação na Câmara com o gasto por área da Prefeitura, identificado como dela
+for tema, x in (('saude', 'Saúde empenhada em 2026'), ('edu', 'Educação empenhada em 2026')):
+    ts = cm.get(f'/painel?tema={tema}').text
+    checa(x in ts and 'pela Prefeitura, até o 5º bimestre de 2026' in ts and 'dado público da Prefeitura' in ts, f'painel da Câmara, {tema}: falta "{x}" da Prefeitura')
+checa('Saúde por habitante' in cm.get('/painel?tema=saude').text or not db.um(CM, "SELECT 1 FROM indicadores i JOIN indicador_valores v ON v.indicador_id=i.id WHERE i.chave='mun_populacao'"), 'saúde por habitante com população')
 checa(not db.um(CM, 'SELECT 1 FROM receitas LIMIT 1') and not db.um(CM, 'SELECT 1 FROM despesas_unidade LIMIT 1') and not db.um(CM, 'SELECT 1 FROM fin_mensal LIMIT 1'),
       'dado da Prefeitura gravado nas tabelas da transparência da Câmara')
 

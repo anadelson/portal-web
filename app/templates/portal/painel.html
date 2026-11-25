@@ -56,7 +56,7 @@
 <section class="psec pcard" aria-labelledby="h-cont"><h2 id="h-cont">Contratações publicadas no PNCP</h2>{% if c.frase %}<p class="sub">{{ c.frase }}</p>{% endif %}
 {{ grafico_barras(c.itens, 'Contratações por modalidade em ' ~ c.ano, 'n', 'p') }}
 <details><summary>Ver em tabela</summary><div class="tabela"><table><caption class="sr">Contratações por modalidade</caption><thead><tr><th scope="col">Modalidade</th><th scope="col" class="num">Quantidade</th><th scope="col" class="num">%</th></tr></thead><tbody>{% for x in c.itens %}<tr><th scope="row">{{ x.l }}</th><td class="num">{{ x.n }}</td><td class="num">{{ x.p }}</td></tr>{% endfor %}</tbody></table></div></details>
-{{ fonte('Portal Nacional de Contratações Públicas (PNCP), publicações do município. Dispensas incluem compras de pequeno valor, permitidas pela Lei 14.133/2021.', c.coletado) }}
+{{ fonte('Portal Nacional de Contratações Públicas (PNCP), publicações ' ~ ('da própria Câmara (as da Prefeitura não entram)' if leg else 'do município') ~ '. Dispensas incluem compras de pequeno valor, permitidas pela Lei 14.133/2021.', c.coletado) }}
 <nav class="plinks" aria-label="Indicadores de contratações"><span>Série histórica e downloads:</span><a href="/painel/cont_publicadas">Contratações publicadas</a><a href="/painel/cont_valor">Valor das contratações</a><a href="/painel/cont_dispensa">Dispensas</a></nav></section>
 {% endif %}
 
