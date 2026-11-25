@@ -2932,7 +2932,7 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
   - painel da Câmara: os indicadores de finanças deixam de aparecer em "Ainda não disponíveis" (o bloco "Dinheiro público da Prefeitura" já os mostra, de fonte pública);
   - CSS `portal.css?v=34`.
 - **Testes:** `teste_fase8` cobre recusa de endereço inválido, gravação, auditoria, menus, páginas externas, faixa por órgão e volta ao formulário próprio.
-- **Implantado em 25/11/2026, ~11h (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"):
+- **Implantado em 25/11/2026, ~8h (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"):
   - mescla `59e5704`; backup ok;
   - bateria sobre o código e sobre a imagem: 41 suítes sem falha;
   - app e worker recriados; `atualizar` concluiu com "pronto.".
@@ -2947,7 +2947,7 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
   - o detalhe por unidade orçamentária continua só na Prefeitura (não vem pela API pública);
   - contratações: frase e fonte dizem "publicadas pela Câmara" e "as da Prefeitura não entram".
 - **Testes:** `teste_financas_prefeitura` confere os cartões de saúde e educação da Câmara com o texto "pela Prefeitura".
-- **Implantado em 25/11/2026, ~11h40 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `0cba289`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto.".
+- **Implantado em 25/11/2026, ~8h40 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `0cba289`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto.".
 - **Conferido:** portais, painéis (temas saúde, educação e social da Câmara), logins e casemaster 200; gestão 303; os 6 cartões novos aparecem na Câmara; sem erros nos logs.
 - **Falta (configuração, com aprovação):** ligar a fonte PNCP da Câmara com o CNPJ dela, para o bloco de contratações ter dado. O PNCP recusava conexões na hora da verificação.
 
@@ -2957,5 +2957,5 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
   - `/admin/sistemas-terceiros`: opção "Ao clicar no link" por sistema (mesma aba = padrão; nova aba = `target="_blank"` com `rel="noopener noreferrer"` e aviso "abre em nova aba" para leitor de tela); vale para faixa, botão, menus, atalhos e páginas `/diario`, `/e-sic`, `/ouvidoria`;
   - causa do hover: a regra geral `a:hover` (cor escura) vencia o branco da faixa; cor fixa em todos os estados, leve elevação no hover (sem animação com "reduzir movimento"); `portal.css?v=35`.
 - **Testes:** `teste_fase8` confere a opção gravada, o `target` no e-SIC em nova aba, a ouvidoria na mesma aba e o rádio marcado no admin; prévia com o hover forçado sem textos apagados.
-- **Implantado em 25/11/2026, ~10h (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `3247ad1`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto.".
+- **Implantado em 25/11/2026, ~9h50 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `3247ad1`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto.".
 - **Conferido:** portais, painéis, transparência, e-SIC, logins e casemaster 200; gestão 303; CSS v=35 com a correção; o endereço de transparência já cadastrado na Prefeitura continua (abre na mesma aba até escolherem outra opção); sem erros nos logs.
