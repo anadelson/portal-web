@@ -38,7 +38,8 @@ def legislaturas(request: Request, leg: int | None = None):
     return T('legislaturas', request, u, legs=legs, leg=leg,
              ver=db.todos(b, 'SELECT * FROM vereadores WHERE legislatura=%s ORDER BY nome', (leg,)) if leg else [],
              mesas=db.todos(b, 'SELECT * FROM mesas WHERE legislatura=%s ORDER BY bienio, id', (leg,)) if leg else [],
-             bienios={x['bienio']: x for x in db.todos(b, 'SELECT * FROM mesa_bienios WHERE legislatura=%s', (leg,))} if leg else {})
+             bienios={x['bienio']: x for x in db.todos(b, 'SELECT * FROM mesa_bienios WHERE legislatura=%s', (leg,))} if leg else {},
+             mesa_layout='abaixo' if db.cfg(b, 'mesa_layout') == 'abaixo' else 'lado')
 
 @r.post('/legislaturas')
 async def legislaturas_post(request: Request):
@@ -74,6 +75,12 @@ async def legislaturas_post(request: Request):
             db.exe(b, 'INSERT INTO mesa_bienios (legislatura, bienio, eleicao, posse, ato) VALUES (%s,%s,%s,%s,%s) ON CONFLICT (legislatura, bienio) DO UPDATE SET eleicao=EXCLUDED.eleicao, posse=EXCLUDED.posse, ato=EXCLUDED.ato',
                    (leg, bi, _d(f.get('eleicao')), _d(f.get('posse')), f.get('ato', '')[:300]))
             msg = f'Mesa do biênio {bi} salva.'
+        elif acao == 'mesa_layout':
+            v = f.get('mesa_layout')
+            if v not in ('lado', 'abaixo'):
+                raise ValueError('Escolha lado a lado ou uma abaixo da outra.')
+            db.set_cfg(b, 'mesa_layout', v)
+            msg = 'Exibição das Mesas salva.'
         else:
             raise HTTPException(400)
     except (ValueError, KeyError) as e:

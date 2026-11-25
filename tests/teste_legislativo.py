@@ -43,6 +43,22 @@ V = {v['nome']: v['id'] for v in L.vereadores_atuais(CM)}
 if (L.presidente_em(CM, L.config.hoje()) or {}).get('nome') != 'Ana Teste': falha('presidente não identificado')
 # segundo biênio continua "a eleger" (nada inventado)
 if db.um(CM, "SELECT count(*) n FROM mesas WHERE legislatura=16 AND bienio='2031–2032' AND nome IS NOT NULL")['n']: falha('2º biênio veio preenchido')
+# Mesa na página inicial (25/11/2026): em 2029 só o 1º biênio, em 100%; Presidente em destaque; sem o aviso das iniciais
+h = cm.get('/').text
+if 'Biênio 2029–2030' not in h or 'Biênio 2031–2032' in h: falha('home: deveria mostrar só o biênio em vigor')
+if 'class="bienios um"' not in h: falha('home: biênio único deveria ocupar 100%')
+if 'class="m-pres"' not in h: falha('home: Presidente da Mesa sem destaque')
+if 'o cartão mostra as iniciais' in h: falha('home: aviso das iniciais deveria ter saído')
+r = post('/admin/legislaturas', {'acao': 'mesa_layout', 'leg': '16', 'mesa_layout': 'xx'}, nome='layout inválido')
+if 'Escolha lado a lado' not in msg(r): falha('layout inválido deveria ser recusado')
+post('/admin/legislaturas', {'acao': 'mesa_layout', 'leg': '16', 'mesa_layout': 'abaixo'}, txt='Exibição das Mesas salva', nome='layout abaixo')
+if db.cfg(CM, 'mesa_layout') != 'abaixo': falha('layout da Mesa não gravado')
+if 'value="abaixo" checked' not in cm.get('/admin/legislaturas?leg=16').text: falha('admin: opção "abaixo" deveria vir marcada')
+from app import portal as PT
+from datetime import date
+d = PT.dados_camara(CM, date(2031, 3, 1))
+if [g['bienio'] for g in d['mesas']] != ['2029–2030', '2031–2032'] or d['mesa_layout'] != 'abaixo': falha(f"2031: dois biênios e layout abaixo ({[g['bienio'] for g in d['mesas']]}, {d['mesa_layout']})")
+db.set_cfg(CM, 'mesa_layout', 'lado')
 
 # ---------- 2. proposição com autores, numeração automática, tramitação e documento ----------
 r = post('/admin/proposicoes/nova', {'acao': 'salvar', 'tipo': 'Projeto de Lei', 'ano': '2029', 'ementa': 'Institui o programa municipal de teste de fluxo legislativo.', 'autor': 'Bruno Teste', 'autor_outro': 'Poder Executivo', 'relator': 'Carla Teste', 'situacao': 'Em tramitação'}, txt='Proposição salva', nome='nova PL')
