@@ -190,6 +190,7 @@ nav.abas a[aria-current=page]{background:var(--cor);color:#fff;border-color:var(
 .perfil .dados{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:12px}
 .tags{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.tag{padding:3px 12px;border-radius:999px;background:var(--cor-clara);color:var(--cor-escura);font-weight:700;font-size:var(--fs-peq)}.tag.forte{background:var(--cor);color:#fff}
 dl.campos{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px}dl.campos dt{font-size:var(--fs-meta);color:var(--sub)}dl.campos dd{margin:0;font-weight:700}
+dl.campos>div{min-width:0}dl.campos dd{overflow-wrap:anywhere} /* e-mail longo quebra dentro da coluna (25/11/2026) */
 .duas-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px;margin-bottom:20px}
 .caixa{background:#fff;border:1px solid var(--bd);border-radius:18px;padding:20px;min-width:0}.caixa h2{font-size:var(--fs-h2-bloco);margin:0}.caixa .sub{margin:2px 0 12px;font-size:var(--fs-desc);color:var(--sub)}
 .caixa ul.itens{list-style:none;margin:0;padding:0;max-height:420px;overflow-y:auto}.caixa ul.itens li{padding:10px 0;border-bottom:1px solid #EEF1EC}
@@ -708,3 +709,16 @@ nav.menu a{font-size:var(--fs-menu)}
 .busca-grupo li a{font-weight:600}.busca-grupo .meta{display:block;font-size:var(--fs-meta);color:var(--sub)}.busca-grupo .d{display:block;font-size:var(--fs-desc);color:var(--tx)}
 .busca-grupo .mais{margin:12px 0 0}
 @media (max-width:640px){.busca-pagina .campo{flex-direction:column}.busca-pagina .btn{width:100%}}
+
+/* Vereadores na página inicial (25/11/2026): Presidente em destaque à esquerda; os demais em cartões compactos, 2 colunas.
+   Caixa estreita: Presidente em cima e a lista embaixo; no celular, 1 coluna. */
+.vers-home{container-type:inline-size}.vers-grade{display:grid;gap:14px}
+.vers-home .vcard.pres{height:100%;box-sizing:border-box;padding:16px;gap:12px}.vers-home .vcard.pres .retrato{width:110px}.vers-home .vcard.pres .info{flex-basis:100%}
+.vers-lista{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:10px;align-content:start}
+.vers-lista li{display:flex;min-width:0}
+.vmini{flex:1;min-width:0;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:8px 12px;background:#fff;border:1px solid var(--bd);border-radius:14px;color:var(--tx);text-decoration:none}
+.vmini:hover{box-shadow:0 6px 16px rgba(11,22,32,.10);color:var(--tx)}
+.vmini .mini-ini{width:48px;height:56px}
+.vmini .t{min-width:0;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}.vmini strong{font-size:var(--fs-peq);line-height:1.25}.vmini small{font-size:var(--fs-meta);color:var(--sub)}
+@container (min-width:720px){.vers-grade.com-pres{grid-template-columns:minmax(260px,1fr) 2fr}}
+@container (max-width:440px){.vers-lista{grid-template-columns:minmax(0,1fr)}}
