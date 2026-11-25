@@ -2991,3 +2991,16 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Implantado em 25/11/2026, ~15h50 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"; o usuário liberou o horário: sem Diário hoje): mescla `16b8f85`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto.".
 - **Conferido:** pmbora, cmbora e perfil 200; gestão e admin 303; CSS v=39; na Câmara, 8 cartões compactos, só o biênio 2025–2026 em 100%, Presidente da Mesa em destaque, sem o aviso; sem erros nos logs.
 - **Observação (dado, não código):** a biografia do vereador Igor começa com asteriscos de formatação digitados no cadastro; correção pelo admin.
+
+## 25/11/2026 — Credenciais do YouTube e da Meta por órgão (tag `credenciais-por-orgao`)
+- **Pedido do usuário:** as credenciais de fontes do console da gestão pediam as APIs do YouTube e da Meta; isso deve ser particular de cada órgão, cada um com a sua, gerenciada pelo admin de cada portal.
+- **Situação antes:** no console só a credencial do IEG-M estava cadastrada; YouTube e Meta nunca tinham sido cadastradas (nada a migrar nem apagar).
+- **Feito:**
+  - migração `045_orgao_credenciais.sql`: tabela `credenciais_orgao` no banco de cada órgão (cifrada com a mesma CHAVE_CREDENCIAIS dos nós; vai junto ao mover o órgão);
+  - admin de cada portal: Administração → Credenciais de API (permissão de configuração): cadastrar, trocar, testar e apagar a chave da YouTube Data API e o token da Meta Graph API; só gravação, valor nunca volta à tela nem à auditoria;
+  - coletores (transmissões e "Nas redes") usam só a credencial do próprio órgão, sem reserva da plataforma; avisos das Transmissões e a tela de consultas apontam para o admin do órgão;
+  - console: "Credenciais de fontes" fica só com o IEG-M, com aviso de que YouTube e Meta são cadastrados em cada portal.
+- **Testes:** `teste_fase9` (valor não volta à tela, cifrado no banco, auditoria sem o valor, isolamento entre Prefeitura e Câmara e em relação à plataforma, coleta com a chave do órgão, chave com espaço recusada, IEG-M recusado no portal, teste de conexão, apagar só a escolhida); `teste_fase8`, `teste_painel_fontes`, `teste_ordens`.
+- **Implantado em 25/11/2026, ~16h25 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `dbe56d5`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto." (tabela criada nos dois bancos, vazia).
+- **Conferido:** pmbora e cmbora 200; gestão 303; `/admin/credenciais-api` pede login nos dois portais; console com só o IEG-M; sem erros nos logs.
+- **Falta (pelos órgãos):** cada portal cadastrar a sua chave do YouTube e o token da Meta, criados nas contas oficiais dele.
