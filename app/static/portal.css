@@ -693,3 +693,13 @@ nav.menu a{font-size:var(--fs-menu)}
 @media (prefers-reduced-motion:reduce){.banner-transp,.banner-transp:hover{transition:none;transform:none}}
 .banner-transp:focus-visible{outline:3px solid var(--destaque);outline-offset:3px}
 @media (max-width:640px){.banner-transp{flex-wrap:wrap;padding:18px}.banner-transp .bt-ico{width:44px;height:44px}.banner-transp .bt-ir{width:100%;justify-content:center}}
+/* 25/11/2026: busca geral (/busca) — a busca do cabeçalho saiu; fica a do banner principal */
+.busca-pagina{margin:0 0 24px;max-width:760px}.busca-pagina label{display:block;font-weight:700;margin-bottom:6px}
+.busca-pagina .campo{display:flex;gap:8px}.busca-pagina input{flex:1;min-width:0;min-height:48px;padding:0 16px;border:1px solid #6B7684;border-radius:999px;font:inherit;font-size:var(--fs-campo)}
+.busca-total{font-weight:600;margin:0 0 20px}
+.busca-grupo{background:#fff;border:1px solid var(--bd);border-radius:18px;padding:18px 20px;margin:0 0 16px}
+.busca-grupo h2{font-size:var(--fs-h2-bloco);margin:0 0 10px}.busca-grupo h2 .n{color:var(--sub);font-weight:500}
+.busca-grupo ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.busca-grupo li a{font-weight:600}.busca-grupo .meta{display:block;font-size:var(--fs-meta);color:var(--sub)}.busca-grupo .d{display:block;font-size:var(--fs-desc);color:var(--tx)}
+.busca-grupo .mais{margin:12px 0 0}
+@media (max-width:640px){.busca-pagina .campo{flex-direction:column}.busca-pagina .btn{width:100%}}

@@ -202,8 +202,8 @@
 <p class="rot">{{ ident.hero_rotulo or 'Portal oficial' }}{% if not leg and ident.nome_curto %} de {{ ident.nome_curto }}{% endif %}{% if leg and orgao.municipio %} de {{ orgao.municipio.split(' (')[0] }}{% endif %}</p>
 <h1 id="h-hero">{{ ident.hero_titulo or ('O que você procura?') }}</h1>
 <p class="lead">{{ ident.hero_texto }}</p>
-<form action="{{ '/proposicoes' if leg else '/servicos' }}" role="search"><label class="sr" for="q-home">Buscar no portal</label><input id="q-home" name="q" type="search" placeholder="{{ ident.busca_dica or 'Buscar' }}"><button type="submit">Buscar</button></form>
-{% if ident.mais_buscados %}<div class="pop"><span>Mais buscados:</span>{% for t in ident.mais_buscados %}<a href="/servicos?q={{ t|urlencode }}">{{ t }}</a>{% endfor %}</div>{% endif %}
+<form action="/busca" role="search"><label class="sr" for="q-home">Buscar em todo o portal</label><input id="q-home" name="q" type="search" placeholder="{{ ident.busca_dica or 'Buscar' }}"><button type="submit">Buscar</button></form>
+{% if ident.mais_buscados %}<div class="pop"><span>Mais buscados:</span>{% for t in ident.mais_buscados %}<a href="/busca?q={{ t|urlencode }}">{{ t }}</a>{% endfor %}</div>{% endif %}
 </div>
 {% if leg %}<aside class="prox" aria-labelledby="h-prox"><p class="rotulo">Próxima sessão</p>
 {% if d.proxima %}<h2 id="h-prox">{{ d.proxima.nome }}</h2><p><strong>{{ d.proxima.data|br }}</strong>, às {{ d.proxima.hora }}{% if ident.endereco %} · {{ ident.endereco.split(' · ')[0] }}{% endif %}</p>

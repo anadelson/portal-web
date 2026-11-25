@@ -1,0 +1,18 @@
+{% extends 'portal/base.html' %}
+{% from 'partials/externo.html' import abre, aviso %}
+{% block titulo %}{{ 'Busca: ' ~ q if q else 'Busca' }} — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Busca</span></nav>
+<h1>Buscar no portal</h1>
+<p class="intro">Procura em tudo o que {{ 'a Câmara' if leg else 'a Prefeitura' }} publica neste portal: serviços, notícias, comunicados, legislação{% if mods.diario %}, Diário Oficial{% endif %}{% if leg %}, proposições, sessões, vereadores{% endif %}{% if mods.bi %}, indicadores{% endif %} e registros da transparência.</p>
+<p class="legal legal-topo"><strong>Base legal:</strong> Lei nº 12.527/2011 (LAI), art. 8º, § 3º, I — ferramenta de pesquisa de conteúdo.</p>
+<form class="busca-pagina" action="/busca" role="search"><label for="q-busca">O que você procura?</label>
+<div class="campo"><input id="q-busca" name="q" type="search" value="{{ q }}" placeholder="{{ ident.busca_dica or 'Ex.: IPTU, edital, lei, vereador' }}" maxlength="120"><button class="btn" type="submit">Buscar</button></div></form>
+{% if q %}
+<p class="busca-total" role="status">{% if curta %}Digite pelo menos 2 letras.{% elif total %}{{ total }} resultado(s) para “{{ q }}”.{% else %}Nenhum resultado para “{{ q }}”. Tente outra palavra, sem abreviação, ou veja a <a href="/mapa-do-site">lista de todas as páginas</a>.{% endif %}</p>
+{% for g in grupos %}<section class="busca-grupo" aria-labelledby="bg-{{ loop.index }}"><h2 id="bg-{{ loop.index }}">{{ g.titulo }} <span class="n">({{ g.total }})</span></h2>
+<ul>{% for x in g.itens %}<li><a href="{{ x.href }}"{% if x.externo %}{{ abre(x.nova_aba) }}{% endif %}>{{ x.t }}{% if x.externo %} <span aria-hidden="true">↗</span>{{ aviso(x.nova_aba) }}{% endif %}</a>{% if x.exemplo %} <span class="exemplo">exemplo</span>{% endif %}
+{% if x.meta %}<span class="meta">{{ x.meta }}</span>{% endif %}{% if x.d %}<span class="d">{{ x.d }}</span>{% endif %}</li>{% endfor %}</ul>
+{% if g.total > g['itens']|length and g.mais %}<p class="mais"><a href="{{ g.mais }}">Ver todos em {{ g.titulo }} {{ icone('seta', 16, 'seta') }}</a></p>{% endif %}</section>{% endfor %}
+{% endif %}
+{% endblock %}

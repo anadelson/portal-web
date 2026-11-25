@@ -125,7 +125,9 @@ def home(request: Request):
     destaque = [x for x in blocos if x['regiao'] == 'destaque']
     principal = [x for x in blocos if x['regiao'] == 'principal']
     lateral = [x for x in blocos if x['regiao'] == 'lateral']
-    return templates.TemplateResponse(request, 'portal/home.html', dict(ctx, destaque=destaque, principal=principal, lateral=lateral, d=dados))
+    # 25/11/2026: a busca fica só no banner principal; o atalho de teclado [3] vai para ela (sem o banner, para /busca)
+    ancora = '#q-home' if any(x['chave'] == 'hero' for x in destaque) else None
+    return templates.TemplateResponse(request, 'portal/home.html', dict(ctx, destaque=destaque, principal=principal, lateral=lateral, d=dados, ancora_busca=ancora))
 
 @r.get('/noticias')
 def noticias(request: Request):
@@ -322,6 +324,15 @@ def tempo(request: Request):
     from . import tempo as T
     ctx = ctx_orgao(request); o = ctx['orgao']
     return templates.TemplateResponse(request, 'portal/tempo.html', dict(ctx, t=T.previsao(o.get('ibge')), cidade=ctx['ident'].get('nome_curto') or (o.get('municipio') or '').split(' (')[0] or 'o município'))
+
+@r.get('/busca')
+def busca(request: Request, q: str = ''):
+    """Busca geral do portal (25/11/2026): tudo o que o órgão publica (app/busca.py)."""
+    from . import busca as BU
+    ctx = ctx_orgao(request)
+    q = (q or '').strip()[:120]
+    grupos, total = BU.buscar(ctx, q) if q else ([], 0)
+    return templates.TemplateResponse(request, 'portal/busca.html', dict(ctx, q=q, grupos=grupos, total=total, curta=bool(q) and len(BU.norm(q).replace(' ', '')) < BU.MIN_CARACTERES))
 
 @r.get('/privacidade')
 def privacidade(request: Request):
