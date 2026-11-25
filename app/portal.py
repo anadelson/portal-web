@@ -50,7 +50,11 @@ def dados_camara(b, hoje):
                     por_nome[m['nome']]['cargo'] = m['cargo']
                 if m['cargo'] == 'Presidente':
                     pres = m['vid']
-    return dict(legislatura=leg, vereadores=ver, mesas=mesas, bienio_atual=atual, presidente_id=pres)
+    # só os biênios que já começaram (o 2º aparece quando entra em vigor); antes da legislatura, o 1º
+    ini = lambda g: int(re.match(r'\d{4}', g['bienio']).group()) if re.match(r'\d{4}', g['bienio']) else 0
+    mesas = [g for g in mesas if ini(g) <= hoje.year] or mesas[:1]
+    return dict(legislatura=leg, vereadores=ver, mesas=mesas, bienio_atual=atual, presidente_id=pres,
+                mesa_layout='abaixo' if db.cfg(b, 'mesa_layout') == 'abaixo' else 'lado')
 
 @r.get('/')
 def home(request: Request):

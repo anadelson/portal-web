@@ -158,11 +158,11 @@ li.pres{grid-row:span 2;grid-column:span 2}@media (max-width:420px){li.pres{grid
 .mesa{grid-column:1/-1;background:#fff;border:1px solid var(--bd);border-left:6px solid var(--destaque);border-radius:18px;padding:20px 22px}
 .mesa .bienios{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
 .bienio{border:1px solid #E5E9E2;border-radius:14px;padding:14px;background:#FAFBF9}
-/* Membros da Mesa (25/11/2026): 3 colunas de mesmo tamanho (largura e altura); o 4º membro em diante desce para a linha de baixo.
+/* Membros da Mesa (25/11/2026): 2 colunas de mesmo tamanho (largura e altura), Presidente em destaque.
    Em caixa estreita (celular), 1 por linha, todos com a mesma altura. */
 .bienio{container-type:inline-size}
-.bienio .cab{margin-bottom:10px}.bienio ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:1fr;gap:8px}
-@container (max-width:440px){.bienio ul{grid-template-columns:minmax(0,1fr)}}
+.bienio .cab{margin-bottom:10px}.bienio ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:8px}
+@container (max-width:360px){.bienio ul{grid-template-columns:minmax(0,1fr)}}
 .bienio li{display:flex;min-width:0}
 .bienio li a,.bienio li span.p{flex:1;min-width:0;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:6px 8px;background:#fff;border:1px solid #E5E9E2;border-radius:12px;color:var(--tx);text-decoration:none;font-size:var(--fs-peq);overflow-wrap:anywhere}
 .mini-ini{width:36px;height:42px;border-radius:8px;background:var(--cor-clara);color:var(--cor);font-weight:800;font-size:var(--fs-meta);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;overflow:hidden}
@@ -722,3 +722,11 @@ nav.menu a{font-size:var(--fs-menu)}
 .vmini .t{min-width:0;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}.vmini strong{font-size:var(--fs-peq);line-height:1.25}.vmini small{font-size:var(--fs-meta);color:var(--sub)}
 @container (min-width:720px){.vers-grade.com-pres{grid-template-columns:minmax(260px,1fr) 2fr}}
 @container (max-width:440px){.vers-lista{grid-template-columns:minmax(0,1fr)}}
+
+/* Mesa (25/11/2026): só o 1º biênio em vigor = 100% da largura; com os dois, lado a lado ou um abaixo do outro (escolha no admin) */
+.mesa .bienios.um,.mesa .bienios.abaixo{grid-template-columns:minmax(0,1fr)}
+.mesa .bienios.lado{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.bienio li.m-pres a,.bienio li.m-pres span.p{background:var(--cor-escura);border-color:var(--cor-escura);color:#fff;box-shadow:inset 4px 0 0 var(--destaque)}
+.bienio li.m-pres a:hover,.bienio li.m-pres a:focus{color:#fff}
+.bienio li.m-pres small{color:var(--destaque)!important;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.bienio li.m-pres .mini-ini{border:2px solid var(--destaque);background:var(--cor);color:#fff}

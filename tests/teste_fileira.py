@@ -34,11 +34,12 @@ for n in NS:
         checa(f'1–{min(n, 5)} de {n}' in b, f'{n}: contagem "1–{min(n, 5)} de {n}"')
 # o componente é o único jeito de montar as fileiras da página inicial e das páginas internas
 usos = {p.name: p.read_text().count('fileira_cartoes(') for p in (RAIZ / 'app' / 'templates' / 'portal').glob('*.html')}
-for t, minimo in (('home.html', 8), ('governo.html', 1), ('transparencia.html', 1), ('painel.html', 1)):
+for t, minimo in (('home.html', 7), ('governo.html', 1), ('transparencia.html', 1), ('painel.html', 1)):
     checa(usos.get(t, 0) >= minimo, f'{t}: usa fileira_cartoes ({usos.get(t, 0)})')
 css = (RAIZ / 'app' / 'static' / 'portal.css').read_text()
 home = (RAIZ / 'app' / 'templates' / 'portal' / 'home.html').read_text()
 checa('fil-atalhos' not in home and '<nav class="atalhos' in home, 'atalhos do topo fora da fileira (exceção)')
+checa('fil-vers' not in home and 'class="vers-lista"' in home, 'vereadores: Presidente em destaque e demais em 2 colunas, fora da fileira (exceção, 25/11/2026)')
 checa('grid-template-columns:repeat(auto-fit,minmax(230px,280px));justify-content:center' in css and 'max-width:1200px;margin:-94px auto' in css, 'atalhos: 230–280 px, centralizados, sobre a foto')
 checa('grid-auto-columns:calc((100% - (var(--v) - 1) * var(--gap)) / var(--v))' in css and 'scroll-snap-type:x mandatory' in css, 'CSS: colunas iguais e scroll-snap')
 checa(not re.search(r'animation[^;]*fil|setInterval', (RAIZ / 'app' / 'static' / 'portal.js').read_text()), 'JS: sem rolagem automática')

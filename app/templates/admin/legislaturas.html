@@ -15,6 +15,12 @@
 
 {% if leg %}
 <section class="cx"><h2>Vereadores da {{ leg }}ª Legislatura ({{ ver|length }})</h2><div class="tabela"><table><thead><tr><th scope="col">Nome</th><th scope="col">Apelido</th><th scope="col">Partido</th><th scope="col">Votos</th><th scope="col">Perfil</th></tr></thead><tbody>{% for v in ver %}<tr><td>{{ v.nome }}</td><td>{{ v.apelido }}</td><td>{{ v.partido }}</td><td>{{ v.votos or '—' }}</td><td><a href="/admin/vereadores/{{ v.id }}">editar perfil</a></td></tr>{% endfor %}</tbody></table></div></section>
+<section class="cx"><h2>Mesa Diretora na página inicial</h2><form class="campos" method="post" action="/admin/legislaturas"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="mesa_layout"><input type="hidden" name="leg" value="{{ leg }}">
+<fieldset><legend>Quando os dois biênios estiverem em vigor, mostrar as composições</legend>
+<label><input type="radio" name="mesa_layout" value="lado" {{ 'checked' if mesa_layout != 'abaixo' }}> Uma ao lado da outra</label>
+<label><input type="radio" name="mesa_layout" value="abaixo" {{ 'checked' if mesa_layout == 'abaixo' }}> Uma abaixo da outra</label></fieldset>
+<p class="legal" style="margin:0">Enquanto só o 1º biênio estiver em vigor, a página mostra só ele, ocupando toda a largura.</p>
+<button class="btn">Salvar exibição</button></form></section>
 {% for g in mesas|groupby('bienio') %}{% set bi = bienios.get(g.grouper) %}
 <section class="cx"><h2>Mesa Diretora · biênio {{ g.grouper }}</h2><form class="campos" method="post" action="/admin/legislaturas"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="mesa"><input type="hidden" name="leg" value="{{ leg }}"><input type="hidden" name="bienio" value="{{ g.grouper }}">
 <div class="grade2">{% for m in g.list %}<label>{{ m.cargo }}<select name="cargo_{{ m.id }}"><option value="">— a eleger —</option>{% for v in ver %}<option {{ 'selected' if v.nome == m.nome }}>{{ v.nome }}</option>{% endfor %}</select></label>{% endfor %}</div>
