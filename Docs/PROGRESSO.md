@@ -2939,3 +2939,14 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Conferido:** gestão 303; portais, painéis, transparência, e-SIC, ouvidoria, diário, logins e casemaster 200; tela nova sem login redireciona; CSS v=34 servido; e-SIC próprio da Câmara continua (nenhum endereço cadastrado ainda); sem erros nos logs.
 - **Falta (usuário):** cadastrar os endereços em cada admin.
 - **Próximo (pedido do usuário):** painel da Câmara com contratações só da Câmara (PNCP pelo CNPJ dela) e gastos de saúde, educação e assistência social da Prefeitura por área.
+
+## 25/11/2026 — Painel da Câmara: gasto por área da Prefeitura e contratações só da Câmara (tag `painel-camara-areas`)
+- **Pedido do usuário:** no painel da Câmara, contratações só da Câmara (desconsiderar as da Prefeitura); aplicações de saúde e educação também na Câmara.
+- **Feito:**
+  - saúde, educação e assistência social na Câmara ganharam "… empenhada em 2026" e "… por habitante", com o empenhado por área da Prefeitura vindo do resumo de fonte pública (`financas_prefeitura`), sempre identificado como dado da Prefeitura, com fonte e base legal no ⓘ; os mínimos legais (Siconfi, RREO Anexo 14) já apareciam;
+  - o detalhe por unidade orçamentária continua só na Prefeitura (não vem pela API pública);
+  - contratações: frase e fonte dizem "publicadas pela Câmara" e "as da Prefeitura não entram".
+- **Testes:** `teste_financas_prefeitura` confere os cartões de saúde e educação da Câmara com o texto "pela Prefeitura".
+- **Implantado em 25/11/2026, ~11h40 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `0cba289`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto.".
+- **Conferido:** portais, painéis (temas saúde, educação e social da Câmara), logins e casemaster 200; gestão 303; os 6 cartões novos aparecem na Câmara; sem erros nos logs.
+- **Falta (configuração, com aprovação):** ligar a fonte PNCP da Câmara com o CNPJ dela, para o bloco de contratações ter dado. O PNCP recusava conexões na hora da verificação.
