@@ -1,6 +1,7 @@
 {% extends 'console/base.html' %}{% block h1 %}Credenciais de fontes{% endblock %}
 {% block conteudo %}{% set C = csrf_token(request) %}
 <p>Credenciais usadas pelos coletores para consultar fontes que exigem acesso. Os valores são gravados <strong>cifrados</strong> no banco da plataforma e <strong>nunca são exibidos</strong> de volta, nem no registro de ações. Para mudar, use “Trocar”.</p>
+<p class="legal"><strong>YouTube e Meta (Instagram e Facebook):</strong> são credenciais de cada órgão. Cada portal cadastra as suas no próprio painel administrativo, em Administração → Credenciais de API.</p>
 {% if not chave_ok %}<p class="msg" role="alert" style="background:#FBE4D8;color:#9B1C1C"><strong>Cadastro desligado:</strong> a chave CHAVE_CREDENCIAIS não está configurada no .env do servidor.</p>{% endif %}
 {% for x in itens %}
 <section class="cx" aria-labelledby="h-{{ x.chave }}"><h2 id="h-{{ x.chave }}">{{ x.nome }} <small>(fonte <code>{{ x.chave }}</code>)</small></h2>

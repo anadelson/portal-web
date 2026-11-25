@@ -60,7 +60,8 @@ NOMES = {'financas_prefeitura': 'Finanças da Prefeitura (fonte pública)', 'fio
          'iegm': 'TCESP — IEG-M', 'mds': 'MDS', 'pni': 'Ministério da Saúde (vacinação)', 'painel': 'Cálculo do painel (dados já coletados + Siconfi)',
          'youtube': 'YouTube (transmissões)', 'redes': 'Redes sociais (últimas publicações)', 'tempo': 'Previsão do tempo (Open-Meteo)', 'portal': 'Este portal (e-SIC e Ouvidoria)', 'manual': 'Lançamento manual'}
 FORMATO = {'govbr': 'XML dentro de ZIP (exportação do portal; sem login e sem captcha)', 'inep': 'planilha (ZIP com XLSX)', 'painel': 'cálculo interno + JSON', 'portal': 'banco do próprio portal', 'manual': '—'}
-CREDENCIAL = {'iegm': 'iegm', 'youtube': 'youtube', 'redes': 'meta'}
+CREDENCIAL = {'iegm': 'iegm'}                          # da plataforma (console)
+CREDENCIAL_ORGAO = {'youtube': ('youtube',), 'redes': ('youtube', 'meta')}  # do órgão (admin do portal)
 
 # Como a consulta é montada (endpoints), com o significado de cada parâmetro
 def endpoints(fonte, p):
@@ -319,7 +320,9 @@ def painel(o, fonte):
     return {'fonte': fonte, 'nome': NOMES.get(fonte, fonte), 'cadastrada': bool(f), 'ativa': bool(f and f['ativo']), 'params': p,
             'esquema': [(n, r, t, de, p.get(n)) for n, r, t, de in ESQUEMA.get(fonte, [])], 'endpoints': endpoints(fonte, p),
             'mapeamento': MAPEAMENTO.get(fonte, []), 'formato': FORMATO.get(fonte, 'JSON'), 'periodicidade': periodicidade(fonte, f),
-            'credencial': ('configurada no console' if CR.situacao(cred) else 'NÃO configurada no console') if cred else 'não usa',
+            'credencial': (('configurada no console' if CR.situacao(cred) else 'NÃO configurada no console') if cred else
+                           ', '.join(f"{CR.FONTES_ORGAO[c]['nome']}: {'cadastrada' if CR.situacao_orgao(o['banco'], c) else 'NÃO cadastrada'} pelo órgão (Credenciais de API)" for c in CREDENCIAL_ORGAO[fonte])
+                           if fonte in CREDENCIAL_ORGAO else 'não usa'),
             'amostras': amostras, 'coletas': coletas, 'teste': ultimo_teste(o, fonte),
             'historico': db.todos(db.LOCAL, 'SELECT * FROM fontes_historico WHERE orgao_id=%s AND fonte=%s ORDER BY id DESC LIMIT 10', (o['id'], fonte)),
             'bases_opcoes': OPCOES_BASES.get(fonte, FIORILLI_BASES), 'escolhas': ESCOLHAS.get(fonte, {}),

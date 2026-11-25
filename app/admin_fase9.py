@@ -508,3 +508,45 @@ async def sistemas_terceiros_salvar(request: Request):
         return T('sistemas_terceiros', request, u, sis=SIS.SISTEMAS, cad=cad, base=SIS.BASE_LEGAL, erros=erros)
     auditar(request, 'Sistemas de terceiros: ' + (', '.join(SIS.SISTEMAS[k][0] for k in dados) or 'nenhum endereço'))
     return ir('/admin/sistemas-terceiros', 'Endereços salvos.', request)
+
+
+# ---------- Credenciais de API do próprio órgão (25/11/2026): YouTube e Meta; só gravação ----------
+@r.get('/credenciais-api')
+def credenciais_api(request: Request):
+    u = exige(request, 'config')
+    from . import credenciais as CR
+    b = request.state.orgao['banco']
+    itens = [dict(v, chave=k, sit=CR.situacao_orgao(b, k)) for k, v in CR.FONTES_ORGAO.items()]
+    return T('credenciais_api', request, u, itens=itens, chave_ok=CR.chave_ok())
+
+@r.post('/credenciais-api')
+async def credenciais_api_post(request: Request):
+    u = exige(request, 'config')
+    from .web import ler_form
+    from . import credenciais as CR
+    b = request.state.orgao['banco']
+    f = await ler_form(request)
+    fonte, acao = f.get('fonte', ''), f.get('acao', '')
+    volta = '/admin/credenciais-api'
+    if fonte not in CR.FONTES_ORGAO:
+        return ir(volta, 'Fonte desconhecida.', request)
+    nome = CR.FONTES_ORGAO[fonte]['nome']
+    if acao == 'salvar':
+        try:
+            res = CR.salvar_orgao(b, fonte, f.get('chave', ''), u['nome'])
+        except CR.SemChave:
+            return ir(volta, 'Cadastro desligado: falta a chave de cifra no servidor. Fale com o suporte da plataforma.', request)
+        except ValueError as e:
+            return ir(volta, f'Não gravado: {e}.', request)
+        auditar(request, f'Credencial de API {nome}: {res}')
+        return ir(volta, f'Credencial {res}. O valor não é exibido nem registrado.', request)
+    if acao == 'apagar':
+        if CR.apagar_orgao(b, fonte):
+            auditar(request, f'Credencial de API {nome}: apagada')
+            return ir(volta, 'Credencial apagada. A consulta a esta API fica desligada até cadastrar outra.', request)
+        return ir(volta, 'Não havia credencial cadastrada.', request)
+    if acao == 'testar':
+        res = await run_in_threadpool(CR.testar_orgao, b, fonte, u['nome'])
+        auditar(request, f'Credencial de API {nome}: testada ({res})')
+        return ir(volta, f'Teste de conexão: {res}.', request)
+    return ir(volta, '', request)

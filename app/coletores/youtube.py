@@ -1,6 +1,6 @@
 """Transmissões pelo YouTube (Fase 8): detecção de "ao vivo" e gravações do canal oficial do órgão.
 
-- Chave da YouTube Data API v3 cadastrada no console (Credenciais de fontes, fonte "youtube"); nunca no .env nem no git.
+- Chave da YouTube Data API v3 do PRÓPRIO órgão, cadastrada no admin do portal (Credenciais de API); nunca no .env nem no git.
 - Canal por órgão: Painel → Transmissões → "ID do canal" (UC…).
 - Ao vivo: verificado a cada 2 minutos só dentro das janelas da agenda (15 min antes do início previsto até 4 h depois)
   ou enquanto houver transmissão marcada como ao vivo. Fora disso não consulta nada (lista vazia).
@@ -16,8 +16,8 @@ API = 'https://www.googleapis.com/youtube/v3'
 JANELA_ANTES, JANELA_DEPOIS = timedelta(minutes=15), timedelta(hours=4)
 VARREDURA = timedelta(hours=20)
 
-def chave():
-    c = CR.obter('youtube')
+def chave(banco):
+    c = CR.obter_orgao(banco, 'youtube')
     return c[1] if c else None
 
 def _get(caminho, params, key):
@@ -109,7 +109,7 @@ def coletar(o, p, agora=None, buscar=None):
     b = o['banco']
     conf = db.cfg(b, 'transmissao', {}) or {}
     canal = (conf.get('canal') or '').strip()
-    key = chave()
+    key = chave(b)
     if not canal or not key:
         return []
     est = db.cfg(b, 'youtube_estado', {}) or {}

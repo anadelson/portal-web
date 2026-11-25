@@ -686,8 +686,8 @@ def transmissoes(request: Request):
 def _yt_situacao(o):
     """Texto curto sobre a integração com o YouTube (sem expor a chave)."""
     from . import credenciais as CR
-    if not CR.situacao('youtube'):
-        return 'chave da YouTube Data API ainda não cadastrada no console (Credenciais de fontes): só o botão manual funciona.'
+    if not CR.situacao_orgao(o['banco'], 'youtube'):
+        return 'chave da YouTube Data API ainda não cadastrada em Administração → Credenciais de API: só o botão manual funciona.'
     c = db.um(db.LOCAL, "SELECT inicio, ok, mensagem FROM coletas WHERE orgao_slug=%s AND fonte='youtube:canal' ORDER BY id DESC LIMIT 1", (o['slug'],))
     if not c:
         return 'chave cadastrada; nenhuma consulta ainda.'

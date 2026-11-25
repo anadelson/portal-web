@@ -82,7 +82,7 @@ def coletar(o, p, hoje=None):
     redes = [r for r in ident.get('redes_v2', []) if r.get('conta') and r['tipo'] in ('youtube', 'instagram', 'facebook')]
     if not redes:
         return []
-    yt, meta = CR.obter('youtube'), CR.obter('meta')
+    yt, meta = CR.obter_orgao(o['banco'], 'youtube'), CR.obter_orgao(o['banco'], 'meta')  # só as do próprio órgão
     res, feed = [], []
     for r in redes:
         cred = yt if r['tipo'] == 'youtube' else meta
