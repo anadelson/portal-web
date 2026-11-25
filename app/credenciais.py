@@ -1,4 +1,7 @@
-"""Credenciais de fontes de dados cadastradas no console do gestor (ex.: acesso anônimo do IEG-M publicado pelo TCESP).
+"""Credenciais de fontes de dados.
+
+- Da PLATAFORMA (console do gestor, banco local do nó): IEG-M do TCESP.
+- De cada ÓRGÃO (admin do portal, banco do órgão, 25/11/2026): YouTube Data API e Meta Graph API — cada órgão usa só a sua.
 
 - Gravadas CIFRADAS (Fernet) no banco de controle com a chave CHAVE_CREDENCIAIS do .env; perder a chave obriga a
   recadastrar. Sem a chave, o cadastro fica desligado.
@@ -12,11 +15,15 @@ FONTES = {
     'iegm': {'nome': 'IEG-M do TCESP (painel público, Pentaho CDA)',
              'explica': 'Acesso anônimo publicado pelo próprio TCESP no redirecionamento de iegm.tce.sp.gov.br (uso autorizado pelo órgão em 07/11/2026). '
                         'Consulta sem documentação oficial: pode mudar sem aviso.'},
+}
+
+# Credenciais de cada ÓRGÃO (25/11/2026): cadastradas no admin do portal, gravadas no banco do órgão (credenciais_orgao).
+FONTES_ORGAO = {
     'youtube': {'nome': 'YouTube Data API v3 (transmissões)', 'so_chave': True,
-                'explica': 'Chave de API do Google Cloud com a YouTube Data API v3 ativada, usada para detectar a transmissão ao vivo e listar as gravações '
-                           'do canal oficial de cada órgão (o canal é informado no painel do órgão, em Transmissões). Restrinja a chave à YouTube Data API.'},
+                'explica': 'Chave de API do Google Cloud do próprio órgão, com a YouTube Data API v3 ativada. Usada para detectar a transmissão ao vivo, listar as gravações '
+                           'do canal oficial (informado em Transmissões) e mostrar os últimos vídeos nas redes sociais. Restrinja a chave à YouTube Data API.'},
     'meta': {'nome': 'Meta Graph API (Instagram e Facebook)', 'so_chave': True,
-             'explica': 'Token de acesso de longa duração do app da Meta ligado às contas oficiais (conta comercial do Instagram / página do Facebook). '
+             'explica': 'Token de acesso de longa duração do app da Meta ligado às contas oficiais do órgão (conta comercial do Instagram / página do Facebook). '
                         'Usado só para mostrar no portal as últimas publicações; as miniaturas ficam no próprio portal.'},
 }
 
@@ -124,4 +131,60 @@ def testar(fonte, quem):
         except Exception as e:  # só o tipo do erro: a mensagem poderia conter dados da requisição
             res = f'falha de conexão ({type(e).__name__})'
     db.exe(db.LOCAL, 'UPDATE credenciais_fontes SET testada_em=now(), testada_por=%s, teste_resultado=%s WHERE fonte=%s', (quem, res, fonte))
+    return res
+
+
+# ---------- credenciais do ÓRGÃO (banco do órgão) ----------
+def _fonte_orgao(fonte):
+    if fonte not in FONTES_ORGAO:
+        raise ValueError('fonte sem credencial prevista')
+
+def situacao_orgao(banco, fonte):
+    """Só metadados da credencial do órgão. Nunca o valor."""
+    try:
+        r = db.um(banco, 'SELECT * FROM credenciais_orgao WHERE fonte=%s', (fonte,))
+    except Exception:  # banco ainda sem a migração
+        return None
+    if not r:
+        return None
+    return {k: r[k] for k in ('fonte', 'configurada_em', 'configurada_por', 'testada_em', 'testada_por', 'teste_resultado')} | {'legivel': decifrar(r['dados']) is not None}
+
+def salvar_orgao(banco, fonte, chave, quem):
+    _fonte_orgao(fonte)
+    chave = (chave or '').strip()
+    if not chave:
+        raise ValueError('preencha a chave')
+    if len(chave) > 1000 or any(c.isspace() for c in chave):
+        raise ValueError('chave inválida (sem espaços, até 1000 caracteres)')
+    token = cifrar('chave', chave)
+    existia = bool(db.um(banco, 'SELECT 1 FROM credenciais_orgao WHERE fonte=%s', (fonte,)))
+    db.exe(banco, """INSERT INTO credenciais_orgao (fonte, dados, configurada_em, configurada_por) VALUES (%s,%s,now(),%s)
+                     ON CONFLICT (fonte) DO UPDATE SET dados=EXCLUDED.dados, configurada_em=now(), configurada_por=EXCLUDED.configurada_por,
+                     testada_em=NULL, testada_por='', teste_resultado=''""", (fonte, token, quem))
+    return 'trocada' if existia else 'cadastrada'
+
+def apagar_orgao(banco, fonte):
+    _fonte_orgao(fonte)
+    return bool(db.exe(banco, 'DELETE FROM credenciais_orgao WHERE fonte=%s RETURNING 1', (fonte,)))
+
+def obter_orgao(banco, fonte):
+    """Uso interno dos coletores: (usuario, chave) do órgão ou None. Sem reserva da plataforma."""
+    try:
+        r = db.um(banco, 'SELECT dados FROM credenciais_orgao WHERE fonte=%s', (fonte,))
+    except Exception:
+        return None
+    return decifrar(r['dados']) if r else None
+
+def testar_orgao(banco, fonte, quem):
+    _fonte_orgao(fonte)
+    cred = obter_orgao(banco, fonte)
+    if not cred:
+        res = 'sem credencial legível cadastrada'
+    else:
+        try:
+            st, valido = _http_teste(fonte, cred)
+            res = f"HTTP {st} · {'JSON válido' if valido else 'resposta não é o JSON esperado'}"
+        except Exception as e:
+            res = f'falha de conexão ({type(e).__name__})'
+    db.exe(banco, 'UPDATE credenciais_orgao SET testada_em=now(), testada_por=%s, teste_resultado=%s WHERE fonte=%s', (quem, res, fonte))
     return res

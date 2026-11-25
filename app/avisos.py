@@ -10,8 +10,8 @@ def transmissoes(o, mods):
     if not ((db.cfg(o['banco'], 'transmissao', {}) or {}).get('canal')):
         falta.append('o ID do canal oficial no YouTube (UC…) não foi informado em Painel → Transmissões')
     try:
-        if not CR.situacao('youtube'):
-            falta.append('a chave da YouTube Data API não foi cadastrada no console (Credenciais de fontes) — sem ela, o “ao vivo” só funciona pelo botão manual')
+        if not CR.situacao_orgao(o['banco'], 'youtube'):
+            falta.append('a chave da YouTube Data API do órgão não foi cadastrada em Administração → Credenciais de API — sem ela, o “ao vivo” só funciona pelo botão manual')
     except Exception:
         pass
     return falta

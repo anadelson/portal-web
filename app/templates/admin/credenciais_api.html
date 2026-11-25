@@ -1,0 +1,26 @@
+{% extends 'admin/base.html' %}{% block h1 %}Credenciais de API{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<div class="tela-cab"><p>Chaves de acesso <strong>do próprio órgão</strong> às APIs do YouTube e da Meta (Instagram e Facebook). Cada órgão cadastra as suas, criadas nas contas oficiais dele. Os valores são gravados <strong>cifrados</strong> e <strong>nunca voltam para a tela</strong>, nem para o registro de ações. Para mudar, use “Trocar”.</p></div>
+{% if not chave_ok %}<p class="msg" role="alert" style="background:#FBE4D8;color:#9B1C1C"><strong>Cadastro desligado:</strong> falta a chave de cifra no servidor. Fale com o suporte da plataforma.</p>{% endif %}
+{% for x in itens %}
+<section class="cx" aria-labelledby="h-{{ x.chave }}"><h2 id="h-{{ x.chave }}">{{ x.nome }}</h2>
+<p class="legal">{{ x.explica }}</p>
+{% if x.sit %}
+<p><span class="chip {{ 'ok' if x.sit.legivel else 'erro' }}">{{ 'cadastrada' if x.sit.legivel else 'ilegível: cadastre de novo' }}</span> em {{ x.sit.configurada_em|br }} por {{ x.sit.configurada_por }}</p>
+{% if x.sit.testada_em %}<p>Último teste: {{ x.sit.testada_em|br }} por {{ x.sit.testada_por }} — {{ x.sit.teste_resultado }}</p>{% endif %}
+<div class="acoes" style="display:flex;gap:8px;flex-wrap:wrap">
+<form class="inline" method="post" action="/admin/credenciais-api"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="fonte" value="{{ x.chave }}"><button class="btn" name="acao" value="testar">Testar conexão</button></form>
+<form class="inline" method="post" action="/admin/credenciais-api"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="fonte" value="{{ x.chave }}"><button class="btn sec" name="acao" value="apagar">Apagar</button></form>
+</div>
+<details style="margin-top:12px"><summary>Trocar</summary>
+{% else %}
+<p><span class="chip alerta">não cadastrada</span> — sem ela, {% if x.chave == 'youtube' %}o “ao vivo” das transmissões só funciona pelo botão manual e os vídeos do canal não aparecem nas redes sociais{% else %}as últimas publicações do Instagram e do Facebook não aparecem; ficam só os links das redes{% endif %}.</p>
+<details open><summary>Cadastrar</summary>
+{% endif %}
+<form class="campos" method="post" action="/admin/credenciais-api" autocomplete="off"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="fonte" value="{{ x.chave }}"><input type="hidden" name="acao" value="salvar">
+<label>{{ 'Chave da API' if x.chave == 'youtube' else 'Token de acesso' }}<input name="chave" type="password" autocomplete="new-password" spellcheck="false" maxlength="1000" required></label>
+<p class="legal">Só gravação: depois de salvar, o valor não volta para a tela.</p>
+<button class="btn" {{ 'disabled' if not chave_ok }}>Salvar</button></form></details>
+</section>
+{% endfor %}
+{% endblock %}

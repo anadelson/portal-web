@@ -202,9 +202,35 @@ h = pm.get('/').text
 checa('aria-label="Instagram"' in h and h.find('aria-label="Instagram"') < h.find('aria-label="YouTube"'), 'rodapé com ícones na ordem')
 # sincronizar (APIs simuladas, com credenciais simuladas)
 from app.coletores import redes as RS
-from app import credenciais as CR
-o_cred = CR.obter
-CR.obter = lambda f: ('chave', 'TESTE') if f in ('youtube', 'meta') else None
+from app import credenciais as CR, config as CFG
+from cryptography.fernet import Fernet
+o_chave = CFG.CHAVE_CREDENCIAIS
+CFG.CHAVE_CREDENCIAIS = Fernet.generate_key().decode()   # chave de TESTE
+# credenciais de API são do ÓRGÃO (25/11/2026): cadastradas no admin do portal, cifradas no banco do órgão, só gravação
+YT, MT = 'TESTE-yt-' + 'k' * 20, 'TESTE-meta-' + 'm' * 20
+checa(CR.obter_orgao(PM, 'youtube') is None and RS.coletar(o, {}) == [], 'sem credencial do órgão: nada coletado')
+t = ok(pm.get('/admin/credenciais-api'), txt='não cadastrada', nome='tela de credenciais de API')
+checa('YouTube Data API' in t.text and 'Meta Graph API' in t.text and 'IEG-M' not in t.text, 'tela do órgão só com YouTube e Meta')
+checa('/admin/credenciais-api' in pm.get('/admin/').text, 'menu do admin com Credenciais de API')
+r = pm.post('/admin/credenciais-api', data={'csrf': tok(pm, '/admin/credenciais-api'), 'fonte': 'youtube', 'acao': 'salvar', 'chave': 'com espaco'}, follow_redirects=True)
+checa('Não gravado' in r.text, 'chave com espaço recusada')
+r = pm.post('/admin/credenciais-api', data={'csrf': tok(pm, '/admin/credenciais-api'), 'fonte': 'iegm', 'acao': 'salvar', 'chave': 'x'}, follow_redirects=True)
+checa('Fonte desconhecida' in r.text, 'IEG-M não é credencial do órgão')
+for f_, v_ in (('youtube', YT), ('meta', MT)):
+    r = pm.post('/admin/credenciais-api', data={'csrf': tok(pm, '/admin/credenciais-api'), 'fonte': f_, 'acao': 'salvar', 'chave': v_}, follow_redirects=True)
+    checa('Credencial cadastrada' in r.text, f'cadastrar credencial {f_}')
+t = pm.get('/admin/credenciais-api').text
+checa(YT not in t and MT not in t and t.count('cadastrada</span>') == 2 and 'Testar conexão' in t, 'tela não devolve os valores')
+d_ = ' '.join(x['dados'] for x in db.todos(PM, 'SELECT dados FROM credenciais_orgao'))
+checa(YT not in d_ and MT not in d_, 'credenciais cifradas no banco do órgão')
+checa(not db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE %s OR acao LIKE %s", (f'%{YT}%', f'%{MT}%')), 'auditoria sem o valor')
+checa(CR.obter_orgao(PM, 'youtube') == ('chave', YT) and CR.obter_orgao('bd_cm_bora', 'youtube') is None and CR.obter('youtube') is None, 'credencial só do próprio órgão')
+o_teste = CR._http_teste
+CR._http_teste = lambda f, auth: (200, auth[1] == YT)
+r = pm.post('/admin/credenciais-api', data={'csrf': tok(pm, '/admin/credenciais-api'), 'fonte': 'youtube', 'acao': 'testar'}, follow_redirects=True)
+CR._http_teste = o_teste
+checa('HTTP 200 · JSON válido' in r.text, 'testar com a chave do órgão')
+usadas = []
 class _R2:
     def __init__(s, url, params): s.status_code = 200; s.url = url; s.p = params or {}
     @property
@@ -217,13 +243,17 @@ class _C2:
     def __init__(s, *a, **k): pass
     def __enter__(s): return s
     def __exit__(s, *a): pass
-    def get(s, url, params=None): return _R2(url, params)
+    def get(s, url, params=None): usadas.append((params or {}).get('key') or (params or {}).get('access_token')); return _R2(url, params)
 o_cli = RS.httpx.Client
 RS.httpx.Client = _C2
 try:
     res = RS.coletar(o, {})
 finally:
-    RS.httpx.Client = o_cli; CR.obter = o_cred
+    RS.httpx.Client = o_cli
+checa(YT in usadas and MT in usadas and set(usadas) <= {YT, MT, None}, 'coleta usa as credenciais do órgão')
+r = pm.post('/admin/credenciais-api', data={'csrf': tok(pm, '/admin/credenciais-api'), 'fonte': 'meta', 'acao': 'apagar'}, follow_redirects=True)
+checa('Credencial apagada' in r.text and CR.obter_orgao(PM, 'meta') is None and CR.obter_orgao(PM, 'youtube'), 'apagar só a credencial escolhida')
+CFG.CHAVE_CREDENCIAIS = o_chave
 feed = (db.cfg(PM, 'redes_feed') or {}).get('itens', [])
 checa(len(feed) == 2 and all(x['img'].startswith('/midia/') for x in feed), f'feed das redes com miniaturas servidas pelo portal: {res}')
 h = pm.get('/').text
