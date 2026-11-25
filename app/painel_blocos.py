@@ -155,14 +155,15 @@ def grafico_mensal(meses, ano):
     return Markup(''.join(p))
 
 def contratacoes(o):
+    quem = 'pela Câmara' if o['tipo'] == 'legislativo' else 'pelo município'  # 25/11/2026: na Câmara, só as dela (PNCP pelo CNPJ da Câmara)
     m = _ind(o['banco'], 'cont_publicadas')
     if not m or not isinstance(m['ult']['detalhe'], list) or not m['ult']['detalhe']:
         return None
     det = m['ult']['detalhe']; tot = sum(x[1] for x in det); mx = max(x[1] for x in det) or 1
     disp = sum(x[1] for x in det if str(x[0]).lower().startswith('dispensa'))
-    return {'ano': m['ult']['periodo'], 'nota': m['ult']['nota'], 'total': tot, 'coletado': m['ult']['coletado_em'],
+    return {'ano': m['ult']['periodo'], 'nota': m['ult']['nota'], 'total': tot, 'coletado': m['ult']['coletado_em'], 'quem': quem,
             'itens': [{'l': x[0], 'n': P._br(x[1], 0), 'p': pct(x[1], tot, 1), 'w': round(x[1] / mx * 100, 1)} for x in det],
-            'frase': f"Das {P._br(tot, 0)} contratações publicadas pelo município em {m['ult']['periodo']} ({m['ult']['nota']}), {pct(disp, tot, 1)} são dispensas de licitação." if disp else ''}
+            'frase': f"Das {P._br(tot, 0)} contratações publicadas {quem} em {m['ult']['periodo']} ({m['ult']['nota']}), {pct(disp, tot, 1)} são dispensas de licitação." if disp else ''}
 
 def minimos(b, chaves):
     out = []
@@ -294,6 +295,29 @@ def cartoes(lista, fonte, atualizado):
         out.append(dict(k, l=k['l'][:32], nome=k.get('nome') or k['l'], u=k.get('u', ''), info=info))
     return out
 
+def areas_prefeitura(o):
+    """Câmara: valor empenhado por área da Prefeitura, do resumo do coletor financas_prefeitura (fonte pública; só totais)."""
+    from .coletores import financas_prefeitura as FP
+    r = (FP.atual(o['banco']) or {}).get('resumo') or {}
+    itens = [a for a in (r.get('areas') or {}).get('itens', []) if a.get('emp')]
+    if not itens:
+        return None
+    col = _data(r.get('coletado_em'))
+    return {'areas': {a['area']: {'area': a['area'], 'emp': a['emp'], 'pago': None, 'dot': None} for a in itens},
+            'ano': r.get('ano'), 'periodo': r.get('periodo', ''), 'nome': r.get('nome') or 'Prefeitura',
+            'info': {'fonte': r.get('fonte', ''), 'link': r.get('link', ''), 'periodo': r.get('periodo', ''),
+                     'atualizado': col.astimezone().strftime('%d/%m/%Y, %Hh%M') if col else '',
+                     'base': 'LRF, arts. 48 e 48-A; LAI, art. 8º — dado público da Prefeitura, lido de fonte pública'}}
+
+def kpis_area_pm(a, pm, pop, nome, cor):
+    """Cartões de uma área com o gasto da Prefeitura, no painel da Câmara (identificados como dado da Prefeitura)."""
+    ano = pm['ano']
+    k = [{'l': f'{nome} empenhada em {ano}', 'v': mi(a['emp']), 'd': f"pela Prefeitura, {pm['periodo']}", 'cor': cor, 'info': dict(pm['info'], metodo='')}]
+    if pop:
+        met = 'valor empenhado pela Prefeitura na área ÷ população estimada; ' + _calc(pop)
+        k.append({'l': f'{nome} por habitante', 'v': reais(float(a['emp']) / pop['n']), 'd': f'empenhado pela Prefeitura em {ano}', 'cor': ESCURO, 'info': dict(pm['info'], metodo=met)})
+    return k
+
 def montar(o, tema):
     hoje = config.hoje()
     b = o['banco']
@@ -310,10 +334,14 @@ def montar(o, tema):
         d['fin_links'] = links_tema(b, 'fin')
     if quer('cont'):
         d['cont'] = contratacoes(o)
+    pm = None  # 25/11/2026: na Câmara, gasto por área é o da PREFEITURA (resumo de fonte pública), sempre identificado
     if quer('saude') or quer('edu') or quer('social'):
         fin = None if leg else (d.get('fin') or financas(o, hoje))
         pop = populacao(b)
         porarea = {a['area']: a for a in areas(b, hoje.year)} if fin else {}
+        if leg:
+            pm = areas_prefeitura(o)
+            porarea = pm['areas'] if pm else {}
     if quer('saude'):
         sm = _ind(b, 'saude_minimo')
         ul = None
@@ -324,7 +352,9 @@ def montar(o, tema):
         if ul:
             k.append({'fonte': 'Siconfi — RREO, Anexo 14 (declarado pela Prefeitura)', 'base': 'LC 141/2012; Constituição, arts. 198 e 212', 'l': f"Aplicado em saúde em {ul['periodo']}", 'v': P.exibir(sm, ul), 'd': 'da receita de impostos; mínimo legal 15%', 'cor': '#C8553D', 'href': '/painel/saude_minimo'})
         a = porarea.get('Saúde')
-        if a and a['emp']:
+        if a and a['emp'] and pm:
+            k += kpis_area_pm(a, pm, pop, 'Saúde', '#C8553D')
+        elif a and a['emp']:
             k.append({'l': f'Saúde empenhada em {hoje.year}', 'v': mi(a['emp']), 'd': f"pago {mi(a['pago'] or 0)}; {pct(a['emp'], a['dot'])} da dotação", 'cor': ESCURO})
             if pop:
                 k.append({'l': 'Saúde por habitante', 'v': reais(float(a['emp']) / pop['n']), 'd': f'empenhado em {hoje.year}', 'metodo': 'valor empenhado na área ÷ população estimada; ' + _calc(pop), 'cor': '#C8553D'})
@@ -344,13 +374,17 @@ def montar(o, tema):
             k.append({'fonte': 'INEP — planilhas oficiais de resultados do IDEB', 'l': f"IDEB {idb['per']}, anos iniciais", 'v': idb['m']['valor_txt'],
                       'd': (idb['resp'] or 'rede pública') + ('; ' + '; '.join(f"{c['l']}: {c['v']}" for c in idb['comp']) if idb['comp'] else ''), 'cor': ESCURO, 'href': '/painel/edu_ideb_ai'})
         a = porarea.get('Educação')
-        if a and a['emp']:
+        if a and a['emp'] and pm:
+            k += kpis_area_pm(a, pm, pop, 'Educação', VERDE)
+        elif a and a['emp']:
             k.append({'l': f'Educação empenhada em {hoje.year}', 'v': mi(a['emp']), 'd': f"{reais(float(a['emp']) / pop['n'])} por habitante" if pop else f"pago {mi(a['pago'] or 0)}", 'metodo': ('por habitante: ' + _calc(pop)) if pop else '', 'cor': VERDE})
         d['edu'] = {'kpis': cartoes(k, FONTE_FIN, d['selo']), 'minimos': minimos(b, ['edu_mde_minimo', 'edu_fundeb_minimo']), 'ideb': idb, 'orc': orcamento_area(b, hoje.year, 'Educação'), 'links': links_tema(b, 'edu')}
     if quer('social'):
         k = []
         a = porarea.get('Assistência Social')
-        if a and a['emp']:
+        if a and a['emp'] and pm:
+            k += kpis_area_pm(a, pm, pop, 'Área social', VERDE)
+        elif a and a['emp']:
             k.append({'l': f'Assistência social, {hoje.year}', 'v': mi(a['emp']), 'd': f"{pct(a['emp'], a['dot'])} da dotação", 'cor': VERDE})
             k.append({'l': 'Já pago pela área social', 'v': mi(a['pago'] or 0), 'd': f"{pct(a['pago'] or 0, a['emp'])} do empenhado", 'cor': ESCURO})
             if pop:
