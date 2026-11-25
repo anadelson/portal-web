@@ -486,3 +486,25 @@ async def versao_restaurar(request: Request, cid: int, vid: int):
     db.exe(b, 'INSERT INTO conteudo_versoes (conteudo_id, quem, obs, dados) VALUES (%s,%s,%s,%s)', (cid, u['nome'], f"Restaurou a versão de {v['quando'].astimezone().strftime('%d/%m/%Y %H:%M')}", Jsonb(d)))
     auditar(request, f'Conteúdo {cid}: versão {vid} restaurada (volta como rascunho)')
     return ir(f'/admin/conteudos/{cid}', 'Versão restaurada como rascunho. Publique ou envie para aprovação quando estiver pronto.', request)
+
+
+# ---------- 25/11/2026: sistemas de terceiros (transparência da empresa contratada, Diário, e-SIC, Ouvidoria) ----------
+@r.get('/sistemas-terceiros')
+def sistemas_terceiros(request: Request):
+    u = exige(request, 'config')
+    from . import sistemas as SIS
+    cad = db.cfg(request.state.orgao['banco'], SIS.CHAVE, {}) or {}
+    return T('sistemas_terceiros', request, u, sis=SIS.SISTEMAS, cad=cad, base=SIS.BASE_LEGAL, erros=[])
+
+@r.post('/sistemas-terceiros')
+async def sistemas_terceiros_salvar(request: Request):
+    u = exige(request, 'config')
+    from .web import ler_form
+    from . import sistemas as SIS
+    f = await ler_form(request)
+    dados, erros = SIS.salvar(request.state.orgao['banco'], f)
+    if erros:
+        cad = {k: {'url': f.get(f'url_{k}', ''), 'empresa': f.get(f'empresa_{k}', '')} for k in SIS.SISTEMAS}
+        return T('sistemas_terceiros', request, u, sis=SIS.SISTEMAS, cad=cad, base=SIS.BASE_LEGAL, erros=erros)
+    auditar(request, 'Sistemas de terceiros: ' + (', '.join(SIS.SISTEMAS[k][0] for k in dados) or 'nenhum endereço'))
+    return ir('/admin/sistemas-terceiros', 'Endereços salvos.', request)

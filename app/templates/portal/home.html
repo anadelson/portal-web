@@ -1,4 +1,5 @@
 {% extends 'portal/base.html' %}
+{% from 'partials/externo.html' import botao_transp with context %}
 {% from 'partials/cena.html' import imagem_noticia with context %}
 {% macro cartao_paco(lado=False) %}{% set sd = ident.sede or {} %}
 <section class="paco{{ ' paco-lado' if lado }}" aria-labelledby="h-sede">
@@ -20,7 +21,7 @@
 {% if b.chave == 'atalhos' %}
 {# atalhos do topo: exceção à regra da fileira — grupo centralizado, cartões de 230 a 280 px, metade sobre a foto #}
 {% if d.atalhos %}<nav class="atalhos{{ ' leg' if leg }}" aria-label="Acesso direto">
-{% for a in d.atalhos %}<a href="{{ a.destino }}"><span class="ico">{{ icone(a.icone, 26) }}</span><span><strong>{{ a.titulo }}</strong>{% if a.descricao %}<span class="d">{{ a.descricao }}</span>{% endif %}</span></a>{% endfor %}
+{% for a in d.atalhos %}<a href="{{ a.destino }}"{% if a.externo %} rel="noopener"{% endif %}><span class="ico">{{ icone(a.icone, 26) }}</span><span><strong>{{ a.titulo }}{% if a.externo %}<span class="sr"> (site externo)</span>{% endif %}</strong>{% if a.descricao %}<span class="d">{{ a.descricao }}</span>{% endif %}</span></a>{% endfor %}
 </nav>{% endif %}
 
 {% elif b.chave == 'comunicados' %}
@@ -43,8 +44,9 @@
 
 {% elif b.chave == 'publicacoes' and d.pub %}
 <section aria-labelledby="h-pub"><h2 id="h-pub">Publicações oficiais</h2><p class="sub">Escolha o que procura e clique em Ver.</p>
-{% call fileira_cartoes(3 + (1 if mods.diario else 0), 'Publicações oficiais', 'fil-pub', classe='pub-cartoes') %}
-{% if mods.diario %}<form action="/diario" class="pub-c"><h3>Diário Oficial</h3><p>{% if d.pub.ultima_edicao %}Edição nº {{ d.pub.ultima_edicao.numero }}{{ d.pub.ultima_edicao.letra }} de {{ d.pub.ultima_edicao.data|br }}{% if d.pub.ultima_edicao.modo_teste %}<br><span class="chip erro">{{ legenda_teste }}</span>{% endif %}{% else %}Nenhuma edição publicada ainda{% endif %}</p><button class="btn sec" type="submit">Ver edições {{ icone('seta', 18, 'seta') }}</button></form>{% endif %}
+{% call fileira_cartoes(3 + (1 if mods.diario or externos.diario else 0), 'Publicações oficiais', 'fil-pub', classe='pub-cartoes') %}
+{% if externos.diario %}<form action="/diario" class="pub-c"><h3>Diário Oficial</h3><p>Publicado em sistema próprio{% if externos.diario.empresa %} ({{ externos.diario.empresa }}){% endif %}</p><button class="btn sec" type="submit">Ver edições {{ icone('seta', 18, 'seta') }}</button></form>
+{% elif mods.diario %}<form action="/diario" class="pub-c"><h3>Diário Oficial</h3><p>{% if d.pub.ultima_edicao %}Edição nº {{ d.pub.ultima_edicao.numero }}{{ d.pub.ultima_edicao.letra }} de {{ d.pub.ultima_edicao.data|br }}{% if d.pub.ultima_edicao.modo_teste %}<br><span class="chip erro">{{ legenda_teste }}</span>{% endif %}{% else %}Nenhuma edição publicada ainda{% endif %}</p><button class="btn sec" type="submit">Ver edições {{ icone('seta', 18, 'seta') }}</button></form>{% endif %}
 <form action="/transparencia/despesas" class="pub-c" onsubmit="this.action=this.querySelector('select').value;"><h3>Contas públicas</h3><p>Receitas, despesas e relatórios</p><label class="sr" for="pub-contas">Categoria</label><select id="pub-contas"><option value="/transparencia/despesas">Despesas</option><option value="/transparencia/receitas">Receitas</option><option value="/transparencia/relatorios-fiscais">Relatórios fiscais</option></select><button class="btn sec" type="submit">Ver contas {{ icone('seta', 18, 'seta') }}</button></form>
 <form action="/transparencia/licitacoes" class="pub-c"><h3>Licitações</h3><p>{{ d.pub.licitacoes }} publicação(ões) em {{ hoje.year }}</p><label class="sr" for="pub-lic">Modalidade</label><select id="pub-lic" name="unidade"><option value="">Todas as modalidades</option>{% for m in d.pub.modalidades %}<option>{{ m }}</option>{% endfor %}</select><button class="btn sec" type="submit">Ver licitações {{ icone('seta', 18, 'seta') }}</button></form>
 <form action="/legislacao" class="pub-c"><h3>Legislação</h3><p>{{ d.pub.legislacao }} ato(s) no acervo</p><label class="sr" for="pub-leg">Tipo de ato</label><select id="pub-leg" name="tipo"><option value="">Todos os tipos</option><option>Lei</option><option>Lei Complementar</option><option>Decreto</option><option>Portaria</option><option>Resolução</option></select><button class="btn sec" type="submit">Ver legislação {{ icone('seta', 18, 'seta') }}</button></form>
@@ -74,7 +76,7 @@
 <p class="rotulo">Prestação de contas</p><h2 id="h-num">Acompanhe a gestão</h2>
 <p class="sub">Números oficiais da {{ 'Câmara' if leg else 'Prefeitura' }}.{% if d.ind_atualizado %} Atualizado em {{ d.ind_atualizado|br }} · fonte de cada número no ⓘ.{% endif %}</p>
 {% call fileira_cartoes(d.indicadores|length, 'Indicadores em destaque', 'fil-ics', classe='ics') %}{% for k in d.indicadores %}{{ cartao(k, 'home-' ~ loop.index) }}{% endfor %}{% endcall %}
-<div class="acoes"><a class="btn" href="/painel">Painel de indicadores {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/dados-abertos">Dados abertos</a></div>
+<div class="acoes"><a class="btn" href="/painel">Painel de indicadores {{ icone('seta', 18, 'seta') }}</a>{% if externos.transparencia %}{{ botao_transp(externos.transparencia) }}{% endif %}<a class="btn sec" href="/dados-abertos">Dados abertos</a></div>
 </section>
 
 {% elif b.chave == 'numeros' and d.numeros %}
@@ -83,7 +85,7 @@
 {% if d.numeros.atualizado %}<p class="atualizado">Atualizado em {{ d.numeros.atualizado|br }}</p>{% endif %}</div>
 {% call fileira_cartoes(d.numeros.kpis|length, 'Números', 'fil-num', tag='dl', classe='kpis') %}{% for k in d.numeros.kpis %}<div style="border-top-color:{{ k.cor or 'var(--cor)' }}"><dt>{{ k.l }}</dt><dd class="v">{{ k.v }}</dd><dd class="d">{{ k.d }}</dd></div>{% endfor %}{% endcall %}
 {% if d.numeros.fonte %}<p class="legal" style="margin:10px 0 0">Fonte: {{ d.numeros.fonte }}</p>{% endif %}
-<nav class="pilulas" aria-label="Atalhos de prestação de contas"><a class="pilula cheia" href="/transparencia">Portal da Transparência</a>{% for l in d.numeros.links %}<a class="pilula" href="{{ l[1] }}">{{ l[0] }}</a>{% endfor %}</nav>
+<nav class="pilulas" aria-label="Atalhos de prestação de contas"><a class="pilula cheia" href="/transparencia">Portal da Transparência</a>{% if externos.transparencia %}{{ botao_transp(externos.transparencia, 'pilula') }}{% endif %}{% for l in d.numeros.links %}<a class="pilula" href="{{ l[1] }}">{{ l[0] }}</a>{% endfor %}</nav>
 </section>
 
 {% elif b.chave == 'diario' %}
@@ -161,7 +163,7 @@
 <div class="barra" role="img" aria-label="{{ '%.2f'|format(u[3])|replace('.', ',') }}% de um limite de 6%; alerta em 5,4%"><span style="width:{{ [u[3] / 6 * 100, 100]|min }}%"></span><i style="left:90%"></i></div>
 <p class="legal" style="margin:0">Linha tracejada: limite de alerta (5,4%). Fonte: {{ f.fonte }}.</p></div>{% endif %}
 {% else %}<p class="vazio">Dados financeiros a carregar.</p>{% endif %}
-<a class="btn" style="align-self:flex-start;margin-top:auto;border-radius:999px" href="/transparencia">Transparência da Câmara</a>
+<div class="acoes" style="margin-top:auto"><a class="btn" style="border-radius:999px" href="/transparencia">Transparência da Câmara</a>{% if externos.transparencia %}{{ botao_transp(externos.transparencia) }}{% endif %}</div>
 </section>
 
 {% elif b.chave == 'emendas' %}

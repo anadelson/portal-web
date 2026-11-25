@@ -272,11 +272,11 @@ def municipio(b):
             out.append({'l': m['nome'], 'v': m['valor_txt'] + (f" {m['unidade']}" if m['formato'] not in ('moeda', 'pct') and m['unidade'] else ''), 'f': f"{m['ult']['periodo']} · {m['fonte']}", 'href': f'/painel/{ch}'})
     return out
 
-def pendentes(b):
+def pendentes(b, sem_temas=()):
     """Gerado do catálogo: indicadores ativos (visíveis) ainda sem dado, com o motivo."""
     return [{'nome': i['nome'], 'motivo': i['pendente'] or 'aguardando a primeira coleta da fonte oficial.'}
             for i in db.todos(b, """SELECT i.* FROM indicadores i WHERE i.visivel AND NOT EXISTS (SELECT 1 FROM indicador_valores v WHERE v.indicador_id=i.id)
-                                    ORDER BY array_position(%s::text[], i.tema), i.ordem""", ([t for t, _ in P.TEMAS],))]
+                                    ORDER BY array_position(%s::text[], i.tema), i.ordem""", ([t for t, _ in P.TEMAS],)) if i['tema'] not in sem_temas]
 
 def links_tema(b, tema):
     return [{'chave': m['chave'], 'nome': m['nome']} for m in P.painel(b, tema)]
@@ -361,7 +361,8 @@ def montar(o, tema):
         sic = [m for m in P.painel(b, 'mun') if m['chave'].startswith(('gestao_sic', 'gestao_ouv'))]
         d['mun'] = {'iegm': iegm(o), 'municipio': municipio(b), 'sic': sic}
     if tema == 'tudo':
-        d['pendentes'] = pendentes(b)
+        # 25/11/2026: na Câmara, "Dinheiro público" é o da Prefeitura (fonte pública), nunca os indicadores fin_* do banco dela
+        d['pendentes'] = pendentes(b, ('fin',) if leg else ())
     return d
 
 

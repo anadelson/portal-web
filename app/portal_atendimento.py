@@ -28,12 +28,14 @@ def _pagina(request, tipo, **kw):
 
 @r.get('/ouvidoria')
 def ouvidoria(request: Request):
-    return _pagina(request, 'manifestacao')
+    from . import sistemas as SIS
+    return SIS.pagina(request, 'ouvidoria') or _pagina(request, 'manifestacao')
 
 
 @r.get('/e-sic')
 def esic(request: Request):
-    return _pagina(request, 'pedido')
+    from . import sistemas as SIS
+    return SIS.pagina(request, 'esic') or _pagina(request, 'pedido')
 
 
 @r.post('/acesso')

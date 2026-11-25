@@ -33,6 +33,7 @@ PADRAO = {
         ('institucional', 'Proposições', '/proposicoes', 'prop', 'transp'),
         ('institucional', 'Legislação', '/legislacao', '', 'ato'),
         ('institucional', 'Emendas', '/emendas', 'emend', 'transp'),
+        ('institucional', 'Diário Oficial', '/diario', 'diario', 'ato'),  # 25/11/2026: aparece com o módulo ou com o Diário externo (ex.: o da Prefeitura)
         ('institucional', 'Serviços', '/servicos', 'carta', 'serv'),
         ('institucional', 'Ouvidoria', '/ouvidoria', 'ouv', 'serv'),
         ('institucional', 'e-SIC', '/e-sic', 'sic', 'transp'),
@@ -90,19 +91,27 @@ def conflito(banco, destino, barra, ignorar_id=None):
             return m
     return None
 
-def barras(banco, mods, defeso, ao_vivo=False):
-    """Itens ativos por barra, respeitando módulos e o período eleitoral (classes vedadas somem)."""
+def barras(banco, mods, defeso, ao_vivo=False, externos=None):
+    """Itens ativos por barra, respeitando módulos e o período eleitoral (classes vedadas somem).
+    Diário, e-SIC e Ouvidoria com sistema de terceiros cadastrado levam direto a ele, mesmo sem o módulo próprio."""
+    from .sistemas import trocar_destino
     out = {b: [] for b in BARRAS}
     for m in db.todos(banco, 'SELECT * FROM menus WHERE ativo ORDER BY barra, ordem, id'):
-        if m['modulo'] and not mods.get(m['modulo']):
+        ext = trocar_destino(m['destino'], externos or {})
+        if m['modulo'] and not mods.get(m['modulo']) and not ext:
             continue
         if defeso and m['classe'] in VEDADAS:
             continue
-        item = dict(m, vivo=bool(ao_vivo and normalizar(m['destino']) == '/transmissoes'))
+        item = dict(m, vivo=bool(ao_vivo and normalizar(m['destino']) == '/transmissoes'), externo=bool(ext), destino=ext or m['destino'])
         if item['vivo']:
             item['rotulo'] = 'Ao vivo'
         out[m['barra']].append(item)
     return out
 
-def atalhos(banco):
-    return db.todos(banco, 'SELECT * FROM atalhos WHERE ativo ORDER BY ordem, id')
+def atalhos(banco, externos=None):
+    from .sistemas import trocar_destino
+    out = []
+    for a in db.todos(banco, 'SELECT * FROM atalhos WHERE ativo ORDER BY ordem, id'):
+        ext = trocar_destino(a['destino'], externos or {})
+        out.append(dict(a, destino=ext or a['destino'], externo=bool(ext)))
+    return out

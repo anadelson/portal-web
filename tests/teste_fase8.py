@@ -285,6 +285,48 @@ except Exception:
     pass
 checa(not db.um(PM, "SELECT 1 FROM indicadores WHERE titulo_curto=''"), 'todo indicador do catálogo tem título curto')
 
+# ---------- 25/11/2026: sistemas de terceiros (transparência da contratada, Diário, e-SIC, Ouvidoria) ----------
+from app import sistemas as SIS
+ok(pm.get('/admin/sistemas-terceiros'), txt='Transparência em detalhes', nome='admin: tela de sistemas de terceiros')
+t = tok(pm, '/admin/sistemas-terceiros')
+ok(pm.post('/admin/sistemas-terceiros', data={'csrf': t, 'url_esic': 'javascript:alert(1)', 'url_transparencia': 'https://transparencia.exemplo.test/portal'}),
+   txt='endereço inválido', nome='admin: recusa endereço que não é http(s)')
+checa(not SIS.conf(PM), 'nada gravado quando há endereço inválido')
+t = tok(pm, '/admin/sistemas-terceiros')
+ok(pm.post('/admin/sistemas-terceiros', data={'csrf': t, 'url_transparencia': 'https://transparencia.exemplo.test/portal', 'empresa_transparencia': 'Empresa Exemplo',
+                                              'url_esic': 'https://esic.exemplo.test/', 'url_ouvidoria': 'https://ouvidoria.exemplo.test/', 'url_diario': 'https://diario.exemplo.test/'},
+           follow_redirects=True), txt='Endereços salvos', nome='admin: salva os endereços')
+checa(set(SIS.conf(PM)) == {'transparencia', 'esic', 'ouvidoria', 'diario'}, f'quatro sistemas gravados: {SIS.conf(PM)}')
+checa(db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE 'Sistemas de terceiros:%%'"), 'alteração registrada na auditoria')
+h = pm.get('/').text
+i, p = destinos(h)
+checa('https://esic.exemplo.test/' in i + p and 'https://ouvidoria.exemplo.test/' in i + p and 'https://diario.exemplo.test/' in i + p, 'menus levam direto aos sistemas externos')
+checa('/e-sic' not in i + p and '/ouvidoria' not in i + p, 'menus próprios de e-SIC e Ouvidoria trocados pelo externo')
+checa('(site externo)' in h, 'link externo identificado para leitor de tela')
+checa(not (set(i) & set(p)), 'destinos externos continuam sem repetição entre as barras')
+r = ok(pm.get('/e-sic'), txt='https://esic.exemplo.test/', nome='/e-sic com sistema externo', sem='name="tipo" value="pedido"')
+checa('Base legal:' in r.text, '/e-sic externo com base legal')
+ok(pm.get('/ouvidoria'), txt='https://ouvidoria.exemplo.test/', nome='/ouvidoria com sistema externo', sem='name="tipo" value="manifestacao"')
+ok(pm.get('/diario'), txt='https://diario.exemplo.test/', nome='/diario com sistema externo')
+if pm.get('/painel').status_code == 200:
+    ok(pm.get('/painel'), txt='class="banner-transp" href="https://transparencia.exemplo.test/portal"', nome='painel: faixa Transparência em detalhes')
+    checa('Empresa Exemplo' in pm.get('/painel').text, 'painel: faixa com o nome da empresa')
+ok(pm.get('/transparencia'), txt='class="banner-transp"', nome='transparência: faixa Transparência em detalhes')
+# a Câmara tem os seus endereços (banco próprio): sem cadastro, nada aparece; com cadastro, leva ao sistema dela
+checa('banner-transp' not in cm.get('/transparencia').text, 'cm: sem endereço cadastrado, sem faixa')
+db.set_cfg(CM, SIS.CHAVE, {'transparencia': {'url': 'https://camara-transp.exemplo.test/', 'empresa': ''}, 'diario': {'url': 'https://diario.exemplo.test/', 'empresa': ''}})
+r = cm.get('/transparencia').text
+checa('href="https://camara-transp.exemplo.test/"' in r and 'transparencia.exemplo.test/portal' not in r, 'cm: faixa leva ao portal da contratada da Câmara')
+i, p = destinos(cm.get('/').text)
+checa('https://diario.exemplo.test/' in i + p, 'cm: Diário externo (o da Prefeitura) aparece no menu mesmo sem o módulo')
+if cm.get('/painel').status_code == 200:
+    ok(cm.get('/painel'), txt='href="https://camara-transp.exemplo.test/"', nome='cm painel: faixa da Câmara')
+    checa('Receita arrecadada no ano' not in cm.get('/painel').text, 'cm painel: finanças da Prefeitura fora de "Ainda não disponíveis"')
+# limpar: e-SIC e Ouvidoria próprios voltam
+db.set_cfg(PM, SIS.CHAVE, {}); db.set_cfg(CM, SIS.CHAVE, {})
+ok(pm.get('/e-sic'), txt='name="tipo" value="pedido"', nome='/e-sic próprio volta sem endereço externo')
+checa(not SIS.url_valida('https://sem ponto') and not SIS.url_valida('ftp://x.test') and SIS.url_valida('http://transparencia.exemplo.test/'), 'validação de endereço')
+
 if erros:
     print('ERROS:', len(erros)); [print(e) for e in erros]; sys.exit(1)
 print('fase 8: tudo ok')

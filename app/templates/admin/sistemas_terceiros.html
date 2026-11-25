@@ -1,0 +1,13 @@
+{% extends 'admin/base.html' %}{% block h1 %}Sistemas de terceiros{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+<div class="tela-cab"><p>Endereços dos sistemas que o órgão contrata de outras empresas e que ficam <strong>fora deste portal</strong>. Deixe em branco o que o próprio portal atende.</p></div>
+{% if erros %}<div class="msg" role="alert" style="background:#FBE4D8"><strong>Nada foi salvo:</strong><ul>{% for e in erros %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<form class="campos" method="post" action="/admin/sistemas-terceiros"><input type="hidden" name="csrf" value="{{ C }}">
+{% for k, (nome, desc, caminho) in sis.items() %}{% set x = cad.get(k) or {} %}
+<section class="cx" aria-labelledby="h-{{ k }}"><h2 id="h-{{ k }}">{{ nome }}</h2><p>{{ desc }}</p>
+<div class="grade2"><label>Endereço (https://…)<input name="url_{{ k }}" type="text" inputmode="url" autocomplete="off" spellcheck="false" maxlength="300" value="{{ x.url or '' }}" placeholder="https://"></label>
+<label>Empresa ou sistema (opcional)<input name="empresa_{{ k }}" maxlength="120" value="{{ x.empresa or '' }}" placeholder="ex.: nome da empresa contratada"></label></div>
+<p class="legal">{% if k == 'transparencia' %}Aparece como “Transparência em detalhes” no bloco “Acompanhe a gestão” da página inicial, como faixa logo abaixo das áreas do painel de indicadores e no alto da página Transparência.{% else %}Com o endereço preenchido, o menu e os atalhos de {{ nome }} levam direto ao sistema externo, e a página {{ caminho }} do portal passa a explicar onde o serviço é prestado, com o botão para lá{% if k != 'diario' %}; o formulário próprio do portal deixa de ser oferecido, para não haver dois canais{% endif %}.{% if k == 'diario' and orgao.tipo == 'legislativo' %} Se a Câmara publica os atos no Diário da Prefeitura, informe o endereço dele.{% endif %}{% endif %} Base legal: {{ base[k] }}.</p></section>{% endfor %}
+<div class="acoes-form"><button class="btn">Salvar endereços</button></div></form>
+<p class="legal"><strong>Base legal:</strong> Lei nº 12.527/2011 (LAI), art. 8º; Lei Complementar nº 101/2000 (LRF), art. 48-A; Lei nº 13.460/2017. Os sistemas externos são de responsabilidade das empresas contratadas; o portal só indica o endereço.</p>
+{% endblock %}

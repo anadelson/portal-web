@@ -5,7 +5,7 @@
 <title>{% block titulo %}{{ ident.nome or orgao.nome }}{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="/static/portal.css?v=33">
+<link rel="stylesheet" href="/static/portal.css?v=34">
 {% if ident.favicon %}{% if ident.favicon.svg %}<link rel="icon" type="image/svg+xml" href="{{ ident.favicon.svg }}">{% endif %}<link rel="icon" type="image/png" sizes="32x32" href="{{ ident.favicon['32'] }}"><link rel="icon" type="image/png" sizes="16x16" href="{{ ident.favicon['16'] }}"><link rel="apple-touch-icon" sizes="180x180" href="{{ ident.favicon['180'] }}"><link rel="icon" type="image/png" sizes="512x512" href="{{ ident.favicon['512'] }}">{% else %}<link rel="icon" type="image/svg+xml" href="/static/favicon-padrao.svg">{% endif %}
 <style>:root{--largura-max:{{ tokens.largura_css }};--cor:{{ tokens.cor }};--cor-escura:{{ tokens.cor_escura }};--cor-clara:{{ tokens.cor_clara }};--destaque:{{ tokens.destaque }}}</style>
 <script>document.documentElement.classList.add('js');try{var p=JSON.parse(localStorage.getItem('acess')||'{}');var h=document.documentElement;if(p.hc)h.classList.add('hc');if(p.sub)h.classList.add('sub');if(p.fonte)h.style.fontSize=p.fonte+'%'}catch(e){}</script>
@@ -33,7 +33,7 @@
 </div></div>
 
 <nav class="b-inst" aria-label="{{ 'Transparência e governo' }}"><ul class="int">
-{% for m in barras.institucional %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}>{{ m.rotulo }}</a></li>{% endfor %}
+{% for m in barras.institucional %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}{% if m.externo %} rel="noopener"{% endif %}>{{ m.rotulo }}{% if m.externo %}<span class="sr"> (site externo)</span>{% endif %}</a></li>{% endfor %}
 </ul></nav>
 
 <header class="topo{{ ' cheio' if barras and (barras.portal|length) >= 6 }}"><div class="int">
@@ -42,7 +42,7 @@
 <span class="nome"><span class="pre">{{ ident.prefixo or '' }}</span><strong>{{ ident.nome or orgao.nome }}</strong><span class="sub">{{ ident.subtitulo or orgao.municipio }}</span></span>
 </a>
 <nav class="menu" id="menu" tabindex="-1" aria-label="Portal"><ul>
-{% for m in barras.portal %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}{% if m.vivo %} class="vivo"{% endif %}>{% if m.vivo %}<span class="ponto" aria-hidden="true"></span>{% endif %}{{ m.rotulo }}{% if m.vivo %}<span class="sr"> (transmissão ao vivo agora)</span>{% endif %}</a></li>{% endfor %}
+{% for m in barras.portal %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}{% if m.vivo %} class="vivo"{% endif %}>{% if m.vivo %}<span class="ponto" aria-hidden="true"></span>{% endif %}{{ m.rotulo }}{% if m.vivo %}<span class="sr"> (transmissão ao vivo agora)</span>{% endif %}{% if m.externo %}<span class="sr"> (site externo)</span>{% endif %}</a></li>{% endfor %}
 </ul></nav>
 <form class="busca-topo" action="{{ busca_url }}" role="search" id="form-busca"><label class="sr" for="busca-topo">Buscar no portal</label><input id="busca-topo" name="q" type="search" placeholder="Buscar"><button type="submit" aria-label="Buscar">{{ icone('busca', 18) }}<span class="txt">Buscar</span></button></form>
 <button type="button" class="btn-menu" aria-expanded="false" aria-controls="menu-cel" hidden>{{ icone('mods', 20) }}<span>Menu</span></button>
@@ -51,8 +51,8 @@
 <div class="menu-cel" id="menu-cel" role="dialog" aria-modal="true" aria-labelledby="h-menu-cel" hidden>
 <div class="cab-menu"><h2 id="h-menu-cel">Menu</h2><button type="button" class="btn sec" data-fechar-menu>Fechar <span aria-hidden="true">✕</span></button></div>
 <form action="{{ busca_url }}" role="search" class="busca-cel"><label class="sr" for="busca-cel">Buscar no portal</label><input id="busca-cel" name="q" type="search" placeholder="Buscar no portal"><button class="btn" type="submit">Buscar</button></form>
-<h3>Portal</h3><ul>{% for m in barras.portal %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}>{{ m.rotulo }}</a></li>{% endfor %}</ul>
-<h3>Transparência e governo</h3><ul>{% for m in barras.institucional %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}>{{ m.rotulo }}</a></li>{% endfor %}</ul>
+<h3>Portal</h3><ul>{% for m in barras.portal %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}{% if m.externo %} rel="noopener"{% endif %}>{{ m.rotulo }}{% if m.externo %}<span class="sr"> (site externo)</span>{% endif %}</a></li>{% endfor %}</ul>
+<h3>Transparência e governo</h3><ul>{% for m in barras.institucional %}<li><a href="{{ m.destino }}"{{ aponta(m.destino) }}{% if m.externo %} rel="noopener"{% endif %}>{{ m.rotulo }}{% if m.externo %}<span class="sr"> (site externo)</span>{% endif %}</a></li>{% endfor %}</ul>
 </div>
 
 {% if ao_vivo %}<section class="ao-vivo" aria-label="Transmissão ao vivo"><div class="int"><span class="pulso-txt"><span class="ponto" aria-hidden="true"></span>AO VIVO</span><span class="t">{{ ao_vivo.titulo }}</span><a class="btn-vivo" href="/transmissoes">Assistir agora</a></div></section>
@@ -91,8 +91,8 @@
 {% if leg %}<li><a href="/sessoes">Sessões e votações</a></li>{% endif %}{% if mods.carta %}<li><a href="/servicos">Carta de Serviços</a></li>{% endif %}
 <li><a href="/legislacao">Legislação</a></li><li><a href="/dados-abertos">Dados abertos</a></li></ul></nav>
 <nav class="fcol" aria-labelledby="f-inst"><h2 id="f-inst">Institucional</h2><ul>
-{% if leg %}{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/vereadores">Vereadores e Mesa Diretora</a></li><li><a href="/proposicoes">Projetos e proposições</a></li><li><a href="/comissoes">Comissões</a></li><li><a href="/contas">Contas do Prefeito</a></li>{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
-{% else %}{% if mods.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/transparencia/licitacoes">Licitações</a></li><li><a href="/transparencia/contratos">Contratos</a></li><li><a href="/conheca">Conheça {{ ident.nome_curto or 'a cidade' }}</a></li>{% endif %}
+{% if leg %}{% if mods.diario or externos.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/vereadores">Vereadores e Mesa Diretora</a></li><li><a href="/proposicoes">Projetos e proposições</a></li><li><a href="/comissoes">Comissões</a></li><li><a href="/contas">Contas do Prefeito</a></li>{% if mods.emend %}<li><a href="/emendas">Emendas impositivas</a></li>{% endif %}
+{% else %}{% if mods.diario or externos.diario %}<li><a href="/diario">Diário Oficial</a></li>{% endif %}<li><a href="/transparencia/licitacoes">Licitações</a></li><li><a href="/transparencia/contratos">Contratos</a></li><li><a href="/conheca">Conheça {{ ident.nome_curto or 'a cidade' }}</a></li>{% endif %}
 {% if mods.noticias %}<li><a href="/noticias">Notícias</a></li>{% endif %}<li><a href="/comunicados">Comunicados</a></li><li><a href="/governo">Governo</a></li><li><a href="/fotos">Fotos</a></li><li><a href="/links-uteis">Links úteis</a></li><li><a href="/fale-conosco">Fale conosco</a></li></ul>
 {% for v in vizinhos %}<a class="f-viz" href="https://{{ v.dominio }}/"><span><small>{{ 'Poder Legislativo' if v.tipo == 'legislativo' else 'Poder Executivo' }}</small><strong>{{ v.nome }}</strong></span>{{ icone('seta', 18) }}</a>{% endfor %}
 </nav>
