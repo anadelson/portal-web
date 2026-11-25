@@ -1,7 +1,9 @@
-{# 25/11/2026: sistemas de terceiros (app/sistemas.py). x = externos.<chave>: url, empresa, nome, base #}
-{% macro botao_transp(x, classe='btn sec') %}<a class="{{ classe }}" href="{{ x.url }}" rel="noopener">Transparência em detalhes <span aria-hidden="true">↗</span><span class="sr"> (portal da transparência {{ 'da ' ~ x.empresa if x.empresa else 'da empresa contratada' }}, site externo)</span></a>{% endmacro %}
-{% macro banner_transp(x) %}<a class="banner-transp" href="{{ x.url }}" rel="noopener">
+{# 25/11/2026: sistemas de terceiros (app/sistemas.py). x = externos.<chave>: url, empresa, nome, base, nova_aba #}
+{% macro abre(nova) %}{% if nova %} target="_blank" rel="noopener noreferrer"{% else %} rel="noopener"{% endif %}{% endmacro %}
+{% macro aviso(nova) %}<span class="sr"> (site externo{{ ', abre em nova aba' if nova }})</span>{% endmacro %}
+{% macro botao_transp(x, classe='btn sec') %}<a class="{{ classe }}" href="{{ x.url }}"{{ abre(x.nova_aba) }}>Transparência em detalhes <span aria-hidden="true">↗</span><span class="sr"> (portal da transparência {{ 'da ' ~ x.empresa if x.empresa else 'da empresa contratada' }}, site externo{{ ', abre em nova aba' if x.nova_aba }})</span></a>{% endmacro %}
+{% macro banner_transp(x) %}<a class="banner-transp" href="{{ x.url }}"{{ abre(x.nova_aba) }}>
 <span class="bt-ico" aria-hidden="true">{{ icone('grafico', 30) }}</span>
 <span class="bt-txt"><span class="bt-rot">Portal da Transparência {{ 'da Câmara' if leg else 'da Prefeitura' }}</span><strong>Transparência em detalhes</strong>
 <span class="bt-d">Receitas, despesas, licitações, contratos, pessoal e dados abertos em detalhe{% if x.empresa %}, no portal mantido por {{ x.empresa }}{% else %}, no portal da empresa contratada{% endif %}.</span></span>
-<span class="bt-ir">Acessar <span aria-hidden="true">↗</span><span class="sr"> (site externo)</span></span></a>{% endmacro %}
+<span class="bt-ir">Acessar <span aria-hidden="true">↗</span>{{ aviso(x.nova_aba) }}</span></a>{% endmacro %}

@@ -294,9 +294,14 @@ ok(pm.post('/admin/sistemas-terceiros', data={'csrf': t, 'url_esic': 'javascript
 checa(not SIS.conf(PM), 'nada gravado quando há endereço inválido')
 t = tok(pm, '/admin/sistemas-terceiros')
 ok(pm.post('/admin/sistemas-terceiros', data={'csrf': t, 'url_transparencia': 'https://transparencia.exemplo.test/portal', 'empresa_transparencia': 'Empresa Exemplo',
-                                              'url_esic': 'https://esic.exemplo.test/', 'url_ouvidoria': 'https://ouvidoria.exemplo.test/', 'url_diario': 'https://diario.exemplo.test/'},
+                                              'url_esic': 'https://esic.exemplo.test/', 'aba_esic': 'nova', 'aba_transparencia': 'mesma', 'url_ouvidoria': 'https://ouvidoria.exemplo.test/', 'url_diario': 'https://diario.exemplo.test/'},
            follow_redirects=True), txt='Endereços salvos', nome='admin: salva os endereços')
 checa(set(SIS.conf(PM)) == {'transparencia', 'esic', 'ouvidoria', 'diario'}, f'quatro sistemas gravados: {SIS.conf(PM)}')
+checa(SIS.conf(PM)['esic']['nova_aba'] and not SIS.conf(PM)['transparencia']['nova_aba'], 'opção de aba gravada por sistema')
+h0 = pm.get('/').text
+checa(re.search(r'href="https://esic\.exemplo\.test/" target="_blank" rel="noopener noreferrer"', h0) and 'abre em nova aba' in h0, 'e-SIC externo abre em nova aba')
+checa(not re.search(r'href="https://ouvidoria\.exemplo\.test/" target="_blank"', h0), 'ouvidoria externa abre na mesma aba (padrão)')
+checa('checked' in re.search(r'name="aba_esic" value="nova"[^>]*>', pm.get('/admin/sistemas-terceiros').text).group(0), 'admin mostra a opção de aba salva')
 checa(db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE 'Sistemas de terceiros:%%'"), 'alteração registrada na auditoria')
 h = pm.get('/').text
 i, p = destinos(h)

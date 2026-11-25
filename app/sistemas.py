@@ -6,6 +6,7 @@
   esic           e-SIC (pedidos de acesso à informação)
   ouvidoria      Ouvidoria
 
+Cada endereço abre na mesma aba (padrão) ou em nova aba, conforme o cadastro.
 Com o endereço preenchido, os menus e atalhos levam direto ao sistema externo e as páginas próprias (/diario, /e-sic,
 /ouvidoria) mostram de onde o serviço é prestado, com o botão para lá — o formulário próprio deixa de ser oferecido, para o
 cidadão não ter dois canais. Cada órgão cadastra os seus (configuração 'sistemas_terceiros' do banco do órgão)."""
@@ -52,7 +53,8 @@ def conf(banco):
     for k, (nome, _, _) in SISTEMAS.items():
         x = bruto.get(k) or {}
         if url_valida(x.get('url')):
-            out[k] = {'url': x['url'].strip(), 'empresa': (x.get('empresa') or '').strip()[:120], 'nome': nome, 'base': BASE_LEGAL[k]}
+            out[k] = {'url': x['url'].strip(), 'empresa': (x.get('empresa') or '').strip()[:120], 'nome': nome, 'base': BASE_LEGAL[k],
+                      'nova_aba': bool(x.get('nova_aba'))}
     return out
 
 
@@ -66,17 +68,17 @@ def salvar(banco, form):
             erros.append(f'{nome}: endereço inválido (use o endereço completo, começando por https://)')
             continue
         if url:
-            dados[k] = {'url': url, 'empresa': emp}
+            dados[k] = {'url': url, 'empresa': emp, 'nova_aba': form.get(f'aba_{k}') == 'nova'}
     if not erros:
         db.set_cfg(banco, CHAVE, dados)
     return dados, erros
 
 
 def trocar_destino(destino, externos):
-    """Destino de menu/atalho próprio (/diario, /e-sic, /ouvidoria) → endereço externo, se cadastrado."""
+    """Destino de menu/atalho próprio (/diario, /e-sic, /ouvidoria) → sistema externo cadastrado (dict com url e nova_aba) ou None."""
     from .menus import normalizar
     k = POR_CAMINHO.get(normalizar(destino))
-    return externos[k]['url'] if k and k in externos else None
+    return externos[k] if k and k in externos else None
 
 
 INTRO = {

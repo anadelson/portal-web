@@ -1,5 +1,5 @@
 {% extends 'portal/base.html' %}
-{% from 'partials/externo.html' import botao_transp with context %}
+{% from 'partials/externo.html' import botao_transp, abre as ext_abre, aviso as ext_aviso with context %}
 {% from 'partials/cena.html' import imagem_noticia with context %}
 {% macro cartao_paco(lado=False) %}{% set sd = ident.sede or {} %}
 <section class="paco{{ ' paco-lado' if lado }}" aria-labelledby="h-sede">
@@ -21,7 +21,7 @@
 {% if b.chave == 'atalhos' %}
 {# atalhos do topo: exceção à regra da fileira — grupo centralizado, cartões de 230 a 280 px, metade sobre a foto #}
 {% if d.atalhos %}<nav class="atalhos{{ ' leg' if leg }}" aria-label="Acesso direto">
-{% for a in d.atalhos %}<a href="{{ a.destino }}"{% if a.externo %} rel="noopener"{% endif %}><span class="ico">{{ icone(a.icone, 26) }}</span><span><strong>{{ a.titulo }}{% if a.externo %}<span class="sr"> (site externo)</span>{% endif %}</strong>{% if a.descricao %}<span class="d">{{ a.descricao }}</span>{% endif %}</span></a>{% endfor %}
+{% for a in d.atalhos %}<a href="{{ a.destino }}"{% if a.externo %}{{ ext_abre(a.nova_aba) }}{% endif %}><span class="ico">{{ icone(a.icone, 26) }}</span><span><strong>{{ a.titulo }}{% if a.externo %}{{ ext_aviso(a.nova_aba) }}{% endif %}</strong>{% if a.descricao %}<span class="d">{{ a.descricao }}</span>{% endif %}</span></a>{% endfor %}
 </nav>{% endif %}
 
 {% elif b.chave == 'comunicados' %}

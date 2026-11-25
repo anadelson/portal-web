@@ -504,7 +504,7 @@ async def sistemas_terceiros_salvar(request: Request):
     f = await ler_form(request)
     dados, erros = SIS.salvar(request.state.orgao['banco'], f)
     if erros:
-        cad = {k: {'url': f.get(f'url_{k}', ''), 'empresa': f.get(f'empresa_{k}', '')} for k in SIS.SISTEMAS}
+        cad = {k: {'url': f.get(f'url_{k}', ''), 'empresa': f.get(f'empresa_{k}', ''), 'nova_aba': f.get(f'aba_{k}') == 'nova'} for k in SIS.SISTEMAS}
         return T('sistemas_terceiros', request, u, sis=SIS.SISTEMAS, cad=cad, base=SIS.BASE_LEGAL, erros=erros)
     auditar(request, 'Sistemas de terceiros: ' + (', '.join(SIS.SISTEMAS[k][0] for k in dados) or 'nenhum endereço'))
     return ir('/admin/sistemas-terceiros', 'Endereços salvos.', request)

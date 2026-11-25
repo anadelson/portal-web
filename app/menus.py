@@ -102,7 +102,7 @@ def barras(banco, mods, defeso, ao_vivo=False, externos=None):
             continue
         if defeso and m['classe'] in VEDADAS:
             continue
-        item = dict(m, vivo=bool(ao_vivo and normalizar(m['destino']) == '/transmissoes'), externo=bool(ext), destino=ext or m['destino'])
+        item = dict(m, vivo=bool(ao_vivo and normalizar(m['destino']) == '/transmissoes'), externo=bool(ext), nova_aba=bool(ext and ext['nova_aba']), destino=ext['url'] if ext else m['destino'])
         if item['vivo']:
             item['rotulo'] = 'Ao vivo'
         out[m['barra']].append(item)
@@ -113,5 +113,5 @@ def atalhos(banco, externos=None):
     out = []
     for a in db.todos(banco, 'SELECT * FROM atalhos WHERE ativo ORDER BY ordem, id'):
         ext = trocar_destino(a['destino'], externos or {})
-        out.append(dict(a, destino=ext or a['destino'], externo=bool(ext)))
+        out.append(dict(a, destino=ext['url'] if ext else a['destino'], externo=bool(ext), nova_aba=bool(ext and ext['nova_aba'])))
     return out

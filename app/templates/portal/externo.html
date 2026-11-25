@@ -1,4 +1,5 @@
 {% extends 'portal/base.html' %}
+{% from 'partials/externo.html' import abre, aviso %}
 {% block titulo %}{{ x.nome }} — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">{{ x.nome }}</span></nav>
@@ -7,6 +8,6 @@
 <p class="legal legal-topo"><strong>Base legal:</strong> {{ x.base }}.</p>
 <section class="caixa externo-cx" aria-labelledby="h-ext"><h2 id="h-ext">Onde acessar</h2>
 <p>{{ artigo|capitalize }} {{ x.nome }} {{ 'da Câmara' if leg else 'da Prefeitura' }} funciona em sistema próprio{% if x.empresa %} ({{ x.empresa }}){% endif %}, fora deste portal.</p>
-<p><a class="btn" href="{{ x.url }}" rel="noopener">Acessar {{ artigo }} {{ x.nome }} <span aria-hidden="true">↗</span><span class="sr"> (site externo)</span></a></p>
+<p><a class="btn" href="{{ x.url }}"{{ abre(x.nova_aba) }}>Acessar {{ artigo }} {{ x.nome }} <span aria-hidden="true">↗</span>{{ aviso(x.nova_aba) }}</a></p>
 <p class="legal">Endereço: {{ x.url }}</p></section>
 {% endblock %}
