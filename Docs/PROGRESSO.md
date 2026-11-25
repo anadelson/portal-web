@@ -2978,4 +2978,16 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Testes:** prévia no portal da Câmara (4 cartões de 173×98 px, 3 + 1); `teste_escala` e `teste_legislativo` ok.
 - **Implantado em 25/11/2026, ~14h50 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `5ba03ae`; backup ok; 41 suítes sem falha sobre a imagem; app e worker recriados; `atualizar` "pronto.".
 - **Conferido:** pmbora e cmbora 200; gestão 303; CSS v=37 no ar com a grade de 3 colunas; sem erros nos logs.
-- **Pronto, aguardando aprovação:** branch `vereadores-2colunas` (`1b04d6d`): vereadores da página inicial com o Presidente em destaque e os demais em cartões compactos em 2 colunas; e-mail do perfil do vereador quebrando dentro da coluna (`portal.css?v=38`).
+- **Substituído** pela Mesa em 2 colunas (tag `vereadores-mesa`, abaixo).
+
+## 25/11/2026 — Vereadores em 2 colunas, e-mail do perfil e Mesa por biênio em vigor (tag `vereadores-mesa`)
+- **Pedido do usuário:** (1) na seção de vereadores, manter o Presidente como está e os demais em cartões menores em 2 colunas; (2) no perfil do vereador (Igor), o e-mail estourava o alinhamento; (3) Mesa Diretora em 2 colunas, Presidente em destaque, só o 1º biênio (100% da largura) enquanto o 2º não estiver em vigor; com os dois, lado a lado ou um abaixo do outro, escolhido no admin; tirar o aviso "Sem foto oficial cadastrada, o cartão mostra as iniciais…".
+- **Feito:**
+  - página inicial: Presidente no cartão escuro de destaque à esquerda; os demais em cartões compactos (foto pequena, nome, cargo, apelido e partido) em 2 colunas; em caixa estreita, Presidente em cima; no celular, 1 coluna; os vereadores saíram da fileira (exceção registrada em `teste_fileira`);
+  - perfil: campos do perfil quebram texto longo (e-mail) dentro da coluna;
+  - Mesa: membros em 2 colunas de mesmo tamanho; Presidente em destaque (fundo escuro, faixa amarela); só biênios já iniciados (ano inicial ≤ ano corrente; antes da legislatura, o 1º); biênio único em 100%; com dois, `mesa_layout` (`lado` padrão ou `abaixo`), gravado em config pelo admin em Vereadores e Mesas → Legislaturas e Mesas ("Mesa Diretora na página inicial"), com auditoria;
+  - saiu o aviso das iniciais; `portal.css?v=39`.
+- **Testes:** `teste_legislativo` (2029: só o 1º biênio, classe `um`, Presidente em destaque, sem o aviso; layout inválido recusado; "abaixo" gravado e marcado no admin; 2031: os dois biênios); `teste_fileira`, `teste_escala`; prévias no portal da Câmara.
+- **Implantado em 25/11/2026, ~15h50 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"; o usuário liberou o horário: sem Diário hoje): mescla `16b8f85`; backup ok; 41 suítes sem falha sobre o código e sobre a imagem; app e worker recriados; `atualizar` "pronto.".
+- **Conferido:** pmbora, cmbora e perfil 200; gestão e admin 303; CSS v=39; na Câmara, 8 cartões compactos, só o biênio 2025–2026 em 100%, Presidente da Mesa em destaque, sem o aviso; sem erros nos logs.
+- **Observação (dado, não código):** a biografia do vereador Igor começa com asteriscos de formatação digitados no cadastro; correção pelo admin.
