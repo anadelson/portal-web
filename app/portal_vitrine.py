@@ -1,4 +1,4 @@
-"""Páginas públicas de selos (/selos), vídeos (/videos) e câmeras ao vivo (/cameras), 26/11/2026.
+"""Páginas públicas de selos (/selos), vídeos (/videos) e câmeras ao vivo com mapa (/cameras-ao-vivo), 26/11/2026.
 O vídeo das câmeras passa pelo portal (/cameras/<id>/…) a partir do conversor do nó; o endereço da câmera nunca chega ao navegador."""
 import re
 from fastapi import APIRouter, Request, HTTPException
@@ -28,10 +28,18 @@ def videos(request: Request):
     g = VT.galeria_unica(ctx['orgao']['banco'], ctx['mods'], ctx['defeso'], limite_videos=60)
     return templates.TemplateResponse(request, 'portal/videos.html', dict(ctx, galeria_d=g))
 
+@r.get('/cameras-ao-vivo')
+def cameras_ao_vivo(request: Request):
+    """Todas as câmeras ativas do órgão, sobre o mapa da cidade (posição cadastrada no painel) e em lista (26/11/2026).
+    Endereço novo porque /cameras chegou a redirecionar com 301 (guardado pelos navegadores) para /videos."""
+    ctx = ctx_orgao(request)
+    o = ctx['orgao']
+    cams = VT.cameras(o['banco'])
+    return templates.TemplateResponse(request, 'portal/cameras.html', dict(ctx, cameras=cams, mapa=VT.mapa_cameras(cams, o.get('ibge'))))
+
 @r.get('/cameras')
 def cameras(request: Request):
-    """Galeria única desde 26/11/2026: as câmeras ficam junto dos vídeos."""
-    return RedirectResponse('/videos', status_code=301)
+    return RedirectResponse('/cameras-ao-vivo', status_code=302)
 
 @r.get('/cameras/{cid}/{resto:path}')
 async def camera_video(request: Request, cid: int, resto: str = ''):

@@ -48,10 +48,11 @@ async def erros(request: Request, exc: HTTPException):
     html = f'<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>{exc.status_code}</title><body style="font-family:system-ui;max-width:640px;margin:10vh auto;padding:0 20px"><h1>{exc.status_code}</h1><p>{msg}</p><p><a href="/">Voltar ao início</a></p></body></html>'
     return HTMLResponse(html, status_code=exc.status_code)
 
+# Mapa das câmeras (26/11/2026): imagens do mapa do OpenStreetMap (tile.openstreetmap.org), só nas páginas com mapa.
 # VLibras (Governo Federal, aprovado em 09/11/2026): o widget carrega script, estilos, imagens e o avatar (WebGL/WebAssembly) de vlibras.gov.br.
 VLIBRAS = 'https://vlibras.gov.br https://*.vlibras.gov.br https://cdn.jsdelivr.net/gh/spbgovbr-vlibras/'  # vlibras.gov.br/app redireciona para a pasta oficial no jsDelivr
 CSP = (f"default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' {VLIBRAS}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com {VLIBRAS}; "
-       f"font-src 'self' https://fonts.gstatic.com {VLIBRAS}; img-src 'self' data: blob: https://i.ytimg.com {VLIBRAS}; media-src 'self' blob: {VLIBRAS}; worker-src 'self' blob:; "
+       f"font-src 'self' https://fonts.gstatic.com {VLIBRAS}; img-src 'self' data: blob: https://i.ytimg.com https://tile.openstreetmap.org {VLIBRAS}; media-src 'self' blob: {VLIBRAS}; worker-src 'self' blob:; "
        f"frame-src https://www.youtube-nocookie.com https:; connect-src 'self' {VLIBRAS}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
 
 class Cabecalhos:

@@ -1,0 +1,20 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Câmeras ao vivo — {{ ident.nome }}{% endblock %}
+{% from 'partials/video.html' import camera with context %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><a href="/videos">Vídeos e câmeras ao vivo</a><span aria-hidden="true">›</span><span aria-current="page">Câmeras ao vivo</span></nav>
+<h1>Câmeras ao vivo</h1>
+<p class="intro">Todas as câmeras de pontos públicos de {{ ident.nome_curto or 'cidade' }}, no mapa e em lista. Clique em uma câmera no mapa para ir até ela; o vídeo só carrega quando você clica em “Assistir ao vivo”.</p>
+{% if not cameras %}<p class="vazio">Nenhuma câmera publicada ainda.</p>
+{% else %}
+{% set sem_pos = cameras|selectattr('lat', 'none')|rejectattr('exemplo')|list %}
+{% if mapa %}<link rel="stylesheet" href="/static/vendor/leaflet-1.9.4/leaflet.css"><script src="/static/vendor/leaflet-1.9.4/leaflet.js" defer></script><script src="/static/mapa.js?v=1" defer></script>
+<section class="mapa-cams-b" aria-labelledby="h-mapa"><h2 id="h-mapa" class="sr">Mapa das câmeras</h2>
+<div class="mapa-cams" data-mapa-cameras role="region" aria-label="Mapa de {{ ident.nome_curto or 'cidade' }} com as câmeras (a lista abaixo traz as mesmas câmeras)"><noscript><p class="vazio">O mapa precisa de JavaScript; as câmeras estão na lista abaixo.</p></noscript></div>
+<script type="application/json" id="dados-mapa">{{ mapa|tojson }}</script>
+<p class="legal">Mapa: © colaboradores do OpenStreetMap. Ao abrir esta página, o seu navegador baixa as imagens do mapa de tile.openstreetmap.org (OpenStreetMap Foundation), que recebe o seu endereço IP. {% if mapa.pontos|selectattr('ilustrativa')|list %}As câmeras de exemplo estão em posições ilustrativas.{% endif %}</p></section>{% endif %}
+<section aria-labelledby="h-lista"><h2 id="h-lista">{{ cameras|length }} câmera{{ 's' if cameras|length != 1 }}</h2>
+<ul class="cams pagina-cams">{% for c in cameras %}<li id="cam-{{ c.id }}" tabindex="-1">{{ camera(c) }}{% if c.lat is none and not c.exemplo %}<p class="legal">Sem posição no mapa.</p>{% endif %}</li>{% endfor %}</ul>
+<p class="legal">Pontos públicos, em tempo real. A imagem só carrega quando você clica; o portal não grava as imagens.</p></section>
+{% endif %}
+{% endblock %}

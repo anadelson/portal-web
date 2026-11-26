@@ -129,7 +129,8 @@ async def cameras(request: Request):
     u = exige(request, 'config'); o = request.state.orgao
     from . import credenciais as CR
     ok = await run_in_threadpool(VT.conversor_ok)
-    return T('vitrine_cameras', request, u, cameras=VT.cameras(o['banco'], publicas=False), conversor=ok, chave_ok=CR.chave_ok())
+    return T('vitrine_cameras', request, u, cameras=VT.cameras(o['banco'], publicas=False), conversor=ok, chave_ok=CR.chave_ok(),
+             centro=VT.centro(o.get('ibge')))
 
 @r.post('/cameras')
 async def cameras_post(request: Request):
@@ -145,14 +146,21 @@ async def cameras_post(request: Request):
             nome, local = ' '.join(str(f.get('nome') or '').split()), ' '.join(str(f.get('local') or '').split())
             if not 3 <= len(nome) <= 80 or len(local) > 160:
                 return ir('/admin/cameras', 'Não salvo: nome de 3 a 80 caracteres e local até 160.', request)
+            lat, lon = VT.ler_posicao(f.get('posicao'))
             rtsp = VT.cifrar_rtsp(f.get('rtsp', ''))
-            db.exe(b, 'INSERT INTO cameras (nome, local, rtsp, caminho, criado_por) VALUES (%s,%s,%s,%s,%s)', (nome, local, rtsp, VT.novo_caminho(o), u['nome']))
+            db.exe(b, 'INSERT INTO cameras (nome, local, rtsp, caminho, criado_por, lat, lon) VALUES (%s,%s,%s,%s,%s,%s,%s)',
+                   (nome, local, rtsp, VT.novo_caminho(o), u['nome'], lat, lon))
             auditar(request, f'Câmera cadastrada: {nome} (endereço cifrado, não registrado)')
             msg = 'Câmera cadastrada. O endereço foi gravado cifrado e não volta para a tela.'
         elif acao == 'trocar' and c:
             db.exe(b, 'UPDATE cameras SET rtsp=%s, exemplo=FALSE WHERE id=%s', (VT.cifrar_rtsp(f.get('rtsp', '')), cid))
             auditar(request, f"Câmera {c['nome']}: endereço trocado (não registrado)")
             msg = 'Endereço trocado.'
+        elif acao == 'posicao' and c:
+            lat, lon = VT.ler_posicao(f.get('posicao'))
+            db.exe(b, 'UPDATE cameras SET lat=%s, lon=%s WHERE id=%s', (lat, lon, cid))
+            auditar(request, f"Câmera {c['nome']}: posição no mapa {'apagada' if lat is None else 'gravada'}")
+            return ir('/admin/cameras', 'Posição no mapa apagada.' if lat is None else 'Posição no mapa gravada.', request)
         elif acao == 'ativa' and c:
             db.exe(b, 'UPDATE cameras SET ativa = NOT ativa WHERE id=%s', (cid,))
             auditar(request, f"Câmera {'desligada' if c['ativa'] else 'ligada'}: {c['nome']}")

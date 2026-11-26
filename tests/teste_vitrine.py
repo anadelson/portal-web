@@ -142,9 +142,60 @@ r = anon.get(f"/cameras/{c['id']}/index.m3u8", follow_redirects=False)
 checa(r.status_code == 200 and r.text.startswith('#EXTM3U') and 'location' not in r.headers and c['caminho'] not in r.text, 'vídeo do portal: 302 do conversor seguido no servidor, sem expor o caminho interno')
 checa(anon.get(f"/cameras/{c['id']}/nada.ts", follow_redirects=False).status_code == 404, 'arquivo inexistente no conversor: 404')
 srv.shutdown(); VT.HLS = o_hls
+
+# ---------- 4b) posição no mapa, no máximo 2 câmeras sorteadas na galeria, página /cameras-ao-vivo com o mapa ----------
+checa(VT.ler_posicao('-22.2442, -50.5021') == (-22.2442, -50.5021) and VT.ler_posicao('-22,2442; -50,5021') == (-22.2442, -50.5021)
+      and VT.ler_posicao('-22.2442,-50.5021') == (-22.2442, -50.5021) and VT.ler_posicao('  ') == (None, None), 'posição lida nos formatos copiados dos mapas')
+for ruim in ('-22.2442', 'abc, def', '-122.5, -50.5', '-22.5, 200'):
+    try:
+        VT.ler_posicao(ruim); checa(False, f'posição inválida aceita: {ruim}')
+    except ValueError:
+        pass
+h = anon.get('/').text
+checa(h.count('data-cam="/cameras/') == 1 and len(re.findall(r'<div class="cam(?: exemplo-cam)?"', h)) == 2 and 'Mais câmeras (3)' in h, 'com 1 real e 2 exemplos: 2 na galeria (a real sempre) e "Mais câmeras (3)"')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'adicionar', 'nome': 'Câmera de teste 2', 'local': '', 'rtsp': RTSP.replace('stream1', 'stream2'), 'posicao': '-22,5; -50'}, follow_redirects=True)
+checa('Câmera cadastrada' in r.text, 'cadastrar câmera com posição')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'adicionar', 'nome': 'Câmera ruim', 'local': '', 'rtsp': RTSP, 'posicao': '-50, 200'}, follow_redirects=True)
+checa('Não salvo' in r.text and 'fora do mapa' in r.text and not db.um(PM, "SELECT 1 FROM cameras WHERE nome='Câmera ruim'"), 'posição fora do mapa recusada')
+pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'adicionar', 'nome': 'Câmera de teste 3', 'local': 'Sem posição', 'rtsp': RTSP.replace('stream1', 'stream3')})
+c2 = db.um(PM, "SELECT id, lat::float lat, lon::float lon FROM cameras WHERE nome='Câmera de teste 2'")
+c3 = db.um(PM, "SELECT id FROM cameras WHERE nome='Câmera de teste 3'")
+checa(c2 and (c2['lat'], c2['lon']) == (-22.5, -50.0), 'posição gravada em graus decimais')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'posicao', 'id': c['id'], 'posicao': '-22.2400, -50.5000'}, follow_redirects=True)
+checa('Posição no mapa gravada' in r.text and 'no mapa: -22.240000, -50.500000' in r.text and 'data-mapa-escolher="pos-' in r.text, 'trocar a posição pelo painel (com o mapa para marcar)')
+vistos, ex_na_galeria = set(), False
+for _ in range(25):
+    h = anon.get('/').text
+    ids = tuple(re.findall(r'data-cam="/cameras/(\d+)/"', h))
+    checa(len(ids) == 2 and len(re.findall(r'<div class="cam(?: exemplo-cam)?"', h)) == 2, f'galeria com exatamente 2 câmeras ({ids})')
+    ex_na_galeria |= 'exemplo-camera.svg' in h
+    vistos.add(ids)
+checa(len(vistos) >= 3 and not ex_na_galeria, f'2 câmeras sorteadas a cada carregamento, reais antes dos exemplos ({len(vistos)} combinações)')
+checa('Mais câmeras (5)' in h and 'href="/cameras-ao-vivo"' in h and 'a cada visita aparecem 2' in h, 'botão "Mais câmeras" com o total')
+checa(anon.get('/videos').text.count('data-cam="/cameras/') == 2, '/videos também com 2 câmeras')
+o_centro, VT.centro = VT.centro, (lambda ibge: {'lat': -22.25, 'lon': -50.50})
+try:
+    t = anon.get('/cameras-ao-vivo').text
+finally:
+    VT.centro = o_centro
+m = re.search(r'<script type="application/json" id="dados-mapa">(.*?)</script>', t, re.S)
+import json as _json
+mp = _json.loads(m.group(1)) if m else {}
+pts = {p['id']: p for p in mp.get('pontos', [])}
+checa(t.count('data-cam="/cameras/') == 3 and 'exemplo-camera.svg' in t and f'id="cam-{c3["id"]}"' in t and 'Sem posição no mapa' in t, '/cameras-ao-vivo: todas as câmeras na lista, a sem posição avisada')
+checa('data-mapa-cameras' in t and '/static/vendor/leaflet-1.9.4/leaflet.js' in t and 'tile.openstreetmap.org' in t and 'OpenStreetMap' in t, 'mapa do OpenStreetMap com atribuição e aviso de privacidade')
+checa(pts.get(c['id'], {}).get('lat') == -22.24 and pts.get(c2['id'], {}).get('lon') == -50.0 and c3['id'] not in pts
+      and sum(1 for p in pts.values() if p['exemplo'] and p['ilustrativa']) == 2, 'pontos do mapa: posições cadastradas; exemplos em posição ilustrativa marcada')
+checa('senha-teste' not in t and '192.0.2' not in t and c['caminho'] not in t and 'rtsp' not in m.group(1), 'mapa sem endereço nem caminho interno da câmera')
+checa(anon.get('/cameras', follow_redirects=False).headers.get('location') == '/cameras-ao-vivo' and anon.get('/cameras', follow_redirects=False).status_code == 302, '/cameras leva (302) para /cameras-ao-vivo')
+checa('tile.openstreetmap.org' in anon.get('/').headers.get('content-security-policy', ''), 'política de segurança libera só as imagens do mapa do OpenStreetMap')
+checa('/static/vendor/leaflet' not in anon.get('/').text, 'início não carrega a biblioteca do mapa')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'posicao', 'id': c2['id'], 'posicao': ''}, follow_redirects=True)
+checa('Posição no mapa apagada' in r.text and db.um(PM, 'SELECT lat FROM cameras WHERE id=%s', (c2['id'],))['lat'] is None, 'apagar a posição (campo em branco)')
+checa(not db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE '%%senha-teste%%' OR acao LIKE '%%-22.24%%'"), 'auditoria sem endereço nem coordenadas')
 VT._api = o_api
 CFG.CHAVE_CREDENCIAIS = o_chave
-checa('Câmera de teste' in anon.get('/videos').text and anon.get('/cameras', follow_redirects=False).headers.get('location') == '/videos', 'página /videos com câmeras; /cameras leva para ela')
+checa('Câmeras ao vivo' in anon.get('/videos').text, 'página /videos com câmeras')
 
 # ---------- 5) período eleitoral: selos e vídeos saem; câmeras ficam ----------
 from app import eleicao
@@ -152,7 +203,7 @@ o_def = eleicao.em_defeso
 eleicao.em_defeso = lambda b: True
 try:
     h = anon.get('/').text
-    checa('id="h-selos"' not in h and 'Câmeras ao vivo</h2>' in h and 'data-yt=' not in h and 'Câmera de teste' in h, 'no defeso: sem selos e vídeos, câmeras ficam na galeria')
+    checa('id="h-selos"' not in h and 'Câmeras ao vivo</h2>' in h and 'data-yt=' not in h and 'data-cam="/cameras/' in h, 'no defeso: sem selos e vídeos, câmeras ficam na galeria')
     checa('suspenso durante o período eleitoral' in anon.get('/selos').text, '/selos suspenso no defeso')
 finally:
     eleicao.em_defeso = o_def

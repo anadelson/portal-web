@@ -7,7 +7,7 @@
   MediaMTX) lê a câmera só enquanto alguém assiste e entrega HLS ao navegador pelo próprio portal (/cameras/<id>/…).
   O worker sincroniza o conversor com as câmeras ativas de todos os órgãos do nó.
 - Exemplos do piloto: marcados (exemplo = TRUE), sempre com a etiqueta "exemplo" no portal; o admin apaga quando quiser."""
-import io, json, re, secrets
+import io, json, random, re, secrets
 from datetime import date
 from pathlib import Path
 from . import config, db
@@ -129,14 +129,24 @@ def galeria(b, mods, limite=7):
     itens.sort(key=lambda v: (v['exemplo'], -(v['quando'].toordinal() if v['quando'] else 0)))
     return itens[:limite] if limite else itens
 
+MAX_CAMERAS_GALERIA = 2
+
+def sortear_cameras(cams, n=MAX_CAMERAS_GALERIA):
+    """Até n câmeras em ordem aleatória a cada carregamento; as reais têm a vez, os exemplos só completam."""
+    reais, ex = [c for c in cams if not c['exemplo']], [c for c in cams if c['exemplo']]
+    escolha = random.sample(reais, min(n, len(reais)))
+    return escolha + random.sample(ex, min(n - len(escolha), len(ex)))
+
 def galeria_unica(b, mods, defeso, limite_videos=7):
     """Seção única (26/11/2026) em 2 colunas: à esquerda (mais larga) os vídeos do YouTube, em destaque + lista;
-    à direita as câmeras ao vivo, cada uma no seu cartão. No período eleitoral os vídeos saem e as câmeras ficam."""
+    à direita as câmeras ao vivo, no máximo 2, sorteadas a cada carregamento; todas ficam em /cameras-ao-vivo (mapa).
+    No período eleitoral os vídeos saem e as câmeras ficam."""
     cams = cameras(b)
     vids = [] if defeso else galeria(b, mods, limite=limite_videos)
     if not cams and not vids:
         return None
-    return {'videos': {'palco': vids[0], 'lista': vids[1:]} if vids else None, 'cameras': cams, 'n_cameras': len(cams), 'n_videos': len(vids)}
+    return {'videos': {'palco': vids[0], 'lista': vids[1:]} if vids else None, 'cameras': sortear_cameras(cams),
+            'n_cameras': len(cams), 'mais_cameras': len(cams) > MAX_CAMERAS_GALERIA, 'n_videos': len(vids)}
 
 # ---------------- câmeras ----------------
 def _fernet():
@@ -161,8 +171,55 @@ def novo_caminho(o):
     return f"{re.sub(r'[^a-z0-9]', '', o['slug'].lower())[:16]}-{secrets.token_hex(8)}"
 
 def cameras(b, publicas=True):
-    q = 'SELECT id, nome, local, caminho, ativa, ordem, exemplo, criado_por, criado_em, (rtsp <> \'\') tem_rtsp FROM cameras'
+    q = 'SELECT id, nome, local, caminho, ativa, ordem, exemplo, criado_por, criado_em, (rtsp <> \'\') tem_rtsp, lat::float lat, lon::float lon FROM cameras'
     return db.todos(b, q + (' WHERE ativa' if publicas else '') + ' ORDER BY exemplo, ordem, id')
+
+_NUM = r'-?\d{1,3}(?:[.,]\d{1,8})?'
+_POS = re.compile(rf'^\s*({_NUM})\s*(?:;|,\s+|\s+|,(?=-?\d{{1,3}}[.]))\s*({_NUM})\s*$')
+
+def ler_posicao(texto):
+    """'-22.2442, -50.5021' (como o Google Maps / OpenStreetMap copiam) -> (lat, lon); vazio -> (None, None).
+    Aceita vírgula decimal quando separado por ';' ou espaço. ValueError com a explicação se não der para ler."""
+    t = ' '.join(str(texto or '').split())
+    if not t:
+        return None, None
+    m = _POS.match(t)
+    if not m:
+        raise ValueError('posição não reconhecida: use latitude e longitude em graus decimais, ex.: -22.2442, -50.5021')
+    lat, lon = (round(float(x.replace(',', '.')), 6) for x in m.groups())
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        raise ValueError('posição fora do mapa: latitude vai de -90 a 90 e longitude de -180 a 180 (confira se não estão trocadas)')
+    return lat, lon
+
+def centro(ibge):
+    """Centro do município (o mesmo da previsão do tempo, coletado do IBGE), ou None."""
+    if not ibge:
+        return None
+    try:
+        r = db.um(db.LOCAL, "SELECT payload FROM dados_publicos WHERE ibge=%s AND fonte='tempo' AND chave='previsao'", (str(ibge),))
+        p = (r or {}).get('payload') or {}
+        lat, lon = float(p['lat']), float(p['lon'])
+        return {'lat': lat, 'lon': lon} if -90 <= lat <= 90 and -180 <= lon <= 180 else None
+    except Exception:
+        return None
+
+# câmeras de exemplo sem posição: postas em volta do centro só para ilustrar o mapa (sempre marcadas "exemplo")
+_DESLOC_EXEMPLO = [(0.0018, -0.0026), (-0.0022, 0.0031), (0.0030, 0.0024), (-0.0012, -0.0038)]
+
+def mapa_cameras(cams, ibge):
+    """Dados do mapa de /cameras-ao-vivo: só id, nome, local, posição e se é exemplo (nunca endereço nem caminho)."""
+    c = centro(ibge)
+    pontos, i = [], 0
+    for x in cams:
+        lat, lon, ilustr = x['lat'], x['lon'], False
+        if lat is None and x['exemplo'] and c:
+            dl = _DESLOC_EXEMPLO[i % len(_DESLOC_EXEMPLO)]; i += 1
+            lat, lon, ilustr = round(c['lat'] + dl[0], 6), round(c['lon'] + dl[1], 6), True
+        if lat is not None:
+            pontos.append({'id': x['id'], 'nome': x['nome'], 'local': x['local'], 'lat': lat, 'lon': lon, 'exemplo': x['exemplo'], 'ilustrativa': ilustr})
+    if not pontos and not c:
+        return None
+    return {'centro': c or {'lat': pontos[0]['lat'], 'lon': pontos[0]['lon']}, 'pontos': pontos}
 
 def _api(metodo, caminho, corpo=None, timeout=5):
     import httpx
