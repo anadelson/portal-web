@@ -187,7 +187,9 @@ def testar(o, cid):
     if VT.sincronizar_quieto() is None:
         return 'conversor de vídeo fora do ar'
     try:
-        r = httpx.get(f"{VT.HLS}/{c['caminho']}/index.m3u8", timeout=25)
+        # o conversor responde ao 1º pedido com 302 (checagem de cookie, "?cookieCheck=1"): segue dentro do servidor
+        with httpx.Client(timeout=25, follow_redirects=True, max_redirects=3) as cli:
+            r = cli.get(f"{VT.HLS}/{c['caminho']}/index.m3u8")
     except httpx.HTTPError:
         return 'sem resposta da câmera em 25 s (confira endereço, usuário, senha e se a porta está liberada para o servidor)'
     if r.status_code == 200 and '#EXTM3U' in r.text:
