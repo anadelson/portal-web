@@ -206,8 +206,31 @@ def centro(ibge):
 # câmeras de exemplo sem posição: postas em volta do centro só para ilustrar o mapa (sempre marcadas "exemplo")
 _DESLOC_EXEMPLO = [(0.0018, -0.0026), (-0.0022, 0.0031), (0.0030, 0.0024), (-0.0012, -0.0038)]
 
-def mapa_cameras(cams, ibge):
-    """Dados do mapa de /cameras-ao-vivo: só id, nome, local, posição e se é exemplo (nunca endereço nem caminho)."""
+ZOOM_MIN, ZOOM_MAX = 3, 19
+
+def visao_mapa(b):
+    """Visão fixa do mapa escolhida no painel ({lat, lon, zoom, travar}) ou None (automático: enquadra as câmeras)."""
+    v = db.cfg(b, 'cameras_mapa')
+    try:
+        if v and -90 <= float(v['lat']) <= 90 and -180 <= float(v['lon']) <= 180 and ZOOM_MIN <= int(v['zoom']) <= ZOOM_MAX:
+            return {'lat': float(v['lat']), 'lon': float(v['lon']), 'zoom': int(v['zoom']), 'travar': bool(v.get('travar'))}
+    except (KeyError, TypeError, ValueError):
+        pass
+    return None
+
+def ler_visao(f):
+    """Formulário do painel -> visão válida; ValueError com a explicação."""
+    try:
+        lat, lon, zoom = float(str(f.get('lat', '')).replace(',', '.')), float(str(f.get('lon', '')).replace(',', '.')), int(f.get('zoom', ''))
+    except (TypeError, ValueError):
+        raise ValueError('visão do mapa não recebida: mova o mapa até o enquadramento desejado e clique em “Usar esta visão”')
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180 and ZOOM_MIN <= zoom <= ZOOM_MAX):
+        raise ValueError(f'visão do mapa inválida (zoom de {ZOOM_MIN} a {ZOOM_MAX})')
+    return {'lat': round(lat, 6), 'lon': round(lon, 6), 'zoom': zoom, 'travar': f.get('travar') in ('1', 'on', 'sim')}
+
+def mapa_cameras(cams, ibge, visao=None):
+    """Dados do mapa de /cameras-ao-vivo: só id, nome, local, posição e se é exemplo (nunca endereço nem caminho).
+    Com "visao" (escolhida no painel), o mapa abre sempre nela, sem enquadrar sozinho; "travar" impede mudar o zoom."""
     c = centro(ibge)
     pontos, i = [], 0
     for x in cams:
@@ -217,9 +240,10 @@ def mapa_cameras(cams, ibge):
             lat, lon, ilustr = round(c['lat'] + dl[0], 6), round(c['lon'] + dl[1], 6), True
         if lat is not None:
             pontos.append({'id': x['id'], 'nome': x['nome'], 'local': x['local'], 'lat': lat, 'lon': lon, 'exemplo': x['exemplo'], 'ilustrativa': ilustr})
-    if not pontos and not c:
+    if not pontos and not c and not visao:
         return None
-    return {'centro': c or {'lat': pontos[0]['lat'], 'lon': pontos[0]['lon']}, 'pontos': pontos}
+    return {'centro': c or ({'lat': visao['lat'], 'lon': visao['lon']} if visao else {'lat': pontos[0]['lat'], 'lon': pontos[0]['lon']}),
+            'pontos': pontos, 'visao': visao}
 
 def _api(metodo, caminho, corpo=None, timeout=5):
     import httpx

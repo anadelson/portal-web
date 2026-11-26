@@ -35,7 +35,7 @@ def cameras_ao_vivo(request: Request):
     ctx = ctx_orgao(request)
     o = ctx['orgao']
     cams = VT.cameras(o['banco'])
-    return templates.TemplateResponse(request, 'portal/cameras.html', dict(ctx, cameras=cams, mapa=VT.mapa_cameras(cams, o.get('ibge'))))
+    return templates.TemplateResponse(request, 'portal/cameras.html', dict(ctx, cameras=cams, mapa=VT.mapa_cameras(cams, o.get('ibge'), VT.visao_mapa(o['banco']))))
 
 @r.get('/cameras')
 def cameras(request: Request):
