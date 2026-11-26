@@ -3021,3 +3021,16 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Implantado em 25/11/2026, ~22h25 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `600b095`; backup ok; 42 suítes sem falha sobre o código e sobre a imagem; imagem do MediaMTX baixada (~29 MB) e configuração validada num container temporário; app, worker e cameras recriados/criados; `atualizar` "pronto." (Prefeitura: 3 blocos novos e 10 exemplos; Câmara: 2 blocos novos e 8 exemplos).
 - **Conferido:** pmbora e cmbora 200 em `/`, `/selos`, `/videos`, `/cameras`; gestão e `/admin/selos` 303; Prefeitura com Atos oficiais 65% + selos 35%, vídeos, câmeras e aviso; Câmara com faixa de selos, vídeos e 9 cartões em 3 linhas; worker alcança o conversor ("0 câmera(s) no conversor"); memória: app 53 MiB, worker 49 MiB, cameras 11 MiB; sem erros nos logs.
 - **Falta:** cadastrar os selos, vídeos e câmeras reais e apagar os exemplos; para cada câmera, deixá-la alcançável pela VPS (IP público com porta liberada só para o servidor, ou VPN) e usar usuário só de visualização. O vídeo ao vivo de câmera real ainda não foi testado (não há câmera no ambiente de teste).
+
+## 26/11/2026 — Vídeos e câmeras ao vivo numa só seção, em 2 colunas (tag `videos-cameras-2-colunas`)
+- **Pedido do usuário:** primeiro, uma galeria única com os vídeos do YouTube e as câmeras ao vivo, sem seções separadas; depois, ajustado: dentro dessa galeria, vídeos e câmeras separados em 2 colunas, com mais peso para os vídeos do YouTube.
+- **Feito:**
+  - home: o bloco `videos` passa a ser "Vídeos e câmeras ao vivo"; coluna esquerda (2/3) "Vídeos do YouTube" com destaque + lista; coluna direita (1/3) "Câmeras ao vivo", um cartão por câmera, vídeo só no clique; em tela estreita as câmeras ficam abaixo dos vídeos; com só um dos dois, ele ocupa a largura toda (Câmara: só vídeos);
+  - período eleitoral: os vídeos saem e as câmeras continuam (título "Câmeras ao vivo");
+  - bloco `cameras` removido do catálogo; migração `047_orgao_galeria_unica.sql` apaga esse bloco da home de cada órgão;
+  - página `/videos` mostra a mesma seção em 2 colunas; `/cameras` redireciona (301) para `/videos`; templates `portal/cameras.html` e `portal/_camera.html` removidos;
+  - textos do admin de vídeos e câmeras atualizados; `portal.css?v=42`, `portal.js?v=10`.
+- **Testes:** `teste_vitrine` atualizado (bloco único no fim, 2 colunas com vídeos antes das câmeras, Câmara sem coluna de câmeras, redirecionamento de `/cameras`, defeso); numa rodada sobre o código o `teste_instalacao` falhou uma vez em "senha do pacote errada: não abre" (acaso do openssl com senha errada, sem relação com a mudança); repetido, passou.
+- **Implantado em 26/11/2026, ~07h20 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `5e35666`; backup ok; 42 suítes sem falha sobre a imagem; app e worker recriados; `atualizar` "pronto." (047 aplicada nos dois bancos).
+- **Conferido:** pmbora e cmbora 200 em `/`, `/videos`, `/selos`; `/cameras` 301 → `/videos`; gestão 303; Prefeitura com `vc dois` (vídeos + câmeras), Câmara com `vc` (só vídeos); worker alcança o conversor; memória: app 64 MiB, worker 49 MiB, cameras 12 MiB; sem erros nos logs.
+- **Falta:** o mesmo da entrada anterior (selos, vídeos e câmeras reais; câmeras alcançáveis pela VPS).
