@@ -201,9 +201,9 @@
   });
   document.addEventListener('click', function(ev){
     var b=ev.target.closest('.cam-play'); if(!b) return;
-    var c=b.closest('.cam'), u=c&&c.getAttribute('data-cam'); if(!u) return;
+    var c=b.closest('.cam'), u=c&&c.getAttribute('data-cam'); if(!u||!/^\/cameras\/\d+\/$/.test(u)) return;
     c.innerHTML=''; c.classList.add('tocando');
-    c.appendChild(el('iframe', {src:u, title:c.getAttribute('data-titulo')||'Câmera ao vivo', allow:'autoplay; fullscreen', allowfullscreen:''}));
+    var f=el('iframe', {src:u, title:c.getAttribute('data-titulo')||'Câmera ao vivo', allow:'autoplay; fullscreen', allowfullscreen:''}); c.appendChild(f); f.focus();
   });
   /* Aviso de cookies e privacidade (LGPD): só cookies necessários; a resposta fica no próprio navegador */
   var a=document.getElementById('aviso-cookies');

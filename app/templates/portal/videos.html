@@ -1,12 +1,12 @@
 {% extends 'portal/base.html' %}
-{% block titulo %}Galeria de vídeos — {{ ident.nome }}{% endblock %}
-{% from 'partials/video.html' import capa_video with context %}
+{% set g = galeria_d %}
+{% block titulo %}Vídeos e câmeras ao vivo — {{ ident.nome }}{% endblock %}
+{% from 'partials/video.html' import galeria with context %}
 {% block conteudo %}
-<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Galeria de vídeos</span></nav>
-<h1>Galeria de vídeos</h1>
-<p class="intro">Vídeos do canal oficial {{ 'da Câmara' if leg else 'da Prefeitura' }} no YouTube. O player só é carregado quando você clica, no modo de privacidade do YouTube (youtube-nocookie).</p>
-{% if defeso %}<p class="vazio">Conteúdo suspenso durante o período eleitoral (Lei 9.504/1997, art. 73, VI, b).</p>
-{% elif not videos %}<p class="vazio">Nenhum vídeo publicado ainda.</p>
-{% else %}<div class="vg pagina" data-galeria><div class="vg-palco">{{ capa_video(videos[0], True) }}</div>
-{% if videos|length > 1 %}<ul class="vg-lista grade" aria-label="Vídeos">{% for v in videos[1:] %}<li>{{ capa_video(v) }}</li>{% endfor %}</ul>{% endif %}</div>{% endif %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Vídeos e câmeras ao vivo</span></nav>
+<h1>Vídeos e câmeras ao vivo</h1>
+<p class="intro">Vídeos do canal oficial {{ 'da Câmara' if leg else 'da Prefeitura' }} no YouTube e câmeras ao vivo de pontos públicos, lado a lado. Clique para assistir.</p>
+{% if defeso %}<p class="legal">Durante o período eleitoral os vídeos ficam suspensos (Lei 9.504/1997, art. 73, VI, b); as câmeras continuam.</p>{% endif %}
+{% if not g %}<p class="vazio">Nenhum vídeo ou câmera publicado ainda.</p>
+{% else %}{{ galeria(g, True) }}{% endif %}
 {% endblock %}

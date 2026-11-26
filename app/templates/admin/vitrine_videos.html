@@ -1,7 +1,7 @@
 {% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, vazio with context %}
 {% block h1 %}Galeria de vídeos{% endblock %}
 {% block conteudo %}{% set C = csrf_token(request) %}
-{{ cab('Vídeos do canal oficial no YouTube que aparecem na página inicial (bloco “Galeria de vídeos”) e em /videos. O portal guarda só o código do vídeo e só carrega o player do YouTube (modo de privacidade) quando a pessoa clica. No período eleitoral a galeria sai do ar.') }}
+{{ cab('Vídeos do canal oficial no YouTube que aparecem na página inicial (bloco “Vídeos e câmeras ao vivo”, coluna dos vídeos) e em /videos. O portal guarda só o código do vídeo e só carrega o player do YouTube (modo de privacidade) quando a pessoa clica. No período eleitoral os vídeos saem do ar (as câmeras continuam).') }}
 {% if com_transm %}<p class="legal">As gravações de <a href="/admin/transmissoes">Transmissões</a> com vídeo do YouTube entram na galeria automaticamente ({{ n_transmissoes }} hoje).</p>{% endif %}
 <section class="cx form-tela"><h2>Acrescentar vídeo</h2><form class="campos" method="post" action="/admin/videos"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="adicionar">
 <div class="grade2"><label>Link do vídeo no YouTube<input name="link" required maxlength="300" placeholder="https://www.youtube.com/watch?v=…"></label><label>Título<input name="titulo" required maxlength="160"></label>

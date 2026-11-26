@@ -14,7 +14,7 @@
 {% from 'partials/vitrine.html' import vitrine with context %}
 {% from 'partials/tempo.html' import tempo_faixa, tempo_hero with context %}
 {% from 'partials/fileira.html' import fileira_cartoes %}
-{% from 'partials/video.html' import capa_video with context %}
+{% from 'partials/video.html' import galeria with context %}
 
 {% macro retrato(v, grande=False) %}<span class="retrato">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt or ('Foto oficial de ' ~ v.nome) }}">{% else %}<span class="ini" aria-hidden="true">{{ v.nome|iniciais }}</span>{% endif %}{% if not grande %}<span class="chip-partido">{{ v.partido }}</span>{% endif %}</span>{% endmacro %}
 
@@ -159,16 +159,10 @@
 <div class="acoes"><a class="btn sec" href="/selos">Todos os selos e certificados {{ icone('seta', 18, 'seta') }}</a></div>
 </div></section>
 
-{% elif b.chave == 'videos' and d.videos and not defeso %}
-<section class="videos-b" aria-labelledby="h-videos"><div class="cab"><h2 id="h-videos">Galeria de vídeos</h2><a class="btn sec" href="/videos">Todos os vídeos {{ icone('seta', 18, 'seta') }}</a></div>
-<div class="vg" data-galeria><div class="vg-palco">{{ capa_video(d.videos[0], True) }}</div>
-{% if d.videos|length > 1 %}<ul class="vg-lista" aria-label="Outros vídeos">{% for v in d.videos[1:] %}<li>{{ capa_video(v) }}</li>{% endfor %}</ul>{% endif %}</div>
-<p class="legal">Vídeos do canal oficial no YouTube. O player só é carregado quando você clica, no modo de privacidade do YouTube (youtube-nocookie).</p></section>
-
-{% elif b.chave == 'cameras' and d.cameras %}
-<section class="cams-b" aria-labelledby="h-cams"><div class="cab"><h2 id="h-cams">Câmeras ao vivo</h2><a class="btn sec" href="/cameras">Todas as câmeras {{ icone('seta', 18, 'seta') }}</a></div>
-<p class="sub">Imagens em tempo real de pontos públicos de {{ ident.nome_curto or 'cidade' }}. O portal não grava as imagens.</p>
-<ul class="cams">{% for c in d.cameras %}<li>{% include 'portal/_camera.html' %}</li>{% endfor %}</ul></section>
+{% elif b.chave == 'videos' and d.galeria %}{% set g = d.galeria %}
+{# vídeos do YouTube e câmeras ao vivo na mesma seção, em 2 colunas separadas (26/11/2026); nada carrega antes do clique #}
+<section class="videos-b" aria-labelledby="h-videos"><div class="cab"><h2 id="h-videos">{{ 'Vídeos e câmeras ao vivo' if g.n_cameras and g.n_videos else ('Câmeras ao vivo' if g.n_cameras else 'Galeria de vídeos') }}</h2><a class="btn sec" href="/videos">{{ 'Todos os vídeos e câmeras' if g.n_cameras and g.n_videos else ('Todas as câmeras' if g.n_cameras else 'Todos os vídeos') }} {{ icone('seta', 18, 'seta') }}</a></div>
+{{ galeria(g) }}</section>
 
 {% elif b.chave == 'contas' %}
 {% set f = d.financas or {} %}{% set dtp = f.dtp or [] %}
