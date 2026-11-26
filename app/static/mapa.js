@@ -7,8 +7,11 @@
   if(!window.L) return;
   var OSM='https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   var ATRIB='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
-  function base(el, lat, lon, zoom){
-    var m=L.map(el, {scrollWheelZoom:false}).setView([lat, lon], zoom);
+  function base(el, lat, lon, zoom, travar){
+    var op={scrollWheelZoom:false};
+    if(travar){op={minZoom:zoom, maxZoom:zoom, zoomControl:false, scrollWheelZoom:false, doubleClickZoom:false, touchZoom:false, boxZoom:false, keyboardZoomOffset:0}}
+    var m=L.map(el, op).setView([lat, lon], zoom);
+    if(travar){L.tileLayer(OSM, {maxZoom:19, attribution:ATRIB}).addTo(m); return m}
     L.tileLayer(OSM, {maxZoom:19, attribution:ATRIB}).addTo(m);
     m.on('focus', function(){m.scrollWheelZoom.enable()}); m.on('blur', function(){m.scrollWheelZoom.disable()});
     return m;
@@ -19,7 +22,7 @@
   if(el && dados){
     var d; try{d=JSON.parse(dados.textContent)}catch(e){d=null}
     if(d && d.centro){
-      var m=base(el, d.centro.lat, d.centro.lon, 15), limites=[];
+      var v=d.visao, m=v?base(el, v.lat, v.lon, v.zoom, v.travar):base(el, d.centro.lat, d.centro.lon, 15), limites=[];
       (d.pontos||[]).forEach(function(p){
         if(typeof p.lat!=='number'||typeof p.lon!=='number') return;
         var mk=L.marker([p.lat, p.lon], {title:p.nome, alt:'Câmera: '+p.nome, keyboard:true}).addTo(m);
@@ -28,8 +31,9 @@
               '<br><a href="#cam-'+(+p.id)+'" data-ir-cam="'+(+p.id)+'">'+(p.exemplo?'Ver na lista':'Assistir ao vivo')+'</a>';
         mk.bindPopup(h); limites.push([p.lat, p.lon]);
       });
-      if(limites.length>1){m.fitBounds(limites, {padding:[40,40], maxZoom:17})}
-      else if(limites.length===1){m.setView(limites[0], 16)}
+      // visão fixa do painel: abre sempre nela; sem ela, enquadra as câmeras
+      if(!v){if(limites.length>1){m.fitBounds(limites, {padding:[40,40], maxZoom:17})}
+      else if(limites.length===1){m.setView(limites[0], 16)}}
       el.addEventListener('click', function(ev){
         var a=ev.target.closest('[data-ir-cam]'); if(!a) return;
         ev.preventDefault();
@@ -39,6 +43,17 @@
         li.classList.add('destacada'); setTimeout(function(){li.classList.remove('destacada')}, 2200);
       });
     }
+  }
+
+  // painel: escolher a visão inicial do mapa das câmeras (centro + zoom vão para os campos ocultos)
+  var vbox=document.querySelector('[data-mapa-visao]');
+  if(vbox){
+    var vc=(vbox.getAttribute('data-centro')||'').split(','), vz=+vbox.getAttribute('data-zoom')||15;
+    if(vc.length===2&&isFinite(+vc[0])&&isFinite(+vc[1])){
+      var vm=base(vbox, +vc[0], +vc[1], vz);
+      var fl=document.getElementById('visao-lat'), fo=document.getElementById('visao-lon'), fz=document.getElementById('visao-zoom'), ft=document.getElementById('visao-zoom-txt');
+      vm.on('moveend zoomend', function(){var c=vm.getCenter(); fl.value=c.lat.toFixed(6); fo.value=c.lng.toFixed(6); fz.value=vm.getZoom(); if(ft){ft.textContent=vm.getZoom()}});
+    }else{vbox.hidden=true}
   }
 
   document.querySelectorAll('[data-mapa-escolher]').forEach(function(box){

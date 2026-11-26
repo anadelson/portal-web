@@ -193,6 +193,22 @@ checa('/static/vendor/leaflet' not in anon.get('/').text, 'início não carrega 
 r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'posicao', 'id': c2['id'], 'posicao': ''}, follow_redirects=True)
 checa('Posição no mapa apagada' in r.text and db.um(PM, 'SELECT lat FROM cameras WHERE id=%s', (c2['id'],))['lat'] is None, 'apagar a posição (campo em branco)')
 checa(not db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE '%%senha-teste%%' OR acao LIKE '%%-22.24%%'"), 'auditoria sem endereço nem coordenadas')
+# visão fixa do mapa (centro + zoom) escolhida no painel, com zoom travado opcional
+def dados_mapa():
+    t = anon.get('/cameras-ao-vivo').text
+    m = re.search(r'<script type="application/json" id="dados-mapa">(.*?)</script>', t, re.S)
+    return _json.loads(m.group(1)) if m else {}
+checa(dados_mapa().get('visao') is None and 'automático' in pm.get(UC).text and 'data-mapa-visao' in pm.get(UC).text, 'mapa começa no automático; painel com o mapa da visão')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'visao', 'lat': '-22.2450', 'lon': '-50.5030', 'zoom': '16', 'travar': '1'}, follow_redirects=True)
+checa('Visão do mapa gravada' in r.text and 'zoom travado' in r.text and 'Voltar ao automático' in r.text, 'gravar visão fixa com zoom travado')
+checa(dados_mapa().get('visao') == {'lat': -22.245, 'lon': -50.503, 'zoom': 16, 'travar': True}, 'página das câmeras abre na visão gravada, travada')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'visao', 'lat': '-22.2450', 'lon': '-50.5030', 'zoom': '25'}, follow_redirects=True)
+checa('Não salvo' in r.text and dados_mapa()['visao']['zoom'] == 16, 'zoom fora da faixa recusado (visão anterior mantida)')
+pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'visao', 'lat': '-22.2450', 'lon': '-50.5030', 'zoom': '14'})
+checa(dados_mapa().get('visao', {}).get('travar') is False and dados_mapa()['visao']['zoom'] == 14, 'visão sem travar o zoom')
+checa(db.cfg(CM, 'cameras_mapa') is None, 'visão do mapa é de cada órgão')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'visao_auto'}, follow_redirects=True)
+checa('Mapa no automático' in r.text and dados_mapa().get('visao') is None, 'voltar ao automático')
 VT._api = o_api
 CFG.CHAVE_CREDENCIAIS = o_chave
 checa('Câmeras ao vivo' in anon.get('/videos').text, 'página /videos com câmeras')

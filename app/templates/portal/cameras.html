@@ -8,7 +8,7 @@
 {% if not cameras %}<p class="vazio">Nenhuma câmera publicada ainda.</p>
 {% else %}
 {% set sem_pos = cameras|selectattr('lat', 'none')|rejectattr('exemplo')|list %}
-{% if mapa %}<link rel="stylesheet" href="/static/vendor/leaflet-1.9.4/leaflet.css"><script src="/static/vendor/leaflet-1.9.4/leaflet.js" defer></script><script src="/static/mapa.js?v=1" defer></script>
+{% if mapa %}<link rel="stylesheet" href="/static/vendor/leaflet-1.9.4/leaflet.css"><script src="/static/vendor/leaflet-1.9.4/leaflet.js" defer></script><script src="/static/mapa.js?v=2" defer></script>
 <section class="mapa-cams-b" aria-labelledby="h-mapa"><h2 id="h-mapa" class="sr">Mapa das câmeras</h2>
 <div class="mapa-cams" data-mapa-cameras role="region" aria-label="Mapa de {{ ident.nome_curto or 'cidade' }} com as câmeras (a lista abaixo traz as mesmas câmeras)"><noscript><p class="vazio">O mapa precisa de JavaScript; as câmeras estão na lista abaixo.</p></noscript></div>
 <script type="application/json" id="dados-mapa">{{ mapa|tojson }}</script>

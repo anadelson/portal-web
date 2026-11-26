@@ -129,8 +129,9 @@ async def cameras(request: Request):
     u = exige(request, 'config'); o = request.state.orgao
     from . import credenciais as CR
     ok = await run_in_threadpool(VT.conversor_ok)
-    return T('vitrine_cameras', request, u, cameras=VT.cameras(o['banco'], publicas=False), conversor=ok, chave_ok=CR.chave_ok(),
-             centro=VT.centro(o.get('ibge')))
+    cams = VT.cameras(o['banco'], publicas=False)
+    centro = VT.centro(o.get('ibge')) or next(({'lat': c['lat'], 'lon': c['lon']} for c in cams if c['lat'] is not None), None)
+    return T('vitrine_cameras', request, u, cameras=cams, conversor=ok, chave_ok=CR.chave_ok(), centro=centro, visao=VT.visao_mapa(o['banco']))
 
 @r.post('/cameras')
 async def cameras_post(request: Request):
@@ -156,6 +157,15 @@ async def cameras_post(request: Request):
             db.exe(b, 'UPDATE cameras SET rtsp=%s, exemplo=FALSE WHERE id=%s', (VT.cifrar_rtsp(f.get('rtsp', '')), cid))
             auditar(request, f"Câmera {c['nome']}: endereço trocado (não registrado)")
             msg = 'Endereço trocado.'
+        elif acao == 'visao':
+            v = VT.ler_visao(f)
+            db.set_cfg(b, 'cameras_mapa', v)
+            auditar(request, f"Mapa das câmeras: visão fixa gravada (zoom {v['zoom']}{', travado' if v['travar'] else ''})")
+            return ir('/admin/cameras', f"Visão do mapa gravada: o mapa abre sempre nela, no zoom {v['zoom']}" + (', com o zoom travado.' if v['travar'] else '.'), request)
+        elif acao == 'visao_auto':
+            db.set_cfg(b, 'cameras_mapa', None)
+            auditar(request, 'Mapa das câmeras: visão automática')
+            return ir('/admin/cameras', 'Mapa no automático: enquadra as câmeras cadastradas.', request)
         elif acao == 'posicao' and c:
             lat, lon = VT.ler_posicao(f.get('posicao'))
             db.exe(b, 'UPDATE cameras SET lat=%s, lon=%s WHERE id=%s', (lat, lon, cid))
