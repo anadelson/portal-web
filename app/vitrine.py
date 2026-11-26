@@ -26,15 +26,15 @@ def pasta_midia(o):
     p.mkdir(parents=True, exist_ok=True)
     return p
 
-def guardar_imagem(o, dados: bytes) -> str:
-    """Imagem do selo: PNG, JPG ou WEBP até 3 MB, convertida para WEBP de até 600 px. Devolve a URL /midia/…"""
+def guardar_imagem(o, dados: bytes, largura_max=600) -> str:
+    """Imagem do selo (ou miniatura da câmera): PNG, JPG ou WEBP até 3 MB, convertida para WEBP. Devolve a URL /midia/…"""
     from . import imagens as IM
     ext = IM.validar_upload(dados)
     nome = secrets.token_hex(16)
     tmp = pasta_midia(o) / f'{nome}.{ext}'
     tmp.write_bytes(dados)
     try:
-        IM.para_webp(tmp, pasta_midia(o) / f'{nome}.webp', largura_max=600)
+        IM.para_webp(tmp, pasta_midia(o) / f'{nome}.webp', largura_max=largura_max)
     finally:
         if ext != 'webp':
             tmp.unlink(missing_ok=True)
@@ -137,16 +137,28 @@ def sortear_cameras(cams, n=MAX_CAMERAS_GALERIA):
     escolha = random.sample(reais, min(n, len(reais)))
     return escolha + random.sample(ex, min(n - len(escolha), len(ex)))
 
-def galeria_unica(b, mods, defeso, limite_videos=7):
+def galeria_unica(b, mods, defeso, limite_videos=7, fotos=None):
     """Seção única (26/11/2026) em 2 colunas: à esquerda (mais larga) os vídeos do YouTube, em destaque + lista;
     à direita as câmeras ao vivo, no máximo 2, sorteadas a cada carregamento; todas ficam em /cameras-ao-vivo (mapa).
-    No período eleitoral os vídeos saem e as câmeras ficam."""
+    No período eleitoral os vídeos saem e as câmeras ficam.
+    fotos (home): quando as câmeras já aparecem no "Conheça" e há álbuns, a 2ª coluna vira a galeria de fotos
+    (só junto com vídeos; sem vídeos a seção continua sendo a das câmeras)."""
     cams = cameras(b)
     vids = [] if defeso else galeria(b, mods, limite=limite_videos)
     if not cams and not vids:
         return None
-    return {'videos': {'palco': vids[0], 'lista': vids[1:]} if vids else None, 'cameras': sortear_cameras(cams),
-            'n_cameras': len(cams), 'mais_cameras': len(cams) > MAX_CAMERAS_GALERIA, 'n_videos': len(vids)}
+    g = {'videos': {'palco': vids[0], 'lista': vids[1:]} if vids else None, 'cameras': sortear_cameras(cams),
+         'n_cameras': len(cams), 'mais_cameras': len(cams) > MAX_CAMERAS_GALERIA, 'n_videos': len(vids), 'fotos': None}
+    if fotos and vids:
+        g.update(cameras=[], fotos=fotos)
+    return g
+
+MAX_CAMERAS_CONHECA = 3
+
+def cameras_conheca(b):
+    """Faixa "Ao vivo" na seção Conheça da home (26/11/2026): até 3 câmeras pequenas, sorteadas (reais primeiro)."""
+    cams = cameras(b)
+    return {'cameras': sortear_cameras(cams, MAX_CAMERAS_CONHECA), 'n': len(cams)} if cams else None
 
 # ---------------- câmeras ----------------
 def _fernet():
@@ -171,7 +183,7 @@ def novo_caminho(o):
     return f"{re.sub(r'[^a-z0-9]', '', o['slug'].lower())[:16]}-{secrets.token_hex(8)}"
 
 def cameras(b, publicas=True):
-    q = 'SELECT id, nome, local, caminho, ativa, ordem, exemplo, criado_por, criado_em, (rtsp <> \'\') tem_rtsp, lat::float lat, lon::float lon FROM cameras'
+    q = 'SELECT id, nome, local, caminho, ativa, ordem, exemplo, criado_por, criado_em, (rtsp <> \'\') tem_rtsp, lat::float lat, lon::float lon, miniatura FROM cameras'
     return db.todos(b, q + (' WHERE ativa' if publicas else '') + ' ORDER BY exemplo, ordem, id')
 
 _NUM = r'-?\d{1,3}(?:[.,]\d{1,8})?'
@@ -244,6 +256,49 @@ def mapa_cameras(cams, ibge, visao=None):
         return None
     return {'centro': c or ({'lat': visao['lat'], 'lon': visao['lon']} if visao else {'lat': pontos[0]['lat'], 'lon': pontos[0]['lon']}),
             'pontos': pontos, 'visao': visao}
+
+# ---------------- miniatura da câmera (26/11/2026) ----------------
+# Foto fixa de fundo do cartão, no lugar do cinza: tirada do RTSP UMA vez, quando o endereço é cadastrado ou trocado
+# (nada fica atualizando sozinho), ou enviada pelo admin. O vídeo continua só no clique; o portal não grava vídeo.
+LARGURA_MINIATURA = 800
+
+def quadro_rtsp(url, espera=10):
+    """Primeiro quadro-chave do RTSP (H.264 ou H.265) como PNG. ValueError com texto curto e SEM o endereço."""
+    import time
+    try:
+        import av
+    except ImportError:
+        raise ValueError('leitor de vídeo não instalado neste servidor')
+    t0 = time.monotonic()
+    try:
+        with av.open(url, options={'rtsp_transport': 'tcp'}, timeout=(espera, espera)) as ct:
+            st = ct.streams.video[0]
+            st.codec_context.skip_frame = 'NONKEY'  # só quadros completos (sem imagem borrada do meio do GOP)
+            for pk in ct.demux(st):
+                if time.monotonic() - t0 > espera * 2:
+                    break  # sem quadro-chave em tempo razoável
+                for fr in pk.decode():
+                    img = fr.to_image()
+                    img.thumbnail((LARGURA_MINIATURA * 2, LARGURA_MINIATURA * 2))
+                    b = io.BytesIO(); img.save(b, 'PNG')
+                    return b.getvalue()
+    except Exception:
+        pass  # a mensagem do leitor pode conter o endereço com usuário e senha: nunca repassar
+    raise ValueError('a câmera não entregou imagem')
+
+def gerar_miniatura(o, cid):
+    """Tira a miniatura do RTSP e grava na câmera (apaga a anterior). Devolve '' se deu certo ou o motivo, sem endereço."""
+    c = db.um(o['banco'], 'SELECT rtsp, exemplo, miniatura FROM cameras WHERE id=%s', (cid,))
+    url = decifrar_rtsp(c['rtsp']) if c and c['rtsp'] and not c['exemplo'] else ''
+    if not url:
+        return 'câmera sem endereço'
+    try:
+        nova = guardar_imagem(o, quadro_rtsp(url), LARGURA_MINIATURA)
+    except ValueError as e:
+        return str(e)
+    db.exe(o['banco'], 'UPDATE cameras SET miniatura=%s WHERE id=%s', (nova, cid))
+    apagar_arquivo(o, c['miniatura'])
+    return ''
 
 def _api(metodo, caminho, corpo=None, timeout=5):
     import httpx

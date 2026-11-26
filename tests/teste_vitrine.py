@@ -14,6 +14,9 @@ erros = []
 def checa(c, nome):
     if not c:
         erros.append(nome)
+def secao(h, ident):  # trecho da seção (home) com aria-labelledby=ident, até o </section> que a fecha
+    i = h.find(f'aria-labelledby="{ident}"')
+    return h[i:h.index('</section>', i)] if i >= 0 else ''
 def png(w=64, h=64):
     from PIL import Image
     b = io.BytesIO(); Image.new('RGB', (w, h), (14, 77, 100)).save(b, 'PNG'); return b.getvalue()
@@ -36,7 +39,9 @@ h = anon.get('/').text
 checa('id="h-selos"' in h and h.count('class="exemplo">exemplo') >= 3, 'home da Prefeitura com selos marcados como exemplo')
 checa(re.search(r'<div class="b l65">\s*<section class="caixa" aria-labelledby="h-diario"', h) and re.search(r'<div class="b l35">\s*<section class="selos-b"', h), 'Atos oficiais e selos dividem a linha (65/35)')
 checa('id="h-videos"' in h and 'exemplo-video.svg' in h and 'youtube-nocookie.com/embed' not in h, 'galeria de vídeos sem player antes do clique')
-checa('id="h-cams"' not in h and 'Vídeos e câmeras ao vivo</h2>' in h and 'exemplo-camera.svg' in h and 'data-cam=' not in h, 'mesma seção: câmeras de exemplo, sem endereço')
+hv = secao(h, 'h-videos'); hk = secao(h, 'h-conheca')
+checa('class="c-vivo"' in hk and 'exemplo-camera.svg' in hk and 'data-cam=' not in hk and 'href="/cameras-ao-vivo"' in hk and len(re.findall(r'<div class="cam(?: exemplo-cam)?"', hk)) == 2, 'Conheça com a faixa "ao vivo" (as 2 câmeras de exemplo, pequenas)')
+checa('id="h-cams"' not in h and 'Vídeos e câmeras ao vivo</h2>' in hv and 'exemplo-camera.svg' in h and 'data-cam=' not in h, 'mesma seção: câmeras de exemplo, sem endereço')
 g_ = h[h.index('id="h-videos"'):]
 checa('<div class="vc dois">' in g_ and g_.index('class="vc-videos"') < g_.index('class="vc-cams"') and 'Vídeos do YouTube</h3>' in g_ and 'Câmeras ao vivo</h3>' in g_, 'vídeos e câmeras em colunas separadas, vídeos primeiro')
 checa('id="aviso-cookies"' in h and 'Privacidade (LGPD)' in h and '/privacidade#cookies' in h, 'aviso de privacidade e cookies')
@@ -89,6 +94,10 @@ checa('Vídeo de teste da galeria' in anon.get('/videos').text, 'página /videos
 CFG.CHAVE_CREDENCIAIS, o_chave = 'Wt1PlqXUjmWtBbBQW3uI0SeS7ksW2yXlxkX7KzQd9mM=', CFG.CHAVE_CREDENCIAIS
 RTSP = 'rtsp://usuario-teste:senha-teste-123@192.0.2.10:554/stream1'
 VT._api, o_api = (lambda *a, **k: (_ for _ in ()).throw(ConnectionError('sem conversor no teste'))), VT._api
+def quadro_falso(url, espera=10):  # quadro fictício no lugar da câmera (nenhuma câmera real no teste)
+    from PIL import Image
+    b = io.BytesIO(); Image.new('RGB', (1280, 720), (40, 90, 120)).save(b, 'PNG'); return b.getvalue()
+VT.quadro_rtsp, o_quadro = quadro_falso, VT.quadro_rtsp
 UC = '/admin/cameras'
 t = pm.get(UC).text
 checa('Conversor de vídeo fora do ar' in t, 'aviso de conversor fora do ar')
@@ -97,6 +106,7 @@ checa('Não salvo' in r.text and 'rtsp://' in r.text, 'endereço que não é RTS
 r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'adicionar', 'nome': 'Câmera de teste', 'local': 'Local de teste', 'rtsp': RTSP}, follow_redirects=True)
 checa('Câmera cadastrada' in r.text and 'atualizado automaticamente' in r.text, 'cadastrar câmera (conversor fora do ar avisado)')
 c = db.um(PM, "SELECT * FROM cameras WHERE nome='Câmera de teste'")
+checa('Miniatura tirada da câmera' in r.text and re.match(r'^/midia/[0-9a-f]{32}\.webp$', c['miniatura'] or ''), 'miniatura tirada do RTSP no cadastro')
 checa(c and 'senha-teste' not in c['rtsp'] and VT.decifrar_rtsp(c['rtsp']) == RTSP and 'pm' in c['caminho'] and '192.0.2' not in c['caminho'], 'endereço cifrado; caminho público não revela a câmera')
 checa('senha-teste' not in pm.get(UC).text and '192.0.2.10' not in pm.get(UC).text, 'tela não devolve o endereço')
 checa(not db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE '%%senha-teste%%' OR acao LIKE '%%192.0.2%%'"), 'auditoria sem o endereço')
@@ -151,7 +161,7 @@ for ruim in ('-22.2442', 'abc, def', '-122.5, -50.5', '-22.5, 200'):
         VT.ler_posicao(ruim); checa(False, f'posição inválida aceita: {ruim}')
     except ValueError:
         pass
-h = anon.get('/').text
+h = secao(anon.get('/').text, 'h-videos')
 checa(h.count('data-cam="/cameras/') == 1 and len(re.findall(r'<div class="cam(?: exemplo-cam)?"', h)) == 2 and 'Mais câmeras (3)' in h, 'com 1 real e 2 exemplos: 2 na galeria (a real sempre) e "Mais câmeras (3)"')
 r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'adicionar', 'nome': 'Câmera de teste 2', 'local': '', 'rtsp': RTSP.replace('stream1', 'stream2'), 'posicao': '-22,5; -50'}, follow_redirects=True)
 checa('Câmera cadastrada' in r.text, 'cadastrar câmera com posição')
@@ -165,7 +175,9 @@ r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'posicao', 'id': c['id'], 'po
 checa('Posição no mapa gravada' in r.text and 'no mapa: -22.240000, -50.500000' in r.text and 'data-mapa-escolher="pos-' in r.text, 'trocar a posição pelo painel (com o mapa para marcar)')
 vistos, ex_na_galeria = set(), False
 for _ in range(25):
-    h = anon.get('/').text
+    hh = anon.get('/').text; h, hk = secao(hh, 'h-videos'), secao(hh, 'h-conheca')
+    ik = re.findall(r'data-cam="/cameras/(\d+)/"', hk)
+    checa(len(ik) == 3 and len(set(ik)) == 3 and 'exemplo-camera.svg' not in hk and 'Todas as câmeras (5)' in hk, f'Conheça com 3 câmeras reais diferentes ({ik})')
     ids = tuple(re.findall(r'data-cam="/cameras/(\d+)/"', h))
     checa(len(ids) == 2 and len(re.findall(r'<div class="cam(?: exemplo-cam)?"', h)) == 2, f'galeria com exatamente 2 câmeras ({ids})')
     ex_na_galeria |= 'exemplo-camera.svg' in h
@@ -173,6 +185,18 @@ for _ in range(25):
 checa(len(vistos) >= 3 and not ex_na_galeria, f'2 câmeras sorteadas a cada carregamento, reais antes dos exemplos ({len(vistos)} combinações)')
 checa('Mais câmeras (5)' in h and 'href="/cameras-ao-vivo"' in h and 'a cada visita aparecem 2' in h, 'botão "Mais câmeras" com o total')
 checa(anon.get('/videos').text.count('data-cam="/cameras/') == 2, '/videos também com 2 câmeras')
+# com as câmeras no Conheça e um álbum publicado, a 2ª coluna da galeria da home vira a galeria de fotos (fictícia)
+aid = db.exe(PM, "INSERT INTO albuns (titulo, publicado) VALUES ('Álbum de teste', TRUE) RETURNING id")['id']
+db.exe(PM, "INSERT INTO album_fotos (album_id, url, alt) VALUES (%s, '/static/img/exemplo-video.svg', 'Foto de teste')", (aid,))
+hh = anon.get('/').text; h = secao(hh, 'h-videos')
+checa('Vídeos e fotos</h2>' in h and '<div class="vc dois">' in h and 'class="vc-fotos"' in h and f'href="/fotos/{aid}"' in h and 'vc-cams' not in h and 'data-cam=' not in h
+      and len(re.findall(r'data-cam="/cameras/', secao(hh, 'h-conheca'))) == 3, 'com álbum: vídeos + galeria de fotos; câmeras só no Conheça')
+checa(anon.get('/videos').text.count('data-cam="/cameras/') == 2, '/videos continua com as câmeras mesmo com álbum')
+db.exe(PM, "UPDATE blocos SET visivel=FALSE WHERE pagina='home' AND chave='conheca'")
+h = anon.get('/').text
+checa('class="c-vivo"' not in h and 'vc-cams' in secao(h, 'h-videos') and 'vc-fotos' not in h, 'sem a seção Conheça as câmeras voltam para a galeria de vídeos')
+db.exe(PM, "UPDATE blocos SET visivel=TRUE WHERE pagina='home' AND chave='conheca'")
+db.exe(PM, 'DELETE FROM albuns WHERE id=%s', (aid,))
 o_centro, VT.centro = VT.centro, (lambda ibge: {'lat': -22.25, 'lon': -50.50})
 try:
     t = anon.get('/cameras-ao-vivo').text
@@ -209,6 +233,43 @@ checa(dados_mapa().get('visao', {}).get('travar') is False and dados_mapa()['vis
 checa(db.cfg(CM, 'cameras_mapa') is None, 'visão do mapa é de cada órgão')
 r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'visao_auto'}, follow_redirects=True)
 checa('Mapa no automático' in r.text and dados_mapa().get('visao') is None, 'voltar ao automático')
+# miniatura: foto fixa de fundo do cartão (tirada no cadastro/troca do endereço ou enviada pelo admin)
+c = db.um(PM, "SELECT id, miniatura FROM cameras WHERE nome='Câmera de teste'")
+t = anon.get('/cameras-ao-vivo').text
+checa(f'<img class="cam-mini" src="{c["miniatura"]}"' in t and 'foto de cada cartão é fixa' in t, 'cartão da câmera com a miniatura de fundo')
+checa(f'class="cam-mini-adm" src="{c["miniatura"]}"' in pm.get(UC).text and 'Tirar da câmera agora' in pm.get(UC).text, 'admin mostra a miniatura e as opções')
+VT.quadro_rtsp = lambda url, espera=10: (_ for _ in ()).throw(ValueError('a câmera não entregou imagem'))
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'miniatura_gerar', 'id': c['id']}, follow_redirects=True)
+checa('Sem miniatura (a câmera não entregou imagem)' in r.text and db.um(PM, 'SELECT miniatura FROM cameras WHERE id=%s', (c['id'],))['miniatura'] == c['miniatura'], 'falha ao tirar da câmera mantém a miniatura anterior')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'miniatura', 'id': c['id']}, files={'imagem': ('x.txt', b'nada aqui', 'text/plain')}, follow_redirects=True)
+checa('Não salvo' in r.text, 'miniatura que não é imagem recusada')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'miniatura', 'id': c['id']}, files={'imagem': ('m.png', png(1600, 900), 'image/png')}, follow_redirects=True)
+m2 = db.um(PM, 'SELECT miniatura FROM cameras WHERE id=%s', (c['id'],))['miniatura']
+checa('Miniatura trocada' in r.text and m2 != c['miniatura'] and re.match(r'^/midia/[0-9a-f]{32}\.webp$', m2) and anon.get(c['miniatura']).status_code == 404 and anon.get(m2).status_code == 200, 'enviar imagem troca a miniatura e apaga a antiga')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'miniatura_tirar', 'id': c['id']}, follow_redirects=True)
+checa('Miniatura removida' in r.text and db.um(PM, 'SELECT miniatura FROM cameras WHERE id=%s', (c['id'],))['miniatura'] == '' and anon.get(m2).status_code == 404, 'remover a miniatura')
+VT.quadro_rtsp = quadro_falso
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'trocar', 'id': c['id'], 'rtsp': RTSP}, follow_redirects=True)
+checa('Endereço trocado. Miniatura tirada da câmera' in r.text and db.um(PM, 'SELECT miniatura FROM cameras WHERE id=%s', (c['id'],))['miniatura'], 'trocar o endereço tira a miniatura de novo')
+checa(not db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE '%%senha-teste%%' OR acao LIKE '%%192.0.2%%'"), 'auditoria da miniatura sem o endereço')
+# leitor de vídeo de verdade (PyAV): um vídeo fictício gerado aqui; e câmera inexistente sem vazar a senha
+VT.quadro_rtsp = o_quadro
+import av, tempfile
+from PIL import Image
+arq = os.path.join(tempfile.mkdtemp(), 'teste.mkv')
+with av.open(arq, 'w') as sai:
+    st = sai.add_stream('mpeg4', rate=10); st.width, st.height, st.pix_fmt = 320, 180, 'yuv420p'
+    for i in range(10):
+        for pk in st.encode(av.VideoFrame.from_image(Image.new('RGB', (320, 180), (200, 20 * i, 40)))):
+            sai.mux(pk)
+    for pk in st.encode():
+        sai.mux(pk)
+q = VT.quadro_rtsp(arq, espera=5)
+checa(q[:8] == b'\x89PNG\r\n\x1a\n' and Image.open(io.BytesIO(q)).size == (320, 180), 'PyAV lê um quadro do vídeo')
+try:
+    VT.quadro_rtsp('rtsp://usuario-teste:senha-teste-123@127.0.0.1:9/stream1', espera=2); checa(False, 'câmera inexistente deveria falhar')
+except ValueError as e:
+    checa('senha' not in str(e) and '127.0.0.1' not in str(e), 'erro do leitor sem endereço nem senha')
 VT._api = o_api
 CFG.CHAVE_CREDENCIAIS = o_chave
 checa('Câmeras ao vivo' in anon.get('/videos').text, 'página /videos com câmeras')

@@ -15,6 +15,6 @@
 <p class="legal">Mapa: © colaboradores do OpenStreetMap. Ao abrir esta página, o seu navegador baixa as imagens do mapa de tile.openstreetmap.org (OpenStreetMap Foundation), que recebe o seu endereço IP. {% if mapa.pontos|selectattr('ilustrativa')|list %}As câmeras de exemplo estão em posições ilustrativas.{% endif %}</p></section>{% endif %}
 <section aria-labelledby="h-lista"><h2 id="h-lista">{{ cameras|length }} câmera{{ 's' if cameras|length != 1 }}</h2>
 <ul class="cams pagina-cams">{% for c in cameras %}<li id="cam-{{ c.id }}" tabindex="-1">{{ camera(c) }}{% if c.lat is none and not c.exemplo %}<p class="legal">Sem posição no mapa.</p>{% endif %}</li>{% endfor %}</ul>
-<p class="legal">Pontos públicos, em tempo real. A imagem só carrega quando você clica; o portal não grava as imagens.</p></section>
+<p class="legal">Pontos públicos, em tempo real. O vídeo só carrega quando você clica; a foto de cada cartão é fixa, tirada no cadastro da câmera. O portal não grava o vídeo.</p></section>
 {% endif %}
 {% endblock %}

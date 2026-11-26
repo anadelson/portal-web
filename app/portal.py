@@ -143,8 +143,12 @@ def home(request: Request):
     from . import vitrine as VT  # selos, galeria de vídeos e câmeras (26/11/2026); selos e vídeos saem no período eleitoral
     if 'selos' in vis and not ctx['defeso']:
         dados['selos'] = VT.selos(b, limite=6)
-    if 'videos' in vis:  # galeria única: vídeos do YouTube e câmeras ao vivo (vídeos saem no período eleitoral)
-        dados['galeria'] = VT.galeria_unica(b, ctx['mods'], ctx['defeso'])
+    cx = ctx['ident'].get('conheca') or {}  # câmeras na faixa "Ao vivo" do Conheça (26/11/2026), se a seção aparece
+    if 'conheca' in vis and (cx.get('titulo') or cx.get('texto') or dados['perfis']):
+        dados['cams_conheca'] = VT.cameras_conheca(b)
+    if 'videos' in vis:  # galeria única: vídeos do YouTube e câmeras ao vivo (vídeos saem no período eleitoral);
+        # com as câmeras no Conheça, a 2ª coluna mostra a galeria de fotos (se houver álbuns)
+        dados['galeria'] = VT.galeria_unica(b, ctx['mods'], ctx['defeso'], fotos=dados['albuns'] if dados.get('cams_conheca') else None)
     destaque = [x for x in blocos if x['regiao'] == 'destaque']
     principal = [x for x in blocos if x['regiao'] == 'principal']
     for a, c in zip(principal, principal[1:]):  # pares que dividem a linha quando vêm em seguida (ex.: Atos oficiais + Selos)

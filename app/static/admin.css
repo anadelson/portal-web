@@ -414,3 +414,4 @@ details.anexar summary{cursor:pointer;color:var(--cor);font-weight:700;font-size
 .mapa-escolher{height:280px;border-radius:12px;border:1px solid #D5DCE3;margin:4px 0 12px;z-index:0;cursor:crosshair}
 .mapa-visao{height:340px}
 label.caixa{display:flex;gap:8px;align-items:flex-start;font-weight:600}
+.cam-mini-adm{display:block;width:160px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);margin-bottom:6px}

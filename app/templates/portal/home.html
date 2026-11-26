@@ -14,7 +14,7 @@
 {% from 'partials/vitrine.html' import vitrine with context %}
 {% from 'partials/tempo.html' import tempo_faixa, tempo_hero with context %}
 {% from 'partials/fileira.html' import fileira_cartoes %}
-{% from 'partials/video.html' import galeria with context %}
+{% from 'partials/video.html' import galeria, camera with context %}
 
 {% macro retrato(v, grande=False) %}<span class="retrato">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt or ('Foto oficial de ' ~ v.nome) }}">{% else %}<span class="ini" aria-hidden="true">{{ v.nome|iniciais }}</span>{% endif %}{% if not grande %}<span class="chip-partido">{{ v.partido }}</span>{% endif %}</span>{% endmacro %}
 
@@ -110,6 +110,12 @@
 {% elif cx.numeros %}<dl class="c-num">{% for n in cx.numeros %}<div><dt>{{ n[0] }}</dt><dd>{{ n[1] }}</dd></div>{% endfor %}</dl>{% if cx.fonte %}<p class="legal">{{ cx.fonte }}</p>{% endif %}{% endif %}
 <div class="acoes"><a class="btn" href="/conheca">Conheça mais {{ icone('seta', 18, 'seta') }}</a>{% if mods.bi %}<a class="btn sec" href="/painel">{{ ident.nome_curto }} em números</a>{% endif %}{% if d.albuns and not d.bloco_fotos %}<a class="btn sec" href="/fotos">Galeria de fotos</a>{% endif %}</div></div>
 {% if d.perfis %}<ul class="c-mosaico n{{ d.perfis|length }}">{% for p in d.perfis %}<li><a href="/conheca/{{ p.slug }}">{% if p.capa %}<img src="{{ p.capa.url }}" alt="" loading="lazy">{% else %}<span class="sem-foto" aria-hidden="true"></span>{% endif %}<span class="leg"><span>{{ p.titulo }}</span><span class="ver">Ver perfil</span></span></a></li>{% endfor %}</ul>{% endif %}
+{% if d.cams_conheca %}{% set cc = d.cams_conheca %}{# faixa "ao vivo" (26/11/2026): chamada à esquerda, 3 câmeras pequenas à direita; o vídeo só carrega no clique #}
+<div class="c-vivo" role="group" aria-labelledby="h-c-vivo"><div class="c-vivo-txt"><p class="c-vivo-selo"><span class="vc-vivo" aria-hidden="true"></span>Ao vivo agora</p>
+<h3 id="h-c-vivo">{{ ident.nome_curto or 'A cidade' }} ao vivo</h3><p>Veja em tempo real os pontos públicos de {{ ident.nome_curto or 'cidade' }}. Clique em uma câmera para assistir.</p>
+<a class="btn sec" href="/cameras-ao-vivo">{{ icone('camera', 18) }}{{ ('Todas as câmeras (' ~ cc.n ~ ')') if cc.n > cc.cameras|length else 'Câmeras no mapa' }} {{ icone('seta', 18, 'seta') }}</a></div>
+<div class="c-vivo-cams"><ul class="cams c-cams n{{ cc.cameras|length }}">{% for c in cc.cameras %}<li>{{ camera(c) }}</li>{% endfor %}</ul>
+<p class="legal">{% if cc.n > cc.cameras|length %}A cada visita aparecem {{ cc.cameras|length }}, sorteadas. {% endif %}O vídeo só carrega quando você clica; o portal não grava o vídeo.</p></div></div>{% endif %}
 </section>
 
 {% elif b.chave == 'fotos' and d.albuns %}
@@ -161,7 +167,7 @@
 
 {% elif b.chave == 'videos' and d.galeria %}{% set g = d.galeria %}
 {# vídeos do YouTube e câmeras ao vivo na mesma seção, em 2 colunas separadas (26/11/2026); nada carrega antes do clique #}
-<section class="videos-b" aria-labelledby="h-videos"><div class="cab"><h2 id="h-videos">{{ 'Vídeos e câmeras ao vivo' if g.n_cameras and g.n_videos else ('Câmeras ao vivo' if g.n_cameras else 'Galeria de vídeos') }}</h2><a class="btn sec" href="{{ '/videos' if g.n_videos else '/cameras-ao-vivo' }}">{{ 'Todos os vídeos' if g.n_videos else 'Todas as câmeras' }} {{ icone('seta', 18, 'seta') }}</a></div>
+<section class="videos-b" aria-labelledby="h-videos"><div class="cab"><h2 id="h-videos">{{ 'Vídeos e fotos' if g.fotos else ('Vídeos e câmeras ao vivo' if g.n_cameras and g.n_videos else ('Câmeras ao vivo' if g.n_cameras else 'Galeria de vídeos')) }}</h2><a class="btn sec" href="{{ '/videos' if g.n_videos else '/cameras-ao-vivo' }}">{{ 'Todos os vídeos' if g.n_videos else 'Todas as câmeras' }} {{ icone('seta', 18, 'seta') }}</a></div>
 {{ galeria(g) }}</section>
 
 {% elif b.chave == 'contas' %}
