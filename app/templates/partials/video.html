@@ -1,0 +1,4 @@
+{# capa de vídeo da galeria (home e /videos): botão que carrega o player só no clique #}
+{% macro capa_video(v, palco=False) %}{% set img = ('https://i.ytimg.com/vi/' ~ v.youtube_id ~ ('/hqdefault.jpg' if palco else '/mqdefault.jpg')) if v.youtube_id else '/static/img/exemplo-video.svg' %}
+<button type="button" class="vg-capa{{ ' palco' if palco }}" data-yt="{{ v.youtube_id }}" data-titulo="{{ v.titulo }}" aria-label="{{ ('Assistir: ' ~ v.titulo) if v.youtube_id else (v.titulo ~ ' (exemplo, sem vídeo)') }}"><span class="vg-img"><img src="{{ img }}" alt="" loading="lazy"><span class="vg-play" aria-hidden="true">{{ icone('play', 26 if palco else 18) }}</span></span>
+<span class="vg-txt"><strong>{{ v.titulo }}</strong><small>{% if v.quando %}{{ v.quando|br }}{% endif %}{% if v.origem == 'transmissao' %} · {{ v.descricao }}{% endif %}{% if v.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</small></span></button>{% endmacro %}

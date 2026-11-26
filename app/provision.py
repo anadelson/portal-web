@@ -14,7 +14,7 @@ from pathlib import Path
 import psycopg
 from psycopg.types.json import Jsonb
 from . import config, db
-from .catalogo import MODULOS, COMECA_OCULTO, ANTES_DE, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, LAYOUT_PADRAO_V2, LAYOUT_PADRAO_V3, serve
+from .catalogo import MODULOS, COMECA_OCULTO, ANTES_DE, DEPOIS_DE, LAYOUT_PADRAO, LAYOUT_PADRAO_V1, LAYOUT_PADRAO_V2, LAYOUT_PADRAO_V3, serve
 from .security import hash_senha
 
 AQUI = Path(__file__).parent
@@ -154,7 +154,11 @@ def atualizar_layout(banco, tipo):
     for k, reg in novos:
         mx = db.um(banco, "SELECT coalesce(max(ordem),0)+1 n FROM blocos WHERE pagina='home' AND regiao<>'rodape'")['n']
         ref = db.um(banco, "SELECT ordem FROM blocos WHERE pagina='home' AND chave=%s AND regiao=%s", (ANTES_DE.get(k, ''), reg))
-        if ref:  # entra logo antes do bloco de referência (os seguintes descem uma posição)
+        dep = db.um(banco, "SELECT ordem FROM blocos WHERE pagina='home' AND chave=%s AND regiao=%s", (DEPOIS_DE.get(tipo, {}).get(k, ''), reg))
+        if dep:  # entra logo depois do bloco de referência (os seguintes descem uma posição)
+            db.exe(banco, "UPDATE blocos SET ordem = ordem + 1 WHERE pagina='home' AND ordem > %s", (dep['ordem'],))
+            mx = dep['ordem'] + 1
+        elif ref:  # entra logo antes do bloco de referência (os seguintes descem uma posição)
             db.exe(banco, "UPDATE blocos SET ordem = ordem + 1 WHERE pagina='home' AND ordem >= %s", (ref['ordem'],))
             mx = ref['ordem']
         db.exe(banco, "INSERT INTO blocos (pagina, chave, regiao, ordem, visivel) VALUES ('home',%s,%s,%s,%s) ON CONFLICT DO NOTHING", (k, reg, mx, k not in COMECA_OCULTO))
@@ -320,6 +324,12 @@ def atualizar():
             print(f"  ajustes 8: {nd1} conteúdo(s)-exemplo que não eram notícia viraram comunicados-exemplo")
         if nm or npf:
             print(f"  fase 8: {nm} item(ns) de menu e {npf} perfil(is) do Conheça criados")
+        pil = next((x for x in PILOTO if x['slug'] == o['slug']), None)
+        if pil and pil.get('vitrine_exemplo') is not None and config.PAPEL != 'no':  # só no piloto (não em nó de portais)
+            from . import vitrine as VT
+            nv = VT.semear_exemplos(o, cameras_tambem=pil['vitrine_exemplo'].get('cameras', False))
+            if nv:
+                print(f"  vitrine: {nv} exemplo(s) de selo, vídeo e câmera criados (marcados como exemplo)")
         ni, nfp = configurar_painel(o)
         nf += nfp + configurar_youtube(o)
         if ni:

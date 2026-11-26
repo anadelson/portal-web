@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Vídeo de exemplo">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22384F"/><stop offset="1" stop-color="#0E1C2B"/></linearGradient></defs>
+<rect width="640" height="360" fill="url(#g)"/><g fill="#fff" fill-opacity=".06"><circle cx="90" cy="300" r="120"/><circle cx="560" cy="60" r="140"/></g>
+<circle cx="320" cy="170" r="46" fill="#fff" fill-opacity=".92"/><path d="M306 148v44l36-22z" fill="#0E1C2B"/>
+<text x="320" y="262" text-anchor="middle" font-family="system-ui,sans-serif" font-size="24" font-weight="700" letter-spacing="4" fill="#fff" fill-opacity=".85">VÍDEO DE EXEMPLO</text>
+</svg>

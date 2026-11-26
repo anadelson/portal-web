@@ -1,0 +1,19 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Selos e reconhecimentos — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Selos e reconhecimentos</span></nav>
+<h1>Selos e reconhecimentos</h1>
+<p class="intro">Selos e avaliações que {{ 'a Câmara' if leg else 'a Prefeitura' }} recebeu de instituições externas: quem concedeu, como foi conseguido, a nota atingida e o documento de concessão.</p>
+{% if defeso %}<p class="vazio">Conteúdo suspenso durante o período eleitoral (Lei 9.504/1997, art. 73, VI, b).</p>
+{% elif not selos %}<p class="vazio">Nenhum selo publicado ainda.</p>
+{% else %}<ul class="selos-pag">{% for s in selos %}<li id="selo-{{ s.id }}" tabindex="-1"><article class="caixa selo-c">
+<div class="s-img">{% if s.imagem %}<img src="{{ s.imagem }}" alt="{{ s.nome }}" loading="lazy">{% else %}{{ icone('selo', 64) }}{% endif %}</div>
+<div class="s-corpo"><h2>{{ s.nome }}{% if s.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</h2>
+<dl class="campos"><div><dt>Instituição</dt><dd>{% if s.link %}<a href="{{ s.link }}" rel="noopener">{{ s.instituicao }}</a>{% else %}{{ s.instituicao }}{% endif %}</dd></div>
+{% if s.nota %}<div><dt>Nota ou resultado</dt><dd><strong>{{ s.nota }}</strong></dd></div>{% endif %}
+{% if s.concedido_em %}<div><dt>Concedido em</dt><dd>{{ s.concedido_em|br }}</dd></div>{% endif %}
+{% if s.valido_ate %}<div><dt>Válido até</dt><dd>{{ s.valido_ate|br }}{% if s.vencido %} <span class="chip erro">vencido</span>{% endif %}</dd></div>{% endif %}</dl>
+{% if s.como %}<h3>Como foi conseguido</h3><p style="white-space:pre-line">{{ s.como }}</p>{% endif %}
+{% if s.documento and s.doc %}<p><a class="btn sec" href="{{ s.documento }}" target="_blank" rel="noopener">{{ icone('lista', 18) }}{{ s.documento_titulo or 'Documento de concessão' }} ({{ s.doc[0] }}, {{ s.doc[1] }})<span class="sr"> (abre em nova aba)</span></a></p>{% endif %}
+</div></article></li>{% endfor %}</ul>{% endif %}
+{% endblock %}

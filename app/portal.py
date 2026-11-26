@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import FileResponse
 from . import config, db, eleicao
 from . import avaliacao as AVAL
-from .catalogo import BLOCOS, VEDADAS, LARGURA
+from .catalogo import BLOCOS, VEDADAS, LARGURA, PARES
 from .web import templates, ctx_orgao, ler_form, ir
 
 r = APIRouter(prefix='/_p')
@@ -34,6 +34,19 @@ def bienio_atual(bienio: str, ano: int) -> bool:
     except ValueError:
         return False
 
+def funcoes(b, ver):
+    """2ª linha do cartão do vereador (26/11/2026): cargo na Mesa em exercício (campo "cargo") ou nas comissões ativas."""
+    com = {}
+    for c in db.todos(b, "SELECT m.vereador_id, m.cargo, c.nome FROM comissao_membros m JOIN comissoes c ON c.id=m.comissao_id WHERE c.ativa ORDER BY (m.cargo='Presidente') DESC, (m.cargo='Relator') DESC, c.nome"):
+        com.setdefault(c['vereador_id'], []).append(c)
+    for v in ver:
+        cs = com.get(v['id'], [])
+        nome_c = lambda c: c['nome'] if c['nome'].lower().startswith('comiss') else 'Comissão de ' + c['nome']
+        partes = ([f"{v['cargo']} da Mesa"] if v.get('cargo') else []) + [f"{c['cargo']} · {nome_c(c)}" if c['cargo'] != 'Membro' else f"Membro · {nome_c(c)}" for c in cs]
+        v['funcao'] = partes[0] if partes else ''
+        v['funcao_mais'] = len(partes) - 1 if partes else 0
+    return ver
+
 def dados_camara(b, hoje):
     leg = db.um(b, 'SELECT max(numero) n FROM legislaturas')['n']
     ver = db.todos(b, 'SELECT * FROM vereadores WHERE legislatura=%s ORDER BY nome', (leg,))
@@ -53,6 +66,7 @@ def dados_camara(b, hoje):
     # só os biênios que já começaram (o 2º aparece quando entra em vigor); antes da legislatura, o 1º
     ini = lambda g: int(re.match(r'\d{4}', g['bienio']).group()) if re.match(r'\d{4}', g['bienio']) else 0
     mesas = [g for g in mesas if ini(g) <= hoje.year] or mesas[:1]
+    funcoes(b, ver)
     return dict(legislatura=leg, vereadores=ver, mesas=mesas, bienio_atual=atual, presidente_id=pres,
                 mesa_layout='abaixo' if db.cfg(b, 'mesa_layout') == 'abaixo' else 'lado')
 
@@ -126,8 +140,19 @@ def home(request: Request):
                         'legislacao': db.um(b, 'SELECT count(*) n FROM legislacao')['n']}
     if ctx['mods'].get('diario'):
         dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND (NOT modo_teste OR %s) ORDER BY data DESC, numero DESC, letra DESC LIMIT 4", (diario_teste(b),))
+    from . import vitrine as VT  # selos, galeria de vídeos e câmeras (26/11/2026); selos e vídeos saem no período eleitoral
+    if 'selos' in vis and not ctx['defeso']:
+        dados['selos'] = VT.selos(b, limite=6)
+    if 'videos' in vis and not ctx['defeso']:
+        dados['videos'] = VT.galeria(b, ctx['mods'], limite=7)
+    if 'cameras' in vis:
+        dados['cameras'] = VT.cameras(b)[:6]
     destaque = [x for x in blocos if x['regiao'] == 'destaque']
     principal = [x for x in blocos if x['regiao'] == 'principal']
+    for a, c in zip(principal, principal[1:]):  # pares que dividem a linha quando vêm em seguida (ex.: Atos oficiais + Selos)
+        par = PARES.get((a['chave'], c['chave']))
+        if par and dados.get(c['chave']):
+            a['largura'], c['largura'] = par
     lateral = [x for x in blocos if x['regiao'] == 'lateral']
     # 25/11/2026: a busca fica só no banner principal; o atalho de teclado [3] vai para ela (sem o banner, para /busca)
     ancora = '#q-home' if any(x['chave'] == 'hero' for x in destaque) else None
@@ -204,6 +229,12 @@ def vereadores(request: Request, leg: str = ''):
     atual = num == legs[0]['numero']
     from . import legislativo as L
     props = {v['id']: len(L.proposicoes_do_vereador(b, v)) for v in ver} if atual else {}
+    if atual:  # cargo na Mesa em exercício + comissões (2ª linha do cartão)
+        dc = dados_camara(b, config.hoje())
+        cargo = {v['id']: v.get('cargo') for v in dc['vereadores']}
+        for v in ver:
+            v['cargo'] = cargo.get(v['id'])
+        funcoes(b, ver)
     return templates.TemplateResponse(request, 'portal/vereadores.html', dict(ctx, legs=legs, leg=lg, ver=ver, loop_atual=atual, props=props,
         mesas=db.todos(b, 'SELECT * FROM mesas WHERE legislatura=%s ORDER BY bienio, id', (num,)), legal='vereadores', notas=notas))
 

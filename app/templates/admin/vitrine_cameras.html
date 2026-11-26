@@ -1,0 +1,18 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, vazio with context %}
+{% block h1 %}Câmeras ao vivo{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+{{ cab('Câmeras de pontos públicos transmitidas ao vivo no portal (bloco “Câmeras ao vivo” e /cameras). O endereço RTSP fica gravado cifrado e nunca volta para a tela. O servidor só lê a câmera enquanto alguém está assistindo; as imagens não são gravadas pelo portal.') }}
+{% if not conversor %}<p class="msg" role="status" style="background:#FCEFD9"><strong>Conversor de vídeo fora do ar neste servidor.</strong> As câmeras podem ser cadastradas, mas só aparecem ao vivo quando ele estiver em funcionamento. Fale com o suporte da plataforma.</p>{% endif %}
+{% if not chave_ok %}<p class="msg" role="alert" style="background:#FBE4D8;color:#9B1C1C"><strong>Cadastro desligado:</strong> falta a chave de cifra no servidor.</p>{% endif %}
+<section class="cx form-tela"><h2>Cadastrar câmera</h2><form class="campos" method="post" action="/admin/cameras" autocomplete="off"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="adicionar">
+<div class="grade2"><label>Nome<input name="nome" required maxlength="80" placeholder="ex.: Praça da Matriz"></label><label>Local (opcional)<input name="local" maxlength="160" placeholder="ex.: Rua…, esquina com…"></label></div>
+<label>Endereço RTSP da câmera<input name="rtsp" type="password" autocomplete="new-password" spellcheck="false" required maxlength="500" placeholder="rtsp://usuario:senha@IP-ou-domínio:554/caminho"></label>
+<p class="legal">Só gravação: depois de salvar, o endereço não volta para a tela nem para o registro de ações. A câmera precisa ser alcançável pelo servidor do portal (IP público com a porta liberada só para o servidor, ou VPN). Use um usuário da câmera só com permissão de visualização. Mostre só espaços públicos; não aponte para janelas, interiores ou locais onde haja expectativa de privacidade.</p>
+<div class="acoes-form"><button class="btn" {{ 'disabled' if not chave_ok }}>Cadastrar</button></div></form></section>
+{% if cameras %}<div class="tabela"><table><caption class="sr">Câmeras</caption><thead><tr><th scope="col">Câmera</th><th scope="col">Situação</th><th scope="col">Ações</th></tr></thead><tbody>
+{% for c in cameras %}<tr><td><strong>{{ c.nome }}</strong>{% if c.exemplo %} <span class="chip alerta">exemplo</span>{% endif %}<br><small>{{ c.local }}</small></td>
+<td><span class="chip {{ 'ok' if c.ativa }}">{{ 'no portal' if c.ativa else 'desligada' }}</span>{% if c.exemplo %}<br><small>sem endereço: só ilustração</small>{% endif %}</td>
+<td><form class="inline" method="post" action="/admin/cameras" style="flex-wrap:wrap;gap:6px"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ c.id }}">{% if not c.exemplo %}<button class="btn sec" name="acao" value="testar">Testar</button>{% endif %}<button class="btn sec" name="acao" value="ativa">{{ 'Desligar' if c.ativa else 'Ligar' }}</button><button class="btn perigo" name="acao" value="apagar">Apagar</button></form>
+<details><summary>{{ 'Cadastrar endereço' if c.exemplo else 'Trocar endereço' }}</summary><form class="campos" method="post" action="/admin/cameras" autocomplete="off"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ c.id }}"><input type="hidden" name="acao" value="trocar"><label>Novo endereço RTSP<input name="rtsp" type="password" autocomplete="new-password" required maxlength="500"></label><button class="btn">Salvar</button></form></details></td></tr>{% endfor %}
+</tbody></table></div>{% else %}{{ vazio('Nenhuma câmera cadastrada.') }}{% endif %}
+{% endblock %}

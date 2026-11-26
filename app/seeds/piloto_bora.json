@@ -2,7 +2,7 @@
  "_sobre": "Dados do piloto de Borá (Prefeitura e Câmara). Só lidos por \"python -m app.provision init/atualizar\" para os órgãos do piloto; o código não depende deles.",
  "orgaos": [
   {
-   "slug": "pm-bora",
+   "slug": "pm-bora", "vitrine_exemplo": {"cameras": true},
    "nome": "Prefeitura Municipal de Borá",
    "tipo": "executivo",
    "dominio_env": "DOMINIO_PM",
@@ -179,7 +179,7 @@
    }
   },
   {
-   "slug": "cm-bora",
+   "slug": "cm-bora", "vitrine_exemplo": {"cameras": false},
    "nome": "Câmara Municipal de Borá",
    "tipo": "legislativo",
    "dominio_env": "DOMINIO_CM",

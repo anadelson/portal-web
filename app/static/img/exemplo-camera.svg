@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Câmera de exemplo">
+<rect width="640" height="360" fill="#18232E"/>
+<g stroke="#fff" stroke-opacity=".08" stroke-width="2"><path d="M0 250 L640 210 M0 300 L640 270 M200 360 L300 150 M440 360 L340 150"/></g>
+<rect x="0" y="0" width="640" height="150" fill="#24384A"/><g fill="#2F465B"><rect x="40" y="70" width="90" height="80"/><rect x="150" y="40" width="70" height="110"/><rect x="420" y="60" width="110" height="90"/><rect x="545" y="90" width="60" height="60"/></g>
+<g transform="translate(286 150)" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="5" stroke-linejoin="round"><rect x="0" y="10" width="52" height="36" rx="6"/><path d="M52 22l18-10v32l-18-10"/></g>
+<text x="320" y="250" text-anchor="middle" font-family="system-ui,sans-serif" font-size="24" font-weight="700" letter-spacing="4" fill="#fff" fill-opacity=".85">CÂMERA DE EXEMPLO</text>
+</svg>

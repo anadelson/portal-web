@@ -14,8 +14,14 @@
 {% from 'partials/vitrine.html' import vitrine with context %}
 {% from 'partials/tempo.html' import tempo_faixa, tempo_hero with context %}
 {% from 'partials/fileira.html' import fileira_cartoes %}
+{% from 'partials/video.html' import capa_video with context %}
 
 {% macro retrato(v, grande=False) %}<span class="retrato">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="{{ v.foto_alt or ('Foto oficial de ' ~ v.nome) }}">{% else %}<span class="ini" aria-hidden="true">{{ v.nome|iniciais }}</span>{% endif %}{% if not grande %}<span class="chip-partido">{{ v.partido }}</span>{% endif %}</span>{% endmacro %}
+
+{# cartão do vereador em 3 linhas (26/11/2026): 1 nome – apelido · 2 Mesa ou comissão · 3 partido e votos #}
+{% macro linha_funcao(v) %}{% if v.funcao %}{{ v.funcao }}{% if v.funcao_mais %} <span class="mais-f">+{{ v.funcao_mais }}</span>{% endif %}{% else %}Sem cargo na Mesa ou em comissão{% endif %}{% endmacro %}
+{% macro linha_voto(v) %}{{ v.partido }}{% if v.votos %} · {{ '{:,}'.format(v.votos)|replace(',', '.') }} votos{% endif %}{% endmacro %}
+
 
 {% macro bloco(b) %}
 {% if b.chave == 'atalhos' %}
@@ -134,15 +140,35 @@
 {% if d.vereadores %}{% set pres = d.vereadores|selectattr('id', 'equalto', d.presidente_id)|first if d.presidente_id else none %}
 <div class="vers-home"><div class="vers-grade{{ ' com-pres' if pres }}">
 {% if pres %}{% set v = pres %}<div class="vers-pres"><a class="vcard pres" href="/vereador/{{ v.id }}" aria-label="Ver perfil de {{ v.nome }}, Presidente da Câmara">{{ retrato(v, True) }}
-<span class="info"><span class="selo-pres">Presidente da Câmara</span><strong>{{ v.nome }}</strong><span class="tags">{% if v.apelido %}<span>“{{ v.apelido }}”</span>{% endif %}<span><b>{{ v.partido }}</b></span></span>{% if d.bienio_atual %}<span style="color:#E3EADF">Mesa Diretora {{ d.bienio_atual }}{% if v.votos %} · {{ v.votos }} votos{% endif %}</span>{% endif %}<span class="ver">Ver perfil e atuação</span></span></a></div>{% endif %}
+<span class="info"><span class="selo-pres">Presidente da Câmara</span><strong>{{ v.nome }}{% if v.apelido %} – {{ v.apelido }}{% endif %}</strong><span class="vl2">{% if d.bienio_atual %}Mesa Diretora {{ d.bienio_atual }}{% else %}{{ linha_funcao(v) }}{% endif %}</span><span class="vl3">{{ linha_voto(v) }}</span><span class="ver">Ver perfil e atuação</span></span></a></div>{% endif %}
 <ul class="vers-lista" aria-label="Vereadores">{% for v in d.vereadores if not pres or v.id != pres.id %}
-<li><a class="vmini" href="/vereador/{{ v.id }}" aria-label="Ver perfil de {{ v.nome }}"><span class="mini-ini" aria-hidden="true">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="">{% else %}{{ v.nome|iniciais }}{% endif %}</span><span class="t"><strong>{{ v.nome }}</strong><small>{% if v.cargo %}{{ v.cargo }} · {% endif %}{% if v.apelido %}“{{ v.apelido }}” · {% endif %}{{ v.partido }}</small></span></a></li>{% endfor %}</ul>
+<li><a class="vmini" href="/vereador/{{ v.id }}" aria-label="Ver perfil de {{ v.nome }}"><span class="mini-ini" aria-hidden="true">{% if v.foto_url %}<img src="{{ v.foto_url }}" alt="">{% else %}{{ v.nome|iniciais }}{% endif %}</span><span class="t"><strong>{{ v.nome }}{% if v.apelido %} – {{ v.apelido }}{% endif %}</strong><small class="vl2{{ ' sem' if not v.funcao }}">{{ linha_funcao(v) }}</small><small class="vl3">{{ linha_voto(v) }}</small></span></a></li>{% endfor %}</ul>
 </div></div>{% endif %}
 {% if d.mesas %}<div class="mesa"><div class="cab" style="margin-bottom:12px"><h3 style="font-size:var(--fs-h2-bloco);margin:0">Mesa Diretora da {{ d.legislatura }}ª Legislatura</h3><small style="color:var(--sub)">Eleita para dois biênios · Regimento Interno</small></div>
 <div class="bienios {{ 'um' if d.mesas|length == 1 else d.mesa_layout }}">{% for g in d.mesas %}<div class="bienio"><div class="cab"><strong>Biênio {{ g.bienio }}</strong><span class="chip {{ 'ok' if g.atual else '' }}">{{ 'Em exercício' if g.atual else ('A eleger' if not g.membros else 'Eleita') }}</span></div>
 {% if g.membros %}<ul>{% for m in g.membros %}<li{% if m.cargo == 'Presidente' %} class="m-pres"{% endif %}>{% if m.vid %}<a href="/vereador/{{ m.vid }}">{% else %}<span class="p">{% endif %}<span class="mini-ini" aria-hidden="true">{% if m.foto %}<img src="{{ m.foto }}" alt="">{% else %}{{ m.nome|iniciais }}{% endif %}</span><span><small style="display:block;color:var(--sub)">{{ m.cargo }}</small>{{ m.nome }}</span>{% if m.vid %}</a>{% else %}</span>{% endif %}</li>{% endfor %}</ul>
 {% else %}<p style="margin:0;font-size:var(--fs-peq);color:var(--sub)">Eleição da Mesa para este biênio ainda não realizada.</p>{% endif %}</div>{% endfor %}</div></div>{% endif %}
 </section>
+
+{% elif b.chave == 'selos' and d.selos %}
+{# selos (26/11/2026): estreito (ao lado de Atos oficiais) = lista; largo (faixa própria, como na Câmara) = medalhas lado a lado #}
+<section class="selos-b" aria-labelledby="h-selos"><div class="selos-in">
+<div class="selos-cab"><p class="rotulo">Reconhecimentos</p><h2 id="h-selos">Selos e reconhecimentos</h2><p class="sub">Avaliações de instituições externas sobre {{ 'a Câmara' if leg else 'a Prefeitura' }}.</p></div>
+<ul class="selos-lista">{% for s in d.selos %}<li><a href="/selos#selo-{{ s.id }}"><span class="s-img">{% if s.imagem %}<img src="{{ s.imagem }}" alt="" loading="lazy">{% else %}{{ icone('selo', 40) }}{% endif %}</span>
+<span class="s-txt"><strong>{{ s.nome }}</strong><small>{{ s.instituicao }}{% if s.ano %} · {{ s.ano }}{% endif %}</small>{% if s.nota %}<span class="s-nota">{{ s.nota }}</span>{% endif %}{% if s.exemplo %}<span class="exemplo">exemplo</span>{% endif %}</span></a></li>{% endfor %}</ul>
+<div class="acoes"><a class="btn sec" href="/selos">Todos os selos e certificados {{ icone('seta', 18, 'seta') }}</a></div>
+</div></section>
+
+{% elif b.chave == 'videos' and d.videos and not defeso %}
+<section class="videos-b" aria-labelledby="h-videos"><div class="cab"><h2 id="h-videos">Galeria de vídeos</h2><a class="btn sec" href="/videos">Todos os vídeos {{ icone('seta', 18, 'seta') }}</a></div>
+<div class="vg" data-galeria><div class="vg-palco">{{ capa_video(d.videos[0], True) }}</div>
+{% if d.videos|length > 1 %}<ul class="vg-lista" aria-label="Outros vídeos">{% for v in d.videos[1:] %}<li>{{ capa_video(v) }}</li>{% endfor %}</ul>{% endif %}</div>
+<p class="legal">Vídeos do canal oficial no YouTube. O player só é carregado quando você clica, no modo de privacidade do YouTube (youtube-nocookie).</p></section>
+
+{% elif b.chave == 'cameras' and d.cameras %}
+<section class="cams-b" aria-labelledby="h-cams"><div class="cab"><h2 id="h-cams">Câmeras ao vivo</h2><a class="btn sec" href="/cameras">Todas as câmeras {{ icone('seta', 18, 'seta') }}</a></div>
+<p class="sub">Imagens em tempo real de pontos públicos de {{ ident.nome_curto or 'cidade' }}. O portal não grava as imagens.</p>
+<ul class="cams">{% for c in d.cameras %}<li>{% include 'portal/_camera.html' %}</li>{% endfor %}</ul></section>
 
 {% elif b.chave == 'contas' %}
 {% set f = d.financas or {} %}{% set dtp = f.dtp or [] %}

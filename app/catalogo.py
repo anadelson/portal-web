@@ -51,6 +51,9 @@ BLOCOS = {
     'sede': ('Sede e atendimento', ['principal', 'lateral'], None, False, 'ambos'),
     'redes': ('Nas redes (últimas publicações; some sem credencial no console e no período eleitoral)', ['principal'], None, False, 'ambos'),
     'fotos': ('Galeria de fotos (últimos álbuns publicados; some sem álbum)', ['principal'], None, False, 'ambos'),
+    'selos': ('Selos e reconhecimentos (ao lado de "Atos oficiais" quando vêm em seguida; some sem selo e no período eleitoral)', ['principal'], None, False, 'ambos'),
+    'videos': ('Galeria de vídeos (YouTube; some sem vídeo e no período eleitoral)', ['principal'], None, False, 'ambos'),
+    'cameras': ('Câmeras ao vivo (some sem câmera ativa)', ['principal'], None, False, 'ambos'),
     'tempo': ('Previsão do tempo (agora e próximos dias; some se a fonte estiver fora do ar)', ['destaque', 'principal'], None, False, 'ambos'),
     'rodape': ('Rodapé com links obrigatórios', ['rodape'], None, True, 'ambos'),
 }
@@ -58,14 +61,19 @@ BLOCOS = {
 COMECA_OCULTO = {'fotos'}
 # Bloco novo entra logo ANTES deste bloco (se o órgão o tiver na mesma região); sem ele, vai para o fim
 ANTES_DE = {'tempo': 'comunicados'}
+# Bloco novo entra logo DEPOIS deste bloco, por tipo de órgão (tem prioridade sobre ANTES_DE)
+DEPOIS_DE = {'executivo': {'selos': 'diario'}, 'legislativo': {'selos': 'emendas'}}
+# Pares de blocos que dividem a linha quando vêm um logo depois do outro (largura de cada um)
+PARES = {('diario', 'selos'): ('l65', 'l35')}
 # Largura do bloco na página inicial: blocos "meio" lado a lado; contas × emendas na proporção 55/45
 LARGURA = {'contas': 'l55', 'emendas': 'l45', 'sessoes': 'meio', 'projetos': 'meio'}
 REGIOES = [('topo', 'Cabeçalho'), ('avisos', 'Faixa de avisos'), ('destaque', 'Destaque'), ('principal', 'Área principal'), ('lateral', 'Coluna lateral'), ('rodape', 'Rodapé')]
 LAYOUT_PADRAO = {  # Fase 9: + "Nas redes" depois das notícias
     'executivo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('tempo', 'principal'), ('comunicados', 'principal'), ('protocolo', 'principal'), ('numeros', 'principal'),
-                  ('publicacoes', 'principal'), ('diario', 'principal'), ('transmissoes', 'principal'), ('conheca', 'principal'), ('noticias', 'principal'), ('redes', 'principal'), ('sede', 'principal'), ('fotos', 'principal'), ('rodape', 'rodape')],
+                  ('publicacoes', 'principal'), ('diario', 'principal'), ('selos', 'principal'), ('transmissoes', 'principal'), ('conheca', 'principal'), ('noticias', 'principal'), ('redes', 'principal'), ('sede', 'principal'), ('fotos', 'principal'),
+                  ('videos', 'principal'), ('cameras', 'principal'), ('rodape', 'rodape')],
     'legislativo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('ver', 'principal'), ('tempo', 'principal'), ('comunicados', 'principal'), ('contas', 'principal'), ('emendas', 'principal'),
-                    ('sessoes', 'principal'), ('projetos', 'principal'), ('transmissoes', 'principal'), ('noticias', 'principal'), ('redes', 'principal'), ('fotos', 'principal'), ('rodape', 'rodape')],
+                    ('selos', 'principal'), ('sessoes', 'principal'), ('projetos', 'principal'), ('transmissoes', 'principal'), ('videos', 'principal'), ('noticias', 'principal'), ('redes', 'principal'), ('fotos', 'principal'), ('rodape', 'rodape')],
 }
 LAYOUT_PADRAO_V3 = {  # padrão da Fase 8 (quem estiver exatamente nele recebe o padrão da Fase 9)
     'executivo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('comunicados', 'principal'), ('protocolo', 'principal'), ('numeros', 'principal'),
