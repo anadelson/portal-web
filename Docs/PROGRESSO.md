@@ -3058,3 +3058,14 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Implantado em 26/11/2026, ~09h30 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `dd32b3f`; backup ok; app e worker recriados; `atualizar` "pronto." (048 aplicada nos dois bancos).
 - **Conferido:** pmbora e cmbora 200 em `/`, `/videos`, `/cameras-ao-vivo`, `mapa.js` e Leaflet; `/cameras` 302 → `/cameras-ao-vivo`; gestão e `/admin/cameras` 303; CSP com o OpenStreetMap; mapa da Prefeitura centrado no município com os 2 exemplos ilustrativos; início com "Mais câmeras (3)"; memória: app 67 MiB, worker 50 MiB, cameras 28 MiB; sem erros nos logs.
 - **Falta (usuário):** cadastrar a posição de cada câmera real; trocar a câmera de teste para H.264 (está em H.265, que o conversor não entrega ao navegador); apagar os exemplos quando houver câmeras reais.
+
+## 26/11/2026 — Mapa das câmeras: visão fixa e zoom travado (tag `cameras-mapa-visao`)
+- **Pedido do usuário:** configurar o zoom do mapa e deixá-lo travado, para a página já abrir no zoom configurado.
+- **Feito:**
+  - admin Câmeras ao vivo → seção "Visão do mapa": o admin arrasta e aproxima o mapa e clica em "Usar esta visão" (grava centro e zoom na configuração do órgão, chave `cameras_mapa`); opção "Travar o zoom" (visitante não aproxima nem afasta; ainda arrasta e clica nas câmeras); "Voltar ao automático" apaga a visão;
+  - `/cameras-ao-vivo`: com visão gravada, abre sempre nela, sem enquadrar sozinho; travado, sem botões de zoom, rodinha, duplo clique, pinça ou teclado;
+  - zoom aceito de 3 a 19; sem o centro do município, o mapa do painel usa a posição de uma câmera; `mapa.js?v=2`, `admin.css?v=28`. Sem migração.
+- **Testes:** `teste_vitrine` (automático no início, gravar visão travada, página com a visão, zoom fora da faixa recusado mantendo a anterior, sem travar, visão separada por órgão, voltar ao automático); `teste_diario_orgaos` atualizada para `admin.css?v=28`; 42 suítes sem falha sobre o código e sobre a imagem.
+- **Implantado em 26/11/2026, ~10h25 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `7c93933`; backup ok; app e worker recriados; `atualizar` "pronto.".
+- **Conferido:** pmbora e cmbora 200 em `/`, `/videos`, `/cameras-ao-vivo` e `mapa.js?v=2`; gestão e `/admin/cameras` 303; mapa da Prefeitura no automático (nenhuma visão gravada ainda); memória: app 63 MiB, worker 50 MiB, cameras 18 MiB; sem erros nos logs.
+- **Falta (usuário):** escolher a visão no painel. O mapa ainda não foi visto num navegador real nesta sessão.
