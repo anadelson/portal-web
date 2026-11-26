@@ -162,7 +162,7 @@
 <div class="selos-cab"><p class="rotulo">Reconhecimentos</p><h2 id="h-selos">Selos e reconhecimentos</h2><p class="sub">Avaliações de instituições externas sobre {{ 'a Câmara' if leg else 'a Prefeitura' }}.</p></div>
 <ul class="selos-lista">{% for s in d.selos %}<li><a href="/selos#selo-{{ s.id }}"><span class="s-img">{% if s.imagem %}<img src="{{ s.imagem }}" alt="" loading="lazy">{% else %}{{ icone('selo', 40) }}{% endif %}</span>
 <span class="s-txt"><strong>{{ s.nome }}</strong><small>{{ s.instituicao }}{% if s.ano %} · {{ s.ano }}{% endif %}</small>{% if s.nota %}<span class="s-nota">{{ s.nota }}</span>{% endif %}{% if s.exemplo %}<span class="exemplo">exemplo</span>{% endif %}</span></a></li>{% endfor %}</ul>
-<div class="acoes"><a class="btn sec" href="/selos">Todos os selos e certificados {{ icone('seta', 18, 'seta') }}</a></div>
+{% if d.n_selos > d.selos|length %}<div class="acoes"><a class="btn sec" href="/selos">Veja mais ({{ d.n_selos }} selos) {{ icone('seta', 18, 'seta') }}</a></div>{% endif %}
 </div></section>
 
 {% elif b.chave == 'videos' and d.galeria %}{% set g = d.galeria %}

@@ -105,7 +105,7 @@ def home(request: Request):
     dados['noticias8'] = F8.noticias_home(b) if ctx['mods'].get('noticias') else None
     dados['perfis'] = F8.perfis(b, destaque=True)[:3]
     from . import portal_fase9 as P9  # galeria: últimos álbuns; sem o bloco "Galeria de fotos" visível, o Conheça mostra o botão
-    dados['albuns'] = P9.albuns_publicos(b, limite=4)
+    dados['albuns'] = P9.albuns_publicos(b, limite=6, recentes=True)  # home: os 6 álbuns mais recentes
     dados['bloco_fotos'] = any(x['chave'] == 'fotos' for x in blocos)
     eds = F8.editorias(b)
     nome_org = 'Câmara' if o['tipo'] == 'legislativo' else 'Prefeitura'
@@ -142,7 +142,8 @@ def home(request: Request):
         dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND (NOT modo_teste OR %s) ORDER BY data DESC, numero DESC, letra DESC LIMIT 4", (diario_teste(b),))
     from . import vitrine as VT  # selos, galeria de vídeos e câmeras (26/11/2026); selos e vídeos saem no período eleitoral
     if 'selos' in vis and not ctx['defeso']:
-        dados['selos'] = VT.selos(b, limite=6)
+        todos = VT.selos(b)  # home: 2 selos; com mais de 2, botão "Veja mais" leva a /selos
+        dados['selos'], dados['n_selos'] = todos[:2], len(todos)
     cx = ctx['ident'].get('conheca') or {}  # câmeras na faixa "Ao vivo" do Conheça (26/11/2026), se a seção aparece
     if 'conheca' in vis and (cx.get('titulo') or cx.get('texto') or dados['perfis']):
         dados['cams_conheca'] = VT.cameras_conheca(b)
