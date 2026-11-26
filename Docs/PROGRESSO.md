@@ -3069,3 +3069,17 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Implantado em 26/11/2026, ~10h25 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `7c93933`; backup ok; app e worker recriados; `atualizar` "pronto.".
 - **Conferido:** pmbora e cmbora 200 em `/`, `/videos`, `/cameras-ao-vivo` e `mapa.js?v=2`; gestão e `/admin/cameras` 303; mapa da Prefeitura no automático (nenhuma visão gravada ainda); memória: app 63 MiB, worker 50 MiB, cameras 18 MiB; sem erros nos logs.
 - **Falta (usuário):** escolher a visão no painel. O mapa ainda não foi visto num navegador real nesta sessão.
+
+## 26/11/2026 — Conheça com "Borá ao vivo", fotos na galeria e miniatura das câmeras (tag `conheca-cameras-miniatura`)
+- **Pedido do usuário:** incluir as câmeras ao vivo na seção Conheça (menores), com uma chamada "Borá ao vivo" à esquerda e só 3 câmeras; na galeria de vídeos da home, mostrar a galeria de fotos quando houver; no lugar do fundo cinza, uma miniatura tirada do RTSP só no cadastro do link (ou enviada por upload).
+- **Feito:**
+  - Conheça: faixa no rodapé da seção, com a chamada à esquerda (selo "Ao vivo agora", título "<cidade> ao vivo", texto e botão "Todas as câmeras (N)" ou "Câmeras no mapa") e até 3 câmeras sorteadas à direita, com as reais primeiro; só aparece se a seção Conheça aparece;
+  - galeria de vídeos da home: com câmeras no Conheça e álbum publicado, a 2ª coluna vira "Galeria de fotos" (até 4 álbuns) e o título vira "Vídeos e fotos"; sem álbum, continua com as câmeras; sem a seção Conheça, as câmeras ficam na galeria; `/videos` não muda;
+  - miniatura (migração 049, `cameras.miniatura`): tirada do RTSP com PyAV (`av==13.1.0`, PyPI, download aprovado pelo usuário; lê H.264 e H.265) só ao cadastrar ou trocar o endereço; nada atualiza sozinho. No admin, item "Miniatura" com Enviar imagem (PNG/JPG/WEBP até 3 MB → WEBP 800 px), "Tirar da câmera agora" e "Remover miniatura"; a anterior é apagada; o erro do leitor nunca é repassado (pode conter o endereço);
+  - cartão da câmera: miniatura como fundo, com o botão por cima; o vídeo continua só no clique;
+  - textos de privacidade (cartões, `/cameras-ao-vivo`, política): o portal não grava o vídeo; o cartão mostra uma foto fixa tirada uma vez no cadastro;
+  - `portal.css?v=45`, `admin.css?v=29`.
+- **Testes:** `teste_vitrine` (faixa no Conheça, 3 reais diferentes, coluna de fotos com álbum, câmeras de volta sem o Conheça, miniatura no cadastro e na troca, falha mantendo a anterior, upload inválido recusado, troca apagando a antiga, remoção, PyAV de verdade lendo um vídeo fictício, erro sem senha, auditoria sem endereço); `teste_diario_orgaos` atualizada para `admin.css?v=29`; 42 suítes sem falha sobre o código e sobre a imagem.
+- **Implantado em 26/11/2026, ~13h45 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `d31056f`; backup ok; imagem 727 MB (com PyAV); app e worker recriados; `atualizar` "pronto.", com a 049 aplicada nos 2 órgãos.
+- **Conferido:** pmbora e cmbora 200 em `/`; `/videos` e `/cameras-ao-vivo` 200; `portal.css?v=45` 200; gestão e `/admin/cameras` 303; faixa "Borá ao vivo" na home da Prefeitura; memória: app 67 MiB, worker 51 MiB, cameras 17 MiB; sem erros nos logs.
+- **Falta (usuário):** as 4 câmeras já cadastradas estão sem miniatura; usar "Tirar da câmera agora" ou "Enviar imagem" em cada uma. Ainda não foi visto num navegador real.
