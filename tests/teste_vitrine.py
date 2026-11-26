@@ -185,7 +185,7 @@ for _ in range(25):
     ex_na_galeria |= 'exemplo-camera.svg' in h
     vistos.add(ids)
 checa(len(vistos) >= 3 and not ex_na_galeria, f'2 câmeras sorteadas a cada carregamento, reais antes dos exemplos ({len(vistos)} combinações)')
-checa('Mais câmeras (5)' in h and 'href="/cameras-ao-vivo"' in h and 'a cada visita aparecem 2' in h, 'botão "Mais câmeras" com o total')
+checa('Mais câmeras (5)' in h and 'href="/cameras-ao-vivo"' in h and 'a cada visita' not in h and 'só carrega quando' not in h and 'Canal oficial no YouTube' not in h, 'botão "Mais câmeras" com o total')
 checa(anon.get('/videos').text.count('data-cam="/cameras/') == 2, '/videos também com 2 câmeras')
 # com as câmeras no Conheça e um álbum publicado, a 2ª coluna da galeria da home vira a galeria de fotos (fictícia)
 ids_alb = []  # 7 álbuns fictícios, um por dia: a home mostra só os 6 mais recentes, do mais novo ao mais antigo

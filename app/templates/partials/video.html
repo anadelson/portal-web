@@ -12,12 +12,10 @@
 {% macro galeria(g, pagina=False) %}<div class="vc{{ ' dois' if g.videos and (g.cameras or g.fotos) }}{{ ' pagina' if pagina }}">
 {% if g.videos %}<div class="vc-videos"><h3 class="vc-tit">{{ icone('play', 20) }}Vídeos do YouTube</h3>
 <div class="vg{{ ' pagina' if pagina }}" data-galeria><div class="vg-palco">{{ capa_video(g.videos.palco, True) }}</div>
-{% if g.videos.lista %}<ul class="vg-lista" aria-label="Outros vídeos">{% for v in g.videos.lista %}<li>{{ capa_video(v) }}</li>{% endfor %}</ul>{% endif %}</div>
-<p class="legal">Canal oficial no YouTube, no modo de privacidade (youtube-nocookie). O player só carrega quando você clica.</p></div>{% endif %}
+{% if g.videos.lista %}<ul class="vg-lista" aria-label="Outros vídeos">{% for v in g.videos.lista %}<li>{{ capa_video(v) }}</li>{% endfor %}</ul>{% endif %}</div></div>{% endif %}
 {% if g.cameras %}<div class="vc-cams"><h3 class="vc-tit"><span class="vc-vivo" aria-hidden="true"></span>Câmeras ao vivo</h3>
 <ul class="cams">{% for c in g.cameras %}<li>{{ camera(c) }}</li>{% endfor %}</ul>
-<a class="btn sec cams-mais" href="/cameras-ao-vivo">{{ icone('camera', 18) }}{{ ('Mais câmeras (' ~ g.n_cameras ~ ')') if g.mais_cameras else 'Câmeras no mapa' }} {{ icone('seta', 18, 'seta') }}</a>
-<p class="legal">Pontos públicos de {{ ident.nome_curto or 'cidade' }}, em tempo real{% if g.mais_cameras %}; a cada visita aparecem 2, sorteadas{% endif %}. O vídeo só carrega quando você clica; o portal não grava o vídeo.</p></div>{% endif %}
+<a class="btn sec cams-mais" href="/cameras-ao-vivo">{{ icone('camera', 18) }}{{ ('Mais câmeras (' ~ g.n_cameras ~ ')') if g.mais_cameras else 'Câmeras no mapa' }} {{ icone('seta', 18, 'seta') }}</a></div>{% endif %}
 {% if g.fotos %}<div class="vc-fotos"><h3 class="vc-tit">{{ icone('midia', 20) }}Galeria de fotos</h3>{# home: as câmeras estão no Conheça (26/11/2026) #}
 <ul class="albuns">{% for a in g.fotos %}<li><a href="/fotos/{{ a.id }}"><img src="{{ a.capa.url }}" alt="" loading="lazy"><span><strong>{{ a.titulo }}</strong><small>{{ a.n }} foto{{ 's' if a.n != 1 }}</small></span></a></li>{% endfor %}</ul>
 <a class="btn sec cams-mais" href="/fotos">Todos os álbuns {{ icone('seta', 18, 'seta') }}</a></div>{% endif %}
