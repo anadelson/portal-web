@@ -19,7 +19,7 @@
 {% from 'partials/externo.html' import abre as ext_abre, aviso as ext_aviso %}{% macro aponta(href) %}{% if atual == href or (href != '/' and atual.startswith(href)) %} aria-current="page"{% endif %}{% endmacro %}
 <div class="barra-acess"><div class="int">
 <span class="atalhos-tec" aria-label="Atalhos de teclado"><a href="#conteudo">Conteúdo [1]</a><a href="#menu">Menu [2]</a><a href="{{ ancora_busca or '/busca#q-busca' }}">Busca [3]</a><a href="#rodape">Rodapé [4]</a>
-<span class="sep" aria-hidden="true"></span>{% for v in vizinhos %}<a class="vizinho" href="https://{{ v.dominio }}/"><strong>{{ v.nome.replace(' Municipal de ' ~ v.municipio.split(' (')[0], ' Municipal') if v.municipio else v.nome }}</strong></a>{% endfor %}<a href="/admin">Área restrita</a></span>
+<span class="sep" aria-hidden="true"></span>{% for v in vizinhos %}<a class="vizinho" href="https://{{ v.dominio }}/"><strong>{{ v.nome.replace(' Municipal de ' ~ v.municipio.split(' (')[0], ' Municipal') if v.municipio else v.nome }}</strong></a>{% endfor %}</span>
 <span class="ferramentas" role="group" aria-label="Ferramentas de acessibilidade">
 <button type="button" data-fonte="-10" aria-label="Diminuir o texto">A−</button>
 <button type="button" data-fonte="0" aria-label="Tamanho normal do texto">A</button>
@@ -102,8 +102,7 @@
 <a class="f-topo" href="#topo">{{ icone('topo', 16) }}Voltar ao topo</a>
 </div>
 <div class="f4"><div class="int">
-<span class="f-legal"><span>© {{ hoje.year }} {{ ident.nome or orgao.nome }}{% if ident.cnpj %} · CNPJ {{ ident.cnpj }}{% endif %}{% if ident.revisado_em %} · Portal revisado em {{ ident.revisado_em|br }}{% endif %}</span>
-<a href="/admin">{{ icone('cadeado', 14) }}Área restrita · painel administrativo</a></span>
+<span class="f-legal"><span>© {{ hoje.year }} {{ ident.nome or orgao.nome }}{% if ident.cnpj %} · CNPJ {{ ident.cnpj }}{% endif %}{% if ident.revisado_em %} · Portal revisado em {{ ident.revisado_em|br }}{% endif %}</span></span>
 <span class="f-cred">{% if ident.creditos %}{{ ident.creditos }} {% endif %}Piloto em homologação: conteúdos marcados como “exemplo” são ilustrativos.</span>
 </div></div>
 </footer>

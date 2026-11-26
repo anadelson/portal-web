@@ -114,8 +114,7 @@
 <div class="c-vivo" role="group" aria-labelledby="h-c-vivo"><div class="c-vivo-txt"><p class="c-vivo-selo"><span class="vc-vivo" aria-hidden="true"></span>Ao vivo agora</p>
 <h3 id="h-c-vivo">{{ ident.nome_curto or 'A cidade' }} ao vivo</h3><p>Veja em tempo real os pontos públicos de {{ ident.nome_curto or 'cidade' }}. Clique em uma câmera para assistir.</p>
 <a class="btn sec" href="/cameras-ao-vivo">{{ icone('camera', 18) }}{{ ('Todas as câmeras (' ~ cc.n ~ ')') if cc.n > cc.cameras|length else 'Câmeras no mapa' }} {{ icone('seta', 18, 'seta') }}</a></div>
-<div class="c-vivo-cams"><ul class="cams c-cams n{{ cc.cameras|length }}">{% for c in cc.cameras %}<li>{{ camera(c) }}</li>{% endfor %}</ul>
-<p class="legal">O vídeo só carrega quando você clica; o portal não grava o vídeo.</p></div></div>{% endif %}
+<div class="c-vivo-cams"><ul class="cams c-cams n{{ cc.cameras|length }}">{% for c in cc.cameras %}<li>{{ camera(c) }}</li>{% endfor %}</ul></div></div>{% endif %}
 </section>
 
 {% elif b.chave == 'fotos' and d.albuns %}
