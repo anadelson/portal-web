@@ -140,7 +140,7 @@ async def cameras_post(request: Request):
     from . import credenciais as CR
     f = await ler_form(request)
     acao, cid = f.get('acao', ''), int(f.get('id') or 0) if str(f.get('id') or '0').isdigit() else 0
-    c = db.um(b, 'SELECT id, nome, ativa, exemplo FROM cameras WHERE id=%s', (cid,)) if cid else None
+    c = db.um(b, 'SELECT id, nome, ativa, exemplo, miniatura FROM cameras WHERE id=%s', (cid,)) if cid else None
     msg = ''
     try:
         if acao == 'adicionar':
@@ -149,14 +149,35 @@ async def cameras_post(request: Request):
                 return ir('/admin/cameras', 'Não salvo: nome de 3 a 80 caracteres e local até 160.', request)
             lat, lon = VT.ler_posicao(f.get('posicao'))
             rtsp = VT.cifrar_rtsp(f.get('rtsp', ''))
-            db.exe(b, 'INSERT INTO cameras (nome, local, rtsp, caminho, criado_por, lat, lon) VALUES (%s,%s,%s,%s,%s,%s,%s)',
-                   (nome, local, rtsp, VT.novo_caminho(o), u['nome'], lat, lon))
+            novo = db.exe(b, 'INSERT INTO cameras (nome, local, rtsp, caminho, criado_por, lat, lon) VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id',
+                          (nome, local, rtsp, VT.novo_caminho(o), u['nome'], lat, lon))['id']
             auditar(request, f'Câmera cadastrada: {nome} (endereço cifrado, não registrado)')
-            msg = 'Câmera cadastrada. O endereço foi gravado cifrado e não volta para a tela.'
+            msg = 'Câmera cadastrada. O endereço foi gravado cifrado e não volta para a tela. ' + _msg_miniatura(await run_in_threadpool(VT.gerar_miniatura, o, novo))
         elif acao == 'trocar' and c:
             db.exe(b, 'UPDATE cameras SET rtsp=%s, exemplo=FALSE WHERE id=%s', (VT.cifrar_rtsp(f.get('rtsp', '')), cid))
             auditar(request, f"Câmera {c['nome']}: endereço trocado (não registrado)")
-            msg = 'Endereço trocado.'
+            msg = 'Endereço trocado. ' + _msg_miniatura(await run_in_threadpool(VT.gerar_miniatura, o, cid))
+        elif acao == 'miniatura' and c:  # imagem enviada pelo admin no lugar da tirada da câmera
+            img = _arquivo(f, 'imagem')
+            if not img:
+                return ir('/admin/cameras', 'Não salvo: escolha uma imagem (PNG, JPG ou WEBP, até 3 MB).', request)
+            dados = await img.read(3 * 1024 * 1024 + 1)
+            if len(dados) > 3 * 1024 * 1024:
+                return ir('/admin/cameras', 'Não salvo: imagem maior que 3 MB.', request)
+            nova = VT.guardar_imagem(o, dados, VT.LARGURA_MINIATURA)
+            db.exe(b, 'UPDATE cameras SET miniatura=%s WHERE id=%s', (nova, cid))
+            VT.apagar_arquivo(o, c['miniatura'])
+            auditar(request, f"Câmera {c['nome']}: miniatura enviada")
+            return ir('/admin/cameras', 'Miniatura trocada pela imagem enviada.', request)
+        elif acao == 'miniatura_gerar' and c and not c['exemplo']:
+            res = await run_in_threadpool(VT.gerar_miniatura, o, cid)
+            auditar(request, f"Câmera {c['nome']}: miniatura tirada da câmera ({'ok' if not res else res})")
+            return ir('/admin/cameras', _msg_miniatura(res), request)
+        elif acao == 'miniatura_tirar' and c:
+            db.exe(b, "UPDATE cameras SET miniatura='' WHERE id=%s", (cid,))
+            VT.apagar_arquivo(o, c['miniatura'])
+            auditar(request, f"Câmera {c['nome']}: miniatura removida")
+            return ir('/admin/cameras', 'Miniatura removida: o cartão volta ao fundo padrão.', request)
         elif acao == 'visao':
             v = VT.ler_visao(f)
             db.set_cfg(b, 'cameras_mapa', v)
@@ -177,6 +198,7 @@ async def cameras_post(request: Request):
             msg = 'Câmera ' + ('desligada: saiu do portal.' if c['ativa'] else 'ligada.')
         elif acao == 'apagar' and c:
             db.exe(b, 'DELETE FROM cameras WHERE id=%s', (cid,))
+            VT.apagar_arquivo(o, c['miniatura'])
             auditar(request, f"Câmera apagada: {c['nome']}")
             msg = 'Câmera apagada.'
         elif acao == 'testar' and c:
@@ -191,6 +213,9 @@ async def cameras_post(request: Request):
         return ir('/admin/cameras', f'Não salvo: {e}', request)
     sinc = await run_in_threadpool(VT.sincronizar_quieto)
     return ir('/admin/cameras', msg + ('' if sinc else ' O conversor de vídeo não respondeu agora; ele é atualizado automaticamente em até 1 minuto.'), request)
+
+def _msg_miniatura(res):
+    return 'Miniatura tirada da câmera.' if not res else f'Sem miniatura ({res}): envie uma imagem ou tente "Tirar da câmera" depois.'
 
 def testar(o, cid):
     """Pede o vídeo ao conversor como um visitante faria (abre a câmera por alguns segundos). Nunca mostra o endereço."""

@@ -94,6 +94,10 @@ checa('Vídeo de teste da galeria' in anon.get('/videos').text, 'página /videos
 CFG.CHAVE_CREDENCIAIS, o_chave = 'Wt1PlqXUjmWtBbBQW3uI0SeS7ksW2yXlxkX7KzQd9mM=', CFG.CHAVE_CREDENCIAIS
 RTSP = 'rtsp://usuario-teste:senha-teste-123@192.0.2.10:554/stream1'
 VT._api, o_api = (lambda *a, **k: (_ for _ in ()).throw(ConnectionError('sem conversor no teste'))), VT._api
+def quadro_falso(url, espera=10):  # quadro fictício no lugar da câmera (nenhuma câmera real no teste)
+    from PIL import Image
+    b = io.BytesIO(); Image.new('RGB', (1280, 720), (40, 90, 120)).save(b, 'PNG'); return b.getvalue()
+VT.quadro_rtsp, o_quadro = quadro_falso, VT.quadro_rtsp
 UC = '/admin/cameras'
 t = pm.get(UC).text
 checa('Conversor de vídeo fora do ar' in t, 'aviso de conversor fora do ar')
@@ -102,6 +106,7 @@ checa('Não salvo' in r.text and 'rtsp://' in r.text, 'endereço que não é RTS
 r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'adicionar', 'nome': 'Câmera de teste', 'local': 'Local de teste', 'rtsp': RTSP}, follow_redirects=True)
 checa('Câmera cadastrada' in r.text and 'atualizado automaticamente' in r.text, 'cadastrar câmera (conversor fora do ar avisado)')
 c = db.um(PM, "SELECT * FROM cameras WHERE nome='Câmera de teste'")
+checa('Miniatura tirada da câmera' in r.text and re.match(r'^/midia/[0-9a-f]{32}\.webp$', c['miniatura'] or ''), 'miniatura tirada do RTSP no cadastro')
 checa(c and 'senha-teste' not in c['rtsp'] and VT.decifrar_rtsp(c['rtsp']) == RTSP and 'pm' in c['caminho'] and '192.0.2' not in c['caminho'], 'endereço cifrado; caminho público não revela a câmera')
 checa('senha-teste' not in pm.get(UC).text and '192.0.2.10' not in pm.get(UC).text, 'tela não devolve o endereço')
 checa(not db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE '%%senha-teste%%' OR acao LIKE '%%192.0.2%%'"), 'auditoria sem o endereço')
@@ -228,6 +233,43 @@ checa(dados_mapa().get('visao', {}).get('travar') is False and dados_mapa()['vis
 checa(db.cfg(CM, 'cameras_mapa') is None, 'visão do mapa é de cada órgão')
 r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'visao_auto'}, follow_redirects=True)
 checa('Mapa no automático' in r.text and dados_mapa().get('visao') is None, 'voltar ao automático')
+# miniatura: foto fixa de fundo do cartão (tirada no cadastro/troca do endereço ou enviada pelo admin)
+c = db.um(PM, "SELECT id, miniatura FROM cameras WHERE nome='Câmera de teste'")
+t = anon.get('/cameras-ao-vivo').text
+checa(f'<img class="cam-mini" src="{c["miniatura"]}"' in t and 'foto de cada cartão é fixa' in t, 'cartão da câmera com a miniatura de fundo')
+checa(f'class="cam-mini-adm" src="{c["miniatura"]}"' in pm.get(UC).text and 'Tirar da câmera agora' in pm.get(UC).text, 'admin mostra a miniatura e as opções')
+VT.quadro_rtsp = lambda url, espera=10: (_ for _ in ()).throw(ValueError('a câmera não entregou imagem'))
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'miniatura_gerar', 'id': c['id']}, follow_redirects=True)
+checa('Sem miniatura (a câmera não entregou imagem)' in r.text and db.um(PM, 'SELECT miniatura FROM cameras WHERE id=%s', (c['id'],))['miniatura'] == c['miniatura'], 'falha ao tirar da câmera mantém a miniatura anterior')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'miniatura', 'id': c['id']}, files={'imagem': ('x.txt', b'nada aqui', 'text/plain')}, follow_redirects=True)
+checa('Não salvo' in r.text, 'miniatura que não é imagem recusada')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'miniatura', 'id': c['id']}, files={'imagem': ('m.png', png(1600, 900), 'image/png')}, follow_redirects=True)
+m2 = db.um(PM, 'SELECT miniatura FROM cameras WHERE id=%s', (c['id'],))['miniatura']
+checa('Miniatura trocada' in r.text and m2 != c['miniatura'] and re.match(r'^/midia/[0-9a-f]{32}\.webp$', m2) and anon.get(c['miniatura']).status_code == 404 and anon.get(m2).status_code == 200, 'enviar imagem troca a miniatura e apaga a antiga')
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'miniatura_tirar', 'id': c['id']}, follow_redirects=True)
+checa('Miniatura removida' in r.text and db.um(PM, 'SELECT miniatura FROM cameras WHERE id=%s', (c['id'],))['miniatura'] == '' and anon.get(m2).status_code == 404, 'remover a miniatura')
+VT.quadro_rtsp = quadro_falso
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'trocar', 'id': c['id'], 'rtsp': RTSP}, follow_redirects=True)
+checa('Endereço trocado. Miniatura tirada da câmera' in r.text and db.um(PM, 'SELECT miniatura FROM cameras WHERE id=%s', (c['id'],))['miniatura'], 'trocar o endereço tira a miniatura de novo')
+checa(not db.um(PM, "SELECT 1 FROM auditoria WHERE acao LIKE '%%senha-teste%%' OR acao LIKE '%%192.0.2%%'"), 'auditoria da miniatura sem o endereço')
+# leitor de vídeo de verdade (PyAV): um vídeo fictício gerado aqui; e câmera inexistente sem vazar a senha
+VT.quadro_rtsp = o_quadro
+import av, tempfile
+from PIL import Image
+arq = os.path.join(tempfile.mkdtemp(), 'teste.mkv')
+with av.open(arq, 'w') as sai:
+    st = sai.add_stream('mpeg4', rate=10); st.width, st.height, st.pix_fmt = 320, 180, 'yuv420p'
+    for i in range(10):
+        for pk in st.encode(av.VideoFrame.from_image(Image.new('RGB', (320, 180), (200, 20 * i, 40)))):
+            sai.mux(pk)
+    for pk in st.encode():
+        sai.mux(pk)
+q = VT.quadro_rtsp(arq, espera=5)
+checa(q[:8] == b'\x89PNG\r\n\x1a\n' and Image.open(io.BytesIO(q)).size == (320, 180), 'PyAV lê um quadro do vídeo')
+try:
+    VT.quadro_rtsp('rtsp://usuario-teste:senha-teste-123@127.0.0.1:9/stream1', espera=2); checa(False, 'câmera inexistente deveria falhar')
+except ValueError as e:
+    checa('senha' not in str(e) and '127.0.0.1' not in str(e), 'erro do leitor sem endereço nem senha')
 VT._api = o_api
 CFG.CHAVE_CREDENCIAIS = o_chave
 checa('Câmeras ao vivo' in anon.get('/videos').text, 'página /videos com câmeras')

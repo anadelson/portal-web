@@ -6,7 +6,7 @@
 <span class="vg-txt"><strong>{{ v.titulo }}</strong><small>{% if v.quando %}{{ v.quando|br }}{% endif %}{% if v.origem == 'transmissao' %} · {{ v.descricao }}{% endif %}{% if v.exemplo %} <span class="exemplo">exemplo</span>{% endif %}</small></span></button>{% endmacro %}
 
 {% macro camera(c) %}<div class="cam{{ ' exemplo-cam' if c.exemplo }}"{% if not c.exemplo %} data-cam="/cameras/{{ c.id }}/" data-titulo="Câmera ao vivo: {{ c.nome }}"{% endif %}>
-{% if c.exemplo %}<img src="/static/img/exemplo-camera.svg" alt="" loading="lazy"><span class="cam-aviso">Ilustração: aqui aparece a imagem ao vivo</span>{% else %}<span class="cam-fundo" aria-hidden="true">{{ icone('camera', 44) }}</span><button type="button" class="cam-play">{{ icone('play', 18) }}Assistir ao vivo<span class="sr">: {{ c.nome }}</span></button><span class="cam-vivo" aria-hidden="true">AO VIVO</span>{% endif %}</div>
+{% if c.exemplo %}<img src="/static/img/exemplo-camera.svg" alt="" loading="lazy"><span class="cam-aviso">Ilustração: aqui aparece a imagem ao vivo</span>{% else %}{% if c.miniatura %}<img class="cam-mini" src="{{ c.miniatura }}" alt="" loading="lazy">{% else %}<span class="cam-fundo" aria-hidden="true">{{ icone('camera', 44) }}</span>{% endif %}<button type="button" class="cam-play">{{ icone('play', 18) }}Assistir ao vivo<span class="sr">: {{ c.nome }}</span></button><span class="cam-vivo" aria-hidden="true">AO VIVO</span>{% endif %}</div>
 <p class="cam-nome"><strong>{{ c.nome }}</strong>{% if c.local %}<small>{{ c.local }}</small>{% endif %}{% if c.exemplo %}<span class="exemplo">exemplo</span>{% endif %}</p>{% endmacro %}
 
 {% macro galeria(g, pagina=False) %}<div class="vc{{ ' dois' if g.videos and (g.cameras or g.fotos) }}{{ ' pagina' if pagina }}">
@@ -17,7 +17,7 @@
 {% if g.cameras %}<div class="vc-cams"><h3 class="vc-tit"><span class="vc-vivo" aria-hidden="true"></span>Câmeras ao vivo</h3>
 <ul class="cams">{% for c in g.cameras %}<li>{{ camera(c) }}</li>{% endfor %}</ul>
 <a class="btn sec cams-mais" href="/cameras-ao-vivo">{{ icone('camera', 18) }}{{ ('Mais câmeras (' ~ g.n_cameras ~ ')') if g.mais_cameras else 'Câmeras no mapa' }} {{ icone('seta', 18, 'seta') }}</a>
-<p class="legal">Pontos públicos de {{ ident.nome_curto or 'cidade' }}, em tempo real{% if g.mais_cameras %}; a cada visita aparecem 2, sorteadas{% endif %}. A imagem só carrega quando você clica; o portal não grava as imagens.</p></div>{% endif %}
+<p class="legal">Pontos públicos de {{ ident.nome_curto or 'cidade' }}, em tempo real{% if g.mais_cameras %}; a cada visita aparecem 2, sorteadas{% endif %}. O vídeo só carrega quando você clica; o portal não grava o vídeo.</p></div>{% endif %}
 {% if g.fotos %}<div class="vc-fotos"><h3 class="vc-tit">{{ icone('midia', 20) }}Galeria de fotos</h3>{# home: as câmeras estão no Conheça (26/11/2026) #}
 <ul class="albuns">{% for a in g.fotos %}<li><a href="/fotos/{{ a.id }}"><img src="{{ a.capa.url }}" alt="" loading="lazy"><span><strong>{{ a.titulo }}</strong><small>{{ a.n }} foto{{ 's' if a.n != 1 }}</small></span></a></li>{% endfor %}</ul>
 <a class="btn sec cams-mais" href="/fotos">Todos os álbuns {{ icone('seta', 18, 'seta') }}</a></div>{% endif %}
