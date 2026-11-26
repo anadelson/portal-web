@@ -3034,3 +3034,12 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Implantado em 26/11/2026, ~07h20 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `5e35666`; backup ok; 42 suítes sem falha sobre a imagem; app e worker recriados; `atualizar` "pronto." (047 aplicada nos dois bancos).
 - **Conferido:** pmbora e cmbora 200 em `/`, `/videos`, `/selos`; `/cameras` 301 → `/videos`; gestão 303; Prefeitura com `vc dois` (vídeos + câmeras), Câmara com `vc` (só vídeos); worker alcança o conversor; memória: app 64 MiB, worker 49 MiB, cameras 12 MiB; sem erros nos logs.
 - **Falta:** o mesmo da entrada anterior (selos, vídeos e câmeras reais; câmeras alcançáveis pela VPS).
+
+## 26/11/2026 — Câmeras: Testar e vídeo seguem o redirecionamento do conversor (tag `cameras-redirecionamento`)
+- **Problema relatado pelo usuário:** ao cadastrar uma câmera real (porta 5545, que abre no VLC) e clicar em Testar, o admin mostrou "a câmera não entregou vídeo (código 302)".
+- **Causa:** o MediaMTX 1.21 responde ao primeiro pedido da playlist (`index.m3u8`) com 302 para `?cookieCheck=1` (checagem de cookie), antes mesmo de abrir a câmera; o Testar e o repasse do vídeo do portal não seguiam esse redirecionamento (o repasse devolveria 302 sem destino ao navegador). A porta 5545 e o endereço não tinham relação com o erro; o teste não chegou a tentar a câmera. Não aparecia antes porque as câmeras de exemplo não têm vídeo e o teste não tinha conversor real.
+- **Feito:** Testar e repasse `/cameras/<id>/…` seguem o redirecionamento dentro do servidor (no máximo 3, só no conversor); qualquer 3xx que sobrar vira 404, sem expor o caminho interno.
+- **Testes:** `teste_vitrine` ganhou um conversor falso que responde 302 como o MediaMTX (Testar "ok, vídeo recebido"; playlist 200 sem `Location` nem caminho interno; arquivo inexistente 404); 42 suítes sem falha sobre o código e sobre a imagem.
+- **Implantado em 26/11/2026, ~08h25 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `f085db5`; backup ok; app e worker recriados; `atualizar` "pronto.".
+- **Conferido:** pmbora e cmbora 200 em `/` e `/videos`; `/cameras` 301; gestão e `/admin/cameras` 303; o app passa pelo 302 do conversor real; memória: app 63 MiB, worker 49 MiB, cameras 14 MiB; sem erros nos logs.
+- **Falta (usuário):** cadastrar a câmera de novo e clicar em Testar; se vier "sem resposta em 25 s", liberar a porta 5545 no roteador para o IP da VPS.
