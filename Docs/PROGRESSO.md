@@ -3099,3 +3099,13 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Testes:** `teste_vitrine` (2 selos e "Veja mais (3 selos)"; 7 álbuns fictícios → os 6 mais recentes em ordem); 42 suítes sem falha sobre o código e sobre a imagem.
 - **Implantado em 26/11/2026, ~15h10 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `b560813`; backup ok; `atualizar` "pronto.".
 - **Conferido:** pmbora e cmbora 200 em `/`; `/selos`, `/fotos` e `portal.css?v=46` 200; gestão 303; as duas homes com 2 selos e "Veja mais (3 selos)"; sem erros nos logs. Ainda sem álbum publicado em produção.
+
+## 26/11/2026 — Portal sem avisos nos cartões e sem link para a área restrita (tag `limpar-avisos`)
+- **Pedido do usuário:** retirar a mensagem "Canal oficial no YouTube, no modo de privacidade…", as mensagens "o vídeo só carrega quando você clica…" e o link da página inicial para a área restrita.
+- **Feito:**
+  - home e `/videos`: sem a nota da coluna de vídeos, sem a nota da coluna de câmeras da galeria e sem a nota da faixa "Borá ao vivo";
+  - todas as páginas dos dois portais: sem "Área restrita" na barra do topo e sem "Área restrita · painel administrativo" no rodapé. O painel continua em `/admin`;
+  - mantidos: as notas de `/cameras-ao-vivo` (atribuição do OpenStreetMap, exigida pela licença, e privacidade), a política de privacidade e o item "Área restrita" do mapa do site.
+- **Testes:** `teste_fase8` agora confere que o portal não tem link para `/admin`; `teste_vitrine` confere que as notas saíram; 42 suítes sem falha sobre o código e sobre a imagem.
+- **Implantado em 26/11/2026, ~16h15 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `ecff36e`; backup ok; `atualizar` "pronto.".
+- **Conferido:** pmbora e cmbora 200 em `/`; `/videos` 200; `/admin` e gestão 303; nenhuma das homes tem link para `/admin` nem as notas; sem erros nos logs.
