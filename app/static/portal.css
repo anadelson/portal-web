@@ -831,3 +831,22 @@ nav.menu a{font-size:var(--fs-menu)}
 .pagina-cams>li{border-radius:16px;padding:4px;transition:box-shadow .3s}
 .pagina-cams>li.destacada,.pagina-cams>li:focus{outline:none;box-shadow:0 0 0 4px var(--cor)}
 @media (prefers-reduced-motion:reduce){.pagina-cams>li{transition:none}}
+
+/* Conheça com câmeras ao vivo (26/11/2026): faixa "Ao vivo" no rodapé da seção, câmeras menores lado a lado;
+   na galeria de vídeos da home a 2ª coluna passa a ser a galeria de fotos */
+.conheca9 .c-vivo{grid-column:1/-1;padding:20px 32px 24px;border-top:1px solid var(--bd);background:var(--cor-clara);min-width:0}
+.c-vivo-cab{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;margin-bottom:14px}
+.c-vivo-cab h3{margin:0;display:flex;align-items:center;gap:10px;font-size:var(--fs-h3-p)}
+.c-cams{grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:12px}
+.c-cams.n1{grid-template-columns:minmax(0,420px)}
+.c-cams .cam{border-radius:12px}
+.c-cams .cam-play{min-height:44px;padding:0 14px}
+.c-cams .cam-vivo{top:8px;left:8px}
+.c-cams .cam-nome{margin-top:6px}
+.conheca9 .c-vivo .legal{margin:10px 0 0}
+@media (max-width:560px){.conheca9 .c-vivo{padding:18px 16px 20px}}
+.vc-fotos{background:var(--cor-clara);border:1px solid var(--bd);border-radius:18px;padding:16px}
+.vc-fotos .albuns{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.vc-fotos .albuns span{padding:8px 10px}.vc-fotos .albuns strong{display:block;font-size:var(--fs-meta);line-height:1.3}
+.vc-fotos .albuns small{display:block;color:var(--sub);font-size:var(--fs-etq)}
+.vc.dois .vc-fotos .cams-mais{width:100%;justify-content:center}

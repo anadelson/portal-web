@@ -14,6 +14,9 @@ erros = []
 def checa(c, nome):
     if not c:
         erros.append(nome)
+def secao(h, ident):  # trecho da seção (home) com aria-labelledby=ident, até o </section> que a fecha
+    i = h.find(f'aria-labelledby="{ident}"')
+    return h[i:h.index('</section>', i)] if i >= 0 else ''
 def png(w=64, h=64):
     from PIL import Image
     b = io.BytesIO(); Image.new('RGB', (w, h), (14, 77, 100)).save(b, 'PNG'); return b.getvalue()
@@ -36,7 +39,9 @@ h = anon.get('/').text
 checa('id="h-selos"' in h and h.count('class="exemplo">exemplo') >= 3, 'home da Prefeitura com selos marcados como exemplo')
 checa(re.search(r'<div class="b l65">\s*<section class="caixa" aria-labelledby="h-diario"', h) and re.search(r'<div class="b l35">\s*<section class="selos-b"', h), 'Atos oficiais e selos dividem a linha (65/35)')
 checa('id="h-videos"' in h and 'exemplo-video.svg' in h and 'youtube-nocookie.com/embed' not in h, 'galeria de vídeos sem player antes do clique')
-checa('id="h-cams"' not in h and 'Vídeos e câmeras ao vivo</h2>' in h and 'exemplo-camera.svg' in h and 'data-cam=' not in h, 'mesma seção: câmeras de exemplo, sem endereço')
+hv = secao(h, 'h-videos'); hk = secao(h, 'h-conheca')
+checa('class="c-vivo"' in hk and 'exemplo-camera.svg' in hk and 'data-cam=' not in hk and 'href="/cameras-ao-vivo"' in hk and len(re.findall(r'<div class="cam(?: exemplo-cam)?"', hk)) == 2, 'Conheça com a faixa "ao vivo" (as 2 câmeras de exemplo, pequenas)')
+checa('id="h-cams"' not in h and 'Vídeos e câmeras ao vivo</h2>' in hv and 'exemplo-camera.svg' in h and 'data-cam=' not in h, 'mesma seção: câmeras de exemplo, sem endereço')
 g_ = h[h.index('id="h-videos"'):]
 checa('<div class="vc dois">' in g_ and g_.index('class="vc-videos"') < g_.index('class="vc-cams"') and 'Vídeos do YouTube</h3>' in g_ and 'Câmeras ao vivo</h3>' in g_, 'vídeos e câmeras em colunas separadas, vídeos primeiro')
 checa('id="aviso-cookies"' in h and 'Privacidade (LGPD)' in h and '/privacidade#cookies' in h, 'aviso de privacidade e cookies')
@@ -151,7 +156,7 @@ for ruim in ('-22.2442', 'abc, def', '-122.5, -50.5', '-22.5, 200'):
         VT.ler_posicao(ruim); checa(False, f'posição inválida aceita: {ruim}')
     except ValueError:
         pass
-h = anon.get('/').text
+h = secao(anon.get('/').text, 'h-videos')
 checa(h.count('data-cam="/cameras/') == 1 and len(re.findall(r'<div class="cam(?: exemplo-cam)?"', h)) == 2 and 'Mais câmeras (3)' in h, 'com 1 real e 2 exemplos: 2 na galeria (a real sempre) e "Mais câmeras (3)"')
 r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'adicionar', 'nome': 'Câmera de teste 2', 'local': '', 'rtsp': RTSP.replace('stream1', 'stream2'), 'posicao': '-22,5; -50'}, follow_redirects=True)
 checa('Câmera cadastrada' in r.text, 'cadastrar câmera com posição')
@@ -165,7 +170,9 @@ r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'posicao', 'id': c['id'], 'po
 checa('Posição no mapa gravada' in r.text and 'no mapa: -22.240000, -50.500000' in r.text and 'data-mapa-escolher="pos-' in r.text, 'trocar a posição pelo painel (com o mapa para marcar)')
 vistos, ex_na_galeria = set(), False
 for _ in range(25):
-    h = anon.get('/').text
+    hh = anon.get('/').text; h, hk = secao(hh, 'h-videos'), secao(hh, 'h-conheca')
+    ik = re.findall(r'data-cam="/cameras/(\d+)/"', hk)
+    checa(len(ik) == 3 and len(set(ik)) == 3 and 'exemplo-camera.svg' not in hk and 'Todas as câmeras (5)' in hk, f'Conheça com 3 câmeras reais diferentes ({ik})')
     ids = tuple(re.findall(r'data-cam="/cameras/(\d+)/"', h))
     checa(len(ids) == 2 and len(re.findall(r'<div class="cam(?: exemplo-cam)?"', h)) == 2, f'galeria com exatamente 2 câmeras ({ids})')
     ex_na_galeria |= 'exemplo-camera.svg' in h
@@ -173,6 +180,18 @@ for _ in range(25):
 checa(len(vistos) >= 3 and not ex_na_galeria, f'2 câmeras sorteadas a cada carregamento, reais antes dos exemplos ({len(vistos)} combinações)')
 checa('Mais câmeras (5)' in h and 'href="/cameras-ao-vivo"' in h and 'a cada visita aparecem 2' in h, 'botão "Mais câmeras" com o total')
 checa(anon.get('/videos').text.count('data-cam="/cameras/') == 2, '/videos também com 2 câmeras')
+# com as câmeras no Conheça e um álbum publicado, a 2ª coluna da galeria da home vira a galeria de fotos (fictícia)
+aid = db.exe(PM, "INSERT INTO albuns (titulo, publicado) VALUES ('Álbum de teste', TRUE) RETURNING id")['id']
+db.exe(PM, "INSERT INTO album_fotos (album_id, url, alt) VALUES (%s, '/static/img/exemplo-video.svg', 'Foto de teste')", (aid,))
+hh = anon.get('/').text; h = secao(hh, 'h-videos')
+checa('Vídeos e fotos</h2>' in h and '<div class="vc dois">' in h and 'class="vc-fotos"' in h and f'href="/fotos/{aid}"' in h and 'vc-cams' not in h and 'data-cam=' not in h
+      and len(re.findall(r'data-cam="/cameras/', secao(hh, 'h-conheca'))) == 3, 'com álbum: vídeos + galeria de fotos; câmeras só no Conheça')
+checa(anon.get('/videos').text.count('data-cam="/cameras/') == 2, '/videos continua com as câmeras mesmo com álbum')
+db.exe(PM, "UPDATE blocos SET visivel=FALSE WHERE pagina='home' AND chave='conheca'")
+h = anon.get('/').text
+checa('class="c-vivo"' not in h and 'vc-cams' in secao(h, 'h-videos') and 'vc-fotos' not in h, 'sem a seção Conheça as câmeras voltam para a galeria de vídeos')
+db.exe(PM, "UPDATE blocos SET visivel=TRUE WHERE pagina='home' AND chave='conheca'")
+db.exe(PM, 'DELETE FROM albuns WHERE id=%s', (aid,))
 o_centro, VT.centro = VT.centro, (lambda ibge: {'lat': -22.25, 'lon': -50.50})
 try:
     t = anon.get('/cameras-ao-vivo').text

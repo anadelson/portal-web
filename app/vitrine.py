@@ -137,16 +137,28 @@ def sortear_cameras(cams, n=MAX_CAMERAS_GALERIA):
     escolha = random.sample(reais, min(n, len(reais)))
     return escolha + random.sample(ex, min(n - len(escolha), len(ex)))
 
-def galeria_unica(b, mods, defeso, limite_videos=7):
+def galeria_unica(b, mods, defeso, limite_videos=7, fotos=None):
     """Seção única (26/11/2026) em 2 colunas: à esquerda (mais larga) os vídeos do YouTube, em destaque + lista;
     à direita as câmeras ao vivo, no máximo 2, sorteadas a cada carregamento; todas ficam em /cameras-ao-vivo (mapa).
-    No período eleitoral os vídeos saem e as câmeras ficam."""
+    No período eleitoral os vídeos saem e as câmeras ficam.
+    fotos (home): quando as câmeras já aparecem no "Conheça" e há álbuns, a 2ª coluna vira a galeria de fotos
+    (só junto com vídeos; sem vídeos a seção continua sendo a das câmeras)."""
     cams = cameras(b)
     vids = [] if defeso else galeria(b, mods, limite=limite_videos)
     if not cams and not vids:
         return None
-    return {'videos': {'palco': vids[0], 'lista': vids[1:]} if vids else None, 'cameras': sortear_cameras(cams),
-            'n_cameras': len(cams), 'mais_cameras': len(cams) > MAX_CAMERAS_GALERIA, 'n_videos': len(vids)}
+    g = {'videos': {'palco': vids[0], 'lista': vids[1:]} if vids else None, 'cameras': sortear_cameras(cams),
+         'n_cameras': len(cams), 'mais_cameras': len(cams) > MAX_CAMERAS_GALERIA, 'n_videos': len(vids), 'fotos': None}
+    if fotos and vids:
+        g.update(cameras=[], fotos=fotos)
+    return g
+
+MAX_CAMERAS_CONHECA = 3
+
+def cameras_conheca(b):
+    """Faixa "Ao vivo" na seção Conheça da home (26/11/2026): até 3 câmeras pequenas, sorteadas (reais primeiro)."""
+    cams = cameras(b)
+    return {'cameras': sortear_cameras(cams, MAX_CAMERAS_CONHECA), 'n': len(cams)} if cams else None
 
 # ---------------- câmeras ----------------
 def _fernet():
