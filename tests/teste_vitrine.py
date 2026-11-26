@@ -37,6 +37,8 @@ checa(op.index('selos') == op.index('diario') + 1 and op[-1] == 'videos' and 'ca
 checa(oc.index('selos') == oc.index('emendas') + 1 and 'videos' in oc and 'cameras' not in oc, f'Câmara: selos em faixa após emendas ({oc})')
 h = anon.get('/').text
 checa('id="h-selos"' in h and h.count('class="exemplo">exemplo') >= 3, 'home da Prefeitura com selos marcados como exemplo')
+hs = secao(h, 'h-selos')
+checa(hs.count('href="/selos#selo-') == 2 and 'Veja mais (3 selos)' in hs and 'href="/selos"' in hs, 'home com 2 selos e "Veja mais" quando há mais de 2')
 checa(re.search(r'<div class="b l65">\s*<section class="caixa" aria-labelledby="h-diario"', h) and re.search(r'<div class="b l35">\s*<section class="selos-b"', h), 'Atos oficiais e selos dividem a linha (65/35)')
 checa('id="h-videos"' in h and 'exemplo-video.svg' in h and 'youtube-nocookie.com/embed' not in h, 'galeria de vídeos sem player antes do clique')
 hv = secao(h, 'h-videos'); hk = secao(h, 'h-conheca')
@@ -186,8 +188,15 @@ checa(len(vistos) >= 3 and not ex_na_galeria, f'2 câmeras sorteadas a cada carr
 checa('Mais câmeras (5)' in h and 'href="/cameras-ao-vivo"' in h and 'a cada visita aparecem 2' in h, 'botão "Mais câmeras" com o total')
 checa(anon.get('/videos').text.count('data-cam="/cameras/') == 2, '/videos também com 2 câmeras')
 # com as câmeras no Conheça e um álbum publicado, a 2ª coluna da galeria da home vira a galeria de fotos (fictícia)
-aid = db.exe(PM, "INSERT INTO albuns (titulo, publicado) VALUES ('Álbum de teste', TRUE) RETURNING id")['id']
-db.exe(PM, "INSERT INTO album_fotos (album_id, url, alt) VALUES (%s, '/static/img/exemplo-video.svg', 'Foto de teste')", (aid,))
+ids_alb = []  # 7 álbuns fictícios, um por dia: a home mostra só os 6 mais recentes, do mais novo ao mais antigo
+for i in range(7):
+    a_ = db.exe(PM, "INSERT INTO albuns (titulo, publicado, ordem, criado_em) VALUES (%s, TRUE, %s, now() - %s * interval '1 day') RETURNING id", (f'Álbum de teste {i}', 100 - i, i))['id']
+    db.exe(PM, "INSERT INTO album_fotos (album_id, url, alt) VALUES (%s, '/static/img/exemplo-video.svg', 'Foto de teste')", (a_,))
+    ids_alb.append(a_)
+aid = ids_alb[0]
+hf = secao(anon.get('/').text, 'h-videos')
+vistos_alb = [int(x) for x in re.findall(r'href="/fotos/(\d+)"', hf)]
+checa(vistos_alb == ids_alb[:6], f'galeria de fotos da home: 6 álbuns, os mais recentes primeiro ({vistos_alb})')
 hh = anon.get('/').text; h = secao(hh, 'h-videos')
 checa('Vídeos e fotos</h2>' in h and '<div class="vc dois">' in h and 'class="vc-fotos"' in h and f'href="/fotos/{aid}"' in h and 'vc-cams' not in h and 'data-cam=' not in h
       and len(re.findall(r'data-cam="/cameras/', secao(hh, 'h-conheca'))) == 3, 'com álbum: vídeos + galeria de fotos; câmeras só no Conheça')
@@ -196,7 +205,7 @@ db.exe(PM, "UPDATE blocos SET visivel=FALSE WHERE pagina='home' AND chave='conhe
 h = anon.get('/').text
 checa('class="c-vivo"' not in h and 'vc-cams' in secao(h, 'h-videos') and 'vc-fotos' not in h, 'sem a seção Conheça as câmeras voltam para a galeria de vídeos')
 db.exe(PM, "UPDATE blocos SET visivel=TRUE WHERE pagina='home' AND chave='conheca'")
-db.exe(PM, 'DELETE FROM albuns WHERE id=%s', (aid,))
+db.exe(PM, 'DELETE FROM albuns WHERE id = ANY(%s)', (ids_alb,))
 o_centro, VT.centro = VT.centro, (lambda ibge: {'lat': -22.25, 'lon': -50.50})
 try:
     t = anon.get('/cameras-ao-vivo').text

@@ -855,6 +855,8 @@ nav.menu a{font-size:var(--fs-menu)}
 @media (max-width:640px){.conheca9 .c-vivo{padding:20px 16px}.c-cams,.c-cams.n2{grid-template-columns:minmax(0,1fr)}}
 .vc-fotos{background:var(--cor-clara);border:1px solid var(--bd);border-radius:18px;padding:16px}
 .vc-fotos .albuns{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.galeria-home .albuns{grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))}
+@media (min-width:900px){.galeria-home .albuns{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .vc-fotos .albuns span{padding:8px 10px}.vc-fotos .albuns strong{display:block;font-size:var(--fs-meta);line-height:1.3}
 .vc-fotos .albuns small{display:block;color:var(--sub);font-size:var(--fs-etq)}
 .vc.dois .vc-fotos .cams-mais{width:100%;justify-content:center}

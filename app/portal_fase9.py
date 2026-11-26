@@ -23,9 +23,10 @@ def com_alt(fotos, album):
     """Texto alternativo é opcional: sem ele, a galeria usa o título da foto ou "Foto N do álbum …"."""
     return [dict(f, alt_portal=f['alt'] or f['titulo'] or f"Foto {i} do álbum {album['titulo']}") for i, f in enumerate(fotos, 1)]
 
-def albuns_publicos(b, limite=None):
+def albuns_publicos(b, limite=None, recentes=False):
+    """Álbuns publicados com capa; recentes=True (home): do mais novo para o mais antigo, sem olhar a ordem manual."""
     out = []
-    for a in db.todos(b, 'SELECT * FROM albuns WHERE publicado ORDER BY ordem, id DESC'):
+    for a in db.todos(b, 'SELECT * FROM albuns WHERE publicado ORDER BY ' + ('criado_em DESC, id DESC' if recentes else 'ordem, id DESC')):
         if limite and len(out) >= limite:
             break
         fs = fotos_publicas(b, a)
