@@ -177,7 +177,7 @@ vistos, ex_na_galeria = set(), False
 for _ in range(25):
     hh = anon.get('/').text; h, hk = secao(hh, 'h-videos'), secao(hh, 'h-conheca')
     ik = re.findall(r'data-cam="/cameras/(\d+)/"', hk)
-    checa(len(ik) == 3 and len(set(ik)) == 3 and 'exemplo-camera.svg' not in hk and 'Todas as câmeras (5)' in hk, f'Conheça com 3 câmeras reais diferentes ({ik})')
+    checa(len(ik) == 3 and len(set(ik)) == 3 and 'exemplo-camera.svg' not in hk and 'Todas as câmeras (5)' in hk and 'sorteadas' not in hk, f'Conheça com 3 câmeras reais diferentes ({ik})')
     ids = tuple(re.findall(r'data-cam="/cameras/(\d+)/"', h))
     checa(len(ids) == 2 and len(re.findall(r'<div class="cam(?: exemplo-cam)?"', h)) == 2, f'galeria com exatamente 2 câmeras ({ids})')
     ex_na_galeria |= 'exemplo-camera.svg' in h
