@@ -161,7 +161,7 @@
 
 {% elif b.chave == 'videos' and d.galeria %}{% set g = d.galeria %}
 {# vídeos do YouTube e câmeras ao vivo na mesma seção, em 2 colunas separadas (26/11/2026); nada carrega antes do clique #}
-<section class="videos-b" aria-labelledby="h-videos"><div class="cab"><h2 id="h-videos">{{ 'Vídeos e câmeras ao vivo' if g.n_cameras and g.n_videos else ('Câmeras ao vivo' if g.n_cameras else 'Galeria de vídeos') }}</h2><a class="btn sec" href="/videos">{{ 'Todos os vídeos e câmeras' if g.n_cameras and g.n_videos else ('Todas as câmeras' if g.n_cameras else 'Todos os vídeos') }} {{ icone('seta', 18, 'seta') }}</a></div>
+<section class="videos-b" aria-labelledby="h-videos"><div class="cab"><h2 id="h-videos">{{ 'Vídeos e câmeras ao vivo' if g.n_cameras and g.n_videos else ('Câmeras ao vivo' if g.n_cameras else 'Galeria de vídeos') }}</h2><a class="btn sec" href="{{ '/videos' if g.n_videos else '/cameras-ao-vivo' }}">{{ 'Todos os vídeos' if g.n_videos else 'Todas as câmeras' }} {{ icone('seta', 18, 'seta') }}</a></div>
 {{ galeria(g) }}</section>
 
 {% elif b.chave == 'contas' %}

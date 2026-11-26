@@ -819,3 +819,15 @@ nav.menu a{font-size:var(--fs-menu)}
 .aviso-cookies[hidden]{display:none}
 .aviso-cookies p{margin:0;font-size:var(--fs-peq);flex:1}
 @media (max-width:640px){.aviso-cookies{flex-direction:column;align-items:stretch}.aviso-cookies .btn{width:100%}}
+
+/* Câmeras ao vivo (26/11/2026): botão "Mais câmeras" na galeria e página /cameras-ao-vivo com o mapa (Leaflet + OpenStreetMap) */
+.cams-mais{margin-top:14px;display:inline-flex;align-items:center;gap:8px}
+.vc.dois .cams-mais{width:100%;justify-content:center}
+.mapa-cams-b{margin:8px 0 28px}
+.mapa-cams{height:min(62vh,520px);min-height:300px;border-radius:18px;border:1px solid var(--bd);overflow:hidden;background:var(--cor-clara);z-index:0}
+.mapa-cams .leaflet-popup-content{font-size:var(--fs-meta);line-height:1.45}
+.mapa-cams .leaflet-popup-content a{font-weight:700}
+.pagina-cams{grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.pagina-cams>li{border-radius:16px;padding:4px;transition:box-shadow .3s}
+.pagina-cams>li.destacada,.pagina-cams>li:focus{outline:none;box-shadow:0 0 0 4px var(--cor)}
+@media (prefers-reduced-motion:reduce){.pagina-cams>li{transition:none}}

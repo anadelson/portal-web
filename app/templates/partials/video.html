@@ -1,4 +1,5 @@
-{# seção de vídeos e câmeras (home e /videos), 26/11/2026: 2 colunas — vídeos do YouTube (mais larga) e câmeras ao vivo.
+{# seção de vídeos e câmeras (home e /videos), 26/11/2026: 2 colunas — vídeos do YouTube (mais larga) e câmeras ao vivo
+   (no máximo 2, sorteadas; "Mais câmeras" leva a /cameras-ao-vivo, com o mapa).
    Cada capa é um botão: o player do YouTube ou o vídeo da câmera só carregam no clique. #}
 {% macro capa_video(v, palco=False) %}{% set img = ('https://i.ytimg.com/vi/' ~ v.youtube_id ~ ('/hqdefault.jpg' if palco else '/mqdefault.jpg')) if v.youtube_id else '/static/img/exemplo-video.svg' %}
 <button type="button" class="vg-capa{{ ' palco' if palco }}" data-yt="{{ v.youtube_id }}" data-titulo="{{ v.titulo }}" aria-label="{{ ('Assistir: ' ~ v.titulo) if v.youtube_id else (v.titulo ~ ' (exemplo, sem vídeo)') }}"><span class="vg-img"><img src="{{ img }}" alt="" loading="lazy"><span class="vg-play" aria-hidden="true">{{ icone('play', 26 if palco else 18) }}</span></span>
@@ -15,5 +16,6 @@
 <p class="legal">Canal oficial no YouTube, no modo de privacidade (youtube-nocookie). O player só carrega quando você clica.</p></div>{% endif %}
 {% if g.cameras %}<div class="vc-cams"><h3 class="vc-tit"><span class="vc-vivo" aria-hidden="true"></span>Câmeras ao vivo</h3>
 <ul class="cams">{% for c in g.cameras %}<li>{{ camera(c) }}</li>{% endfor %}</ul>
-<p class="legal">Pontos públicos de {{ ident.nome_curto or 'cidade' }}, em tempo real. A imagem só carrega quando você clica; o portal não grava as imagens.</p></div>{% endif %}
+<a class="btn sec cams-mais" href="/cameras-ao-vivo">{{ icone('camera', 18) }}{{ ('Mais câmeras (' ~ g.n_cameras ~ ')') if g.mais_cameras else 'Câmeras no mapa' }} {{ icone('seta', 18, 'seta') }}</a>
+<p class="legal">Pontos públicos de {{ ident.nome_curto or 'cidade' }}, em tempo real{% if g.mais_cameras %}; a cada visita aparecem 2, sorteadas{% endif %}. A imagem só carrega quando você clica; o portal não grava as imagens.</p></div>{% endif %}
 </div>{% endmacro %}
