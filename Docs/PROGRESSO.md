@@ -3083,3 +3083,9 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Implantado em 26/11/2026, ~13h45 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `d31056f`; backup ok; imagem 727 MB (com PyAV); app e worker recriados; `atualizar` "pronto.", com a 049 aplicada nos 2 órgãos.
 - **Conferido:** pmbora e cmbora 200 em `/`; `/videos` e `/cameras-ao-vivo` 200; `portal.css?v=45` 200; gestão e `/admin/cameras` 303; faixa "Borá ao vivo" na home da Prefeitura; memória: app 67 MiB, worker 51 MiB, cameras 17 MiB; sem erros nos logs.
 - **Falta (usuário):** as 4 câmeras já cadastradas estão sem miniatura; usar "Tirar da câmera agora" ou "Enviar imagem" em cada uma. Ainda não foi visto num navegador real.
+
+## 26/11/2026 — Faixa "Borá ao vivo" sem o aviso do sorteio (tag `conheca-sem-sorteio`)
+- **Pedido do usuário:** retirar a frase "A cada visita aparecem 3, sorteadas" da faixa. O sorteio continua; só o aviso saiu. A frase da galeria ("aparecem 2") ficou como estava.
+- **Testes:** `teste_vitrine` atualizada; 42 suítes sem falha sobre a imagem.
+- **Implantado em 26/11/2026, ~14h25 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `e938f90`; backup ok; `atualizar` "pronto.".
+- **Conferido:** pmbora, cmbora e `/cameras-ao-vivo` 200; gestão 303; faixa sem a frase; sem erros nos logs.
