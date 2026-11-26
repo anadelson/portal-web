@@ -143,10 +143,8 @@ def home(request: Request):
     from . import vitrine as VT  # selos, galeria de vídeos e câmeras (26/11/2026); selos e vídeos saem no período eleitoral
     if 'selos' in vis and not ctx['defeso']:
         dados['selos'] = VT.selos(b, limite=6)
-    if 'videos' in vis and not ctx['defeso']:
-        dados['videos'] = VT.galeria(b, ctx['mods'], limite=7)
-    if 'cameras' in vis:
-        dados['cameras'] = VT.cameras(b)[:6]
+    if 'videos' in vis:  # galeria única: vídeos do YouTube e câmeras ao vivo (vídeos saem no período eleitoral)
+        dados['galeria'] = VT.galeria_unica(b, ctx['mods'], ctx['defeso'])
     destaque = [x for x in blocos if x['regiao'] == 'destaque']
     principal = [x for x in blocos if x['regiao'] == 'principal']
     for a, c in zip(principal, principal[1:]):  # pares que dividem a linha quando vêm em seguida (ex.: Atos oficiais + Selos)

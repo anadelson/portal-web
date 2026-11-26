@@ -129,6 +129,15 @@ def galeria(b, mods, limite=7):
     itens.sort(key=lambda v: (v['exemplo'], -(v['quando'].toordinal() if v['quando'] else 0)))
     return itens[:limite] if limite else itens
 
+def galeria_unica(b, mods, defeso, limite_videos=7):
+    """Seção única (26/11/2026) em 2 colunas: à esquerda (mais larga) os vídeos do YouTube, em destaque + lista;
+    à direita as câmeras ao vivo, cada uma no seu cartão. No período eleitoral os vídeos saem e as câmeras ficam."""
+    cams = cameras(b)
+    vids = [] if defeso else galeria(b, mods, limite=limite_videos)
+    if not cams and not vids:
+        return None
+    return {'videos': {'palco': vids[0], 'lista': vids[1:]} if vids else None, 'cameras': cams, 'n_cameras': len(cams), 'n_videos': len(vids)}
+
 # ---------------- câmeras ----------------
 def _fernet():
     from . import credenciais as CR

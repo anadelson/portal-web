@@ -30,17 +30,19 @@ checa(db.um(PM, 'SELECT count(*) n FROM selos WHERE exemplo')['n'] == 3 and db.u
 checa(db.um(PM, 'SELECT count(*) n FROM cameras WHERE exemplo')['n'] == 2 and db.um(CM, 'SELECT count(*) n FROM cameras')['n'] == 0, 'câmeras de exemplo só na Prefeitura')
 ordem = lambda b: [r['chave'] for r in db.todos(b, "SELECT chave FROM blocos WHERE pagina='home' AND regiao='principal' ORDER BY ordem")]
 op, oc = ordem(PM), ordem(CM)
-checa(op.index('selos') == op.index('diario') + 1 and op[-2:] == ['videos', 'cameras'], f'Prefeitura: selos logo após Atos oficiais; vídeos e câmeras no fim ({op})')
+checa(op.index('selos') == op.index('diario') + 1 and op[-1] == 'videos' and 'cameras' not in op, f'Prefeitura: selos logo após Atos oficiais; galeria única de vídeos e câmeras no fim ({op})')
 checa(oc.index('selos') == oc.index('emendas') + 1 and 'videos' in oc and 'cameras' not in oc, f'Câmara: selos em faixa após emendas ({oc})')
 h = anon.get('/').text
 checa('id="h-selos"' in h and h.count('class="exemplo">exemplo') >= 3, 'home da Prefeitura com selos marcados como exemplo')
 checa(re.search(r'<div class="b l65">\s*<section class="caixa" aria-labelledby="h-diario"', h) and re.search(r'<div class="b l35">\s*<section class="selos-b"', h), 'Atos oficiais e selos dividem a linha (65/35)')
 checa('id="h-videos"' in h and 'exemplo-video.svg' in h and 'youtube-nocookie.com/embed' not in h, 'galeria de vídeos sem player antes do clique')
-checa('id="h-cams"' in h and 'exemplo-camera.svg' in h and 'data-cam=' not in h, 'câmeras de exemplo sem endereço de vídeo')
+checa('id="h-cams"' not in h and 'Vídeos e câmeras ao vivo</h2>' in h and 'exemplo-camera.svg' in h and 'data-cam=' not in h, 'mesma seção: câmeras de exemplo, sem endereço')
+g_ = h[h.index('id="h-videos"'):]
+checa('<div class="vc dois">' in g_ and g_.index('class="vc-videos"') < g_.index('class="vc-cams"') and 'Vídeos do YouTube</h3>' in g_ and 'Câmeras ao vivo</h3>' in g_, 'vídeos e câmeras em colunas separadas, vídeos primeiro')
 checa('id="aviso-cookies"' in h and 'Privacidade (LGPD)' in h and '/privacidade#cookies' in h, 'aviso de privacidade e cookies')
 hc = anon_cm.get('/').text
 checa('id="h-selos"' in hc and re.search(r'<div class="b ">\s*<section class="selos-b"', hc), 'Câmara: selos em faixa de largura total')
-checa('id="aviso-cookies"' in hc and 'id="h-videos"' in hc, 'Câmara: aviso de cookies e galeria de vídeos')
+checa('id="aviso-cookies"' in hc and 'Galeria de vídeos</h2>' in hc and '<div class="vc">' in hc and 'vc-cams' not in hc, 'Câmara: aviso de cookies e só a coluna de vídeos, em largura total')
 checa('Vídeos e câmeras:' in anon.get('/privacidade').text, 'política de privacidade cita vídeos e câmeras')
 
 # ---------- 2) selos: cadastro com imagem e documento ----------
@@ -120,7 +122,7 @@ checa(anon.get(f'/cameras/{ex_c}/').status_code == 404 and anon.get(f"/cameras/{
 checa(db.um(CM, 'SELECT count(*) n FROM cameras')['n'] == 0 and anon_cm.get(f"/cameras/{c['id']}/").status_code == 404, 'câmera de um órgão não aparece no outro')
 VT._api = o_api
 CFG.CHAVE_CREDENCIAIS = o_chave
-checa('Câmera de teste' in anon.get('/cameras').text, 'página /cameras')
+checa('Câmera de teste' in anon.get('/videos').text and anon.get('/cameras', follow_redirects=False).headers.get('location') == '/videos', 'página /videos com câmeras; /cameras leva para ela')
 
 # ---------- 5) período eleitoral: selos e vídeos saem; câmeras ficam ----------
 from app import eleicao
@@ -128,7 +130,7 @@ o_def = eleicao.em_defeso
 eleicao.em_defeso = lambda b: True
 try:
     h = anon.get('/').text
-    checa('id="h-selos"' not in h and 'id="h-videos"' not in h and 'id="h-cams"' in h, 'no defeso: sem selos e vídeos, câmeras ficam')
+    checa('id="h-selos"' not in h and 'Câmeras ao vivo</h2>' in h and 'data-yt=' not in h and 'Câmera de teste' in h, 'no defeso: sem selos e vídeos, câmeras ficam na galeria')
     checa('suspenso durante o período eleitoral' in anon.get('/selos').text, '/selos suspenso no defeso')
 finally:
     eleicao.em_defeso = o_def

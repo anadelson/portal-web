@@ -52,8 +52,7 @@ BLOCOS = {
     'redes': ('Nas redes (últimas publicações; some sem credencial no console e no período eleitoral)', ['principal'], None, False, 'ambos'),
     'fotos': ('Galeria de fotos (últimos álbuns publicados; some sem álbum)', ['principal'], None, False, 'ambos'),
     'selos': ('Selos e reconhecimentos (ao lado de "Atos oficiais" quando vêm em seguida; some sem selo e no período eleitoral)', ['principal'], None, False, 'ambos'),
-    'videos': ('Galeria de vídeos (YouTube; some sem vídeo e no período eleitoral)', ['principal'], None, False, 'ambos'),
-    'cameras': ('Câmeras ao vivo (some sem câmera ativa)', ['principal'], None, False, 'ambos'),
+    'videos': ('Vídeos e câmeras ao vivo (2 colunas: vídeos do YouTube e câmeras; os vídeos saem no período eleitoral; some sem nenhum dos dois)', ['principal'], None, False, 'ambos'),
     'tempo': ('Previsão do tempo (agora e próximos dias; some se a fonte estiver fora do ar)', ['destaque', 'principal'], None, False, 'ambos'),
     'rodape': ('Rodapé com links obrigatórios', ['rodape'], None, True, 'ambos'),
 }
@@ -71,7 +70,7 @@ REGIOES = [('topo', 'Cabeçalho'), ('avisos', 'Faixa de avisos'), ('destaque', '
 LAYOUT_PADRAO = {  # Fase 9: + "Nas redes" depois das notícias
     'executivo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('tempo', 'principal'), ('comunicados', 'principal'), ('protocolo', 'principal'), ('numeros', 'principal'),
                   ('publicacoes', 'principal'), ('diario', 'principal'), ('selos', 'principal'), ('transmissoes', 'principal'), ('conheca', 'principal'), ('noticias', 'principal'), ('redes', 'principal'), ('sede', 'principal'), ('fotos', 'principal'),
-                  ('videos', 'principal'), ('cameras', 'principal'), ('rodape', 'rodape')],
+                  ('videos', 'principal'), ('rodape', 'rodape')],
     'legislativo': [('acess', 'topo'), ('defeso', 'avisos'), ('hero', 'destaque'), ('atalhos', 'destaque'), ('ver', 'principal'), ('tempo', 'principal'), ('comunicados', 'principal'), ('contas', 'principal'), ('emendas', 'principal'),
                     ('selos', 'principal'), ('sessoes', 'principal'), ('projetos', 'principal'), ('transmissoes', 'principal'), ('videos', 'principal'), ('noticias', 'principal'), ('redes', 'principal'), ('fotos', 'principal'), ('rodape', 'rodape')],
 }

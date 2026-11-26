@@ -1,7 +1,7 @@
 {% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, vazio with context %}
 {% block h1 %}Câmeras ao vivo{% endblock %}
 {% block conteudo %}{% set C = csrf_token(request) %}
-{{ cab('Câmeras de pontos públicos transmitidas ao vivo no portal (bloco “Câmeras ao vivo” e /cameras). O endereço RTSP fica gravado cifrado e nunca volta para a tela. O servidor só lê a câmera enquanto alguém está assistindo; as imagens não são gravadas pelo portal.') }}
+{{ cab('Câmeras de pontos públicos transmitidas ao vivo no portal, na seção “Vídeos e câmeras ao vivo”, em coluna própria ao lado dos vídeos (bloco “Vídeos e câmeras ao vivo” e /videos). O endereço RTSP fica gravado cifrado e nunca volta para a tela. O servidor só lê a câmera enquanto alguém está assistindo; as imagens não são gravadas pelo portal.') }}
 {% if not conversor %}<p class="msg" role="status" style="background:#FCEFD9"><strong>Conversor de vídeo fora do ar neste servidor.</strong> As câmeras podem ser cadastradas, mas só aparecem ao vivo quando ele estiver em funcionamento. Fale com o suporte da plataforma.</p>{% endif %}
 {% if not chave_ok %}<p class="msg" role="alert" style="background:#FBE4D8;color:#9B1C1C"><strong>Cadastro desligado:</strong> falta a chave de cifra no servidor.</p>{% endif %}
 <section class="cx form-tela"><h2>Cadastrar câmera</h2><form class="campos" method="post" action="/admin/cameras" autocomplete="off"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="adicionar">

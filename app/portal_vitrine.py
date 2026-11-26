@@ -2,7 +2,7 @@
 O vídeo das câmeras passa pelo portal (/cameras/<id>/…) a partir do conversor do nó; o endereço da câmera nunca chega ao navegador."""
 import re
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 from starlette.background import BackgroundTask
 from . import db, vitrine as VT
 from .web import templates, ctx_orgao
@@ -25,13 +25,13 @@ def selos(request: Request):
 @r.get('/videos')
 def videos(request: Request):
     ctx = ctx_orgao(request)
-    lista = [] if ctx['defeso'] else VT.galeria(ctx['orgao']['banco'], ctx['mods'], limite=60)
-    return templates.TemplateResponse(request, 'portal/videos.html', dict(ctx, videos=lista))
+    g = VT.galeria_unica(ctx['orgao']['banco'], ctx['mods'], ctx['defeso'], limite_videos=60)
+    return templates.TemplateResponse(request, 'portal/videos.html', dict(ctx, galeria_d=g))
 
 @r.get('/cameras')
 def cameras(request: Request):
-    ctx = ctx_orgao(request)
-    return templates.TemplateResponse(request, 'portal/cameras.html', dict(ctx, cameras=VT.cameras(ctx['orgao']['banco'])))
+    """Galeria única desde 26/11/2026: as câmeras ficam junto dos vídeos."""
+    return RedirectResponse('/videos', status_code=301)
 
 @r.get('/cameras/{cid}/{resto:path}')
 async def camera_video(request: Request, cid: int, resto: str = ''):
