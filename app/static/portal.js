@@ -177,3 +177,37 @@
   if (m.complete) ajustar(); else m.addEventListener('load', ajustar);
   window.addEventListener('resize', ajustar);
 })();
+
+/* Galeria de vídeos e câmeras ao vivo (26/11/2026): o player do YouTube (youtube-nocookie) e o vídeo da câmera só carregam no clique */
+(function(){
+  function el(tag, attrs, txt){var e=document.createElement(tag);for(var k in attrs){e.setAttribute(k, attrs[k])}if(txt){e.textContent=txt}return e}
+  document.querySelectorAll('[data-galeria]').forEach(function(g){
+    var palco=g.querySelector('.vg-palco');
+    g.addEventListener('click', function(ev){
+      var b=ev.target.closest('.vg-capa'); if(!b||!g.contains(b)) return;
+      var id=b.getAttribute('data-yt')||'', tit=b.getAttribute('data-titulo')||'';
+      var moldura=el('div', {'class':'vg-frame'});
+      if(/^[A-Za-z0-9_-]{11}$/.test(id)){
+        moldura.appendChild(el('iframe', {src:'https://www.youtube-nocookie.com/embed/'+id+'?rel=0&autoplay=1', title:'Vídeo: '+tit, allow:'autoplay; encrypted-media; picture-in-picture; fullscreen', allowfullscreen:'', referrerpolicy:'strict-origin-when-cross-origin'}));
+      } else {
+        moldura.classList.add('vg-ex'); moldura.appendChild(el('span', {}, 'Vídeo de exemplo: quando os vídeos do canal oficial forem cadastrados no painel, eles tocam aqui.'));
+      }
+      palco.innerHTML=''; palco.appendChild(moldura); palco.appendChild(el('p', {'class':'vg-agora'}, tit));
+      g.querySelectorAll('.vg-lista .vg-capa').forEach(function(x){x.removeAttribute('aria-current')});
+      if(b.closest('.vg-lista')){b.setAttribute('aria-current','true')}
+      var r=palco.getBoundingClientRect(); if(r.top<0||r.top>window.innerHeight*0.6){palco.scrollIntoView({behavior:'smooth', block:'start'})}
+      var f=palco.querySelector('iframe'); if(f){f.focus()}
+    });
+  });
+  document.addEventListener('click', function(ev){
+    var b=ev.target.closest('.cam-play'); if(!b) return;
+    var c=b.closest('.cam'), u=c&&c.getAttribute('data-cam'); if(!u) return;
+    c.innerHTML=''; c.classList.add('tocando');
+    c.appendChild(el('iframe', {src:u, title:c.getAttribute('data-titulo')||'Câmera ao vivo', allow:'autoplay; fullscreen', allowfullscreen:''}));
+  });
+  /* Aviso de cookies e privacidade (LGPD): só cookies necessários; a resposta fica no próprio navegador */
+  var a=document.getElementById('aviso-cookies');
+  if(a){var visto=false;try{visto=localStorage.getItem('aviso_cookies')==='1'}catch(e){}
+    if(!visto){a.hidden=false}
+    var ok=a.querySelector('[data-ok]'); if(ok){ok.addEventListener('click', function(){try{localStorage.setItem('aviso_cookies','1')}catch(e){}a.hidden=true})}}
+})();

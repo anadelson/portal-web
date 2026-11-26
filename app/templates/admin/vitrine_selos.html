@@ -1,0 +1,35 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, voltar, acoes, vazio with context %}
+{% set novo = request.query_params.get('novo') %}
+{% block h1 %}{% if ed %}Editar selo{% elif novo %}Novo selo{% else %}Selos e reconhecimentos{% endif %}{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}
+{% if ed or novo %}{% set s = ed or {} %}
+{{ voltar('/admin/selos') }}
+{% if s.exemplo %}<p class="msg" style="background:#FCEFD9">Este é um <strong>selo de exemplo</strong> do piloto (aparece no portal com a etiqueta “exemplo”). Ao salvar com os dados reais, ele deixa de ser exemplo; ou apague.</p>{% endif %}
+<section class="cx form-tela"><form class="campos" method="post" action="/admin/selos" enctype="multipart/form-data"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="salvar">{% if ed %}<input type="hidden" name="id" value="{{ ed.id }}">{% endif %}
+<div class="grade2"><label>Nome do selo<input name="nome" value="{{ s.nome or '' }}" maxlength="120" required placeholder="ex.: Selo de Transparência"></label>
+<label>Instituição que concedeu<input name="instituicao" value="{{ s.instituicao or '' }}" maxlength="160" required placeholder="ex.: tribunal, programa ou entidade avaliadora"></label></div>
+<label>Como foi conseguido<textarea name="como" rows="4" maxlength="2000" placeholder="Programa ou avaliação, critérios, ano de referência, o que o órgão fez.">{{ s.como or '' }}</textarea></label>
+<div class="grade2"><label>Nota ou resultado atingido<input name="nota" value="{{ s.nota or '' }}" maxlength="60" placeholder="ex.: 95,4 de 100 · Nível Diamante · Nota A"></label>
+<label>Link da instituição ou do resultado (opcional)<input name="link" type="url" value="{{ s.link or '' }}" maxlength="500" placeholder="https://…"></label>
+<label>Concedido em<input name="concedido_em" type="date" value="{{ s.concedido_em or '' }}"></label>
+<label>Válido até (opcional)<input name="valido_ate" type="date" value="{{ s.valido_ate or '' }}"></label>
+<label>Ordem no portal (menor aparece antes)<input name="ordem" type="number" min="0" max="999" value="{{ s.ordem if s.ordem is not none else 100 }}"></label>
+<label class="check" style="align-self:end"><input type="checkbox" name="visivel" value="1" {{ 'checked' if (not ed) or s.visivel }}> Mostrar no portal</label></div>
+<fieldset><legend>Imagem do selo</legend>{% if s.imagem %}<p><img src="{{ s.imagem }}" alt="" width="96" height="96" style="object-fit:contain;vertical-align:middle"> imagem atual</p>{% endif %}
+<label>{{ 'Trocar a imagem' if s.imagem else 'Enviar a imagem' }} (PNG, JPG ou WEBP, até 3 MB; fundo transparente fica melhor)<input type="file" name="imagem" accept="image/png,image/jpeg,image/webp"></label></fieldset>
+<fieldset><legend>Certificado ou documento de concessão</legend>{% if s.documento %}<p><a href="{{ s.documento }}" target="_blank" rel="noopener">{{ s.documento_titulo or 'Documento atual' }}</a>{% if s.doc %} ({{ s.doc[0] }}, {{ s.doc[1] }}){% endif %}</p>{% endif %}
+<label>{{ 'Trocar o documento' if s.documento else 'Enviar o documento' }} (PDF, PNG, JPG ou WEBP, até 20 MB)<input type="file" name="documento" accept="application/pdf,image/png,image/jpeg,image/webp"></label>
+<label>Texto do link do documento<input name="documento_titulo" value="{{ s.documento_titulo or '' }}" maxlength="120" placeholder="ex.: Certificado de concessão"></label>
+<p class="legal">O documento fica público no portal, na página do selo. Não envie documento com dados pessoais (CPF, assinatura manuscrita digitalizada de servidor etc.) sem tarjar.</p></fieldset>
+{{ acoes('Salvar', '/admin/selos') }}</form></section>
+{% if ed %}<section class="cx"><h2>Outras ações</h2><div class="acoes" style="display:flex;gap:8px;flex-wrap:wrap">
+{% for a, r, ok in [('sem_imagem', 'Remover a imagem', ed.imagem), ('sem_documento', 'Remover o documento', ed.documento), ('apagar', 'Apagar o selo', True)] if ok %}
+<form class="inline" method="post" action="/admin/selos"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ ed.id }}"><button class="btn {{ 'perigo' if a == 'apagar' else 'sec' }}" name="acao" value="{{ a }}">{{ r }}</button></form>{% endfor %}</div></section>{% endif %}
+{% else %}
+{{ cab('Selos, prêmios e reconhecimentos que o órgão conquistou: de qual instituição, como, com que nota, e o certificado. Aparecem na página inicial (bloco “Selos e reconhecimentos”) e em /selos. No período eleitoral saem do ar.', '/admin/selos?novo=1', 'Novo selo') }}
+{% if selos %}<div class="tabela"><table><caption class="sr">Selos</caption><thead><tr><th scope="col">Selo</th><th scope="col">Instituição</th><th scope="col">Nota</th><th scope="col">Concedido</th><th scope="col">Documento</th><th scope="col">Portal</th></tr></thead><tbody>
+{% for s in selos %}<tr><td><a href="/admin/selos?ed={{ s.id }}">{{ s.nome }}</a>{% if s.exemplo %} <span class="chip alerta">exemplo</span>{% endif %}</td><td>{{ s.instituicao }}</td><td>{{ s.nota or '—' }}</td><td>{{ s.concedido_em|br if s.concedido_em else '—' }}{% if s.vencido %} <span class="chip erro">vencido</span>{% endif %}</td><td>{{ 'sim' if s.documento else '—' }}</td><td><span class="chip {{ 'ok' if s.visivel }}">{{ 'visível' if s.visivel else 'oculto' }}</span></td></tr>{% endfor %}
+</tbody></table></div>
+{% else %}{{ vazio('Nenhum selo cadastrado.', '/admin/selos?novo=1', 'Novo selo') }}{% endif %}
+{% endif %}
+{% endblock %}

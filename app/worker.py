@@ -185,10 +185,21 @@ def portal_antigo_tick():
     except Exception:
         traceback.print_exc()
 
+def cameras_tick(estado):
+    """Câmeras ao vivo: mantém o conversor de vídeo igual às câmeras ativas (a cada minuto; avisa só quando muda)."""
+    from . import vitrine as VT
+    try:
+        res = VT.sincronizar()
+    except Exception as e:
+        res = f'conversor de vídeo indisponível ({type(e).__name__})'
+    if res != estado.get('ult'):
+        print(f'câmeras: {res}', flush=True)
+        estado['ult'] = res
+
 def main():
     ultimo = ultimas_execucoes()
     mud = {}
-    lic, ords, rel = {}, {}, {}
+    lic, ords, rel, cam = {}, {}, {}, {}
     print('worker iniciado', flush=True)
     while True:
         licencas_tick(lic)
@@ -215,6 +226,7 @@ def main():
         diario_tick(datetime.now())
         atendimento_tick(datetime.now())
         portal_antigo_tick()
+        cameras_tick(cam)
         time.sleep(60)
 
 if __name__ == '__main__':

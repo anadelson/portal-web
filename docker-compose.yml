@@ -57,6 +57,14 @@ services:
       interval: 5s
       retries: 20
 
+  cameras:  # conversor de vídeo das câmeras ao vivo (RTSP → HLS, sem recodificar); só na rede interna, nenhuma porta publicada
+    image: bluenviron/mediamtx:1.21.3
+    restart: unless-stopped
+    volumes: ["./deploy/mediamtx.yml:/mediamtx.yml:ro"]
+    mem_limit: 96m
+    memswap_limit: 96m
+    cpus: 0.3
+
 networks:
   proxy:
     external: true

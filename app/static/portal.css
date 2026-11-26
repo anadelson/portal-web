@@ -730,3 +730,81 @@ nav.menu a{font-size:var(--fs-menu)}
 .bienio li.m-pres a:hover,.bienio li.m-pres a:focus{color:#fff}
 .bienio li.m-pres small{color:var(--destaque)!important;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
 .bienio li.m-pres .mini-ini{border:2px solid var(--destaque);background:var(--cor);color:#fff}
+
+/* Vereadores em 3 linhas (26/11/2026): 1 nome – apelido · 2 Mesa ou comissão · 3 partido e votos */
+.vmini .vl2{color:var(--tx)!important;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vmini .vl2.sem,.vcard .vl2.sem{color:var(--sub)!important;font-weight:400}
+.vmini .mais-f{font-weight:700;color:var(--cor)}
+.vcard .info .vl2{color:var(--tx);font-weight:600}.vcard.pres .info .vl2,.vcard.pres .info .vl3{color:#E3EADF}.vcard.pres .info .vl3{font-weight:700}
+
+/* Selos e reconhecimentos (26/11/2026). Mesma marcação nos dois portais; a largura do bloco decide:
+   estreito (ao lado de “Atos oficiais”) = lista compacta; largo (faixa própria) = texto à esquerda e medalhas lado a lado */
+.fluxo>.b.l65{flex:65 1 520px}.fluxo>.b.l35{flex:35 1 300px}.fluxo>.b.l65,.fluxo>.b.l35{margin-bottom:16px}
+.fluxo>.b.l65>.caixa,.fluxo>.b.l35>.selos-b{height:100%;box-sizing:border-box}
+.selos-b{container-type:inline-size;background:#fff;border:1px solid var(--bd);border-radius:18px;padding:20px 22px;box-shadow:inset 0 4px 0 var(--destaque)}
+.selos-in{display:grid;gap:14px}
+.selos-cab h2{margin:0 0 4px}.selos-cab .sub{margin:0;color:var(--sub);font-size:var(--fs-desc)}
+.selos-lista{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.selos-lista li{display:flex;min-width:0}
+.selos-lista a{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:14px;color:var(--tx);text-decoration:none;border:1px solid transparent}
+.selos-lista a:hover,.selos-lista a:focus-visible{border-color:var(--bd);background:var(--cor-clara)}
+.selos-lista .s-img{flex:0 0 auto;width:56px;height:56px;display:grid;place-items:center;color:var(--cor)}
+.selos-lista .s-img img{width:100%;height:100%;object-fit:contain}
+.selos-lista .s-txt{min-width:0;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}
+.selos-lista strong{font-size:var(--fs-peq);line-height:1.25}.selos-lista small{font-size:var(--fs-meta);color:var(--sub)}
+.selos-lista .s-nota{align-self:flex-start;padding:1px 10px;border-radius:999px;background:var(--cor-escura);color:#fff;font-size:var(--fs-meta);font-weight:700}
+.selos-lista .exemplo{align-self:flex-start}
+.selos-b .acoes{margin:0}
+@container (min-width:760px){
+  .selos-in{grid-template-columns:minmax(220px,1fr) 3fr;grid-template-areas:"cab lista" "acoes lista";align-items:center;column-gap:28px}
+  .selos-cab{grid-area:cab;align-self:end}.selos-b .acoes{grid-area:acoes;align-self:start}
+  .selos-lista{grid-area:lista;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+  .selos-lista a{flex-direction:column;text-align:center;padding:16px 12px;border-color:var(--bd);background:linear-gradient(180deg,var(--cor-clara),#fff 60%)}
+  .selos-lista .s-img{width:96px;height:96px}.selos-lista .s-txt{align-items:center}.selos-lista .s-nota,.selos-lista .exemplo{align-self:center}
+}
+/* página /selos */
+.selos-pag{list-style:none;margin:0;padding:0;display:grid;gap:16px}
+.selo-c{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.selo-c .s-img{flex:0 0 140px;height:140px;display:grid;place-items:center;color:var(--cor)}.selo-c .s-img img{width:100%;height:100%;object-fit:contain}
+.selo-c .s-corpo{flex:1 1 320px;min-width:0}.selo-c h2{margin:0 0 10px}.selo-c h3{font-size:var(--fs-h3-p);margin:14px 0 4px}
+.selos-pag li:target .selo-c{outline:3px solid var(--destaque);outline-offset:2px}
+
+/* Galeria de vídeos (26/11/2026): vídeo em destaque + lista; o player só entra no clique */
+.videos-b{container-type:inline-size}
+.vg{display:grid;gap:16px}
+@container (min-width:820px){.vg{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);align-items:start}}
+.vg-capa{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:8px;width:100%;color:var(--tx)}
+.vg-capa:focus-visible{outline:3px solid var(--destaque);outline-offset:3px;border-radius:14px}
+.vg-img{position:relative;display:block;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#0B1620}
+.vg-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s}
+.vg-capa:hover .vg-img img{transform:scale(1.03)}
+.vg-play{position:absolute;inset:auto auto 10px 10px;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.92);color:#0B1620}
+.vg-capa.palco .vg-play{inset:50% auto auto 50%;transform:translate(-50%,-50%);width:68px;height:68px}
+.vg-txt{display:flex;flex-direction:column;gap:2px;min-width:0}.vg-txt strong{font-size:var(--fs-peq);line-height:1.3}.vg-txt small{font-size:var(--fs-meta);color:var(--sub)}
+.vg-capa.palco .vg-txt strong{font-size:var(--fs-h3-p)}
+.vg-lista{list-style:none;margin:0;padding:0;display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+@container (min-width:820px){.vg:not(.pagina) .vg-lista{grid-template-columns:minmax(0,1fr);max-height:560px;overflow:auto;padding-right:4px}
+  .vg:not(.pagina) .vg-lista .vg-capa{flex-direction:row;align-items:center}.vg:not(.pagina) .vg-lista .vg-img{flex:0 0 46%}}
+.vg-lista .vg-capa[aria-current] .vg-img{outline:3px solid var(--destaque);outline-offset:-3px}
+.vg.pagina{grid-template-columns:minmax(0,1fr)}
+.vg-frame{aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#0B1620}
+.vg-frame iframe{width:100%;height:100%;border:0;display:block}
+.vg-frame.vg-ex{display:grid;place-items:center;padding:24px;text-align:center;color:#fff;font-size:var(--fs-desc);background:linear-gradient(135deg,#22384F,#0E1C2B)}
+.vg-agora{margin:8px 0 0;font-weight:700;font-size:var(--fs-h3-p)}
+
+/* Câmeras ao vivo (26/11/2026) */
+.cams{list-style:none;margin:0;padding:0;display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.cam{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#18232E;display:grid;place-items:center}
+.cam>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam-fundo{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.35)}
+.cam-play{position:relative;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border:0;border-radius:999px;background:#fff;color:#0B1620;font:inherit;font-weight:700;font-size:var(--fs-btn);cursor:pointer}
+.cam-play:focus-visible{outline:3px solid var(--destaque);outline-offset:3px}
+.cam-vivo{position:absolute;top:10px;left:10px;padding:2px 8px;border-radius:6px;background:#B42318;color:#fff;font-size:var(--fs-etq);font-weight:800;letter-spacing:.06em}
+.cam-aviso{position:absolute;left:10px;right:10px;bottom:10px;padding:6px 10px;border-radius:8px;background:rgba(11,22,32,.72);color:#fff;font-size:var(--fs-meta);text-align:center}
+.cam.tocando{display:block}.cam iframe{width:100%;height:100%;border:0;display:block}
+.cam-nome{margin:8px 0 0;display:flex;flex-direction:column;gap:2px}.cam-nome small{font-size:var(--fs-meta);color:var(--sub)}.cam-nome .exemplo{align-self:flex-start}
+
+/* Aviso de privacidade e cookies (LGPD), 26/11/2026 */
+.aviso-cookies{position:fixed;left:16px;right:16px;bottom:16px;z-index:60;max-width:880px;margin:0 auto;display:flex;gap:16px;align-items:center;padding:14px 18px;background:#fff;color:var(--tx);border:1px solid var(--bd);border-radius:16px;box-shadow:0 12px 32px rgba(11,22,32,.22)}
+.aviso-cookies[hidden]{display:none}
+.aviso-cookies p{margin:0;font-size:var(--fs-peq);flex:1}
+@media (max-width:640px){.aviso-cookies{flex-direction:column;align-items:stretch}.aviso-cookies .btn{width:100%}}

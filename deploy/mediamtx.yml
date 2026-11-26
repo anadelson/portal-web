@@ -1,0 +1,34 @@
+# Conversor de vídeo das câmeras ao vivo (MediaMTX), 26/11/2026. Só na rede interna do projeto (nenhuma porta publicada):
+# o worker cadastra as câmeras pela API (9997) e o app repassa o HLS (8888) ao navegador em /cameras/<id>/.
+# As câmeras só são lidas enquanto alguém assiste (sourceOnDemand) e nada é gravado.
+logLevel: warn
+api: yes
+apiAddress: :9997
+metrics: no
+pprof: no
+playback: no
+rtsp: no
+rtmp: no
+webrtc: no
+srt: no
+hls: yes
+hlsAddress: :8888
+hlsVariant: mpegts
+hlsSegmentCount: 5
+hlsSegmentDuration: 2s
+hlsAlwaysRemux: no
+authMethod: internal
+authInternalUsers:
+  # leitura do vídeo e API: só de redes privadas (a rede interna do Docker); nada é exposto para fora
+  - user: any
+    pass:
+    ips: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.1/32']
+    permissions:
+      - action: read
+      - action: api
+pathDefaults:
+  record: no
+  sourceOnDemand: yes
+  sourceOnDemandStartTimeout: 15s
+  sourceOnDemandCloseAfter: 30s
+paths: {}

@@ -1,0 +1,9 @@
+{% extends 'portal/base.html' %}
+{% block titulo %}Câmeras ao vivo — {{ ident.nome }}{% endblock %}
+{% block conteudo %}
+<nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Câmeras ao vivo</span></nav>
+<h1>Câmeras ao vivo</h1>
+<p class="intro">Imagens em tempo real de pontos públicos de {{ ident.nome_curto or 'cidade' }}. A imagem só é carregada quando você clica em “Assistir ao vivo”. O portal não grava as imagens; as câmeras mostram apenas vias e espaços públicos.</p>
+{% if not cameras %}<p class="vazio">Nenhuma câmera disponível no momento.</p>
+{% else %}<ul class="cams pagina">{% for c in cameras %}<li>{% include 'portal/_camera.html' %}</li>{% endfor %}</ul>{% endif %}
+{% endblock %}
