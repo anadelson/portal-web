@@ -3089,3 +3089,13 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Testes:** `teste_vitrine` atualizada; 42 suítes sem falha sobre a imagem.
 - **Implantado em 26/11/2026, ~14h25 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `e938f90`; backup ok; `atualizar` "pronto.".
 - **Conferido:** pmbora, cmbora e `/cameras-ao-vivo` 200; gestão 303; faixa sem a frase; sem erros nos logs.
+
+## 26/11/2026 — Home: 6 álbuns mais recentes e 2 selos com "Veja mais" (tag `fotos6-selos2`)
+- **Pedido do usuário:** a galeria de fotos com 6 cards, sempre os mais recentes; nos selos, só 2, com "Veja mais" quando houver mais de 2. Também perguntou onde cadastrar a categoria do álbum: Cidade → Fotos e álbuns → aba "Categorias" (a categoria é opcional).
+- **Feito:**
+  - home: os 6 álbuns publicados mais recentes (por data de criação, sem olhar a ordem manual), no bloco "Galeria de fotos" (3 por linha no computador) e na coluna de fotos de "Vídeos e fotos"; `/fotos` não muda;
+  - selos na home: 2; com mais de 2, botão "Veja mais (N selos)" para `/selos`;
+  - `portal.css?v=46`.
+- **Testes:** `teste_vitrine` (2 selos e "Veja mais (3 selos)"; 7 álbuns fictícios → os 6 mais recentes em ordem); 42 suítes sem falha sobre o código e sobre a imagem.
+- **Implantado em 26/11/2026, ~15h10 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `b560813`; backup ok; `atualizar` "pronto.".
+- **Conferido:** pmbora e cmbora 200 em `/`; `/selos`, `/fotos` e `portal.css?v=46` 200; gestão 303; as duas homes com 2 selos e "Veja mais (3 selos)"; sem erros nos logs. Ainda sem álbum publicado em produção.
