@@ -120,6 +120,28 @@ checa(anon.get(f"/cameras/{c['id']}/").status_code == 503, 'sem conversor: 503 c
 ex_c = db.um(PM, 'SELECT id FROM cameras WHERE exemplo LIMIT 1')['id']
 checa(anon.get(f'/cameras/{ex_c}/').status_code == 404 and anon.get(f"/cameras/{c['id']}/..%2F..%2Fetc").status_code in (400, 404), 'câmera de exemplo e caminho estranho: 404')
 checa(db.um(CM, 'SELECT count(*) n FROM cameras')['n'] == 0 and anon_cm.get(f"/cameras/{c['id']}/").status_code == 404, 'câmera de um órgão não aparece no outro')
+# conversor falso que responde como o MediaMTX 1.21: o 1º pedido da playlist recebe 302 (checagem de cookie, "?cookieCheck=1")
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+PL = f"/{c['caminho']}/index.m3u8"
+class ConversorFalso(BaseHTTPRequestHandler):
+    def log_message(self, *a): pass
+    def responder(self, cod, corpo=b'', tipo='text/plain', loc=None):
+        self.send_response(cod)
+        if loc: self.send_header('Location', loc)
+        self.send_header('Content-Type', tipo); self.send_header('Content-Length', str(len(corpo))); self.end_headers(); self.wfile.write(corpo)
+    def do_GET(self):
+        if self.path == PL: return self.responder(302, loc=PL + '?cookieCheck=1')
+        if self.path == PL + '?cookieCheck=1': return self.responder(200, b'#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-STREAM-INF:BANDWIDTH=1\nmain_stream.m3u8\n', 'application/vnd.apple.mpegurl')
+        self.responder(404)
+srv = ThreadingHTTPServer(('127.0.0.1', 0), ConversorFalso); threading.Thread(target=srv.serve_forever, daemon=True).start()
+VT.HLS, o_hls = f'http://127.0.0.1:{srv.server_port}', VT.HLS
+r = pm.post(UC, data={'csrf': tok(pm, UC), 'acao': 'testar', 'id': c['id']}, follow_redirects=True)
+checa('ok, vídeo recebido' in r.text and 'código 302' not in r.text, 'Testar segue o 302 de checagem de cookie do conversor')
+r = anon.get(f"/cameras/{c['id']}/index.m3u8", follow_redirects=False)
+checa(r.status_code == 200 and r.text.startswith('#EXTM3U') and 'location' not in r.headers and c['caminho'] not in r.text, 'vídeo do portal: 302 do conversor seguido no servidor, sem expor o caminho interno')
+checa(anon.get(f"/cameras/{c['id']}/nada.ts", follow_redirects=False).status_code == 404, 'arquivo inexistente no conversor: 404')
+srv.shutdown(); VT.HLS = o_hls
 VT._api = o_api
 CFG.CHAVE_CREDENCIAIS = o_chave
 checa('Câmera de teste' in anon.get('/videos').text and anon.get('/cameras', follow_redirects=False).headers.get('location') == '/videos', 'página /videos com câmeras; /cameras leva para ela')

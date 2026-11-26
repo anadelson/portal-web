@@ -44,7 +44,9 @@ async def camera_video(request: Request, cid: int, resto: str = ''):
     qs = request.url.query
     if not _QS.match(qs):
         raise HTTPException(400)
-    cliente = httpx.AsyncClient(timeout=httpx.Timeout(20, connect=3))
+    # o conversor responde ao 1º pedido da playlist com 302 (checagem de cookie, "?cookieCheck=1"): o redirecionamento é
+    # seguido aqui dentro (só no próprio conversor), para o navegador não receber 302 nem o caminho interno da câmera
+    cliente = httpx.AsyncClient(timeout=httpx.Timeout(20, connect=3), follow_redirects=True, max_redirects=3)
     try:
         resp = await cliente.send(cliente.build_request('GET', f"{VT.HLS}/{c['caminho']}/{resto}" + (f'?{qs}' if qs else '')), stream=True)
     except httpx.HTTPError:
@@ -53,7 +55,7 @@ async def camera_video(request: Request, cid: int, resto: str = ''):
     async def fechar():
         await resp.aclose()
         await cliente.aclose()
-    if resp.status_code >= 400:
+    if resp.status_code >= 300:
         await fechar()
         raise HTTPException(503 if resp.status_code >= 500 else 404, 'Câmera fora do ar no momento. Tente de novo em alguns minutos.')
     h = {'Cache-Control': resp.headers.get('cache-control', 'no-cache'), 'X-Frame-Options': 'SAMEORIGIN', 'Content-Security-Policy': CSP_CAMERA}
