@@ -41,6 +41,7 @@ for nome, c in (('pm', pm), ('cm', cm)):
     checa(len(i) == len(set(i)) and len(p) == len(set(p)), f'{nome}: destino repetido dentro da mesma barra')
     checa('class="btn-menu"' in html and 'id="menu-cel"' in html and 'aria-controls="menu-cel"' in html, f'{nome}: botão e painel do menu do celular')
     checa('href="/admin"' not in html, f'{nome}: sem link para a área restrita no portal (26/11/2026)')
+    checa('href="/admin"' not in c.get('/mapa-do-site').text, f'{nome}: mapa do site sem a área restrita')
 i, p = destinos(pm.get('/').text)
 for d in ['/transparencia', '/painel', '/diario', '/legislacao', '/ouvidoria', '/e-sic']:
     checa(d in i or d in p or d == '/painel', f'pm: destino {d} no cabeçalho')
