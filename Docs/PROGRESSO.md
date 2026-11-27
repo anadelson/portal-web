@@ -3109,3 +3109,10 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Testes:** `teste_fase8` agora confere que o portal não tem link para `/admin`; `teste_vitrine` confere que as notas saíram; 42 suítes sem falha sobre o código e sobre a imagem.
 - **Implantado em 26/11/2026, ~16h15 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `ecff36e`; backup ok; `atualizar` "pronto.".
 - **Conferido:** pmbora e cmbora 200 em `/`; `/videos` 200; `/admin` e gestão 303; nenhuma das homes tem link para `/admin` nem as notas; sem erros nos logs.
+
+## 27/11/2026 — Mapa do site sem o item "Área restrita" (tag `mapa-sem-admin`)
+- **Pedido do usuário:** "tire tambem" — retirar do mapa do site o item "Área restrita", que tinha ficado na entrega `limpar-avisos`.
+- **Feito:** `/mapa-do-site` dos dois portais sem o link para `/admin`. Com isso o portal não tem mais nenhum link para o painel; ele continua em `/admin`, digitando o endereço.
+- **Testes:** `teste_fase8` confere que o mapa do site não tem `href="/admin"`; 42 suítes sem falha sobre o código e sobre a imagem.
+- **Implantado em 27/11/2026, ~07h30 (Brasília)**, com o usuário confirmando o snapshot ("sim"): mescla `92e106b`; backup ok; `atualizar` "pronto.".
+- **Conferido:** pmbora e cmbora 200 em `/` e em `/mapa-do-site`; nenhum link para `/admin` no mapa do site; memória app 69 MiB e worker 50 MiB.
