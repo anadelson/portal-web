@@ -1,6 +1,5 @@
 {# Diário Oficial no painel (27/11/2026): um item no menu e tudo organizado em abas #}
-{% from 'admin/_tela.html' import abas_tela %}
-{% macro abas_diario(atual) %}{{ abas_tela('Diário Oficial', [
+{% macro abas_diario(atual) %}{% set itens = [
   ('/admin/diario', 'Visão geral', atual == 'geral'),
   ('/admin/diario?aba=atos', 'Atos', atual == 'atos'),
   ('/admin/diario?aba=edicoes', 'Edições', atual == 'edicoes'),
@@ -8,4 +7,6 @@
   ('/admin/diario/orgaos', 'Órgãos', atual == 'orgaos'),
   ('/admin/diario/config?aba=signatarios', 'Signatários', atual == 'signatarios'),
   ('/admin/diario/config?aba=calendario', 'Calendário', atual == 'calendario'),
-  ('/admin/diario/config?aba=regras', 'Lei, horários e teste', atual == 'regras')]) }}{% endmacro %}
+  ('/admin/diario/config?aba=regras', 'Lei e horários', atual == 'regras'),
+  ('/admin/diario/config?aba=exibicao', 'Exibição no portal', atual == 'exibicao')] %}
+<nav class="abas quebra" aria-label="Diário Oficial">{% for h, n, on in itens %}<a href="{{ h }}"{% if on %} aria-current="page"{% endif %}>{{ n }}</a>{% endfor %}</nav>{% endmacro %}

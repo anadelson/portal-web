@@ -860,3 +860,12 @@ nav.menu a{font-size:var(--fs-menu)}
 .vc-fotos .albuns span{padding:8px 10px}.vc-fotos .albuns strong{display:block;font-size:var(--fs-meta);line-height:1.3}
 .vc-fotos .albuns small{display:block;color:var(--sub);font-size:var(--fs-etq)}
 .vc.dois .vc-fotos .cams-mais{width:100%;justify-content:center}
+/* Diário na página inicial em linhas (27/11/2026): uma edição por linha, na largura da seção; as demais em /diario */
+.atos-linhas{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--bd)}
+.atos-linhas>li{border-bottom:1px solid var(--bd)}
+.atos-linhas a{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 14px;padding:10px 6px;color:var(--tx);text-decoration:none;border-radius:8px}
+.atos-linhas a:hover,.atos-linhas a:focus-visible{background:#F4F7F9}
+.atos-linhas a>small:first-child{flex:0 0 6.2em;color:var(--sub);font-variant-numeric:tabular-nums}
+.atos-linhas a>strong{flex:1 1 12em;min-width:0}
+.atos-linhas a>small:not(:first-child){color:var(--sub);flex:0 1 auto;min-width:0;overflow-wrap:anywhere}
+.atos-linhas .chip{margin:0}

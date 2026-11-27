@@ -139,7 +139,9 @@ def home(request: Request):
                         'modalidades': [r['m'] for r in db.todos(b, "SELECT DISTINCT modalidade m FROM licitacoes WHERE ano=%s AND modalidade<>'' ORDER BY 1", (hoje.year,))],
                         'legislacao': db.um(b, 'SELECT count(*) n FROM legislacao')['n']}
     if ctx['mods'].get('diario'):
-        dados['edicoes'] = diario_edicoes(b, 4)  # nativas e das plataformas de terceiros (27/11/2026), as mais recentes
+        from .diario import exibicao_home  # 27/11/2026: cartões lado a lado ou linhas, e quantas (Diário → Exibição no portal)
+        dados['diario_exib'] = exibicao_home(b)
+        dados['edicoes'] = diario_edicoes(b, dados['diario_exib']['qtd'])  # nativas e das plataformas de terceiros, as mais recentes
     from . import vitrine as VT  # selos, galeria de vídeos e câmeras (26/11/2026); selos e vídeos saem no período eleitoral
     if 'selos' in vis and not ctx['defeso']:
         todos = VT.selos(b)  # home: 2 selos; com mais de 2, botão "Veja mais" leva a /selos

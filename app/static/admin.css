@@ -415,3 +415,16 @@ details.anexar summary{cursor:pointer;color:var(--cor);font-weight:700;font-size
 .mapa-visao{height:340px}
 label.caixa{display:flex;gap:8px;align-items:flex-start;font-weight:600}
 .cam-mini-adm{display:block;width:160px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);margin-bottom:6px}
+/* Diário → Plataformas externas (27/11/2026): cada fonte num cartão; formulário na largura toda */
+.lista-fontes{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.lista-fontes>li{border:1px solid var(--bd);border-radius:12px;padding:12px 14px;background:#fff}
+.lista-fontes>li.inativo{background:#F6F7F9}
+.lista-fontes>li>p{margin:0 0 6px}
+.lista-fontes .info{font-size:var(--fs-meta);color:var(--sub);display:flex;flex-wrap:wrap;gap:4px 16px}
+.lista-fontes form.campos{max-width:none;margin-top:8px}
+.ajuda-campo{margin:-4px 0 0}
+/* alerta com o botão dentro da faixa */
+.msg.com-acao{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px}.msg.com-acao form{margin:0}
+.abas.quebra{flex-wrap:wrap;overflow-x:visible;row-gap:0}
+.grade2>label.campo-curto{max-width:220px}
+@media (min-width:700px){.grade2.duas{grid-template-columns:repeat(2,minmax(0,1fr))}}
