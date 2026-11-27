@@ -3131,3 +3131,16 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Implantado em 27/11/2026, ~12h16 (Brasília)**, com o usuário confirmando o snapshot ("há snapshot"): mescla `4644f23`; backup ok; `atualizar` "pronto." com a `050` nos dois órgãos.
 - **Conferido:** pmbora 200 em `/` e `/diario`; cmbora 200 em `/` e 404 em `/diario` (sem o módulo, como antes); `/admin/diario/fontes` 303 para o login; app 73 MiB e worker 49 MiB. Na partida, o worker registrou uma vez "diario_fontes não existe" (às 15:16:25 UTC, antes do `atualizar`); o erro não voltou.
 - **Pendente (usuário):** cadastrar a fonte DOSP no painel da Prefeitura (Diário Oficial → Plataformas externas, endereço `bora`).
+
+## 27/11/2026 — Diário: campos alinhados no painel e edições em linhas na página inicial (tag `diario-exibicao`)
+- **Pedido do usuário:** "reveja o alinhamento dos campos do formulário da seção nova plataforma … verifique todos os alinhamentos do menu diário oficial, e no portal, a apresentação das publicações do diário ficaram em card lado a lado, ele deve ter a opção de colocar em linhas uma abaixo da outra, sempre obedecendo o tamanho da seção, onde os demais links ficam no portal acessado pela opção todas as edições do diário".
+- **Como foi conferido:** prévias das telas geradas no banco de TESTE e abertas no Chrome do usuário (sem login no painel de produção). Na página inicial, só o bloco do Diário foi trocado, no próprio navegador, sem alterar nada no servidor.
+- **Feito:**
+  - Plataformas externas: cada fonte num cartão próprio (`.lista-fontes`; antes herdava a grade de 5 colunas da lista de órgãos); a ajuda do "Endereço" saiu de dentro do rótulo (linha abaixo, ligada por `aria-describedby`), então os campos ficam alinhados; "Nova plataforma" com 2 campos por linha;
+  - Visão geral: botão "Resolvido" dentro da faixa do alerta (antes ficava fora); aba Edições com aviso quando não há edição própria;
+  - Signatários e Calendário na largura toda, como as demais abas; botão "Designar" sem esticar; as 9 abas quebram em duas linhas em vez de rolar; o aviso de modo teste das designações só aparece em Signatários;
+  - nova aba **Exibição no portal**: página inicial em cartões lado a lado (padrão) ou em linhas, uma abaixo da outra, na largura da seção, de 1 a 10 edições (padrão 4), com as demais em "Todas as edições do Diário". "Edições de teste no portal" mudou para essa aba, e "Lei, horários e teste" agora se chama "Lei e horários";
+  - `portal.css?v=47` e `admin.css?v=30`.
+- **Testes:** `teste_diario_fontes` (abas, ajuda fora do rótulo, cartões por padrão, linhas com 2 edições, valores inválidos recusados, volta para a aba); 43 suítes sem falha sobre o código e sobre a imagem.
+- **Implantado em 27/11/2026, ~13h20 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `6fb6ded`; backup ok; `atualizar` "pronto.".
+- **Conferido:** pmbora e cmbora 200 em `/`, com `portal.css?v=47` servido; `admin.css?v=30` com as regras novas; Prefeitura com 122 edições da DOSP, ainda em cartões (padrão: 4); sem erros nos logs; app 71 MiB e worker 49 MiB.
