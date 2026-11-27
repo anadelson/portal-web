@@ -162,8 +162,8 @@ cm = TestClient(app, base_url='http://cmbora.localhost')
 entrar(pm, 'admin@pmbora.localhost', 'admin123', 'senhaforte123')
 entrar(cm, 'admin@cmbora.localhost', 'admin123', 'senhaforte123')
 pg = pm.get('/admin/diario/fontes')
-checa(pg.status_code == 200 and 'Plataformas externas' in pg.text and 'Imprensa Oficial Municipal — DOSP (teste)' in pg.text and 'Código do município na plataforma: 4730' in pg.text, 'painel: fonte, código e contagem')
-checa('Plataformas externas' in pm.get('/admin/diario').text, 'aba no Diário')
+checa(pg.status_code == 200 and 'Diário em plataforma externa' in pg.text and 'Imprensa Oficial Municipal — DOSP (teste)' in pg.text and 'Código do município na plataforma: 4730' in pg.text, 'painel: fonte, código e contagem')
+checa('Plataformas e sincronização' in pm.get('/admin/diario').text, 'aba no Diário')
 checa(cm.get('/admin/diario/fontes').status_code == 404, 'Câmara sem o módulo Diário: 404')
 post = lambda d: pm.post('/admin/diario/fontes', data=dict(d, csrf=tok(pm, '/admin/diario/fontes')), follow_redirects=True)
 checa('só letras minúsculas' in post({'acao': 'criar', 'tipo': 'dosp', 'nome': 'Outra fonte', 'slug': '../x'}).text, 'painel: slug inválido recusado')
@@ -180,22 +180,44 @@ post({'acao': 'ativar', 'id': fid})
 checa(fonte()['ativa'], 'reativada')
 checa(db.um(PM, "SELECT count(*) n FROM auditoria WHERE acao LIKE 'Diário: fonte externa%%'")['n'] >= 3, 'auditoria das ações')
 
-# ---------- 5) Diário no painel: um item no menu e tudo em abas ----------
-ABAS = ['Visão geral', 'Atos', 'Edições', 'Plataformas externas', 'Órgãos', 'Signatários', 'Calendário', 'Lei e horários', 'Exibição no portal']
+# ---------- 5) Diário no painel: um item no menu e abas em grupos (Diário próprio × plataforma externa × portal) ----------
+GRUPOS = [('Diário próprio do portal', ['Visão geral', 'Atos', 'Edições', 'Órgãos', 'Signatários', 'Calendário', 'Lei e horários']),
+          ('Diário em plataforma externa', ['Plataformas e sincronização', 'Edições importadas']), ('No portal', ['Exibição no portal'])]
 def abas(t):
-    m = re.search(r'<nav class="abas[^"]*" aria-label="Diário Oficial">(.*?)</nav>', t, re.S)
-    return (re.findall(r'>([^<]+)</a>', m.group(1)), re.findall(r'aria-current="page">([^<]+)<', m.group(1))) if m else ([], [])
-for url, atual in (('/admin/diario', 'Visão geral'), ('/admin/diario?aba=atos', 'Atos'), ('/admin/diario?aba=edicoes', 'Edições'), ('/admin/diario/fontes', 'Plataformas externas'),
-                   ('/admin/diario/orgaos', 'Órgãos'), ('/admin/diario/config', 'Signatários'), ('/admin/diario/config?aba=calendario', 'Calendário'), ('/admin/diario/config?aba=regras', 'Lei e horários'), ('/admin/diario/config?aba=exibicao', 'Exibição no portal')):
-    todas, cur = abas(pm.get(url).text)
-    checa(todas == ABAS and cur == [atual], f'abas do Diário em {url} ({todas}, {cur})')
+    m = re.search(r'<div class="abas-diario" role="group" aria-label="Diário Oficial">(.*?</nav></div>)</div>', t, re.S)
+    if not m:
+        return [], []
+    gs = [(g[0], re.findall(r'>([^<]+)</a>', g[1])) for g in re.findall(r'<span class="rot" aria-hidden="true">([^<]+)</span><nav class="abas quebra" aria-label="[^"]+">(.*?)</nav></div>', m.group(1), re.S)]
+    return gs, re.findall(r'aria-current="page">([^<]+)<', m.group(1))
+for url, atual in (('/admin/diario', 'Visão geral'), ('/admin/diario?aba=atos', 'Atos'), ('/admin/diario?aba=edicoes', 'Edições'), ('/admin/diario/fontes', 'Plataformas e sincronização'),
+                   ('/admin/diario/fontes?aba=edicoes', 'Edições importadas'), ('/admin/diario/orgaos', 'Órgãos'), ('/admin/diario/config', 'Signatários'), ('/admin/diario/config?aba=calendario', 'Calendário'),
+                   ('/admin/diario/config?aba=regras', 'Lei e horários'), ('/admin/diario/config?aba=exibicao', 'Exibição no portal')):
+    gs, cur = abas(pm.get(url).text)
+    checa(gs == GRUPOS and cur == [atual], f'abas do Diário em {url} ({gs}, {cur})')
 menu = pm.get('/admin/').text
 nav = menu.split('<main')[0]
 checa(nav.count('href="/admin/diario"') == 1 and not re.search(r'href="/admin/diario[/?]', nav), 'um único item "Diário Oficial" no menu do painel')
 g, at, ed = pm.get('/admin/diario').text, pm.get('/admin/diario?aba=atos').text, pm.get('/admin/diario?aba=edicoes').text
-checa('Edição em andamento' in g and 'Atos aguardando publicação' not in g and 'Últimas edições' not in g and 'id="h-ext"' in g, 'Visão geral: edição em andamento e plataformas externas')
+checa('Edição em andamento' in g and 'Atos aguardando publicação' not in g and 'Últimas edições' not in g, 'Visão geral do Diário próprio: edição em andamento')
+checa('dosp.com.br' not in g and 'dosp.com.br' not in ed and 'Imprensa Oficial Municipal' not in g + ed, 'Diário próprio sem nada da plataforma externa')
+checa('falhas seguidas' not in g, 'alerta da plataforma externa fora da Visão geral do Diário próprio')
 checa('Atos aguardando publicação' in at and 'Edição em andamento' not in at, 'aba Atos')
-checa('Últimas edições' in ed and 'Edições em plataformas externas' in ed and f'href="{URL1}"' in ed, 'aba Edições com as da plataforma')
+checa('Últimas edições' in ed and 'Nenhuma edição do Diário próprio ainda' in ed, 'aba Edições: só as do Diário próprio')
+imp = pm.get('/admin/diario/fontes?aba=edicoes').text
+checa('Edições importadas' in imp and imp.count('Abrir na plataforma') == 3 and f'href="{URL1}"' in imp, 'Edições importadas: as 3 da DOSP com link')
+fo = pm.get('/admin/diario/fontes').text
+checa('falhas seguidas na sincronização' in fo and 'name="volta" value="fontes"' in fo, 'alerta da plataforma externa na aba dela')
+aid = db.um(PM, "SELECT id FROM diario_alertas WHERE tipo='fonte_externa'")['id']
+r = pm.post('/admin/diario/alertas', data={'csrf': tok(pm, '/admin/diario/fontes'), 'id': aid, 'volta': 'fontes'}, follow_redirects=False)
+checa(r.headers.get('location') == '/admin/diario/fontes' and 'falhas seguidas na sincronização' not in pm.get('/admin/diario/fontes').text, 'Resolvido volta para a aba da plataforma')
+
+# página inicial: "Publicações oficiais" sem o cartão do Diário (já está em "Atos oficiais"); no lugar, Comunicados com os tipos
+db.exe(PM, "INSERT INTO blocos (pagina, chave, regiao, ordem, visivel) VALUES ('home', 'publicacoes', 'principal', 99, TRUE) ON CONFLICT (pagina, chave) DO UPDATE SET visivel=TRUE")
+hp = secao(anon.get('/').text, 'h-pub')
+checa(hp and '<h3>Diário Oficial</h3>' not in hp and 'action="/diario"' not in hp, 'Publicações oficiais sem o cartão do Diário')
+checa('<form action="/comunicados" class="pub-c"><h3>Comunicados</h3>' in hp and 'name="tipo"' in hp and '<option>Convocação</option>' in hp and '<option value="">Todos os tipos</option>' in hp, 'cartão Comunicados com a lista de tipos')
+cf = anon.get('/comunicados?tipo=Convocação').text
+checa('<option selected>Convocação</option>' in cf, 'Comunicados abre com o tipo escolhido já filtrado')
 cs, cc, cr = pm.get('/admin/diario/config').text, pm.get('/admin/diario/config?aba=calendario').text, pm.get('/admin/diario/config?aba=regras').text
 checa('Signatários designados' in cs and 'Calendário: feriados' not in cs and 'Lei, decreto e horários' not in cs, 'aba Signatários sozinha')
 checa('Calendário: feriados' in cc and 'Signatários designados' not in cc, 'aba Calendário sozinha')

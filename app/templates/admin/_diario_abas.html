@@ -1,12 +1,17 @@
-{# Diário Oficial no painel (27/11/2026): um item no menu e tudo organizado em abas #}
-{% macro abas_diario(atual) %}{% set itens = [
-  ('/admin/diario', 'Visão geral', atual == 'geral'),
-  ('/admin/diario?aba=atos', 'Atos', atual == 'atos'),
-  ('/admin/diario?aba=edicoes', 'Edições', atual == 'edicoes'),
-  ('/admin/diario/fontes', 'Plataformas externas', atual == 'fontes'),
-  ('/admin/diario/orgaos', 'Órgãos', atual == 'orgaos'),
-  ('/admin/diario/config?aba=signatarios', 'Signatários', atual == 'signatarios'),
-  ('/admin/diario/config?aba=calendario', 'Calendário', atual == 'calendario'),
-  ('/admin/diario/config?aba=regras', 'Lei e horários', atual == 'regras'),
-  ('/admin/diario/config?aba=exibicao', 'Exibição no portal', atual == 'exibicao')] %}
-<nav class="abas quebra" aria-label="Diário Oficial">{% for h, n, on in itens %}<a href="{{ h }}"{% if on %} aria-current="page"{% endif %}>{{ n }}</a>{% endfor %}</nav>{% endmacro %}
+{# Diário Oficial no painel (27/11/2026): um item no menu; abas separadas entre o Diário próprio do portal
+   (montado, assinado e publicado aqui) e o Diário em plataforma externa (só a lista, importada da plataforma) #}
+{% macro abas_diario(atual) %}{% set grupos = [
+  ('Diário próprio do portal', [
+    ('/admin/diario', 'Visão geral', 'geral'),
+    ('/admin/diario?aba=atos', 'Atos', 'atos'),
+    ('/admin/diario?aba=edicoes', 'Edições', 'edicoes'),
+    ('/admin/diario/orgaos', 'Órgãos', 'orgaos'),
+    ('/admin/diario/config?aba=signatarios', 'Signatários', 'signatarios'),
+    ('/admin/diario/config?aba=calendario', 'Calendário', 'calendario'),
+    ('/admin/diario/config?aba=regras', 'Lei e horários', 'regras')]),
+  ('Diário em plataforma externa', [
+    ('/admin/diario/fontes', 'Plataformas e sincronização', 'fontes'),
+    ('/admin/diario/fontes?aba=edicoes', 'Edições importadas', 'ext_edicoes')]),
+  ('No portal', [
+    ('/admin/diario/config?aba=exibicao', 'Exibição no portal', 'exibicao')])] %}
+<div class="abas-diario" role="group" aria-label="Diário Oficial">{% for rot, itens in grupos %}<div class="grupo{{ ' atual' if itens|selectattr(2, 'equalto', atual)|list }}"><span class="rot" aria-hidden="true">{{ rot }}</span><nav class="abas quebra" aria-label="{{ rot }}">{% for h, n, k in itens %}<a href="{{ h }}"{% if k == atual %} aria-current="page"{% endif %}>{{ n }}</a>{% endfor %}</nav></div>{% endfor %}</div>{% endmacro %}

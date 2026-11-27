@@ -134,7 +134,7 @@ def home(request: Request):
         dados['proxima_tv'] = db.um(b, 'SELECT * FROM transmissoes WHERE NOT ao_vivo AND previsto_para > now() ORDER BY previsto_para LIMIT 1')
     if o['tipo'] == 'executivo':
         F8.sincronizar(b)
-        dados['pub'] = {'ultima_edicao': (diario_edicoes(b, 1) or [None])[0] if ctx['mods'].get('diario') else None,
+        dados['pub'] = {'comunicados': len(F8.comunicados(b, 500, ano=hoje.year, so_validos=False)), 'tipos_comunicado': F8.tipos_comunicado(b),  # 27/11/2026: no lugar do Diário
                         'licitacoes': db.um(b, "SELECT count(*) n FROM licitacoes WHERE ano=%s", (hoje.year,))['n'],
                         'modalidades': [r['m'] for r in db.todos(b, "SELECT DISTINCT modalidade m FROM licitacoes WHERE ano=%s AND modalidade<>'' ORDER BY 1", (hoje.year,))],
                         'legislacao': db.um(b, 'SELECT count(*) n FROM legislacao')['n']}

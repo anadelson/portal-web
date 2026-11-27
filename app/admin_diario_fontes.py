@@ -19,15 +19,19 @@ def _modulo(request):
 
 
 @r.get('/diario/fontes')
-def fontes(request: Request):
+def fontes(request: Request, aba: str = '', fonte: int = 0):
     u = exige(request); _modulo(request); b = request.state.orgao['banco']
     lista = DX.fontes(b)
+    if aba == 'edicoes':  # Edições importadas: a lista que o portal mostra, com o link para a edição na plataforma
+        eds = [e for e in DX.edicoes(b, 1000) if not fonte or e['fonte_id'] == fonte]
+        return T('diario_fontes', request, u, aba='ext_edicoes', fontes=lista, edicoes=eds, fonte_sel=fonte, tipos=[])
     for f in lista:
         f['plataforma'] = DX.plataforma(f['tipo'])
         f['n'] = db.um(b, 'SELECT count(*) n, max(data) ult FROM diario_externo_edicoes WHERE fonte_id=%s', (f['id'],))
         f['syncs'] = db.todos(b, 'SELECT * FROM diario_sincronizacoes WHERE fonte_id=%s ORDER BY id DESC LIMIT 5', (f['id'],))
     tipos = [(k, c.plataforma, c.campos) for k, c in sorted(DF.ADAPTADORES.items())]
-    return T('diario_fontes', request, u, fontes=lista, tipos=tipos)
+    alertas = db.todos(b, "SELECT * FROM diario_alertas WHERE NOT resolvido AND tipo='fonte_externa' ORDER BY id DESC LIMIT 10")
+    return T('diario_fontes', request, u, aba='fontes', fontes=lista, tipos=tipos, alertas=alertas)
 
 
 def _validar(f, tipo):

@@ -428,3 +428,12 @@ label.caixa{display:flex;gap:8px;align-items:flex-start;font-weight:600}
 .abas.quebra{flex-wrap:wrap;overflow-x:visible;row-gap:0}
 .grade2>label.campo-curto{max-width:220px}
 @media (min-width:700px){.grade2.duas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Diário: abas em três grupos — Diário próprio, plataforma externa e exibição no portal (27/11/2026) */
+.abas-diario{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;margin:0 0 16px;border-bottom:2px solid var(--bd)}
+.abas-diario .grupo{display:contents}
+.abas-diario .rot{align-self:center;font-size:var(--fs-meta);font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.03em;padding:0 0 0 2px}
+.abas-diario .grupo.atual .rot{color:var(--cor)}
+.abas-diario .abas{border-bottom:0;margin:0}
+.abas-diario .grupo+.grupo .rot,.abas-diario .grupo+.grupo .abas{border-top:1px solid var(--bd)}
+@media (max-width:720px){.abas-diario{grid-template-columns:minmax(0,1fr)}.abas-diario .rot{padding-top:8px}.abas-diario .grupo+.grupo .abas{border-top:0}}
+.filtro-linha{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:0 0 12px}.filtro-linha label{display:flex;flex-direction:column;gap:3px;font-weight:600;font-size:var(--fs-rotulo)}

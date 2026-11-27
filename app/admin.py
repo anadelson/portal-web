@@ -837,7 +837,6 @@ def _volta_config(acao):
 @r.get('/diario')
 def diario(request: Request, aba: str = ''):
     u = exige(request)
-    from . import diario_externo as DX
     aba = aba if aba in ABAS_DIARIO else 'geral'
     o = request.state.orgao; b = o['banco']
     if not modulos_do_orgao(o).get('diario'):
@@ -846,11 +845,11 @@ def diario(request: Request, aba: str = ''):
     return T('diario', request, u, atos=db.todos(b, "SELECT * FROM diario_atos WHERE situacao <> 'publicado' ORDER BY id DESC"),
              eds=db.todos(b, 'SELECT * FROM diario_edicoes ORDER BY id DESC LIMIT 20'), aberta=DS.em_andamento(b), prox=DS.proxima_ordinaria(b),
              corte=agora.time() >= diario_pdf.regras(b)['t_corte'], alvo=diario_pdf.data_alvo(b, agora), modo_teste=AS.modo_teste(), diario_teste_publico=diario_pdf.mostrar_teste(b),
-             alertas=db.todos(b, 'SELECT * FROM diario_alertas WHERE NOT resolvido ORDER BY id DESC LIMIT 10'),
+             alertas=db.todos(b, "SELECT * FROM diario_alertas WHERE NOT resolvido AND tipo <> 'fonte_externa' ORDER BY id DESC LIMIT 10"),  # os da plataforma externa ficam na aba dela
              publicados=db.todos(b, "SELECT a.id, a.tipo, a.numero, a.ementa, e.numero en, e.letra el FROM diario_atos a JOIN diario_edicoes e ON e.id=a.edicao_id WHERE a.situacao='publicado' ORDER BY a.id DESC LIMIT 100"),
              designacoes={d['caderno']: d for d in db.todos(b, 'SELECT * FROM designacoes WHERE ativo ORDER BY id')},
              orgaos_diario=db.todos(b, 'SELECT * FROM diario_orgaos WHERE ativo ORDER BY caderno, nome'), orgao_escolhido=_orgao_escolhido(b, u),
-             aba=aba, fontes_ext=DX.fontes(b), externas=DX.edicoes(b, 20) if aba == 'edicoes' else [])
+             aba=aba)
 
 def _orgao_escolhido(b, u):
     """Órgão que já vem escolhido no envio: o do último ato que esta pessoa enviou; senão o marcado como padrão."""
@@ -1011,7 +1010,7 @@ def diario_edicao_pdf(request: Request, eid: int):
 async def diario_alertas(request: Request):
     u = exige(request, 'diario_fechar'); f = await ler_form(request)
     db.exe(request.state.orgao['banco'], 'UPDATE diario_alertas SET resolvido=TRUE WHERE id=%s', (int(f['id']),))
-    return ir('/admin/diario', 'Alerta marcado como resolvido.', request)
+    return ir('/admin/diario/fontes' if f.get('volta') == 'fontes' else '/admin/diario', 'Alerta marcado como resolvido.', request)
 
 @r.get('/diario/config')
 def diario_config(request: Request, aba: str = ''):
