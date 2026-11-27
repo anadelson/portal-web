@@ -1,5 +1,14 @@
 {% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% from 'admin/_diario_abas.html' import abas_diario with context %}{% block h1 %}Diário Oficial{% endblock %}
-{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_diario('fontes') }}
+{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_diario(aba) }}
+{% if aba == 'ext_edicoes' %}{{ cab('Edições do Diário publicadas em plataforma externa, importadas pela sincronização. É esta lista que o portal mostra; o PDF fica na plataforma e o link leva até ele.') }}
+<section class="cx" aria-labelledby="h-imp"><h2 id="h-imp">Edições importadas</h2>
+{% if fontes|length > 1 %}<form class="filtro-linha" method="get" action="/admin/diario/fontes"><input type="hidden" name="aba" value="edicoes"><label>Plataforma<select name="fonte"><option value="0">Todas</option>{% for f in fontes %}<option value="{{ f.id }}" {{ 'selected' if f.id == fonte_sel }}>{{ f.nome }}</option>{% endfor %}</select></label><button class="btn sec">Filtrar</button></form>{% endif %}
+{% if edicoes %}<p class="legal">{{ edicoes|length }} edição(ões){% if edicoes|length >= 1000 %} (as 1.000 mais recentes){% endif %}.</p>
+<div class="tabela"><table><thead><tr><th scope="col">Edição</th><th scope="col">Data</th><th scope="col">Páginas</th><th scope="col">Plataforma</th><th scope="col">Importada em</th><th scope="col"><span class="sr">Abrir</span></th></tr></thead><tbody>
+{% for e in edicoes %}<tr><td>nº {{ e.numero }}{% if e.extra %} (extra){% endif %}</td><td>{{ e.data|br }}</td><td>{{ e.paginas or '—' }}</td><td>{{ e.fonte_nome }}</td><td>{{ e.criado_em|br }}</td><td><a href="{{ e.url }}" rel="noopener external" target="_blank">Abrir na plataforma<span class="sr"> (nova aba)</span></a></td></tr>{% endfor %}
+</tbody></table></div>
+{% else %}{{ vazio('Nenhuma edição importada ainda. Cadastre a plataforma em "Plataformas e sincronização" e clique em "Sincronizar agora".') }}{% endif %}</section>
+{% else %}{% for al in alertas %}<div class="msg com-acao" role="alert" style="background:#FCEFD9"><span>{{ al.quando|br }} · {{ al.mensagem }}</span>{% if pode('diario_fechar') %}<form class="inline" method="post" action="/admin/diario/alertas"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ al.id }}"><input type="hidden" name="volta" value="fontes"><button class="btn sec">Resolvido</button></form>{% endif %}</div>{% endfor %}
 {{ cab('Diário publicado em plataforma de terceiros (ex.: DOSP). O portal só lista as edições, em "Diário Oficial" e em "Atos oficiais e oportunidades" na página inicial; ao clicar, a edição abre no site da plataforma. A lista é atualizada sozinha, no intervalo escolhido, e o portal nunca consulta a plataforma na hora da visita.') }}
 <section class="cx" aria-labelledby="h-fontes"><h2 id="h-fontes">Fontes cadastradas</h2>
 {% if fontes %}<ul class="lista-fontes">{% for f in fontes %}<li class="{{ '' if f.ativa else 'inativo' }}">
@@ -21,7 +30,7 @@
 </tbody></table></div></details>{% endif %}
 </li>{% endfor %}</ul>
 {% else %}{{ vazio('Nenhuma plataforma externa cadastrada. Com o Diário publicado na DOSP, cadastre abaixo.') }}{% endif %}
-<p class="legal">A fonte não é apagada: desativar só para a sincronização, e as edições já listadas continuam no portal. Se a plataforma pedir verificação de navegador (Cloudflare), a sincronização para e o erro aparece aqui; o bloqueio nunca é contornado. Depois de 3 falhas seguidas, um alerta aparece em "Visão geral".</p></section>
+<p class="legal">A fonte não é apagada: desativar só para a sincronização, e as edições já listadas continuam no portal. Se a plataforma pedir verificação de navegador (Cloudflare), a sincronização para e o erro aparece aqui; o bloqueio nunca é contornado. Depois de 3 falhas seguidas, um alerta aparece no topo desta aba.</p></section>
 {% if pode('config') %}<section class="cx form-tela"><h2>Nova plataforma</h2>
 <form class="campos" method="post" action="/admin/diario/fontes"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="criar">
 <div class="grade2 duas"><label>Plataforma<select name="tipo">{% for t, p, campos in tipos %}<option value="{{ t }}">{{ p }}</option>{% endfor %}</select></label>
@@ -31,4 +40,4 @@
 {% for t, p, campos in tipos %}{% for k, rot, ajuda in campos %}<p class="legal ajuda-campo" id="aj-{{ k }}-novo">{{ rot }}: {{ ajuda }}</p>{% endfor %}{% endfor %}
 <label class="opc"><input type="checkbox" name="nova_aba" value="1"> Abrir a edição em nova aba</label>
 <div><button class="btn">Cadastrar plataforma</button></div></form></section>{% endif %}
-{% endblock %}
+{% endif %}{% endblock %}
