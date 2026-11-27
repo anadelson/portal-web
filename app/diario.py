@@ -16,10 +16,10 @@ from . import config, db
 LEGENDA_TESTE = 'Edição teste — não homologada — sem validade'
 
 def mostrar_teste(banco) -> bool:
-    """Opção do órgão (Diário Oficial → Signatários, calendário e lei): mostrar no portal as edições de teste, com a legenda. Padrão: sim."""
+    """Opção do órgão (Diário Oficial → Lei, horários e teste): mostrar no portal as edições de teste, com a legenda. Padrão: sim."""
     return bool((db.cfg(banco, 'diario', {}) or {}).get('mostrar_teste', True))
 
-LEI_PADRAO = 'lei municipal'  # o órgão informa a lei em Diário Oficial → Signatários, calendário e lei
+LEI_PADRAO = 'lei municipal'  # o órgão informa a lei em Diário Oficial → Lei, horários e teste
 
 # ---------- calendário ----------
 def dia_util(b, d: date) -> bool:

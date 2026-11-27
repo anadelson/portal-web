@@ -826,9 +826,19 @@ from . import diario_servico as DS, assinatura as AS
 from starlette.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse as _FR
 
+ABAS_DIARIO = ('geral', 'atos', 'edicoes')
+ABAS_DIARIO_CONFIG = ('signatarios', 'calendario', 'regras')
+
+def _volta_config(acao):
+    """Depois de salvar, volta para a aba da configuração de onde veio a ação."""
+    aba = 'signatarios' if acao == 'designar' else ('calendario' if acao in ('feriado', 'tirar_feriado') else 'regras')
+    return f'/admin/diario/config?aba={aba}'
+
 @r.get('/diario')
-def diario(request: Request):
+def diario(request: Request, aba: str = ''):
     u = exige(request)
+    from . import diario_externo as DX
+    aba = aba if aba in ABAS_DIARIO else 'geral'
     o = request.state.orgao; b = o['banco']
     if not modulos_do_orgao(o).get('diario'):
         raise HTTPException(404)
@@ -839,7 +849,8 @@ def diario(request: Request):
              alertas=db.todos(b, 'SELECT * FROM diario_alertas WHERE NOT resolvido ORDER BY id DESC LIMIT 10'),
              publicados=db.todos(b, "SELECT a.id, a.tipo, a.numero, a.ementa, e.numero en, e.letra el FROM diario_atos a JOIN diario_edicoes e ON e.id=a.edicao_id WHERE a.situacao='publicado' ORDER BY a.id DESC LIMIT 100"),
              designacoes={d['caderno']: d for d in db.todos(b, 'SELECT * FROM designacoes WHERE ativo ORDER BY id')},
-             orgaos_diario=db.todos(b, 'SELECT * FROM diario_orgaos WHERE ativo ORDER BY caderno, nome'), orgao_escolhido=_orgao_escolhido(b, u))
+             orgaos_diario=db.todos(b, 'SELECT * FROM diario_orgaos WHERE ativo ORDER BY caderno, nome'), orgao_escolhido=_orgao_escolhido(b, u),
+             aba=aba, fontes_ext=DX.fontes(b), externas=DX.edicoes(b, 20) if aba == 'edicoes' else [])
 
 def _orgao_escolhido(b, u):
     """Órgão que já vem escolhido no envio: o do último ato que esta pessoa enviou; senão o marcado como padrão."""
@@ -914,9 +925,9 @@ async def diario_ato(request: Request):
             return ir('/admin/diario?novo=1', 'Escolha o órgão na lista (os órgãos são cadastrados em Diário Oficial → Órgãos).', request)
         f['orgao'], f['caderno'] = org['nome'], org['caderno']
         if not (f.get('ementa') and f.get('texto') and f.get('tipo')):
-            return ir('/admin/diario', 'Preencha tipo, ementa e texto.', request)
+            return ir('/admin/diario?aba=atos', 'Preencha tipo, ementa e texto.', request)
         if re.search(r'\d{3}\.\d{3}\.\d{3}-\d{2}', f['texto'] + f['ementa']):
-            return ir('/admin/diario', 'O texto tem CPF completo. Remova ou mascare antes de enviar (LGPD).', request)
+            return ir('/admin/diario?aba=atos', 'O texto tem CPF completo. Remova ou mascare antes de enviar (LGPD).', request)
         ret = int(f['retifica']) if f.get('retifica', '').isdigit() else None
         alvo = diario_pdf.data_alvo(b, config.agora())
         rels = [{'tipo': f.get(f'rel_tipo_{i}'), 'alvo': f.get(f'rel_alvo_{i}', '').strip()[:60]} for i in range(5)
@@ -935,7 +946,7 @@ async def diario_ato(request: Request):
         else:
             raise HTTPException(403)
     auditar(request, f'Diário: {msg}')
-    return ir('/admin/diario', msg, request)
+    return ir('/admin/diario?aba=atos', msg, request)
 
 @r.post('/diario/edicao')
 async def diario_edicao(request: Request):
@@ -984,7 +995,7 @@ async def diario_edicao(request: Request):
     except ValueError as ex:
         return ir('/admin/diario', str(ex), request)
     auditar(request, f'Diário: {msg}')
-    return ir('/admin/diario', msg, request)
+    return ir('/admin/diario?aba=edicoes' if acao == 'invalidar' else '/admin/diario', msg, request)
 
 @r.get('/diario/edicao/{eid}.pdf')
 def diario_edicao_pdf(request: Request, eid: int):
@@ -1003,11 +1014,12 @@ async def diario_alertas(request: Request):
     return ir('/admin/diario', 'Alerta marcado como resolvido.', request)
 
 @r.get('/diario/config')
-def diario_config(request: Request):
+def diario_config(request: Request, aba: str = ''):
     u = exige(request)
     b = request.state.orgao['banco']
     return T('diario_config', request, u, desig=db.todos(b, 'SELECT * FROM designacoes ORDER BY ativo DESC, caderno, id DESC'), etapas=AS.ETAPAS,
-             feriados=db.todos(b, 'SELECT * FROM feriados WHERE data >= %s ORDER BY data', (config.hoje().replace(month=1, day=1),)), conf=db.cfg(b, 'diario', {}) or {}, mostrar_teste=diario_pdf.mostrar_teste(b), modo_teste=AS.modo_teste(), rd=diario_pdf.regras(b))
+             feriados=db.todos(b, 'SELECT * FROM feriados WHERE data >= %s ORDER BY data', (config.hoje().replace(month=1, day=1),)), conf=db.cfg(b, 'diario', {}) or {}, mostrar_teste=diario_pdf.mostrar_teste(b), modo_teste=AS.modo_teste(), rd=diario_pdf.regras(b),
+             aba=aba if aba in ABAS_DIARIO_CONFIG else 'signatarios')
 
 @r.post('/diario/config')
 async def diario_config_post(request: Request):
@@ -1058,9 +1070,9 @@ async def diario_config_post(request: Request):
         else:
             raise HTTPException(400)
     except ValueError as ex:
-        return ir('/admin/diario/config', str(ex), request)
+        return ir(_volta_config(acao), str(ex), request)
     auditar(request, f'Diário (configuração): {acao}')
-    return ir('/admin/diario/config', msg, request)
+    return ir(_volta_config(acao), msg, request)
 
 # ---------- remessa ao Diário de outro órgão (ex.: Câmara → caderno Legislativo da Prefeitura) ----------
 from . import remessa as RM

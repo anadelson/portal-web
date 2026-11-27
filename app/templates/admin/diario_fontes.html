@@ -1,5 +1,5 @@
-{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}Diário Oficial{% endblock %}
-{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_tela('Diário Oficial', [('/admin/diario', 'Edições e atos', False), ('/admin/diario/orgaos', 'Órgãos', False), ('/admin/diario/config', 'Signatários, calendário e lei', False), ('/admin/diario/fontes', 'Plataformas externas', True)]) }}
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% from 'admin/_diario_abas.html' import abas_diario with context %}{% block h1 %}Diário Oficial{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_diario('fontes') }}
 {{ cab('Diário publicado em plataforma de terceiros (ex.: DOSP). O portal só lista as edições, em "Diário Oficial" e em "Atos oficiais e oportunidades" na página inicial; ao clicar, a edição abre no site da plataforma. A lista é atualizada sozinha, no intervalo escolhido, e o portal nunca consulta a plataforma na hora da visita.') }}
 <section class="cx" aria-labelledby="h-fontes"><h2 id="h-fontes">Fontes cadastradas</h2>
 {% if fontes %}<ul class="lista-orgaos">{% for f in fontes %}<li class="{{ '' if f.ativa else 'inativo' }}">

@@ -180,6 +180,31 @@ post({'acao': 'ativar', 'id': fid})
 checa(fonte()['ativa'], 'reativada')
 checa(db.um(PM, "SELECT count(*) n FROM auditoria WHERE acao LIKE 'Diário: fonte externa%%'")['n'] >= 3, 'auditoria das ações')
 
+# ---------- 5) Diário no painel: um item no menu e tudo em abas ----------
+ABAS = ['Visão geral', 'Atos', 'Edições', 'Plataformas externas', 'Órgãos', 'Signatários', 'Calendário', 'Lei, horários e teste']
+def abas(t):
+    m = re.search(r'<nav class="abas" aria-label="Diário Oficial">(.*?)</nav>', t, re.S)
+    return (re.findall(r'>([^<]+)</a>', m.group(1)), re.findall(r'aria-current="page">([^<]+)<', m.group(1))) if m else ([], [])
+for url, atual in (('/admin/diario', 'Visão geral'), ('/admin/diario?aba=atos', 'Atos'), ('/admin/diario?aba=edicoes', 'Edições'), ('/admin/diario/fontes', 'Plataformas externas'),
+                   ('/admin/diario/orgaos', 'Órgãos'), ('/admin/diario/config', 'Signatários'), ('/admin/diario/config?aba=calendario', 'Calendário'), ('/admin/diario/config?aba=regras', 'Lei, horários e teste')):
+    todas, cur = abas(pm.get(url).text)
+    checa(todas == ABAS and cur == [atual], f'abas do Diário em {url} ({todas}, {cur})')
+menu = pm.get('/admin/').text
+nav = menu.split('<main')[0]
+checa(nav.count('href="/admin/diario"') == 1 and not re.search(r'href="/admin/diario[/?]', nav), 'um único item "Diário Oficial" no menu do painel')
+g, at, ed = pm.get('/admin/diario').text, pm.get('/admin/diario?aba=atos').text, pm.get('/admin/diario?aba=edicoes').text
+checa('Edição em andamento' in g and 'Atos aguardando publicação' not in g and 'Últimas edições' not in g and 'id="h-ext"' in g, 'Visão geral: edição em andamento e plataformas externas')
+checa('Atos aguardando publicação' in at and 'Edição em andamento' not in at, 'aba Atos')
+checa('Últimas edições' in ed and 'Edições em plataformas externas' in ed and f'href="{URL1}"' in ed, 'aba Edições com as da plataforma')
+cs, cc, cr = pm.get('/admin/diario/config').text, pm.get('/admin/diario/config?aba=calendario').text, pm.get('/admin/diario/config?aba=regras').text
+checa('Signatários designados' in cs and 'Calendário: feriados' not in cs and 'Lei, decreto e horários' not in cs, 'aba Signatários sozinha')
+checa('Calendário: feriados' in cc and 'Signatários designados' not in cc, 'aba Calendário sozinha')
+checa('Lei, decreto e horários' in cr and 'Edições de teste no portal' in cr and 'Signatários designados' not in cr, 'aba Lei, horários e teste')
+rf = pm.post('/admin/diario/config', data={'csrf': tok(pm, '/admin/diario/config?aba=calendario'), 'acao': 'feriado', 'data': '2026-12-25', 'descricao': 'Natal (teste)', 'tipo': 'feriado'}, follow_redirects=False)
+checa(rf.status_code == 303 and rf.headers['location'] == '/admin/diario/config?aba=calendario', f"feriado volta para a aba Calendário ({rf.headers.get('location')})")
+ra = pm.post('/admin/diario/ato', data={'csrf': tok(pm, '/admin/diario?aba=atos'), 'acao': 'novo', 'ementa': ''}, follow_redirects=False)
+checa(ra.status_code == 303 and ra.headers['location'].startswith('/admin/diario?'), f"ato volta para o Diário ({ra.headers.get('location')})")
+
 print('ERROS:', len(erros))
 for e in erros:
     print(' -', e)
