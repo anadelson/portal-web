@@ -3144,3 +3144,15 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Testes:** `teste_diario_fontes` (abas, ajuda fora do rótulo, cartões por padrão, linhas com 2 edições, valores inválidos recusados, volta para a aba); 43 suítes sem falha sobre o código e sobre a imagem.
 - **Implantado em 27/11/2026, ~13h20 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `6fb6ded`; backup ok; `atualizar` "pronto.".
 - **Conferido:** pmbora e cmbora 200 em `/`, com `portal.css?v=47` servido; `admin.css?v=30` com as regras novas; Prefeitura com 122 edições da DOSP, ainda em cartões (padrão: 4); sem erros nos logs; app 71 MiB e worker 49 MiB.
+
+## 27/11/2026 — Diário próprio separado da plataforma externa no painel; Comunicados em Publicações oficiais (tag `diario-separado`)
+- **Pedido do usuário:** "organizar/separar o que é referente ao diário nativo do portal ao diário de plataforma externa, ficou confuso, e no portal principal onde está o card diário oficial, pode remover … ficou meio que duplicado, no lugar do diário se quiser colocar uma para levar aos concursos pode trocar". Depois: "pode ser comunicados e o drop lista as categorias do comunicado levando a um portal já com os filtros selecionados".
+- **Feito:**
+  - painel → Diário Oficial com as abas em três grupos, uma linha cada: **Diário próprio do portal** (Visão geral, Atos, Edições, Órgãos, Signatários, Calendário, Lei e horários), **Diário em plataforma externa** (Plataformas e sincronização; nova aba **Edições importadas**, com filtro por plataforma e link para a edição) e **No portal** (Exibição no portal). Cada grupo é um `<nav>` com o nome do grupo;
+  - as abas do Diário próprio não mostram mais nada da plataforma externa. Os alertas de falha da sincronização (`fonte_externa`) aparecem na aba da plataforma, e o "Resolvido" volta para ela;
+  - página inicial → Publicações oficiais: saiu o cartão "Diário Oficial", que repetia "Atos oficiais e oportunidades". No lugar entrou **Comunicados**, com o total publicado no ano e a lista dos tipos de comunicado do órgão; a página `/comunicados` abre já filtrada pelo tipo escolhido;
+  - `admin.css?v=31`.
+- **Conferência visual:** prévia no Chrome do usuário (sem login no painel). Ela mostrou que o CSS só desenha abas dentro de `nav.abas`; os grupos foram ajustados antes dos testes.
+- **Testes:** `teste_diario_fontes` (grupos e aba atual em todas as telas; Diário próprio sem itens da DOSP; Edições importadas; alerta só na aba da plataforma; cartão Comunicados com os tipos; filtro aplicado); 43 suítes sem falha sobre o código e sobre a imagem.
+- **Implantado em 27/11/2026, ~14h50 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `fea9d8f`; backup ok; `atualizar` "pronto.".
+- **Conferido:** pmbora e cmbora 200 em `/`; a home da Prefeitura tem o cartão Comunicados e não tem mais o do Diário; "Atos oficiais e oportunidades" continua; `/comunicados?tipo=Aviso` abre com Aviso selecionado; `admin.css?v=31` com as abas em grupos; sem erros nos logs; app 72 MiB e worker 49 MiB.
