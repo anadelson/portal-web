@@ -1,5 +1,5 @@
 {% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}Diário Oficial{% endblock %}
-{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_tela('Diário Oficial', [('/admin/diario', 'Edições e atos', False), ('/admin/diario/orgaos', 'Órgãos', True), ('/admin/diario/config', 'Signatários, calendário e lei', False)]) }}
+{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_tela('Diário Oficial', [('/admin/diario', 'Edições e atos', False), ('/admin/diario/orgaos', 'Órgãos', True), ('/admin/diario/config', 'Signatários, calendário e lei', False), ('/admin/diario/fontes', 'Plataformas externas', False)]) }}
 {{ cab('Órgãos que publicam no Diário. No envio do ato o órgão é escolhido nesta lista (ninguém digita o nome), então ele sai sempre igual em todas as edições. Já vem escolhido o órgão do último ato que a pessoa enviou; para quem ainda não enviou, o órgão padrão.') }}
 <section class="cx"><h2>Órgãos cadastrados</h2>
 {% if orgaos %}<ul class="lista-orgaos">{% for o in orgaos %}<li class="{{ '' if o.ativo else 'inativo' }}">

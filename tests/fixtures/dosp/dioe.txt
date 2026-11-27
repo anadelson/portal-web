@@ -1,0 +1,48 @@
+parseResponse({
+    "meta": {
+        "Cache-Control": "no-cache, must-revalidate",
+        "Expires": "0",
+        "X-Powered-By": "Luracast Restler v3.0.0rc5",
+        "Content-Type": "text/javascript; charset=utf-8",
+        "Content-Language": "en"
+    },
+    "data": [
+        {
+            "iddo": 912656,
+            "hash_do": "c2f3ff9920b220c3445e45f326bf9a58.pdf",
+            "data": "2026-11-26",
+            "ano_do": 1,
+            "edicao_do": "122",
+            "flag_extra": 0,
+            "hora_assinou": "2026-11-26 20:12:00",
+            "pgtotal": 11,
+            "cadernos_texto": null,
+            "assinaturadados": 1,
+            "link": "https://dosp.com.br/diario/sp/bora/2026-11-26/ed-122-912656-33b0dc80c293.pdf"
+        },
+        {
+            "iddo": 895189,
+            "hash_do": "50d6137a46b3baa7f8422a700ba73118.pdf",
+            "data": "2026-10-16",
+            "ano_do": 1,
+            "edicao_do": "98",
+            "flag_extra": 0,
+            "hora_assinou": "2026-10-16 16:52:34",
+            "pgtotal": 2,
+            "cadernos_texto": null,
+            "assinaturadados": 1
+        },
+        {
+            "iddo": 795464,
+            "hash_do": "ab37e4871ea476de05e60c9ff031a55e.pdf",
+            "data": "2026-03-25",
+            "ano_do": 1,
+            "edicao_do": "01",
+            "flag_extra": 0,
+            "hora_assinou": "2026-03-25 14:55:42",
+            "pgtotal": 3,
+            "cadernos_texto": null,
+            "assinaturadados": 1
+        }
+    ]
+});

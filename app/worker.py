@@ -177,6 +177,19 @@ def atendimento_tick(agora):
             comum.registrar(o['slug'], 'atendimento:rotina', False, 0, f'{type(e).__name__}: {str(e)[:200]}')
             traceback.print_exc()
 
+def diario_externo_tick(agora):
+    """Diário em plataforma de terceiros (27/11/2026): sincroniza as fontes vencidas de cada órgão (padrão: a cada 60 min)."""
+    from . import diario_externo as DX
+    from . import orgaos
+    for o in orgaos.todos():
+        try:
+            for r in DX.tick(o['banco']):
+                comum.registrar(o['slug'], 'diario:externo', 'falhou' not in r, 1, r)
+                print(agora, 'DIÁRIO EXTERNO', o['slug'], r, flush=True)
+        except Exception as e:
+            comum.registrar(o['slug'], 'diario:externo', False, 0, f'{type(e).__name__}')
+            traceback.print_exc()
+
 def portal_antigo_tick():
     """Busca no portal antigo (24/11/2026): avança as buscas em andamento por até 45 s a cada minuto, 1 pedido por segundo."""
     try:
@@ -224,6 +237,7 @@ def main():
         except Exception:
             traceback.print_exc()
         diario_tick(datetime.now())
+        diario_externo_tick(datetime.now())
         atendimento_tick(datetime.now())
         portal_antigo_tick()
         cameras_tick(cam)

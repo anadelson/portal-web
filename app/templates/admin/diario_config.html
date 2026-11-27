@@ -1,5 +1,5 @@
 {% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% block h1 %}Diário Oficial{% endblock %}
-{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_tela('Diário Oficial', [('/admin/diario', 'Edições e atos', False), ('/admin/diario/orgaos', 'Órgãos', False), ('/admin/diario/config', 'Signatários, calendário e lei', True)]) }}
+{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_tela('Diário Oficial', [('/admin/diario', 'Edições e atos', False), ('/admin/diario/orgaos', 'Órgãos', False), ('/admin/diario/config', 'Signatários, calendário e lei', True), ('/admin/diario/fontes', 'Plataformas externas', False)]) }}
 
 {% if modo_teste %}<p class="msg" style="background:#FBE4D8;color:#9B1C1C">MODO TESTE: as designações abaixo são registradas, mas as assinaturas usam certificados de teste.</p>{% endif %}
 <section class="cx" aria-labelledby="h-teste-pub"><h2 id="h-teste-pub">Edições de teste no portal</h2>
