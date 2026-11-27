@@ -29,7 +29,7 @@ checa(D.data_alvo(PM, em(15, 59)) == TER and D.data_alvo(PM, em(16, 0)) > TER, '
 pm = TestClient(app, base_url='http://pmbora.localhost')
 entrar(pm, 'admin@pmbora.localhost', 'admin123', 'senhaforte123')
 U = '/admin/diario/config'
-t = pm.get(U).text
+t = pm.get(U + '?aba=regras').text  # 27/11/2026: configuração do Diário em abas
 checa('Lei, decreto e horários' in t and 'name="corte"' in t and 'value="16:00"' in t and '(em uso)' in t, 'tela com os campos e o padrão em uso')
 def salvar(**k):
     d = {'csrf': tok(pm, U), 'acao': 'regras', 'lei': 'Lei Municipal nº 910/2026', 'decreto': 'Decreto de 25/03/2026', 'base_legal': '', 'corte': '14:00', 'alerta': '14:30', 'publicacao': '15:00'}
@@ -53,7 +53,7 @@ checa(D.base_legal(dict(r2, lei='', decreto=''), 'GENÉRICA') == 'GENÉRICA', 's
 
 # textos no painel, no portal e na Câmara
 t = pm.get('/admin/diario').text
-checa('Envio até 14h entra na edição do dia útil' in t and 'Lei Municipal nº 910/2026 e Decreto de 25/03/2026: envio até 14h' in t and 'publicação automática às 15h' in t, 'painel do Diário com os horários do órgão')
+checa('Envio até 14h entra na edição do dia útil' in pm.get('/admin/diario?aba=atos').text and 'Lei Municipal nº 910/2026 e Decreto de 25/03/2026: envio até 14h' in t and 'publicação automática às 15h' in t, 'painel do Diário com os horários do órgão')
 checa('16h' not in t.split('<main', 1)[1], 'painel do Diário sem "16h" fixo')
 p = TestClient(app, base_url='http://pmbora.localhost').get('/diario').text
 checa('a partir das 14h' in p and 'Decreto de 25/03/2026; MP 2.200-2/2001' in p, 'portal do Diário com o horário e a base legal do órgão')

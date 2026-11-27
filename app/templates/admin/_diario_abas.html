@@ -1,0 +1,11 @@
+{# Diário Oficial no painel (27/11/2026): um item no menu e tudo organizado em abas #}
+{% from 'admin/_tela.html' import abas_tela %}
+{% macro abas_diario(atual) %}{{ abas_tela('Diário Oficial', [
+  ('/admin/diario', 'Visão geral', atual == 'geral'),
+  ('/admin/diario?aba=atos', 'Atos', atual == 'atos'),
+  ('/admin/diario?aba=edicoes', 'Edições', atual == 'edicoes'),
+  ('/admin/diario/fontes', 'Plataformas externas', atual == 'fontes'),
+  ('/admin/diario/orgaos', 'Órgãos', atual == 'orgaos'),
+  ('/admin/diario/config?aba=signatarios', 'Signatários', atual == 'signatarios'),
+  ('/admin/diario/config?aba=calendario', 'Calendário', atual == 'calendario'),
+  ('/admin/diario/config?aba=regras', 'Lei, horários e teste', atual == 'regras')]) }}{% endmacro %}

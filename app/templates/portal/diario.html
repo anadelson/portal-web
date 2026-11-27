@@ -2,11 +2,19 @@
 {% block titulo %}Diário Oficial — {{ ident.nome }}{% endblock %}
 {% block conteudo %}
 <nav class="migalha" aria-label="Você está em"><a href="/">Início</a><span aria-hidden="true">›</span><span aria-current="page">Diário Oficial</span></nav>
-<h1>Diário Oficial Eletrônico</h1>
+<h1>Diário Oficial{% if edicoes or not externas %} Eletrônico{% endif %}</h1>
+{% if externas and not edicoes %}<p class="intro">As edições do Diário Oficial {{ 'da Câmara' if orgao.tipo == 'legislativo' else 'do Município' }} são publicadas em plataforma de terceiros{% if fontes_ext %} ({% for n, p in fontes_ext %}{{ p }}{% if not loop.last %}; {% endif %}{% endfor %}){% endif %}. Este portal só lista as edições: ao clicar, a edição abre no site da plataforma, que é a fonte oficial.</p>{{ legal_topo(legal) }}
+{% else %}
 {% set rd = regras_diario() %}<p class="intro">Edições publicadas em dias úteis, a partir das {{ rd.corte_txt }}, assinadas digitalmente com certificado ICP-Brasil e carimbo do tempo{% if lei_diario() %} ({{ lei_diario() }}){% endif %}. A data da edição é a data de publicação; os prazos contam a partir do dia útil seguinte.</p>{{ legal_topo(legal) }}
 {% if edicoes|selectattr('modo_teste')|list %}<div class="nota aviso-teste" role="note" style="margin-bottom:12px"><strong>{{ legenda_teste }}.</strong> As edições marcadas assim são testes do Diário Oficial Eletrônico, publicadas só para conferência antes da homologação. Não produzem efeitos legais.</div>{% endif %}
 {% for e in invalidadas %}<div class="nota" role="alert" style="margin-bottom:12px"><strong>Comunicado de indisponibilidade:</strong> a edição nº {{ e.numero }}{{ e.letra }} de {{ e.data|br }} foi invalidada por {{ e.invalidacao.ato }}. {{ e.invalidacao.comunicado }}{% if e.invalidacao.prorrogacao %} <strong>Prorrogação de prazos:</strong> {{ e.invalidacao.prorrogacao }}{% endif %}</div>{% endfor %}
 <form action="/diario/verificar" class="campos" style="max-width:420px;margin:12px 0 20px"><label>Verificar autenticidade (código da edição)<input name="codigo" placeholder="Ex.: 7F3A-91C2-0B5E"></label><button class="btn" type="submit">Verificar</button></form>
 <div class="tabela"><table><caption class="sr">Edições publicadas</caption><thead><tr><th scope="col">Edição</th><th scope="col">Data</th><th scope="col">Código</th><th scope="col">Arquivo</th></tr></thead><tbody>
 {% for e in edicoes %}<tr><td>nº {{ e.numero }}{{ e.letra }}{% if e.letra %} (extra){% endif %}{% if e.sem_atos %} · sem atos{% endif %}{% if e.situacao == 'invalidada' %} <span class="chip erro">invalidada</span>{% endif %}{% if e.modo_teste %} <span class="chip erro">{{ legenda_teste }}</span>{% endif %}</td><td>{{ e.data|br }}</td><td><code>{{ e.codigo }}</code></td><td><a href="/diario/{{ e.id }}.pdf{% if e.sha256 %}?v={{ e.sha256[:12] }}{% endif %}">PDF</a> · <a href="/diario/verificar?codigo={{ e.codigo }}">verificar</a></td></tr>{% else %}<tr><td colspan="4">Nenhuma edição oficial publicada ainda.</td></tr>{% endfor %}
-</tbody></table></div>{% endblock %}
+</tbody></table></div>{% endif %}
+{% if externas %}{# 27/11/2026: plataformas de terceiros — só a lista; o PDF fica na plataforma #}
+{% if edicoes %}<h2 id="h-diario-ext">Edições publicadas em plataforma de terceiros</h2>{% endif %}
+<p class="legal">Fonte oficial: {% for n, p in fontes_ext %}{{ n }}{% if not loop.last %}; {% endif %}{% endfor %}. O portal é um espelho da lista: o link leva à edição no site da plataforma.</p>
+<div class="tabela"><table><caption class="sr">Edições publicadas na plataforma de terceiros</caption><thead><tr><th scope="col">Edição</th><th scope="col">Data</th><th scope="col">Páginas</th><th scope="col">Fonte oficial</th><th scope="col">Arquivo</th></tr></thead><tbody>
+{% for e in externas %}<tr><td>nº {{ e.numero }}{% if e.extra %} (extra){% endif %}</td><td>{{ e.data|br }}</td><td>{{ e.paginas or '—' }}</td><td>{{ e.fonte_nome }}</td><td><a href="{{ e.url }}" rel="noopener external"{% if e.nova_aba %} target="_blank"{% endif %} aria-label="Abrir a edição nº {{ e.numero }}{% if e.extra %} extra{% endif %} de {{ e.data|br }} em {{ e.fonte_nome }}{% if e.nova_aba %} (abre em nova aba){% endif %}">Abrir edição</a></td></tr>{% endfor %}
+</tbody></table></div>{% endif %}{% endblock %}

@@ -96,9 +96,9 @@
 
 {% elif b.chave == 'diario' %}
 <section class="caixa" aria-labelledby="h-diario"><h2 id="h-diario">Atos oficiais e oportunidades</h2>
-{% if d.edicoes %}{% call fileira_cartoes(d.edicoes|length, 'Últimas edições do Diário Oficial', 'fil-atos', tag='ul', classe='atos-ult') %}{% for e in d.edicoes %}<li><a href="/diario/{{ e.id }}.pdf{% if e.sha256 %}?v={{ e.sha256[:12] }}{% endif %}"><small>{{ e.data|br }}</small><strong>Edição nº {{ e.numero }}{{ e.letra }}{% if e.sem_atos %} · sem atos{% endif %}</strong>{% if e.modo_teste %}<span class="chip erro">{{ legenda_teste }}</span>{% endif %}</a></li>{% endfor %}{% endcall %}
+{% if d.edicoes %}{% call fileira_cartoes(d.edicoes|length, 'Últimas edições do Diário Oficial', 'fil-atos', tag='ul', classe='atos-ult') %}{% for e in d.edicoes %}{% if e.externo %}<li><a href="{{ e.url }}" rel="noopener external"{% if e.nova_aba %} target="_blank"{% endif %}><small>{{ e.data|br }}</small><strong>Edição nº {{ e.numero }}{% if e.extra %} · extra{% endif %}</strong><small>{{ e.fonte_nome }}</small></a></li>{% else %}<li><a href="/diario/{{ e.id }}.pdf{% if e.sha256 %}?v={{ e.sha256[:12] }}{% endif %}"><small>{{ e.data|br }}</small><strong>Edição nº {{ e.numero }}{{ e.letra }}{% if e.sem_atos %} · sem atos{% endif %}</strong>{% if e.modo_teste %}<span class="chip erro">{{ legenda_teste }}</span>{% endif %}</a></li>{% endif %}{% endfor %}{% endcall %}
 {% else %}<p class="vazio">Diário Oficial{% if lei_diario() %} ({{ lei_diario() }}){% endif %}: nenhuma edição publicada ainda.</p>{% endif %}
-<div class="acoes"><a class="btn" href="/diario">Todas as edições do Diário {{ icone('seta', 18, 'seta') }}</a><a class="btn sec" href="/diario/verificar">Verificar autenticidade</a></div></section>
+<div class="acoes"><a class="btn" href="/diario">Todas as edições do Diário {{ icone('seta', 18, 'seta') }}</a>{% if d.edicoes|rejectattr('externo')|list or not d.edicoes %}<a class="btn sec" href="/diario/verificar">Verificar autenticidade</a>{% endif %}</div></section>
 
 {% elif b.chave == 'conheca' and ident.conheca and (ident.conheca.titulo or ident.conheca.texto or d.perfis) %}
 {% set cx = ident.conheca %}

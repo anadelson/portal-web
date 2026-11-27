@@ -1,0 +1,32 @@
+{% extends 'admin/base.html' %}{% from 'admin/_tela.html' import cab, abas_tela, voltar, acoes, vazio with context %}{% from 'admin/_diario_abas.html' import abas_diario with context %}{% block h1 %}Diário Oficial{% endblock %}
+{% block conteudo %}{% set C = csrf_token(request) %}{{ abas_diario('fontes') }}
+{{ cab('Diário publicado em plataforma de terceiros (ex.: DOSP). O portal só lista as edições, em "Diário Oficial" e em "Atos oficiais e oportunidades" na página inicial; ao clicar, a edição abre no site da plataforma. A lista é atualizada sozinha, no intervalo escolhido, e o portal nunca consulta a plataforma na hora da visita.') }}
+<section class="cx" aria-labelledby="h-fontes"><h2 id="h-fontes">Fontes cadastradas</h2>
+{% if fontes %}<ul class="lista-orgaos">{% for f in fontes %}<li class="{{ '' if f.ativa else 'inativo' }}">
+<p><strong>{{ f.nome }}</strong> · {{ f.plataforma }} <span class="chip {{ 'ok' if f.ativa }}">{{ 'Ativa' if f.ativa else 'Desativada' }}</span>{% if f.ultimo_erro %} <span class="chip erro">com erro</span>{% endif %}</p>
+<p class="info"><span>{{ f.n.n }} edição(ões) listadas{% if f.n.ult %}, a mais recente de {{ f.n.ult|br }}{% endif %}</span>
+<span>Última sincronização: {{ f.ultima_sincronizacao_em|br if f.ultima_sincronizacao_em else 'ainda não rodou' }}</span>
+{% if f.config.codigo %}<span>Código do município na plataforma: {{ f.config.codigo }}</span>{% endif %}</p>
+{% if f.ultimo_erro %}<p class="msg" role="status">Último erro{% if f.falhas_seguidas > 1 %} ({{ f.falhas_seguidas }} falhas seguidas){% endif %}: {{ f.ultimo_erro }}</p>{% endif %}
+{% if pode('config') %}<form class="campos" method="post" action="/admin/diario/fontes"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="id" value="{{ f.id }}">
+<div class="grade2"><label>Nome em "Fonte oficial:"<input name="nome" value="{{ f.nome }}" required maxlength="120"></label>
+{% for t, p, campos in tipos if t == f.tipo %}{% for k, rot, ajuda in campos %}<label>{{ rot }}<input name="{{ k }}" value="{{ f.config[k] or '' }}" required maxlength="200"><small>{{ ajuda }}</small></label>{% endfor %}{% endfor %}
+<label>Sincronizar a cada (minutos)<input name="intervalo_min" type="number" min="15" max="1440" value="{{ f.intervalo_min }}"></label></div>
+<label class="opc"><input type="checkbox" name="nova_aba" value="1" {{ 'checked' if f.nova_aba }}> Abrir a edição em nova aba</label>
+<div class="acoes"><button class="btn sec" name="acao" value="salvar">Salvar</button><button class="btn" name="acao" value="sincronizar" formnovalidate>Sincronizar agora</button>
+{% if f.ativa %}<button class="btn sec" name="acao" value="desativar" formnovalidate>Desativar</button>{% else %}<button class="btn sec" name="acao" value="ativar" formnovalidate>Ativar</button>{% endif %}</div></form>{% endif %}
+{% if f.syncs %}<details><summary>Últimas sincronizações</summary><div class="tabela"><table><thead><tr><th scope="col">Início</th><th scope="col">Novas</th><th scope="col">Atualizadas</th><th scope="col">Resultado</th></tr></thead><tbody>
+{% for s in f.syncs %}<tr><td>{{ s.iniciado_em|br }}</td><td>{{ s.novas }}</td><td>{{ s.atualizadas }}</td><td>{% if s.erros %}<span class="chip erro">falhou</span> {% endif %}{{ s.mensagem }}</td></tr>{% endfor %}
+</tbody></table></div></details>{% endif %}
+</li>{% endfor %}</ul>
+{% else %}{{ vazio('Nenhuma plataforma externa cadastrada. Com o Diário publicado na DOSP, cadastre abaixo.') }}{% endif %}
+<p class="legal">A fonte não é apagada: desativar só para a sincronização, e as edições já listadas continuam no portal. Se a plataforma pedir verificação de navegador (Cloudflare), a sincronização para e o erro aparece aqui; o bloqueio nunca é contornado. Depois de 3 falhas seguidas, um alerta aparece em "Edições e atos".</p></section>
+{% if pode('config') %}<section class="cx form-tela"><h2>Nova plataforma</h2>
+<form class="campos" method="post" action="/admin/diario/fontes"><input type="hidden" name="csrf" value="{{ C }}"><input type="hidden" name="acao" value="criar">
+<div class="grade2"><label>Plataforma<select name="tipo">{% for t, p, campos in tipos %}<option value="{{ t }}">{{ p }}</option>{% endfor %}</select></label>
+<label>Nome em "Fonte oficial:"<input name="nome" required maxlength="120" placeholder="Ex.: Imprensa Oficial Municipal — DOSP"></label>
+{% for t, p, campos in tipos %}{% for k, rot, ajuda in campos %}<label>{{ rot }}<input name="{{ k }}" maxlength="200" placeholder="Ex.: bora"><small>{{ ajuda }}</small></label>{% endfor %}{% endfor %}
+<label>Sincronizar a cada (minutos)<input name="intervalo_min" type="number" min="15" max="1440" value="60"></label></div>
+<label class="opc"><input type="checkbox" name="nova_aba" value="1"> Abrir a edição em nova aba</label>
+<div><button class="btn">Cadastrar plataforma</button></div></form></section>{% endif %}
+{% endblock %}

@@ -134,12 +134,12 @@ def home(request: Request):
         dados['proxima_tv'] = db.um(b, 'SELECT * FROM transmissoes WHERE NOT ao_vivo AND previsto_para > now() ORDER BY previsto_para LIMIT 1')
     if o['tipo'] == 'executivo':
         F8.sincronizar(b)
-        dados['pub'] = {'ultima_edicao': db.um(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND (NOT modo_teste OR %s) ORDER BY data DESC, numero DESC LIMIT 1", (diario_teste(b),)) if ctx['mods'].get('diario') else None,
+        dados['pub'] = {'ultima_edicao': (diario_edicoes(b, 1) or [None])[0] if ctx['mods'].get('diario') else None,
                         'licitacoes': db.um(b, "SELECT count(*) n FROM licitacoes WHERE ano=%s", (hoje.year,))['n'],
                         'modalidades': [r['m'] for r in db.todos(b, "SELECT DISTINCT modalidade m FROM licitacoes WHERE ano=%s AND modalidade<>'' ORDER BY 1", (hoje.year,))],
                         'legislacao': db.um(b, 'SELECT count(*) n FROM legislacao')['n']}
     if ctx['mods'].get('diario'):
-        dados['edicoes'] = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND (NOT modo_teste OR %s) ORDER BY data DESC, numero DESC, letra DESC LIMIT 4", (diario_teste(b),))
+        dados['edicoes'] = diario_edicoes(b, 4)  # nativas e das plataformas de terceiros (27/11/2026), as mais recentes
     from . import vitrine as VT  # selos, galeria de vídeos e câmeras (26/11/2026); selos e vídeos saem no período eleitoral
     if 'selos' in vis and not ctx['defeso']:
         todos = VT.selos(b)  # home: 2 selos; com mais de 2, botão "Veja mais" leva a /selos
@@ -303,6 +303,12 @@ def diario_teste(b):
     from .diario import mostrar_teste
     return mostrar_teste(b)
 
+def diario_edicoes(b, limite):
+    """Últimas edições publicadas: as do Diário nativo e as das plataformas de terceiros (o link destas abre na plataforma)."""
+    from . import diario_externo as DX
+    nat = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao='publicada' AND (NOT modo_teste OR %s) ORDER BY data DESC, numero DESC, letra DESC LIMIT %s", (diario_teste(b), limite))
+    return DX.misturar(nat, DX.edicoes(b, limite), limite)
+
 @r.get('/diario')
 def diario(request: Request):
     from . import sistemas as SIS  # 25/11/2026: Diário em sistema de terceiros (na Câmara, pode ser o da Prefeitura)
@@ -312,7 +318,10 @@ def diario(request: Request):
     ctx = ctx_orgao(request); precisa(ctx, 'diario')
     b = ctx['orgao']['banco']
     eds = db.todos(b, "SELECT * FROM diario_edicoes WHERE situacao IN ('publicada','invalidada') AND (NOT modo_teste OR %s) ORDER BY data DESC, numero DESC, letra DESC LIMIT 100", (diario_teste(b),))
-    return templates.TemplateResponse(request, 'portal/diario.html', dict(ctx, edicoes=eds, invalidadas=[e for e in eds if e['situacao'] == 'invalidada'], legal='diario'))
+    from . import diario_externo as DX  # plataformas de terceiros (27/11/2026): só a lista; o link abre a edição na plataforma
+    ext = DX.edicoes(b, 500)
+    fontes_ext = sorted({(e['fonte_nome'], DX.plataforma(e['fonte_tipo'])) for e in ext})
+    return templates.TemplateResponse(request, 'portal/diario.html', dict(ctx, edicoes=eds, invalidadas=[e for e in eds if e['situacao'] == 'invalidada'], externas=ext, fontes_ext=fontes_ext, legal='diario'))
 
 @r.get('/diario/{eid}.pdf')
 def diario_pdf(request: Request, eid: int):

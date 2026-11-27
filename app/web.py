@@ -159,7 +159,7 @@ def regras_diario(ctx, banco=None):
 
 @pass_context
 def lei_diario(ctx):
-    """Lei de instituição do Diário Oficial do órgão (Diário → Signatários, calendário e lei); vazio se não informada."""
+    """Lei de instituição do Diário Oficial do órgão (Diário → Lei, horários e teste); vazio se não informada."""
     return _conf_diario(ctx).get('lei', '')
 
 @pass_context
