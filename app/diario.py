@@ -16,10 +16,21 @@ from . import config, db
 LEGENDA_TESTE = 'Edição teste — não homologada — sem validade'
 
 def mostrar_teste(banco) -> bool:
-    """Opção do órgão (Diário Oficial → Lei, horários e teste): mostrar no portal as edições de teste, com a legenda. Padrão: sim."""
+    """Opção do órgão (Diário Oficial → Exibição no portal): mostrar no portal as edições de teste, com a legenda. Padrão: sim."""
     return bool((db.cfg(banco, 'diario', {}) or {}).get('mostrar_teste', True))
 
-LEI_PADRAO = 'lei municipal'  # o órgão informa a lei em Diário Oficial → Lei, horários e teste
+LEI_PADRAO = 'lei municipal'  # o órgão informa a lei em Diário Oficial → Lei e horários
+
+def exibicao_home(banco) -> dict:
+    """Diário Oficial → Exibição no portal (27/11/2026): como as últimas edições aparecem em "Atos oficiais e oportunidades"
+    na página inicial — cartões lado a lado (padrão) ou linhas, uma abaixo da outra — e quantas (1 a 10; padrão 4)."""
+    c = db.cfg(banco, 'diario', {}) or {}
+    formato = c.get('home_formato') if c.get('home_formato') in ('cartoes', 'linhas') else 'cartoes'
+    try:
+        qtd = min(10, max(1, int(c.get('home_qtd') or 4)))
+    except (TypeError, ValueError):
+        qtd = 4
+    return {'formato': formato, 'qtd': qtd}
 
 # ---------- calendário ----------
 def dia_util(b, d: date) -> bool:

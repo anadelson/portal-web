@@ -181,12 +181,12 @@ checa(fonte()['ativa'], 'reativada')
 checa(db.um(PM, "SELECT count(*) n FROM auditoria WHERE acao LIKE 'Diário: fonte externa%%'")['n'] >= 3, 'auditoria das ações')
 
 # ---------- 5) Diário no painel: um item no menu e tudo em abas ----------
-ABAS = ['Visão geral', 'Atos', 'Edições', 'Plataformas externas', 'Órgãos', 'Signatários', 'Calendário', 'Lei, horários e teste']
+ABAS = ['Visão geral', 'Atos', 'Edições', 'Plataformas externas', 'Órgãos', 'Signatários', 'Calendário', 'Lei e horários', 'Exibição no portal']
 def abas(t):
-    m = re.search(r'<nav class="abas" aria-label="Diário Oficial">(.*?)</nav>', t, re.S)
+    m = re.search(r'<nav class="abas[^"]*" aria-label="Diário Oficial">(.*?)</nav>', t, re.S)
     return (re.findall(r'>([^<]+)</a>', m.group(1)), re.findall(r'aria-current="page">([^<]+)<', m.group(1))) if m else ([], [])
 for url, atual in (('/admin/diario', 'Visão geral'), ('/admin/diario?aba=atos', 'Atos'), ('/admin/diario?aba=edicoes', 'Edições'), ('/admin/diario/fontes', 'Plataformas externas'),
-                   ('/admin/diario/orgaos', 'Órgãos'), ('/admin/diario/config', 'Signatários'), ('/admin/diario/config?aba=calendario', 'Calendário'), ('/admin/diario/config?aba=regras', 'Lei, horários e teste')):
+                   ('/admin/diario/orgaos', 'Órgãos'), ('/admin/diario/config', 'Signatários'), ('/admin/diario/config?aba=calendario', 'Calendário'), ('/admin/diario/config?aba=regras', 'Lei e horários'), ('/admin/diario/config?aba=exibicao', 'Exibição no portal')):
     todas, cur = abas(pm.get(url).text)
     checa(todas == ABAS and cur == [atual], f'abas do Diário em {url} ({todas}, {cur})')
 menu = pm.get('/admin/').text
@@ -199,7 +199,27 @@ checa('Últimas edições' in ed and 'Edições em plataformas externas' in ed a
 cs, cc, cr = pm.get('/admin/diario/config').text, pm.get('/admin/diario/config?aba=calendario').text, pm.get('/admin/diario/config?aba=regras').text
 checa('Signatários designados' in cs and 'Calendário: feriados' not in cs and 'Lei, decreto e horários' not in cs, 'aba Signatários sozinha')
 checa('Calendário: feriados' in cc and 'Signatários designados' not in cc, 'aba Calendário sozinha')
-checa('Lei, decreto e horários' in cr and 'Edições de teste no portal' in cr and 'Signatários designados' not in cr, 'aba Lei, horários e teste')
+checa('Lei, decreto e horários' in cr and 'Edições de teste no portal' not in cr and 'Signatários designados' not in cr, 'aba Lei e horários')
+ce = pm.get('/admin/diario/config?aba=exibicao').text
+checa('Edições de teste no portal' in ce and 'name="home_formato" value="cartoes" checked' in ce and 'name="home_qtd" min="1" max="10" value="4"' in ce, 'aba Exibição no portal: padrão cartões e 4')
+for txt in ('class="lista-fontes"', 'id="aj-slug-novo"', 'aria-describedby="aj-slug-novo"'):
+    checa(txt in pm.get('/admin/diario/fontes').text, f'Plataformas externas: {txt}')
+checa('<small>' not in pm.get('/admin/diario/fontes').text.split('Nova plataforma')[1], 'ajuda fora do rótulo (campos alinhados)')
+
+# página inicial: cartões (padrão) ou linhas, e quantas
+hd = secao(anon.get('/').text, 'h-diario')
+checa('class="fil-trilho atos-ult"' in hd and 'atos-linhas' not in hd, 'home: cartões por padrão')
+ex = lambda d: pm.post('/admin/diario/config', data=dict(d, csrf=tok(pm, '/admin/diario/config?aba=exibicao'), acao='exibicao'), follow_redirects=False)
+r = ex({'home_formato': 'linhas', 'home_qtd': '2'})
+checa(r.status_code == 303 and r.headers['location'] == '/admin/diario/config?aba=exibicao', 'Exibição: volta para a aba')
+hd = secao(anon.get('/').text, 'h-diario')
+checa('<ul class="atos-linhas"' in hd and 'fil-trilho' not in hd and hd.count('<li>') == 2 and 'Todas as edições do Diário' in hd, f'home: 2 edições em linhas e o botão para as demais ({hd.count("<li>")})')
+checa(f'href="{URL1}"' in hd, 'home em linhas: a mais recente com link para a plataforma')
+for d, nome in (({'home_formato': 'colunas', 'home_qtd': '2'}, 'formato inválido'), ({'home_formato': 'linhas', 'home_qtd': '11'}, 'mais de 10')):
+    ex(d)
+    checa(db.cfg(PM, 'diario', {}).get('home_qtd') == 2 and db.cfg(PM, 'diario', {}).get('home_formato') == 'linhas', f'Exibição: {nome} recusado')
+ex({'home_formato': 'cartoes', 'home_qtd': '4'})
+checa('class="fil-trilho atos-ult"' in secao(anon.get('/').text, 'h-diario'), 'home: de volta aos cartões')
 rf = pm.post('/admin/diario/config', data={'csrf': tok(pm, '/admin/diario/config?aba=calendario'), 'acao': 'feriado', 'data': '2026-12-25', 'descricao': 'Natal (teste)', 'tipo': 'feriado'}, follow_redirects=False)
 checa(rf.status_code == 303 and rf.headers['location'] == '/admin/diario/config?aba=calendario', f"feriado volta para a aba Calendário ({rf.headers.get('location')})")
 ra = pm.post('/admin/diario/ato', data={'csrf': tok(pm, '/admin/diario?aba=atos'), 'acao': 'novo', 'ementa': ''}, follow_redirects=False)

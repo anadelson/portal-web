@@ -827,11 +827,11 @@ from starlette.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse as _FR
 
 ABAS_DIARIO = ('geral', 'atos', 'edicoes')
-ABAS_DIARIO_CONFIG = ('signatarios', 'calendario', 'regras')
+ABAS_DIARIO_CONFIG = ('signatarios', 'calendario', 'regras', 'exibicao')
 
 def _volta_config(acao):
     """Depois de salvar, volta para a aba da configuração de onde veio a ação."""
-    aba = 'signatarios' if acao == 'designar' else ('calendario' if acao in ('feriado', 'tirar_feriado') else 'regras')
+    aba = 'signatarios' if acao == 'designar' else ('calendario' if acao in ('feriado', 'tirar_feriado') else ('exibicao' if acao in ('teste_publico', 'exibicao') else 'regras'))
     return f'/admin/diario/config?aba={aba}'
 
 @r.get('/diario')
@@ -1019,7 +1019,7 @@ def diario_config(request: Request, aba: str = ''):
     b = request.state.orgao['banco']
     return T('diario_config', request, u, desig=db.todos(b, 'SELECT * FROM designacoes ORDER BY ativo DESC, caderno, id DESC'), etapas=AS.ETAPAS,
              feriados=db.todos(b, 'SELECT * FROM feriados WHERE data >= %s ORDER BY data', (config.hoje().replace(month=1, day=1),)), conf=db.cfg(b, 'diario', {}) or {}, mostrar_teste=diario_pdf.mostrar_teste(b), modo_teste=AS.modo_teste(), rd=diario_pdf.regras(b),
-             aba=aba if aba in ABAS_DIARIO_CONFIG else 'signatarios')
+             aba=aba if aba in ABAS_DIARIO_CONFIG else 'signatarios', exib=diario_pdf.exibicao_home(b))
 
 @r.post('/diario/config')
 async def diario_config_post(request: Request):
@@ -1053,6 +1053,19 @@ async def diario_config_post(request: Request):
             conf['mostrar_teste'] = f.get('mostrar_teste') == '1'; db.set_cfg(b, 'diario', conf)
             auditar(request, f"Diário: edições de teste no portal {'sim' if antes else 'não'} → {'sim' if conf['mostrar_teste'] else 'não'}")
             msg = ('As edições de teste publicadas aparecem no portal com a legenda “' + diario_pdf.LEGENDA_TESTE + '”.') if conf['mostrar_teste'] else 'As edições de teste não aparecem mais no portal.'
+        elif acao == 'exibicao':  # 27/11/2026: edições na página inicial em cartões ou em linhas, e quantas
+            conf = db.cfg(b, 'diario', {}) or {}
+            if f.get('home_formato') not in ('cartoes', 'linhas'):
+                raise ValueError('Escolha a apresentação: cartões lado a lado ou linhas.')
+            try:
+                qtd = int(f.get('home_qtd') or 0)
+            except ValueError:
+                qtd = 0
+            if not 1 <= qtd <= 10:
+                raise ValueError('Mostre de 1 a 10 edições na página inicial.')
+            conf.update(home_formato=f['home_formato'], home_qtd=qtd); db.set_cfg(b, 'diario', conf)
+            auditar(request, f"Diário: página inicial em {'linhas' if f['home_formato'] == 'linhas' else 'cartões'}, {qtd} edição(ões)")
+            msg = f"Página inicial: {'linhas, uma abaixo da outra' if f['home_formato'] == 'linhas' else 'cartões lado a lado'}, com {qtd} edição(ões)."
         elif acao == 'regras':  # etapa 3: lei, decreto, base legal e horários do órgão
             novo, erros = diario_pdf.validar_regras(f)
             if erros:
