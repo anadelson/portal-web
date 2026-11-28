@@ -286,6 +286,21 @@ pm.post(url, data={'csrf': tok(pm, url), 'acao': 'excluir', 'valor_id': vid, 'mo
 if val('gestao_iegm', '2024'): falha('exclusão do lançamento manual')
 if not db.um(PM, "SELECT 1 FROM indicador_historico WHERE indicador_id=%s AND acao LIKE 'Lançamento manual excluído%%'", (iegm,)): falha('exclusão sem histórico')
 
+# ---------- anos sem declaração no Siconfi (28/11/2026): "não declarado", nunca zero nem valor inventado ----------
+ind_s = db.um(PM, "SELECT * FROM indicadores WHERE chave='saude_minimo'")
+lin = lambda a, v: {'periodo': str(a), 'data_ref': date(a, 12, 31), 'valor': v, 'texto': None, 'nota': '', 'parcial': False, 'detalhe': None, 'origem': 'coletor'}
+s2 = P.com_lacunas(ind_s, [lin(2021, 25.1), lin(2024, 20.4)])
+if [x['periodo'] for x in s2] != ['2021', '2022', '2023', '2024']: falha(f'lacunas: períodos {[x["periodo"] for x in s2]}')
+if any(x['valor'] is not None or x['texto'] != 'não declarado ao Siconfi' for x in s2[1:3]): falha('lacuna com valor ou sem o texto "não declarado"')
+g = str(P.grafico(ind_s, s2, 'g-t'))
+if g.count('>declarado<') != 2 or '2022: não declarado ao Siconfi' not in g: falha('gráfico sem a marca dos anos não declarados')
+ideb = db.um(PM, "SELECT * FROM indicadores WHERE chave='edu_ideb_ai'")
+if len(P.com_lacunas(ideb, [lin(2019, 6), lin(2021, 6)])) != 2: falha('IDEB (bienal) ganhou ano "não declarado"')
+db.exe(PM, "DELETE FROM indicador_valores v USING indicadores i WHERE i.id=v.indicador_id AND i.chave='saude_minimo' AND v.periodo='2025'")
+t = ok(pm.get('/painel/saude_minimo'), nome='indicador com ano não declarado').text
+if 'não declarado ao Siconfi' not in t or 'O RREO (Anexo 14) deste ano no Siconfi não traz este percentual.' not in t: falha('tabela sem o ano não declarado')
+if '"2025"' in pm.get('/painel/api/saude_minimo.json').text: falha('API publicou o ano não declarado como registro')
+
 # ---------- desligar o módulo tira tudo do ar ----------
 bi(False)
 ok(pm.get('/painel'), 404, nome='painel desligado')
