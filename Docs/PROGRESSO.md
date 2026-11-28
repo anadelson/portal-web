@@ -3165,3 +3165,10 @@ Pedido do usuário: controlar a sessão no admin da Câmara de forma fácil, do 
 - **Testes:** 43 suítes sem falha sobre o código e sobre a imagem.
 - **Implantado em 28/11/2026, ~21h40 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `81bad0d`; backup ok; `atualizar` "pronto.".
 - **Conferido:** pmbora e cmbora 200 em `/`, com `portal.css?v=48` servido e contendo a regra nova; sem erros nos logs.
+
+## 28/11/2026 — Painel: anos sem os mínimos no Siconfi marcados como "não declarado" (tag `minimos-lacuna`)
+- **Pedido do usuário:** escolheu "Marcar como não declarado" para a lacuna de 2022 e 2023 (ver a entrada `botoes-lado`).
+- **Feito:** `painel.LACUNA_ANUAL` (saude_minimo, edu_mde_minimo, edu_fundeb_minimo) e `com_lacunas(ind, serie)`, usada só na página do indicador. Os anos que faltam entre o primeiro e o último aparecem no gráfico sem barra, com "não declarado", e na tabela com "não declarado ao Siconfi" e a nota "O RREO (Anexo 14) deste ano no Siconfi não traz este percentual.". Nada é gravado: o banco, a API, os downloads, o último valor e a variação continuam só com dados reais. O IDEB, que é bienal, não é afetado. Se a declaração for corrigida no Siconfi, o coletor (que tenta uma vez por dia) grava o valor real e a marca some.
+- **Testes:** `teste_painel` (série com lacunas, gráfico, página, API sem o ano, IDEB sem lacuna); 43 suítes sem falha sobre o código e sobre a imagem.
+- **Implantado em 28/11/2026, ~22h20 (Brasília)**, com aprovação do usuário ("Aprovo, há snapshot"): mescla `e4dde3b`; backup ok; `atualizar` "pronto.".
+- **Conferido:** pmbora e cmbora, nos três indicadores: 2022 e 2023 marcados na tabela e no gráfico; a API de `saude_minimo` não tem 2022; sem erros nos logs.
