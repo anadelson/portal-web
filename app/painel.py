@@ -266,6 +266,22 @@ def serie(banco, indicador_id, limite=None):
     s = db.todos(banco, 'SELECT * FROM indicador_valores WHERE indicador_id=%s ORDER BY data_ref, periodo', (indicador_id,))
     return s[-limite:] if limite else s
 
+# Indicadores anuais em que ano sem valor é falta de declaração na fonte, e não pausa natural da série (como o IDEB, que é bienal).
+# Só para exibição (gráfico e tabela): nada é gravado, e o ano aparece como "não declarado", nunca como zero.
+LACUNA_ANUAL = {k: ('não declarado ao Siconfi', 'O RREO (Anexo 14) deste ano no Siconfi não traz este percentual.')
+                for k in ('saude_minimo', 'edu_mde_minimo', 'edu_fundeb_minimo')}
+
+def com_lacunas(ind, s):
+    """Série com os anos que faltam entre o primeiro e o último marcados como "não declarado" (só nos indicadores de LACUNA_ANUAL)."""
+    lac = LACUNA_ANUAL.get(ind['chave'])
+    anos = {int(x['periodo']) for x in s if str(x['periodo']).isdigit()}
+    if not lac or len(anos) < 2:
+        return s
+    falta = [{'periodo': str(a), 'data_ref': date(a, 12, 31), 'valor': None, 'texto': lac[0], 'detalhe': None, 'nota': lac[1], 'parcial': False,
+              'origem': 'lacuna', 'coletado_em': None, 'usuario': None, 'motivo': None, 'lacuna': True}
+             for a in range(min(anos), max(anos) + 1) if a not in anos]
+    return sorted(s + falta, key=lambda x: (x['data_ref'], x['periodo'])) if falta else s
+
 def catalogo(banco, so_visiveis=True, tema=None):
     sql = 'SELECT * FROM indicadores'
     w, p = [], []
@@ -446,9 +462,9 @@ def grafico(ind, s, uid='g'):
             ty = base - 28
         elif x['valor'] is None:
             ty = base - 8
-            if x['texto']:  # ex.: "não divulgado pelo INEP" — nunca desenhado como zero
+            if x['texto']:  # ex.: "não divulgado pelo INEP" ou "não declarado ao Siconfi" — nunca desenhado como zero
                 p.append(f'<text x="{cx:.1f}" y="{base - 22}" text-anchor="middle" font-size="11" fill="{COR_EIXO}">não</text>')
-                p.append(f'<text x="{cx:.1f}" y="{base - 8}" text-anchor="middle" font-size="11" fill="{COR_EIXO}">divulgado</text>')
+                p.append(f'<text x="{cx:.1f}" y="{base - 8}" text-anchor="middle" font-size="11" fill="{COR_EIXO}">{"declarado" if x.get("lacuna") else "divulgado"}</text>')
                 rot = ''
         else:
             yy = y(float(x['valor']))
